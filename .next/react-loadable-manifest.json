@@ -1,6 +1,6 @@
 {
-  "app/quotes/new/page.tsx -> jspdf": {
-    "id": "app/quotes/new/page.tsx -> jspdf",
+  "app/calculations/[id]/page.tsx -> jspdf": {
+    "id": "app/calculations/[id]/page.tsx -> jspdf",
     "files": [
       "static/chunks/_app-pages-browser_node_modules_jspdf_dist_jspdf_es_min_js.js"
     ]
