@@ -1,1 +1,1 @@
-{"version":1,"functions":{"/api/auth/login":{},"/api/admin/companies":{},"/api/company":{},"/api/dashboard":{},"/api/calculations/[id]":{},"/api/settings":{},"/api/materials":{},"/api/signup":{},"/api/calculations":{},"/api/materials/[id]":{}}}
+{"version":1,"functions":{"/api/admin/companies":{},"/api/dashboard":{},"/api/company":{},"/api/settings":{},"/api/calculations/[id]":{},"/api/materials":{},"/api/materials/[id]":{},"/api/signup":{},"/api/auth/login":{},"/api/calculations":{}}}
