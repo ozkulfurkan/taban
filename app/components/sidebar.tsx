@@ -5,7 +5,7 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Package, Calculator, History, Settings, Shield, LogOut, Menu, X, ChevronLeft, FileText, Users, Truck, BoxIcon
+  LayoutDashboard, Package, Calculator, History, Settings, Shield, LogOut, Menu, X, ChevronLeft, FileText, Users, Truck, BoxIcon, Receipt, CreditCard
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,6 +29,8 @@ export default function Sidebar() {
     { href: '/products', label: 'Ürünler', icon: BoxIcon },
     { href: '/customers', label: 'Müşteriler', icon: Users },
     { href: '/suppliers', label: 'Tedarikçiler', icon: Truck },
+    { href: '/invoices', label: 'Faturalar', icon: Receipt },
+    { href: '/payments', label: 'Ödemeler', icon: CreditCard },
     { href: '/settings', label: t('common', 'settings'), icon: Settings },
   ];
 
