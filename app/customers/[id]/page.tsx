@@ -311,6 +311,7 @@ export default function CustomerDetailPage() {
           {!customer.invoices?.length ? (
             <div className="py-8 text-center text-slate-400 text-sm">Henüz satış yok</div>
           ) : (
+            <>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
@@ -352,6 +353,7 @@ export default function CustomerDetailPage() {
                 </button>
               </div>
             )}
+            </>
           )}
         </div>
 
@@ -363,6 +365,7 @@ export default function CustomerDetailPage() {
           {!customer.payments?.length ? (
             <div className="py-8 text-center text-slate-400 text-sm">Henüz ödeme yok</div>
           ) : (
+            <>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
@@ -396,6 +399,7 @@ export default function CustomerDetailPage() {
                 </button>
               </div>
             )}
+            </>
           )}
         </div>
       </div>
