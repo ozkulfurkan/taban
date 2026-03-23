@@ -40,6 +40,7 @@ function QuoteForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const calcId = searchParams.get('calcId');
+  const customerId = searchParams.get('customerId');
 
   const [docType, setDocType] = useState<'teklif' | 'siparis'>('teklif');
   const [calcName, setCalcName] = useState('');
@@ -71,7 +72,19 @@ function QuoteForm() {
         }
       }).catch(() => {});
     }
-  }, [calcId]);
+    if (customerId) {
+      fetch(`/api/customers/${customerId}`).then(r => r.json()).then(d => {
+        if (!d?.error) {
+          setCustomer({
+            firmName: d.name ?? '',
+            address: d.address ?? '',
+            taxId: d.taxId ?? '',
+            email: d.email ?? '',
+          });
+        }
+      }).catch(() => {});
+    }
+  }, [calcId, customerId]);
 
   // Numara helpers
   const addNumara = () => {

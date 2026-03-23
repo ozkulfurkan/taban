@@ -39,6 +39,11 @@ model Company {
   users              User[]
   materials          Material[]
   soleCalculations   SoleCalculation[]
+  customers          Customer[]
+  suppliers          Supplier[]
+  invoices           Invoice[]
+  purchases          Purchase[]
+  payments           Payment[]
 }
 
 model User {
@@ -105,6 +110,123 @@ model SoleCalculation {
   notes               String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  PARTIAL
+  PAID
+  CANCELLED
+}
+
+enum PaymentType {
+  RECEIVED
+  PAID
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  companyId String
+  company   Company   @relation(fields: [companyId], references: [id])
+  name      String
+  taxId     String?
+  email     String?
+  phone     String?
+  address   String?
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  invoices  Invoice[]
+  payments  Payment[]
+}
+
+model Supplier {
+  id        String     @id @default(cuid())
+  companyId String
+  company   Company    @relation(fields: [companyId], references: [id])
+  name      String
+  taxId     String?
+  email     String?
+  phone     String?
+  address   String?
+  notes     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  purchases Purchase[]
+  payments  Payment[]
+}
+
+model Invoice {
+  id         String        @id @default(cuid())
+  companyId  String
+  company    Company       @relation(fields: [companyId], references: [id])
+  customerId String
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  invoiceNo  String
+  date       DateTime
+  dueDate    DateTime?
+  currency   String        @default("USD")
+  subtotal   Float         @default(0)
+  vatRate    Float         @default(0)
+  vatAmount  Float         @default(0)
+  total      Float         @default(0)
+  paidAmount Float         @default(0)
+  status     InvoiceStatus @default(PENDING)
+  notes      String?
+  items      InvoiceItem[]
+  payments   Payment[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float
+  unitPrice   Float
+  total       Float
+}
+
+model Purchase {
+  id         String        @id @default(cuid())
+  companyId  String
+  company    Company       @relation(fields: [companyId], references: [id])
+  supplierId String
+  supplier   Supplier      @relation(fields: [supplierId], references: [id])
+  invoiceNo  String?
+  date       DateTime
+  currency   String        @default("USD")
+  total      Float         @default(0)
+  paidAmount Float         @default(0)
+  status     InvoiceStatus @default(PENDING)
+  notes      String?
+  payments   Payment[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model Payment {
+  id         String      @id @default(cuid())
+  companyId  String
+  company    Company     @relation(fields: [companyId], references: [id])
+  type       PaymentType
+  customerId String?
+  customer   Customer?   @relation(fields: [customerId], references: [id])
+  supplierId String?
+  supplier   Supplier?   @relation(fields: [supplierId], references: [id])
+  invoiceId  String?
+  invoice    Invoice?    @relation(fields: [invoiceId], references: [id])
+  purchaseId String?
+  purchase   Purchase?   @relation(fields: [purchaseId], references: [id])
+  amount     Float
+  currency   String      @default("USD")
+  date       DateTime
+  method     String      @default("Nakit")
+  notes      String?
+  createdAt  DateTime    @default(now())
 }
 
 model SolePart {

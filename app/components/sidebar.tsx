@@ -5,7 +5,7 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Package, Calculator, History, Settings, Shield, LogOut, Menu, X, ChevronLeft, FileText
+  LayoutDashboard, Package, Calculator, History, Settings, Shield, LogOut, Menu, X, ChevronLeft, FileText, Users, Truck
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,6 +26,8 @@ export default function Sidebar() {
     { href: '/calculations/new', label: t('common', 'newCalculation'), icon: Calculator },
     { href: '/calculations', label: t('calculation', 'history'), icon: History },
     { href: '/quotes/new', label: 'Teklif Oluştur', icon: FileText },
+    { href: '/customers', label: 'Müşteriler', icon: Users },
+    { href: '/suppliers', label: 'Tedarikçiler', icon: Truck },
     { href: '/settings', label: t('common', 'settings'), icon: Settings },
   ];
 
