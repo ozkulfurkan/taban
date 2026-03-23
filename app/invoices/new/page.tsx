@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
-import { ArrowLeft, Loader2, Plus, Trash2, Pencil, X } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save } from 'lucide-react';
 
 interface LineItem {
   productId?: string;
@@ -16,7 +16,7 @@ interface LineItem {
 
 interface ModalState {
   open: boolean;
-  editIndex: number | null; // null = new item
+  editIndex: number | null;
 }
 
 const CURRENCIES = ['USD', 'EUR', 'TRY'];
@@ -30,19 +30,10 @@ function lineTotal(item: LineItem) {
   return qty * price * (1 - disc / 100);
 }
 
-// ── Line Item Modal ──────────────────────────────────────────────────────────
-function ItemModal({
-  initial,
-  currency,
-  products,
-  onConfirm,
-  onClose,
-}: {
-  initial: LineItem;
-  currency: string;
-  products: any[];
-  onConfirm: (item: LineItem) => void;
-  onClose: () => void;
+// ── Line Item Modal ───────────────────────────────────────────────────────────
+function ItemModal({ initial, currency, products, onConfirm, onClose }: {
+  initial: LineItem; currency: string; products: any[];
+  onConfirm: (item: LineItem) => void; onClose: () => void;
 }) {
   const [item, setItem] = useState<LineItem>({ ...initial });
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -68,95 +59,57 @@ function ItemModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        {/* Header */}
         <div className="bg-emerald-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
-          <h3 className="text-white font-semibold text-base">
-            {item.description || 'Ürün / Hizmet'}
-          </h3>
-          <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          <h3 className="text-white font-semibold text-base">{item.description || 'Ürün / Hizmet'}</h3>
+          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
-
         <div className="p-5 space-y-4">
-          {/* Product selector */}
           {products.length > 0 && (
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Ürün Kataloğundan Seç</label>
-              <select
-                value={item.productId ?? ''}
-                onChange={e => handleProductSelect(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
-              >
+              <select value={item.productId ?? ''} onChange={e => handleProductSelect(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
                 <option value="">Manuel giriş...</option>
                 {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
           )}
-
-          {/* Description */}
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Ürün / Hizmet Adı</label>
-            <input
-              value={item.description}
-              onChange={e => set('description', e.target.value)}
-              placeholder="Açıklama girin"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-            />
+            <input value={item.description} onChange={e => set('description', e.target.value)} placeholder="Açıklama girin"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
           </div>
-
-          {/* Quantity + Stock */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Miktar (Ad)</label>
-              <input
-                type="number" step="0.001" min="0"
-                value={item.quantity}
-                onChange={e => set('quantity', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none"
-              />
+              <input type="number" step="0.001" min="0" value={item.quantity} onChange={e => set('quantity', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Stok Durumu</label>
               <div className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500">
-                {selectedProduct
-                  ? `${selectedProduct.stock} ${selectedProduct.unit}`
-                  : '—'}
+                {selectedProduct ? `${selectedProduct.stock} ${selectedProduct.unit}` : '—'}
               </div>
             </div>
           </div>
-
-          {/* Price + Discount */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Fiyat</label>
               <div className="flex">
-                <input
-                  type="number" step="0.0001" min="0"
-                  value={item.unitPrice}
-                  onChange={e => set('unitPrice', e.target.value)}
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0"
-                />
-                <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs text-slate-500 flex items-center">
-                  {currency}
-                </span>
+                <input type="number" step="0.0001" min="0" value={item.unitPrice} onChange={e => set('unitPrice', e.target.value)}
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0" />
+                <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs text-slate-500 flex items-center">{currency}</span>
               </div>
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">İndirim</label>
               <div className="flex">
-                <input
-                  type="number" step="0.1" min="0" max="100"
-                  value={item.discount}
-                  onChange={e => set('discount', e.target.value)}
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0"
-                />
+                <input type="number" step="0.1" min="0" max="100" value={item.discount} onChange={e => set('discount', e.target.value)}
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0" />
                 <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs text-slate-500 flex items-center">%</span>
               </div>
             </div>
           </div>
-
-          {/* Total display */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
             <div className="flex justify-between items-center mb-1">
               <span className="text-xs text-slate-500">Brüt</span>
@@ -173,25 +126,14 @@ function ItemModal({
               <span className="text-lg font-bold text-slate-800">{total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {currency}</span>
             </div>
           </div>
-
-          {/* Notes */}
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama (isteğe bağlı)</label>
-            <input
-              value={item.notes}
-              onChange={e => set('notes', e.target.value)}
-              placeholder="isteğe bağlı açıklama girebilirsiniz"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-            />
+            <input value={item.notes} onChange={e => set('notes', e.target.value)} placeholder="isteğe bağlı açıklama girebilirsiniz"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
           </div>
-
-          {/* Confirm */}
-          <button
-            type="button"
-            onClick={() => { if (item.description || item.unitPrice) onConfirm(item); }}
+          <button type="button" onClick={() => { if (item.description || item.unitPrice) onConfirm(item); }}
             disabled={!item.description && !item.unitPrice}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
-          >
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" /> Ekle
           </button>
         </div>
@@ -200,7 +142,7 @@ function ItemModal({
   );
 }
 
-// ── Main Page ────────────────────────────────────────────────────────────────
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function NewInvoicePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -209,12 +151,17 @@ export default function NewInvoicePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [modal, setModal] = useState<ModalState>({ open: false, editIndex: null });
   const [draftItem, setDraftItem] = useState<LineItem>(EMPTY_ITEM);
+  const [productSearch, setProductSearch] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     customerId: searchParams?.get('customerId') ?? '',
     invoiceNo: '',
     date: new Date().toISOString().split('T')[0],
     dueDate: '',
+    irsaliyeNo: '',
+    sevkTarihi: new Date().toISOString().split('T')[0],
     currency: 'USD',
     vatRate: '0',
     notes: '',
@@ -229,8 +176,12 @@ export default function NewInvoicePage() {
 
   const setField = (field: string, val: string) => setForm(p => ({ ...p, [field]: val }));
 
-  const openNewModal = () => {
-    setDraftItem({ ...EMPTY_ITEM });
+  const filteredProducts = productSearch.length >= 2
+    ? products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || (p.code && p.code.toLowerCase().includes(productSearch.toLowerCase())))
+    : [];
+
+  const openNewModal = (prefill?: Partial<LineItem>) => {
+    setDraftItem({ ...EMPTY_ITEM, ...prefill });
     setModal({ open: true, editIndex: null });
   };
 
@@ -250,13 +201,20 @@ export default function NewInvoicePage() {
 
   const removeItem = (idx: number) => setItems(prev => prev.filter((_, i) => i !== idx));
 
+  const handleProductClick = (product: any) => {
+    setProductSearch('');
+    setShowDropdown(false);
+    openNewModal({ productId: product.id, description: product.name, unitPrice: String(product.unitPrice) });
+  };
+
   const subtotal = items.reduce((s, it) => s + lineTotal(it), 0);
   const vatRate = parseFloat(form.vatRate) || 0;
   const vatAmount = subtotal * vatRate / 100;
   const total = subtotal + vatAmount;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const selectedCustomer = customers.find(c => c.id === form.customerId);
+
+  const handleSubmit = async (saveType: 'fatura') => {
     if (!form.customerId) return alert('Müşteri seçiniz');
     if (items.length === 0) return alert('En az bir kalem ekleyiniz');
     setSaving(true);
@@ -267,181 +225,225 @@ export default function NewInvoicePage() {
         body: JSON.stringify({ ...form, items }),
       });
       const data = await res.json();
-      if (data.id) router.push(`/invoices/${data.id}`);
+      if (data.id) {
+        // Redirect to customer detail page
+        router.push(form.customerId ? `/customers/${form.customerId}` : `/invoices/${data.id}`);
+      }
     } catch (e) { console.error(e); }
     finally { setSaving(false); }
   };
 
   return (
     <AppShell>
-      <div className="max-w-3xl space-y-6">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
+      <div className="space-y-3 h-full">
+        {/* Top action bar */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={() => router.back()} className="flex items-center gap-1.5 px-3 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Geri Dön
           </button>
-          <h1 className="text-2xl font-bold text-slate-800">Yeni Fatura</h1>
+          <button
+            onClick={() => handleSubmit('fatura')}
+            disabled={saving || items.length === 0 || !form.customerId}
+            className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Fatura Kaydet
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Header Info */}
-          <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-            <h2 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">Fatura Bilgileri</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-slate-600 mb-1">Müşteri *</label>
-                <select
-                  required
-                  value={form.customerId}
-                  onChange={e => setField('customerId', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                >
+        {/* Split Layout */}
+        <div className="flex gap-4 items-start flex-col lg:flex-row">
+          {/* LEFT PANEL — Customer info + doc fields */}
+          <div className="w-full lg:w-[340px] lg:flex-shrink-0 bg-white rounded-xl shadow-sm overflow-hidden">
+            {/* Blue header with customer name */}
+            <div className="bg-blue-600 px-4 py-3">
+              <p className="text-white font-semibold text-sm truncate">
+                {selectedCustomer?.name || 'Müşteri Seçilmedi'}
+              </p>
+            </div>
+            <div className="p-4 space-y-3">
+              {/* Customer select */}
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Müşteri *</label>
+                <select required value={form.customerId} onChange={e => setField('customerId', e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                   <option value="">Müşteri seçin...</option>
                   {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Fatura No</label>
-                <input
-                  value={form.invoiceNo}
-                  onChange={e => setField('invoiceNo', e.target.value)}
-                  placeholder="Otomatik oluşturulur"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                />
+                <label className="block text-xs font-medium text-slate-500 mb-1">Belge No</label>
+                <input value={form.invoiceNo} onChange={e => setField('invoiceNo', e.target.value)} placeholder="Otomatik oluşturulur"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Para Birimi</label>
-                <select value={form.currency} onChange={e => setField('currency', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                  {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                <label className="block text-xs font-medium text-slate-500 mb-1">Tarihi</label>
+                <input type="date" value={form.date} onChange={e => setField('date', e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Vadesi</label>
+                <input type="date" value={form.dueDate} onChange={e => setField('dueDate', e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">İrsaliye No</label>
+                <input value={form.irsaliyeNo} onChange={e => setField('irsaliyeNo', e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Sevk Tarihi</label>
+                <input type="date" value={form.sevkTarihi} onChange={e => setField('sevkTarihi', e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Para Birimi</label>
+                <select value={form.currency} onChange={e => setField('currency', e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  {CURRENCIES.map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Fatura Tarihi *</label>
-                <input required type="date" value={form.date} onChange={e => setField('date', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Vade Tarihi</label>
-                <input type="date" value={form.dueDate} onChange={e => setField('dueDate', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
+                <textarea value={form.notes} onChange={e => setField('notes', e.target.value)} rows={3}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
               </div>
             </div>
           </div>
 
-          {/* Line Items */}
-          <div className="bg-white rounded-xl shadow-sm p-6 space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">Ürün / Hizmetler</h2>
-              <button
-                type="button"
-                onClick={openNewModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" /> Kalem Ekle
-              </button>
+          {/* RIGHT PANEL — Product search + items */}
+          <div className="flex-1 min-w-0 bg-white rounded-xl shadow-sm overflow-hidden">
+            {/* Green header */}
+            <div className="bg-green-600 px-4 py-3">
+              <p className="text-white font-semibold text-sm uppercase tracking-wide">Ürün / Hizmetler</p>
             </div>
-
-            {items.length === 0 ? (
-              <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl">
-                <p className="text-slate-400 text-sm mb-2">Henüz kalem eklenmedi</p>
-                <button
-                  type="button"
-                  onClick={openNewModal}
-                  className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
-                >
-                  + İlk kalemi ekle
-                </button>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-slate-500 font-medium border-b">
-                      <th className="text-left pb-2">Ürün/Hizmet</th>
-                      <th className="text-right pb-2 px-2 w-20">Miktar</th>
-                      <th className="text-right pb-2 px-2 w-28">Birim Fiyat</th>
-                      <th className="text-right pb-2 px-2 w-16">İndirim</th>
-                      <th className="text-right pb-2 w-28">Toplam</th>
-                      <th className="w-14"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {items.map((item, i) => (
-                      <tr key={i} className="hover:bg-slate-50/50">
-                        <td className="py-2 pr-2">
-                          <p className="font-medium text-slate-800">{item.description}</p>
-                          {item.notes && <p className="text-xs text-slate-400">{item.notes}</p>}
-                        </td>
-                        <td className="py-2 px-2 text-right text-slate-600">{item.quantity}</td>
-                        <td className="py-2 px-2 text-right text-slate-600">
-                          {(parseFloat(item.unitPrice) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-2 px-2 text-right text-slate-500">
-                          {parseFloat(item.discount) > 0 ? `%${item.discount}` : '—'}
-                        </td>
-                        <td className="py-2 text-right font-semibold text-slate-800">
-                          {lineTotal(item).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-2 pl-2">
-                          <div className="flex items-center gap-1 justify-end">
-                            <button type="button" onClick={() => openEditModal(i)} className="p-1 text-slate-300 hover:text-blue-500 transition-colors">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button type="button" onClick={() => removeItem(i)} className="p-1 text-slate-300 hover:text-red-400 transition-colors">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Totals */}
-            {items.length > 0 && (
-              <div className="border-t pt-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">KDV Oranı (Genel)</span>
-                  <select
-                    value={form.vatRate}
-                    onChange={e => setField('vatRate', e.target.value)}
-                    className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white w-24"
-                  >
-                    {VAT_RATES.map(r => <option key={r} value={r}>%{r}</option>)}
-                  </select>
-                </div>
-                <div className="flex justify-between text-sm text-slate-600">
-                  <span>Ara Toplam</span>
-                  <span>{subtotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
-                </div>
-                {vatRate > 0 && (
-                  <div className="flex justify-between text-sm text-slate-600">
-                    <span>KDV (%{vatRate})</span>
-                    <span>{vatAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
+            <div className="p-4 space-y-4">
+              {/* Product search */}
+              <div className="relative">
+                <input
+                  ref={searchRef}
+                  value={productSearch}
+                  onChange={e => { setProductSearch(e.target.value); setShowDropdown(true); }}
+                  onFocus={() => setShowDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                  placeholder="Ürün isminden arayın veya barkod okutun"
+                  className="w-full px-3 py-2.5 border-2 border-slate-200 focus:border-green-500 rounded-lg text-sm outline-none"
+                />
+                {showDropdown && productSearch.length >= 2 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                    {filteredProducts.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-slate-400">Sonuç bulunamadı</div>
+                    ) : (
+                      filteredProducts.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onMouseDown={() => handleProductClick(p)}
+                          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-blue-500 hover:text-white text-sm transition-colors text-left"
+                        >
+                          <span className="font-medium">{p.name}</span>
+                          <span className="text-xs opacity-70 ml-2 flex-shrink-0">{p.stock} {p.unit}</span>
+                        </button>
+                      ))
+                    )}
                   </div>
                 )}
-                <div className="flex justify-between text-base font-bold text-slate-800 border-t pt-2">
-                  <span>Genel Toplam</span>
-                  <span>{total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
-                </div>
+                {showDropdown && productSearch.length > 0 && productSearch.length < 2 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-md z-10">
+                    <div className="px-4 py-3 text-sm text-slate-400">En az iki harf yazın...</div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Notes */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <label className="block text-xs font-medium text-slate-600 mb-1">Fatura Notu</label>
-            <textarea value={form.notes} onChange={e => setField('notes', e.target.value)} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
-          </div>
+              {/* Manual add button */}
+              <button type="button" onClick={() => openNewModal()}
+                className="flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+                <Plus className="w-4 h-4" /> Manuel Kalem Ekle
+              </button>
 
-          <div className="flex gap-3">
-            <button type="button" onClick={() => router.back()} className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
-              İptal
-            </button>
-            <button type="submit" disabled={saving || items.length === 0} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Fatura Oluştur
-            </button>
+              {/* Items table */}
+              {items.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs text-slate-500 font-medium border-b">
+                        <th className="text-left pb-2">Ürün/Hizmet</th>
+                        <th className="text-right pb-2 px-2 w-20">Miktar</th>
+                        <th className="text-right pb-2 px-2 w-28">Birim Fiyat</th>
+                        <th className="text-right pb-2 px-2 w-16">İndirim</th>
+                        <th className="text-right pb-2 w-28">Toplam</th>
+                        <th className="w-14"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {items.map((item, i) => (
+                        <tr key={i} className="hover:bg-slate-50/50">
+                          <td className="py-2 pr-2">
+                            <p className="font-medium text-slate-800">{item.description}</p>
+                            {item.notes && <p className="text-xs text-slate-400">{item.notes}</p>}
+                          </td>
+                          <td className="py-2 px-2 text-right text-slate-600">{item.quantity}</td>
+                          <td className="py-2 px-2 text-right text-slate-600">
+                            {(parseFloat(item.unitPrice) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2 px-2 text-right text-slate-500">
+                            {parseFloat(item.discount) > 0 ? `%${item.discount}` : '—'}
+                          </td>
+                          <td className="py-2 text-right font-semibold text-slate-800">
+                            {lineTotal(item).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2 pl-2">
+                            <div className="flex items-center gap-1 justify-end">
+                              <button type="button" onClick={() => openEditModal(i)} className="p-1 text-slate-300 hover:text-blue-500 transition-colors">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button type="button" onClick={() => removeItem(i)} className="p-1 text-slate-300 hover:text-red-400 transition-colors">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Totals */}
+              {items.length > 0 && (
+                <div className="border-t pt-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-500">KDV Oranı</span>
+                    <select value={form.vatRate} onChange={e => setField('vatRate', e.target.value)}
+                      className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white w-24">
+                      {VAT_RATES.map(r => <option key={r} value={r}>%{r}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>Ara Toplam</span>
+                    <span>{subtotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
+                  </div>
+                  {vatRate > 0 && (
+                    <div className="flex justify-between text-sm text-slate-600">
+                      <span>KDV (%{vatRate})</span>
+                      <span>{vatAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-base font-bold text-slate-800 border-t pt-2">
+                    <span>Genel Toplam</span>
+                    <span>{total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
+                  </div>
+                </div>
+              )}
+
+              {items.length === 0 && (
+                <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm">
+                  Ürün aramak için yukarıya yazın veya "Manuel Kalem Ekle" butonunu kullanın
+                </div>
+              )}
+            </div>
           </div>
-        </form>
+        </div>
       </div>
 
       {/* Modal */}

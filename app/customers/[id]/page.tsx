@@ -100,6 +100,8 @@ export default function CustomerDetailPage() {
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [showIade, setShowIade] = useState(false);
+  const [invoicesShown, setInvoicesShown] = useState(10);
+  const [paymentsShown, setPaymentsShown] = useState(10);
 
   const load = () => {
     if (!params?.id) return;
@@ -320,7 +322,7 @@ export default function CustomerDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {customer.invoices.map((inv: any) => (
+                {customer.invoices.slice(0, invoicesShown).map((inv: any) => (
                   <tr key={inv.id} className="hover:bg-slate-50/50">
                     <td className="px-4 py-2.5 text-slate-500">{new Date(inv.date).toLocaleDateString('tr-TR')}</td>
                     <td className="px-4 py-2.5 font-medium text-slate-700">{inv.invoiceNo}</td>
@@ -340,6 +342,16 @@ export default function CustomerDetailPage() {
                 ))}
               </tbody>
             </table>
+            {customer.invoices.length > invoicesShown && (
+              <div className="px-4 py-3 border-t text-center">
+                <button
+                  onClick={() => setInvoicesShown(p => p + 10)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Daha Fazla Göster ({customer.invoices.length - invoicesShown} adet daha)
+                </button>
+              </div>
+            )}
           )}
         </div>
 
@@ -360,7 +372,7 @@ export default function CustomerDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {customer.payments.map((p: any) => (
+                {customer.payments.slice(0, paymentsShown).map((p: any) => (
                   <tr key={p.id} className="hover:bg-slate-50/50">
                     <td className="px-4 py-2.5 text-slate-500">{new Date(p.date).toLocaleDateString('tr-TR')}</td>
                     <td className="px-4 py-2.5 text-right font-semibold text-emerald-600">
@@ -374,6 +386,16 @@ export default function CustomerDetailPage() {
                 ))}
               </tbody>
             </table>
+            {customer.payments.length > paymentsShown && (
+              <div className="px-4 py-3 border-t text-center">
+                <button
+                  onClick={() => setPaymentsShown(p => p + 10)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Daha Fazla Göster ({customer.payments.length - paymentsShown} adet daha)
+                </button>
+              </div>
+            )}
           )}
         </div>
       </div>

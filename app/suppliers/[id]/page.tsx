@@ -27,6 +27,8 @@ export default function SupplierDetailPage() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [purchasesShown, setPurchasesShown] = useState(10);
+  const [paymentsShown, setPaymentsShown] = useState(10);
 
   useEffect(() => {
     if (!params?.id) return;
@@ -134,7 +136,7 @@ export default function SupplierDetailPage() {
               <h2 className="font-semibold text-slate-700">Alışlar</h2>
             </div>
             <div className="divide-y">
-              {supplier.purchases.map((p: any) => (
+              {supplier.purchases.slice(0, purchasesShown).map((p: any) => (
                 <div key={p.id} className="p-4 flex items-center justify-between">
                   <div>
                     <p className="font-medium text-slate-700 text-sm">{p.invoiceNo || 'Faturasız'}</p>
@@ -147,6 +149,13 @@ export default function SupplierDetailPage() {
                 </div>
               ))}
             </div>
+            {supplier.purchases.length > purchasesShown && (
+              <div className="px-4 py-3 border-t text-center">
+                <button onClick={() => setPurchasesShown(p => p + 10)} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  Daha Fazla Göster ({supplier.purchases.length - purchasesShown} adet daha)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
