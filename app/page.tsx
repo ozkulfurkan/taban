@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+/*import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 
@@ -9,4 +9,8 @@ export default async function Home() {
   } else {
     redirect('/login');
   }
+}
+*/
+export default function Home() {
+  return <main>OK</main>;
 }
