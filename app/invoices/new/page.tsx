@@ -214,6 +214,13 @@ export default function NewInvoicePage() {
 
   const selectedCustomer = customers.find(c => c.id === form.customerId);
 
+  // Auto-set currency from customer when customer changes
+  useEffect(() => {
+    if (selectedCustomer?.currency) {
+      setField('currency', selectedCustomer.currency);
+    }
+  }, [form.customerId]);
+
   const handleSubmit = async (saveType: 'fatura') => {
     if (!form.customerId) return alert('Müşteri seçiniz');
     if (items.length === 0) return alert('En az bir kalem ekleyiniz');
@@ -298,10 +305,17 @@ export default function NewInvoicePage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Para Birimi</label>
-                <select value={form.currency} onChange={e => setField('currency', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                  {CURRENCIES.map(c => <option key={c}>{c}</option>)}
-                </select>
+                {selectedCustomer ? (
+                  <div className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg text-sm text-slate-700 flex items-center justify-between">
+                    <span className="font-semibold">{form.currency}</span>
+                    <span className="text-xs text-slate-400">Müşteri para birimi</span>
+                  </div>
+                ) : (
+                  <select value={form.currency} onChange={e => setField('currency', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>

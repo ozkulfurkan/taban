@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
+const CURRENCIES = ['TRY', 'USD', 'EUR'];
+
 export default function NewCustomerPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', taxId: '', email: '', phone: '', address: '', notes: '' });
+  const [form, setForm] = useState({ name: '', taxId: '', taxOffice: '', email: '', phone: '', address: '', currency: 'TRY', notes: '' });
 
   const set = (field: string, val: string) => setForm(prev => ({ ...prev, [field]: val }));
 
@@ -40,15 +42,27 @@ export default function NewCustomerPage() {
               <label className="block text-xs font-medium text-slate-600 mb-1">Firma / Müşteri Adı *</label>
               <input required value={form.name} onChange={e => set('name', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-slate-600 mb-1">Para Birimi *</label>
+              <select value={form.currency} onChange={e => set('currency', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+              <p className="text-xs text-slate-400 mt-1">Bu müşteriye sadece seçilen para biriminde satış yapılabilir.</p>
+            </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Vergi Kimlik No</label>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Vergi Kimlik No (VKN)</label>
               <input value={form.taxId} onChange={e => set('taxId', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Vergi Dairesi</label>
+              <input value={form.taxOffice} onChange={e => set('taxOffice', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Telefon</label>
               <input value={form.phone} onChange={e => set('phone', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">E-posta</label>
               <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>

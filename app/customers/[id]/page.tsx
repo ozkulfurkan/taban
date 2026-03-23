@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Pencil, FileText, ShoppingCart, Download, RotateCcw,
-  Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Loader
+  Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Building2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -211,13 +211,20 @@ export default function CustomerDetailPage() {
           <div className="flex-1 min-w-0">
             {editing ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[['name','Firma Adı'], ['taxId','VKN'], ['phone','Telefon'], ['email','E-posta']].map(([f, l]) => (
+                {[['name','Firma Adı'], ['taxId','VKN'], ['taxOffice','Vergi Dairesi'], ['phone','Telefon'], ['email','E-posta']].map(([f, l]) => (
                   <div key={f}>
                     <label className="block text-xs font-medium text-slate-600 mb-1">{l}</label>
                     <input value={form[f] ?? ''} onChange={e => setForm((p: any) => ({...p, [f]: e.target.value}))}
                       className="w-full px-3 py-1.5 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white" />
                   </div>
                 ))}
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Para Birimi</label>
+                  <select value={form.currency ?? 'TRY'} onChange={e => setForm((p: any) => ({...p, currency: e.target.value}))}
+                    className="w-full px-3 py-1.5 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white">
+                    {['TRY','USD','EUR'].map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-slate-600 mb-1">Adres</label>
                   <textarea value={form.address ?? ''} onChange={e => setForm((p: any) => ({...p, address: e.target.value}))}
@@ -239,9 +246,16 @@ export default function CustomerDetailPage() {
               <>
                 <h1 className="text-xl font-bold text-slate-800 mb-1">{customer.name}</h1>
                 <div className="space-y-1 text-sm text-slate-600">
+                  {customer.currency && <div className="flex items-center gap-2"><span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{customer.currency}</span></div>}
                   {customer.email && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-slate-400" />{customer.email}</div>}
                   {customer.address && <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />{customer.address}</div>}
-                  {customer.taxId && <div className="flex items-center gap-2"><Hash className="w-4 h-4 text-slate-400" />VKN: {customer.taxId}</div>}
+                  {(customer.taxId || customer.taxOffice) && (
+                    <div className="flex items-center gap-2">
+                      <Hash className="w-4 h-4 text-slate-400" />
+                      {customer.taxId && <span>VKN: {customer.taxId}</span>}
+                      {customer.taxOffice && <span className="flex items-center gap-1"><Building2 className="w-3.5 h-3.5 text-slate-400" />{customer.taxOffice}</span>}
+                    </div>
+                  )}
                   {customer.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-slate-400" />{customer.phone}</div>}
                   {customer.notes && <p className="text-xs text-slate-400 italic mt-1">{customer.notes}</p>}
                 </div>

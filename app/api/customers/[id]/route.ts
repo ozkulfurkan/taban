@@ -11,8 +11,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   const customer = await prisma.customer.findFirst({
     where: { id: params.id, companyId: user.companyId },
     include: {
-      invoices: { orderBy: { date: 'desc' }, take: 20 },
-      payments: { orderBy: { date: 'desc' }, take: 20 },
+      invoices: { orderBy: { date: 'desc' } },
+      payments: { orderBy: { date: 'desc' } },
     },
   });
   if (!customer) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -45,9 +45,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     data: {
       name: body.name,
       taxId: body.taxId || null,
+      taxOffice: body.taxOffice || null,
       email: body.email || null,
       phone: body.phone || null,
       address: body.address || null,
+      currency: body.currency || 'TRY',
       notes: body.notes || null,
     },
   });

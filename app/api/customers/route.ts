@@ -50,9 +50,11 @@ export async function POST(req: NextRequest) {
       companyId: user.companyId,
       name: body.name,
       taxId: body.taxId || null,
+      taxOffice: body.taxOffice || null,
       email: body.email || null,
       phone: body.phone || null,
       address: body.address || null,
+      currency: body.currency || 'TRY',
       notes: body.notes || null,
     },
   });

@@ -143,19 +143,21 @@ model Product {
 }
 
 model Customer {
-  id        String    @id @default(cuid())
-  companyId String
-  company   Company   @relation(fields: [companyId], references: [id])
-  name      String
-  taxId     String?
-  email     String?
-  phone     String?
-  address   String?
-  notes     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  invoices  Invoice[]
-  payments  Payment[]
+  id         String    @id @default(cuid())
+  companyId  String
+  company    Company   @relation(fields: [companyId], references: [id])
+  name       String
+  taxId      String?
+  taxOffice  String?
+  email      String?
+  phone      String?
+  address    String?
+  currency   String    @default("TRY")
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  invoices   Invoice[]
+  payments   Payment[]
 }
 
 model Supplier {
