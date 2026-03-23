@@ -35,7 +35,12 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { items = [], ...rest } = body;
 
-  const subtotal = items.reduce((s: number, i: any) => s + (parseFloat(i.quantity) || 0) * (parseFloat(i.unitPrice) || 0), 0);
+  const subtotal = items.reduce((s: number, i: any) => {
+    const qty = parseFloat(i.quantity) || 0;
+    const price = parseFloat(i.unitPrice) || 0;
+    const disc = parseFloat(i.discount) || 0;
+    return s + qty * price * (1 - disc / 100);
+  }, 0);
   const vatRate = parseFloat(rest.vatRate) || 0;
   const vatAmount = subtotal * vatRate / 100;
   const total = subtotal + vatAmount;
@@ -59,12 +64,19 @@ export async function POST(req: NextRequest) {
       status: 'PENDING',
       notes: rest.notes || null,
       items: {
-        create: items.map((i: any) => ({
-          description: i.description,
-          quantity: parseFloat(i.quantity) || 0,
-          unitPrice: parseFloat(i.unitPrice) || 0,
-          total: (parseFloat(i.quantity) || 0) * (parseFloat(i.unitPrice) || 0),
-        })),
+        create: items.map((i: any) => {
+          const qty = parseFloat(i.quantity) || 0;
+          const price = parseFloat(i.unitPrice) || 0;
+          const disc = parseFloat(i.discount) || 0;
+          return {
+            description: i.description,
+            quantity: qty,
+            unitPrice: price,
+            discount: disc,
+            total: qty * price * (1 - disc / 100),
+            notes: i.notes || null,
+          };
+        }),
       },
     },
     include: { items: true, customer: true },

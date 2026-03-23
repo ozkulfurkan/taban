@@ -204,7 +204,9 @@ model InvoiceItem {
   description String
   quantity    Float
   unitPrice   Float
+  discount    Float   @default(0)
   total       Float
+  notes       String?
 }
 
 model Purchase {

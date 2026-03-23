@@ -4,7 +4,8 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Calculator, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Paintbrush, Wrench } from 'lucide-react';
+import { Calculator, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Paintbrush, Wrench, History } from 'lucide-react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface PartForm {
@@ -177,11 +178,19 @@ function NewCalculationForm() {
   return (
     <AppShell>
       <div className="space-y-6 max-w-4xl">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">
-            {copyFromId ? t('calculation', 'copyCalculation') : t('common', 'newCalculation')}
-          </h1>
-          <p className="text-slate-500 text-sm">{t('calculation', 'title')}</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">
+              {copyFromId ? t('calculation', 'copyCalculation') : t('common', 'newCalculation')}
+            </h1>
+            <p className="text-slate-500 text-sm">{t('calculation', 'title')}</p>
+          </div>
+          <Link
+            href="/calculations"
+            className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            <History className="w-4 h-4" /> Hesaplama Geçmişi
+          </Link>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-5">
