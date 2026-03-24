@@ -46,6 +46,7 @@ model Company {
   payments           Payment[]
   products           Product[]
   accounts           Account[]
+  cekler             Cek[]
 }
 
 model User {
@@ -159,6 +160,7 @@ model Customer {
   updatedAt  DateTime  @updatedAt
   invoices   Invoice[]
   payments   Payment[]
+  cekler     Cek[]
 }
 
 model Supplier {
@@ -175,6 +177,7 @@ model Supplier {
   updatedAt DateTime   @updatedAt
   purchases Purchase[]
   payments  Payment[]
+  cekler    Cek[]
 }
 
 model Invoice {
@@ -282,4 +285,35 @@ model SolePart {
   netWeight     Float
   cost          Float
   createdAt     DateTime        @default(now())
+}
+
+enum CekDurum {
+  PORTFOY
+  BANKAYA_VERILDI
+  TEDARIKCI_VERILDI
+  ODENDI
+  KARSILIKS
+  IPTAL
+}
+
+model Cek {
+  id          String    @id @default(cuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  borclu      String
+  islem       String    @default("Müşteriden Alınan Çek Kaydı")
+  aciklama    String?
+  islemTarihi DateTime  @default(now())
+  vadesi      DateTime
+  tutar       Float
+  currency    String    @default("TRY")
+  seriNo      String?
+  bankasi     String?
+  durum       CekDurum  @default(PORTFOY)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

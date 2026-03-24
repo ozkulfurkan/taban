@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Calculator, Settings, Shield, LogOut, Menu, X, ChevronLeft,
-  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark
+  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,6 +49,7 @@ export default function Sidebar() {
       title: 'Nakit Yönetimi',
       links: [
         { href: '/accounts', label: 'Hesaplarım', icon: Landmark },
+        { href: '/cek-portfolyo', label: 'Çek Portföyü', icon: ScrollText },
       ],
     },
     {

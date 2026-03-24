@@ -5,7 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Pencil, FileText, ShoppingCart, Download, RotateCcw,
-  Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Building2, CheckCircle2, Banknote
+  Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Building2, CheckCircle2, Banknote,
+  ChevronDown, PlusCircle, Trash2, CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -273,6 +274,251 @@ function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () 
   );
 }
 
+const ISLEM_OPTIONS = [
+  'Müşteriden Alınan Çek Kaydı',
+  'Müşteriye Verilen Çek Kaydı',
+  'Diğer',
+];
+
+const BANKS = [
+  'Akbank', 'Garanti BBVA', 'İş Bankası', 'Yapı Kredi', 'Ziraat Bankası',
+  'Halkbank', 'VakıfBank', 'DenizBank', 'QNB Finansbank', 'Fibabanka',
+  'TEB', 'HSBC', 'ING', 'Şekerbank', 'Kuveyt Türk', 'Albaraka Türk', 'Diğer',
+];
+
+const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
+const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+
+function calcAvgVade(checks: any[]) {
+  const total = checks.reduce((s, c) => s + c.tutar, 0);
+  if (!total) return null;
+  const weightedMs = checks.reduce((s, c) => s + c.tutar * new Date(c.vadesi).getTime(), 0);
+  const avgMs = weightedMs / total;
+  const avgDate = new Date(avgMs);
+  const today = new Date();
+  const days = Math.round((avgDate.getTime() - today.getTime()) / 86400000);
+  return { date: avgDate, days };
+}
+
+function CekTanimModal({ borclu, onClose, onAdd }: { borclu: string; onClose: () => void; onAdd: (cek: any) => void }) {
+  const [form, setForm] = useState({
+    islemTarihi: new Date().toISOString().split('T')[0],
+    vadesi: '',
+    tutar: '',
+    currency: 'TRY',
+    seriNo: '',
+    bankasi: '',
+  });
+
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleAdd = () => {
+    if (!form.vadesi || !form.tutar) return;
+    onAdd({ ...form, borclu, id: Math.random().toString(36).slice(2) });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="bg-teal-500 rounded-t-2xl px-6 py-4 flex items-center justify-between">
+          <h3 className="text-white font-bold text-base">Çek Tanımı</h3>
+          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">İşlem Tarihi</label>
+              <input type="date" value={form.islemTarihi} onChange={e => set('islemTarihi', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">Vadesi *</label>
+              <input type="date" value={form.vadesi} onChange={e => set('vadesi', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Borçlu</label>
+            <input value={borclu} disabled
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Tutar *</label>
+            <div className="flex gap-2">
+              <input type="number" placeholder="0.00" value={form.tutar} onChange={e => set('tutar', e.target.value)}
+                className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+              <select value={form.currency} onChange={e => set('currency', e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500">
+                <option>TRY</option><option>USD</option><option>EUR</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Seri No</label>
+            <input value={form.seriNo} onChange={e => set('seriNo', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Bankası</label>
+            <select value={form.bankasi} onChange={e => set('bankasi', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500">
+              <option value="">Seçin</option>
+              {BANKS.map(b => <option key={b}>{b}</option>)}
+            </select>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">İptal</button>
+            <button onClick={handleAdd} disabled={!form.vadesi || !form.tutar}
+              className="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg disabled:opacity-50">Tamam</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose: () => void; onSaved: () => void }) {
+  const [islem, setIslem] = useState(ISLEM_OPTIONS[0]);
+  const [aciklama, setAciklama] = useState('');
+  const [checks, setChecks] = useState<any[]>([]);
+  const [showTanim, setShowTanim] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const totalTutar = checks.reduce((s, c) => s + parseFloat(c.tutar), 0);
+  const avgVade = calcAvgVade(checks);
+
+  const handleSave = async () => {
+    if (!checks.length) return;
+    setSaving(true);
+    try {
+      await Promise.all(checks.map(c =>
+        fetch('/api/cek', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerId: customer.id,
+            borclu: c.borclu,
+            islem,
+            aciklama: aciklama || null,
+            islemTarihi: c.islemTarihi,
+            vadesi: c.vadesi,
+            tutar: parseFloat(c.tutar),
+            currency: c.currency,
+            seriNo: c.seriNo || null,
+            bankasi: c.bankasi || null,
+          }),
+        })
+      ));
+      onSaved();
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+          <div className="bg-teal-600 rounded-t-2xl px-6 py-4 flex items-center justify-between flex-shrink-0">
+            <h2 className="text-white font-bold text-base flex items-center gap-2">
+              <CreditCard className="w-5 h-5" /> Çek Kaydı — {customer.name}
+            </h2>
+            <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+          </div>
+
+          <div className="p-6 space-y-4 overflow-y-auto flex-1">
+            {/* İşlem + Açıklama */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium text-slate-500 mb-1 block">İşlem</label>
+                <select value={islem} onChange={e => setIslem(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500">
+                  {ISLEM_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500 mb-1 block">Açıklama</label>
+                <input value={aciklama} onChange={e => setAciklama(e.target.value)} placeholder="İsteğe bağlı"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+              </div>
+            </div>
+
+            {/* Yeni Çek Ekle */}
+            <button onClick={() => setShowTanim(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
+              <PlusCircle className="w-4 h-4" /> Yeni Çek Ekle
+            </button>
+
+            {/* Check list */}
+            {checks.length > 0 && (
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Tutar</th>
+                      <th className="px-3 py-2 text-left">Vade</th>
+                      <th className="px-3 py-2 text-left">Banka</th>
+                      <th className="px-3 py-2 text-left">No</th>
+                      <th className="px-3 py-2 text-center">Sil</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {checks.map(c => (
+                      <tr key={c.id} className="border-t border-slate-100">
+                        <td className="px-3 py-2 font-medium">{fmt(parseFloat(c.tutar))} {c.currency}</td>
+                        <td className="px-3 py-2 text-slate-500">{fmtDate(c.vadesi)}</td>
+                        <td className="px-3 py-2 text-slate-500">{c.bankasi || '—'}</td>
+                        <td className="px-3 py-2 text-slate-500">{c.seriNo || '—'}</td>
+                        <td className="px-3 py-2 text-center">
+                          <button onClick={() => setChecks(prev => prev.filter(x => x.id !== c.id))}
+                            className="text-red-400 hover:text-red-600">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {/* Totals */}
+                <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-wrap gap-6 text-sm">
+                  <div><span className="text-slate-500 font-medium">Toplam Tutar: </span><span className="font-bold">{fmt(totalTutar)} TL</span></div>
+                  {avgVade && (
+                    <div>
+                      <span className="text-slate-500 font-medium">Ortalama Vade: </span>
+                      <span className="font-bold">{fmtDate(avgVade.date)} ({avgVade.days} gün)</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {checks.length === 0 && (
+              <div className="bg-amber-50 rounded-lg px-4 py-3 text-sm text-amber-700">
+                Çek eklemek için yukarıdaki düğmeye tıklayın
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 flex-shrink-0">
+            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">İptal</button>
+            <button onClick={handleSave} disabled={saving || checks.length === 0}
+              className="px-5 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium disabled:opacity-50 flex items-center gap-2">
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />} Kaydet
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {showTanim && (
+        <CekTanimModal
+          borclu={customer.name}
+          onClose={() => setShowTanim(false)}
+          onAdd={cek => { setChecks(prev => [...prev, cek]); }}
+        />
+      )}
+    </>
+  );
+}
+
 export default function CustomerDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -283,6 +529,8 @@ export default function CustomerDetailPage() {
   const [saving, setSaving] = useState(false);
   const [showIade, setShowIade] = useState(false);
   const [showTahsilat, setShowTahsilat] = useState(false);
+  const [showCek, setShowCek] = useState(false);
+  const [tahsilatDropdown, setTahsilatDropdown] = useState(false);
   const [successAmount, setSuccessAmount] = useState<number | null>(null);
   const [invoicesShown, setInvoicesShown] = useState(10);
   const [paymentsShown, setPaymentsShown] = useState(10);
@@ -505,12 +753,33 @@ export default function CustomerDetailPage() {
           >
             <FileText className="w-4 h-4" /> Teklif Hazırla
           </Link>
-          <button
-            onClick={() => setShowTahsilat(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-          >
-            <Banknote className="w-4 h-4" /> Tahsilat Al
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setTahsilatDropdown(d => !d)}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            >
+              <Banknote className="w-4 h-4" /> Tahsilat Al <ChevronDown className="w-3 h-3" />
+            </button>
+            {tahsilatDropdown && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setTahsilatDropdown(false)} />
+                <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 z-20 min-w-[200px] overflow-hidden">
+                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                    onClick={() => { setShowTahsilat(true); setTahsilatDropdown(false); }}>
+                    <Banknote className="w-4 h-4 text-emerald-500" /> Nakit / KK / Banka
+                  </button>
+                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                    onClick={() => { setShowCek(true); setTahsilatDropdown(false); }}>
+                    <CreditCard className="w-4 h-4 text-teal-500" /> Çek
+                  </button>
+                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-400 hover:bg-slate-50 cursor-not-allowed"
+                    onClick={() => setTahsilatDropdown(false)}>
+                    <FileText className="w-4 h-4" /> Senet (yakında)
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
           <button
             onClick={() => setShowIade(true)}
             className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
@@ -639,6 +908,13 @@ export default function CustomerDetailPage() {
             load();
             setTimeout(() => setSuccessAmount(null), 4000);
           }}
+        />
+      )}
+      {showCek && (
+        <CekKayitModal
+          customer={customer}
+          onClose={() => setShowCek(false)}
+          onSaved={() => { setShowCek(false); }}
         />
       )}
     </AppShell>
