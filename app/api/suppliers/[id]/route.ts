@@ -11,8 +11,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   const supplier = await prisma.supplier.findFirst({
     where: { id: params.id, companyId: user.companyId },
     include: {
-      purchases: { orderBy: { date: 'desc' }, take: 20 },
-      payments: { orderBy: { date: 'desc' }, take: 20 },
+      purchases: { orderBy: { date: 'desc' } },
+      payments: { orderBy: { date: 'desc' } },
     },
   });
   if (!supplier) return NextResponse.json({ error: 'Not found' }, { status: 404 });

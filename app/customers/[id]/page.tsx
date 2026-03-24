@@ -65,19 +65,19 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
   const handleAmountChange = (v: string) => {
     const a = parseFloat(v) || 0;
     const r = parseFloat(form.exchangeRate) || 0;
-    setForm(p => ({ ...p, amount: v, recordedAmount: (!isSameCurrency && r > 0 && a > 0) ? String(+(a * r).toFixed(4)) : p.recordedAmount }));
+    setForm(p => ({ ...p, amount: v, recordedAmount: (!isSameCurrency && r > 0 && a > 0) ? String(a * r) : p.recordedAmount }));
   };
 
   // Kur changes → recompute Kaydedilecek Tutar
   const handleRateChange = (v: string) => {
     const r = parseFloat(v) || 0;
-    setForm(p => ({ ...p, exchangeRate: v, recordedAmount: (amt > 0 && r > 0) ? String(+(amt * r).toFixed(4)) : p.recordedAmount }));
+    setForm(p => ({ ...p, exchangeRate: v, recordedAmount: (amt > 0 && r > 0) ? String(amt * r) : p.recordedAmount }));
   };
 
   // Kaydedilecek Tutar changes → recompute Kur
   const handleRecordedChange = (v: string) => {
     const rec = parseFloat(v) || 0;
-    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(+(rec / amt).toFixed(6)) : p.exchangeRate }));
+    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(rec / amt) : p.exchangeRate }));
   };
 
   const handle = async (e: React.FormEvent) => {
@@ -162,7 +162,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
                   <label className="block text-xs font-medium text-blue-700 mb-1">
                     Kur (1 {form.paymentCurrency}={customer.currency || 'TRY'})
                   </label>
-                  <input type="number" step="0.0001" min="0.0001" value={form.exchangeRate}
+                  <input type="number" step="0.0000000001" min="0.0000000001" value={form.exchangeRate}
                     onChange={e => handleRateChange(e.target.value)} placeholder="0.0000"
                     className="w-full px-2 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white" />
                 </div>
@@ -483,9 +483,7 @@ export default function CustomerDetailPage() {
               <p className="text-slate-600 text-sm">
                 <span className="font-semibold">{successAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {customer.currency || 'TRY'}</span> tahsil edildi
               </p>
-              <p className="text-xs text-slate-400">
-                Kalan bakiye: {Math.max(0, (customer.balance || 0) - successAmount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {customer.currency || 'TRY'}
-              </p>
+
               <button onClick={() => setSuccessAmount(null)} className="mt-1 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
                 Tamam
               </button>

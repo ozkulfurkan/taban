@@ -63,10 +63,9 @@ export default function SuppliersPage() {
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Table header */}
-            <div className="grid grid-cols-[1fr_160px_140px] items-center px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide">
-              <span>İsim / Unvan</span>
-              <span className="text-right">Borç Bakiye</span>
-              <span className="text-right pr-1">Toplam Alış</span>
+            <div className="grid grid-cols-[1fr_180px] items-center px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide">
+              <span>Tedarikçi Adı / Unvanı</span>
+              <span className="text-right pr-1">Açık Bakiye</span>
             </div>
 
             {/* Rows */}
@@ -75,33 +74,19 @@ export default function SuppliersPage() {
                 <Link
                   key={s.id}
                   href={`/suppliers/${s.id}`}
-                  className="grid grid-cols-[1fr_160px_140px] items-center hover:bg-slate-50 transition-colors group"
+                  className="grid grid-cols-[1fr_180px] items-center hover:bg-slate-50/80 transition-colors group"
                 >
-                  {/* Name cell */}
+                  {/* Name cell — full-width button */}
                   <div className="px-3 py-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-block bg-cyan-500 group-hover:bg-cyan-600 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors max-w-xs truncate">
-                        {s.name}
-                      </span>
-                      {s.phone && (
-                        <span className="inline-block bg-emerald-500 text-white text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap">
-                          {s.phone}
-                        </span>
-                      )}
-                    </div>
+                    <span className="block w-full bg-cyan-500 group-hover:bg-cyan-600 text-white text-sm font-medium px-4 py-2 rounded transition-colors truncate">
+                      {s.name}
+                    </span>
                   </div>
 
                   {/* Balance */}
                   <div className="text-right pr-4 py-2">
                     <span className={`text-sm font-semibold ${s.balance > 0 ? 'text-orange-600' : 'text-slate-500'}`}>
-                      {(s.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-
-                  {/* Total purchased */}
-                  <div className="text-right pr-4 py-2">
-                    <span className="text-sm text-slate-500">
-                      {(s.totalPurchased || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                      {(s.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL
                     </span>
                   </div>
                 </Link>

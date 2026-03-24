@@ -93,12 +93,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Update account balance (increment by originalAmount in account's currency)
+    // Update account balance: incoming (customer) → increment, outgoing (supplier) → decrement
     if (accountId) {
       const incrementBy = originalAmount ? parseFloat(originalAmount) : parseFloat(amount);
+      const isIncoming = !!customerId;
       await tx.account.update({
         where: { id: accountId },
-        data: { balance: { increment: incrementBy } },
+        data: { balance: { increment: isIncoming ? incrementBy : -incrementBy } },
       });
     }
 
