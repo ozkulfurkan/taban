@@ -18,13 +18,14 @@ export async function GET(req: NextRequest) {
   if (durum) where.durum = durum;
   if (customerId) where.customerId = customerId;
 
+  const all = searchParams.get('all') === 'true';
+
   const [cekler, total] = await Promise.all([
     prisma.cek.findMany({
       where,
       include: { customer: { select: { id: true, name: true } }, supplier: { select: { id: true, name: true } } },
       orderBy: { vadesi: 'asc' },
-      skip: (page - 1) * limit,
-      take: limit,
+      ...(all ? {} : { skip: (page - 1) * limit, take: limit }),
     }),
     prisma.cek.count({ where }),
   ]);

@@ -290,18 +290,21 @@ const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
 
 function calcAvgVade(checks: any[]) {
-  const total = checks.reduce((s, c) => s + c.tutar, 0);
+  const total = checks.reduce((s, c) => s + Number(c.tutar), 0);
   if (!total) return null;
-  const weightedMs = checks.reduce((s, c) => s + c.tutar * new Date(c.vadesi).getTime(), 0);
-  const avgMs = weightedMs / total;
-  const avgDate = new Date(avgMs);
-  const today = new Date();
-  const days = Math.round((avgDate.getTime() - today.getTime()) / 86400000);
-  return { date: avgDate, days };
+  const today = Date.now();
+  const weightedDays = checks.reduce((s, c) => {
+    const daysToVade = (new Date(c.vadesi).getTime() - today) / 86400000;
+    return s + Number(c.tutar) * daysToVade;
+  }, 0);
+  const avgDays = Math.round(weightedDays / total);
+  const avgDate = new Date(today + avgDays * 86400000);
+  return { date: avgDate, days: avgDays };
 }
 
-function CekTanimModal({ borclu, onClose, onAdd }: { borclu: string; onClose: () => void; onAdd: (cek: any) => void }) {
+function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: string; onClose: () => void; onAdd: (cek: any) => void }) {
   const [form, setForm] = useState({
+    borclu: defaultBorclu,
     islemTarihi: new Date().toISOString().split('T')[0],
     vadesi: '',
     tutar: '',
@@ -314,7 +317,7 @@ function CekTanimModal({ borclu, onClose, onAdd }: { borclu: string; onClose: ()
 
   const handleAdd = () => {
     if (!form.vadesi || !form.tutar) return;
-    onAdd({ ...form, borclu, id: Math.random().toString(36).slice(2) });
+    onAdd({ ...form, id: Math.random().toString(36).slice(2) });
     onClose();
   };
 
@@ -340,8 +343,8 @@ function CekTanimModal({ borclu, onClose, onAdd }: { borclu: string; onClose: ()
           </div>
           <div>
             <label className="text-xs font-medium text-slate-500 mb-1 block">Borçlu</label>
-            <input value={borclu} disabled
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500" />
+            <input value={form.borclu} onChange={e => set('borclu', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
           </div>
           <div>
             <label className="text-xs font-medium text-slate-500 mb-1 block">Tutar *</label>
@@ -534,13 +537,20 @@ export default function CustomerDetailPage() {
   const [successAmount, setSuccessAmount] = useState<number | null>(null);
   const [invoicesShown, setInvoicesShown] = useState(10);
   const [paymentsShown, setPaymentsShown] = useState(10);
+  const [cekler, setCekler] = useState<any[]>([]);
 
   const load = () => {
     if (!params?.id) return;
     setLoading(true);
-    fetch(`/api/customers/${params.id}`)
-      .then(r => r.json())
-      .then(d => { setCustomer(d); setForm(d); })
+    Promise.all([
+      fetch(`/api/customers/${params.id}`).then(r => r.json()),
+      fetch(`/api/cek?customerId=${params.id}&all=true`).then(r => r.json()),
+    ])
+      .then(([d, cekData]) => {
+        setCustomer(d);
+        setForm(d);
+        setCekler(cekData.cekler || []);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   };
@@ -702,23 +712,35 @@ export default function CustomerDetailPage() {
         </div>
 
         {/* Balance Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-xl p-4 text-white bg-orange-500 shadow-sm">
-            <p className="text-xs font-medium opacity-80 mb-1">Açık Bakiyesi</p>
-            <p className="text-2xl font-bold">{(customer.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
-            <p className="text-xs opacity-70 mt-0.5">Alacak</p>
-          </div>
-          <div className="rounded-xl p-4 text-white bg-blue-500 shadow-sm">
-            <p className="text-xs font-medium opacity-80 mb-1">Toplam Fatura</p>
-            <p className="text-2xl font-bold">{(customer.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
-            <p className="text-xs opacity-70 mt-0.5">{(customer.invoices || []).length} fatura</p>
-          </div>
-          <div className="rounded-xl p-4 text-white bg-emerald-500 shadow-sm">
-            <p className="text-xs font-medium opacity-80 mb-1">Tahsilat</p>
-            <p className="text-2xl font-bold">{(customer.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
-            <p className="text-xs opacity-70 mt-0.5">{(customer.payments || []).length} ödeme</p>
-          </div>
-        </div>
+        {(() => {
+          const cekBakiye = cekler
+            .filter(c => c.durum === 'PORTFOY' || c.durum === 'BANKAYA_VERILDI')
+            .reduce((s, c) => s + c.tutar, 0);
+          return (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="rounded-xl p-4 text-white bg-orange-500 shadow-sm">
+                <p className="text-xs font-medium opacity-80 mb-1">Açık Bakiyesi</p>
+                <p className="text-xl font-bold">{(customer.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xs opacity-70 mt-0.5">{customer.currency || 'TRY'}</p>
+              </div>
+              <div className="rounded-xl p-4 text-white bg-blue-500 shadow-sm">
+                <p className="text-xs font-medium opacity-80 mb-1">Toplam Fatura</p>
+                <p className="text-xl font-bold">{(customer.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xs opacity-70 mt-0.5">{(customer.invoices || []).length} fatura</p>
+              </div>
+              <div className="rounded-xl p-4 text-white bg-teal-500 shadow-sm">
+                <p className="text-xs font-medium opacity-80 mb-1">Tahsilat</p>
+                <p className="text-xl font-bold">{(customer.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xs opacity-70 mt-0.5">{(customer.payments || []).length} ödeme</p>
+              </div>
+              <div className="rounded-xl p-4 text-white bg-cyan-600 shadow-sm">
+                <p className="text-xs font-medium opacity-80 mb-1">Çek Bakiyesi</p>
+                <p className="text-xl font-bold">{cekBakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xs opacity-70 mt-0.5">{cekler.filter(c => c.durum === 'PORTFOY' || c.durum === 'BANKAYA_VERILDI').length} çek</p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Success overlay */}
         {successAmount !== null && (
@@ -848,51 +870,83 @@ export default function CustomerDetailPage() {
           )}
         </div>
 
-        {/* Previous Payments */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
-            <h2 className="font-semibold text-white text-sm uppercase tracking-wide">Önceki Ödemeler</h2>
-          </div>
-          {!customer.payments?.length ? (
-            <div className="py-8 text-center text-slate-400 text-sm">Henüz ödeme yok</div>
-          ) : (
-            <>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
-                  <th className="px-4 py-2 text-left">Tarih</th>
-                  <th className="px-4 py-2 text-right">Tutar</th>
-                  <th className="px-4 py-2 text-left">Şekli</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {customer.payments.slice(0, paymentsShown).map((p: any) => (
-                  <tr key={p.id} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-2.5 text-slate-500">{new Date(p.date).toLocaleDateString('tr-TR')}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-emerald-600">
-                      {p.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                      <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
-                    </td>
-                    <td className="px-4 py-2.5 text-slate-600">
-                      {p.method}{p.notes ? ` (${p.notes})` : ''}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {customer.payments.length > paymentsShown && (
-              <div className="px-4 py-3 border-t text-center">
-                <button
-                  onClick={() => setPaymentsShown(p => p + 10)}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Daha Fazla Göster ({customer.payments.length - paymentsShown} adet daha)
-                </button>
+        {/* Previous Payments (merged with checks) */}
+        {(() => {
+          const DURUM_LABEL: Record<string, string> = {
+            PORTFOY: 'Portföyde', BANKAYA_VERILDI: 'Bankaya Verildi',
+            TEDARIKCI_VERILDI: 'Tedarikçiye Verildi', ODENDI: 'Tahsil Edildi',
+            KARSILIKS: 'Karşılıksız', IPTAL: 'İptal',
+          };
+          const paymentRows = (customer.payments || []).map((p: any) => ({
+            _type: 'payment', _date: new Date(p.date), ...p,
+          }));
+          const cekRows = cekler.map((c: any) => ({
+            _type: 'cek', _date: new Date(c.islemTarihi), ...c,
+          }));
+          const merged = [...paymentRows, ...cekRows].sort((a, b) => b._date.getTime() - a._date.getTime());
+          const shown = merged.slice(0, paymentsShown);
+          return (
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
+                <h2 className="font-semibold text-white text-sm uppercase tracking-wide">Önceki Ödemeler</h2>
               </div>
-            )}
-            </>
-          )}
-        </div>
+              {!merged.length ? (
+                <div className="py-8 text-center text-slate-400 text-sm">Henüz ödeme yok</div>
+              ) : (
+                <>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+                        <th className="px-4 py-2 text-left">Tarih</th>
+                        <th className="px-4 py-2 text-right">Tutar</th>
+                        <th className="px-4 py-2 text-left">Şekli</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {shown.map((row: any) => row._type === 'payment' ? (
+                        <tr key={row.id} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-emerald-600">
+                            {row.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-600">
+                            {row.method}{row.notes ? ` (${row.notes})` : ''}
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr key={row.id} className="hover:bg-slate-50/50 bg-cyan-50/40">
+                          <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-cyan-700">
+                            {row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-600">
+                            Çek ({new Date(row.vadesi).toLocaleDateString('tr-TR')})
+                            <span className={`ml-2 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                              row.durum === 'ODENDI' ? 'bg-green-100 text-green-700' :
+                              row.durum === 'IPTAL' ? 'bg-slate-100 text-slate-500' :
+                              row.durum === 'KARSILIKS' ? 'bg-red-100 text-red-600' :
+                              'bg-cyan-100 text-cyan-700'
+                            }`}>{DURUM_LABEL[row.durum] || row.durum}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {merged.length > paymentsShown && (
+                    <div className="px-4 py-3 border-t text-center">
+                      <button onClick={() => setPaymentsShown(p => p + 10)}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        Daha Fazla Göster ({merged.length - paymentsShown} adet daha)
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {showIade && (
@@ -914,7 +968,7 @@ export default function CustomerDetailPage() {
         <CekKayitModal
           customer={customer}
           onClose={() => setShowCek(false)}
-          onSaved={() => { setShowCek(false); }}
+          onSaved={() => { setShowCek(false); load(); }}
         />
       )}
     </AppShell>

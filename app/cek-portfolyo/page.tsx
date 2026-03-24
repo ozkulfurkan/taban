@@ -45,13 +45,16 @@ const ISLEMLER = [
 ];
 
 function calcAvgVade(cekler: any[]) {
-  const total = cekler.reduce((s, c) => s + c.tutar, 0);
+  const total = cekler.reduce((s, c) => s + Number(c.tutar), 0);
   if (!total) return null;
-  const weightedMs = cekler.reduce((s, c) => s + c.tutar * new Date(c.vadesi).getTime(), 0);
-  const avgMs = weightedMs / total;
-  const avgDate = new Date(avgMs);
-  const days = Math.round((avgDate.getTime() - Date.now()) / 86400000);
-  return { date: avgDate, days };
+  const today = Date.now();
+  const weightedDays = cekler.reduce((s, c) => {
+    const daysToVade = (new Date(c.vadesi).getTime() - today) / 86400000;
+    return s + Number(c.tutar) * daysToVade;
+  }, 0);
+  const avgDays = Math.round(weightedDays / total);
+  const avgDate = new Date(today + avgDays * 86400000);
+  return { date: avgDate, days: avgDays };
 }
 
 export default function CekPortfoyuPage() {
