@@ -8,6 +8,7 @@ import {
   Download, RotateCcw, Banknote, CheckCircle2, ShoppingBag, Plus, Trash2, Search, ChevronRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: 'Taslak', PENDING: 'Bekliyor', PARTIAL: 'Kısmi', PAID: 'Ödendi', CANCELLED: 'İptal',
@@ -782,10 +783,10 @@ export default function SupplierDetailPage() {
             className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
             <RotateCcw className="w-4 h-4" /> İade Yap
           </button>
-          <button onClick={handleExtrePdf}
+          <Link href={`/suppliers/${params.id}/ekstre`}
             className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
             <Download className="w-4 h-4" /> Hesap Ekstresi
-          </button>
+          </Link>
         </div>
 
         {/* Purchases + Payments — side by side */}

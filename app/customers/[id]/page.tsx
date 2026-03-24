@@ -517,12 +517,11 @@ export default function CustomerDetailPage() {
           >
             <RotateCcw className="w-4 h-4" /> İade Al
           </button>
-          <button
-            onClick={handleExtrePdf}
+          <Link href={`/customers/${params.id}/ekstre`}
             className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
             <Download className="w-4 h-4" /> Hesap Ekstresi
-          </button>
+          </Link>
         </div>
 
         {/* Previous Sales */}
