@@ -41,6 +41,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Create 3 default kasa accounts
+    await prisma.account.createMany({
+      data: [
+        { companyId: company.id, name: 'TL Kasa', type: 'Kasa', currency: 'TRY', balance: 0, color: '#10B981' },
+        { companyId: company.id, name: 'Dolar Kasa', type: 'Kasa', currency: 'USD', balance: 0, color: '#3B82F6' },
+        { companyId: company.id, name: 'Euro Kasa', type: 'Kasa', currency: 'EUR', balance: 0, color: '#8B5CF6' },
+      ],
+    });
+
     return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
   } catch (error: any) {
     console.error('Signup error:', error);

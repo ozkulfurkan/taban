@@ -29,6 +29,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
     paymentCurrency: customer.currency || 'TRY',
     amount: '',
     exchangeRate: '',
+    recordedAmount: '',
     method: 'Nakit',
     notes: '',
   });
@@ -40,30 +41,54 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
     fetch('/api/accounts').then(r => r.json()).then(d => setAccounts(Array.isArray(d) ? d : []));
   }, []);
 
-  // Pre-fill exchange rate from company settings when currency changes
   useEffect(() => {
-    if (form.paymentCurrency === customer.currency) { set('exchangeRate', ''); return; }
-    // Try to get company exchange rates
+    if (form.paymentCurrency === (customer.currency || 'TRY')) {
+      setForm(p => ({ ...p, exchangeRate: '', recordedAmount: '' }));
+      return;
+    }
     fetch('/api/company').then(r => r.json()).then(d => {
-      if (form.paymentCurrency === 'USD' && d.usdToTry) set('exchangeRate', String(d.usdToTry));
-      else if (form.paymentCurrency === 'EUR' && d.eurToTry) set('exchangeRate', String(d.eurToTry));
+      let rate = '';
+      if (form.paymentCurrency === 'USD' && d.usdToTry) rate = String(d.usdToTry);
+      else if (form.paymentCurrency === 'EUR' && d.eurToTry) rate = String(d.eurToTry);
+      if (rate) {
+        const a = parseFloat(form.amount) || 0;
+        setForm(p => ({ ...p, exchangeRate: rate, recordedAmount: a > 0 ? String(a * parseFloat(rate)) : '' }));
+      }
     }).catch(() => {});
   }, [form.paymentCurrency]);
 
   const isSameCurrency = form.paymentCurrency === (customer.currency || 'TRY');
   const amt = parseFloat(form.amount) || 0;
-  const rate = parseFloat(form.exchangeRate) || 0;
-  const recordedAmount = isSameCurrency ? amt : amt * rate;
+  const finalRecorded = isSameCurrency ? amt : (parseFloat(form.recordedAmount) || 0);
+
+  // Tutar changes → recompute Kaydedilecek Tutar
+  const handleAmountChange = (v: string) => {
+    const a = parseFloat(v) || 0;
+    const r = parseFloat(form.exchangeRate) || 0;
+    setForm(p => ({ ...p, amount: v, recordedAmount: (!isSameCurrency && r > 0 && a > 0) ? String(+(a * r).toFixed(4)) : p.recordedAmount }));
+  };
+
+  // Kur changes → recompute Kaydedilecek Tutar
+  const handleRateChange = (v: string) => {
+    const r = parseFloat(v) || 0;
+    setForm(p => ({ ...p, exchangeRate: v, recordedAmount: (amt > 0 && r > 0) ? String(+(amt * r).toFixed(4)) : p.recordedAmount }));
+  };
+
+  // Kaydedilecek Tutar changes → recompute Kur
+  const handleRecordedChange = (v: string) => {
+    const rec = parseFloat(v) || 0;
+    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(+(rec / amt).toFixed(6)) : p.exchangeRate }));
+  };
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.amount || amt <= 0) return;
-    if (!isSameCurrency && (!form.exchangeRate || rate <= 0)) return;
+    if (!form.accountId || amt <= 0 || (!isSameCurrency && finalRecorded <= 0)) return;
     setSaving(true);
     try {
+      const savedAmt = isSameCurrency ? amt : finalRecorded;
       let notes = form.notes || null;
       if (!isSameCurrency) {
-        const rateNote = `${amt} ${form.paymentCurrency} @ ${rate}`;
+        const rateNote = `${amt} ${form.paymentCurrency} @ ${form.exchangeRate}`;
         notes = notes ? `${notes} | ${rateNote}` : rateNote;
       }
       await fetch('/api/payments', {
@@ -71,21 +96,23 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerId: customer.id,
-          accountId: form.accountId || null,
-          amount: recordedAmount,
+          accountId: form.accountId,
+          amount: savedAmt,
           currency: customer.currency || 'TRY',
           originalAmount: isSameCurrency ? null : amt,
           originalCurrency: isSameCurrency ? null : form.paymentCurrency,
-          exchangeRate: isSameCurrency ? null : rate,
+          exchangeRate: isSameCurrency ? null : parseFloat(form.exchangeRate) || null,
           date: form.date,
           method: form.method,
           notes,
         }),
       });
-      onSaved(recordedAmount);
+      onSaved(savedAmt);
     } catch (e) { console.error(e); }
     finally { setSaving(false); }
   };
+
+  const canSave = !!form.accountId && amt > 0 && (isSameCurrency || finalRecorded > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -105,10 +132,10 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Kasa / Hesap</label>
-            <select value={form.accountId} onChange={e => set('accountId', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
-              <option value="">Hesap seçin (isteğe bağlı)</option>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Kasa / Hesap *</label>
+            <select required value={form.accountId} onChange={e => set('accountId', e.target.value)}
+              className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white ${!form.accountId ? 'border-orange-300 bg-orange-50' : 'border-slate-200'}`}>
+              <option value="">— Kasa / Hesap seçin *</option>
               {accounts.map(a => (
                 <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>
               ))}
@@ -124,25 +151,31 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Tutar *</label>
-              <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
+              <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => handleAmountChange(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-right" />
             </div>
           </div>
           {!isSameCurrency && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
-              <div>
-                <label className="block text-xs font-medium text-blue-700 mb-1">
-                  1 {form.paymentCurrency} = __ {customer.currency || 'TRY'} (Kur)
-                </label>
-                <input required type="number" step="0.0001" min="0.0001" value={form.exchangeRate} onChange={e => set('exchangeRate', e.target.value)}
-                  className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white" />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-blue-700 mb-1">
+                    Kur (1 {form.paymentCurrency}={customer.currency || 'TRY'})
+                  </label>
+                  <input type="number" step="0.0001" min="0.0001" value={form.exchangeRate}
+                    onChange={e => handleRateChange(e.target.value)} placeholder="0.0000"
+                    className="w-full px-2 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-blue-700 mb-1">
+                    Kaydedilecek ({customer.currency || 'TRY'}) *
+                  </label>
+                  <input type="number" step="0.01" min="0.01" value={form.recordedAmount}
+                    onChange={e => handleRecordedChange(e.target.value)} placeholder="0.00"
+                    className="w-full px-2 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white font-semibold" />
+                </div>
               </div>
-              <div className="flex justify-between items-center border-t border-blue-200 pt-2">
-                <span className="text-xs text-blue-700 font-medium">Kaydedilecek Tutar</span>
-                <span className="text-base font-bold text-blue-800">
-                  {recordedAmount > 0 ? recordedAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '—'} {customer.currency || 'TRY'}
-                </span>
-              </div>
+              <p className="text-xs text-blue-500">Kur veya Kaydedilecek Tutar'ı girin — diğeri otomatik hesaplanır.</p>
             </div>
           )}
           <div>
@@ -159,7 +192,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
           </div>
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
-            <button type="submit" disabled={saving || amt <= 0 || (!isSameCurrency && rate <= 0)}
+            <button type="submit" disabled={saving || !canSave}
               className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />} Kaydet
             </button>
@@ -462,12 +495,6 @@ export default function CustomerDetailPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setShowTahsilat(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-          >
-            <Banknote className="w-4 h-4" /> Tahsilat Al
-          </button>
           <Link
             href={`/invoices/new?customerId=${customer.id}`}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
@@ -481,16 +508,22 @@ export default function CustomerDetailPage() {
             <FileText className="w-4 h-4" /> Teklif Hazırla
           </Link>
           <button
-            onClick={handleExtrePdf}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            onClick={() => setShowTahsilat(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
-            <Download className="w-4 h-4" /> Hesap Ekstresi
+            <Banknote className="w-4 h-4" /> Tahsilat Al
           </button>
           <button
             onClick={() => setShowIade(true)}
             className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
             <RotateCcw className="w-4 h-4" /> İade Al
+          </button>
+          <button
+            onClick={handleExtrePdf}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
+            <Download className="w-4 h-4" /> Hesap Ekstresi
           </button>
         </div>
 
