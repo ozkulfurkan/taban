@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Pencil, FileText, ShoppingCart, Download, RotateCcw,
-  Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Building2
+  Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Building2, CheckCircle2, Banknote
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -20,6 +20,155 @@ const STATUS_COLOR: Record<string, string> = {
   CANCELLED: 'bg-red-100 text-red-600',
 };
 const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı'];
+const CURRENCIES = ['TRY', 'USD', 'EUR'];
+
+function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose: () => void; onSaved: (amount: number) => void }) {
+  const [form, setForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    accountId: '',
+    paymentCurrency: customer.currency || 'TRY',
+    amount: '',
+    exchangeRate: '',
+    method: 'Nakit',
+    notes: '',
+  });
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
+  const set = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
+
+  useEffect(() => {
+    fetch('/api/accounts').then(r => r.json()).then(d => setAccounts(Array.isArray(d) ? d : []));
+  }, []);
+
+  // Pre-fill exchange rate from company settings when currency changes
+  useEffect(() => {
+    if (form.paymentCurrency === customer.currency) { set('exchangeRate', ''); return; }
+    // Try to get company exchange rates
+    fetch('/api/company').then(r => r.json()).then(d => {
+      if (form.paymentCurrency === 'USD' && d.usdToTry) set('exchangeRate', String(d.usdToTry));
+      else if (form.paymentCurrency === 'EUR' && d.eurToTry) set('exchangeRate', String(d.eurToTry));
+    }).catch(() => {});
+  }, [form.paymentCurrency]);
+
+  const isSameCurrency = form.paymentCurrency === (customer.currency || 'TRY');
+  const amt = parseFloat(form.amount) || 0;
+  const rate = parseFloat(form.exchangeRate) || 0;
+  const recordedAmount = isSameCurrency ? amt : amt * rate;
+
+  const handle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.amount || amt <= 0) return;
+    if (!isSameCurrency && (!form.exchangeRate || rate <= 0)) return;
+    setSaving(true);
+    try {
+      let notes = form.notes || null;
+      if (!isSameCurrency) {
+        const rateNote = `${amt} ${form.paymentCurrency} @ ${rate}`;
+        notes = notes ? `${notes} | ${rateNote}` : rateNote;
+      }
+      await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: customer.id,
+          accountId: form.accountId || null,
+          amount: recordedAmount,
+          currency: customer.currency || 'TRY',
+          originalAmount: isSameCurrency ? null : amt,
+          originalCurrency: isSameCurrency ? null : form.paymentCurrency,
+          exchangeRate: isSameCurrency ? null : rate,
+          date: form.date,
+          method: form.method,
+          notes,
+        }),
+      });
+      onSaved(recordedAmount);
+    } catch (e) { console.error(e); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+        <div className="bg-emerald-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <h3 className="text-white font-semibold">Tahsilat Al</h3>
+          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+        <form onSubmit={handle} className="p-5 space-y-3">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-sm text-emerald-800 font-medium truncate">
+            {customer.name}
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
+            <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Kasa / Hesap</label>
+            <select value={form.accountId} onChange={e => set('accountId', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+              <option value="">Hesap seçin (isteğe bağlı)</option>
+              {accounts.map(a => (
+                <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Ödeme Dövizi</label>
+              <select value={form.paymentCurrency} onChange={e => set('paymentCurrency', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Tutar *</label>
+              <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-right" />
+            </div>
+          </div>
+          {!isSameCurrency && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
+              <div>
+                <label className="block text-xs font-medium text-blue-700 mb-1">
+                  1 {form.paymentCurrency} = __ {customer.currency || 'TRY'} (Kur)
+                </label>
+                <input required type="number" step="0.0001" min="0.0001" value={form.exchangeRate} onChange={e => set('exchangeRate', e.target.value)}
+                  className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white" />
+              </div>
+              <div className="flex justify-between items-center border-t border-blue-200 pt-2">
+                <span className="text-xs text-blue-700 font-medium">Kaydedilecek Tutar</span>
+                <span className="text-base font-bold text-blue-800">
+                  {recordedAmount > 0 ? recordedAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '—'} {customer.currency || 'TRY'}
+                </span>
+              </div>
+            </div>
+          )}
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Ödeme Şekli</label>
+            <select value={form.method} onChange={e => set('method', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+              {METHODS.map(m => <option key={m}>{m}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Not</label>
+            <input value={form.notes} onChange={e => set('notes', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+            <button type="submit" disabled={saving || amt <= 0 || (!isSameCurrency && rate <= 0)}
+              className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />} Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({ amount: '', date: new Date().toISOString().split('T')[0], method: 'Nakit', notes: 'İade' });
@@ -100,6 +249,8 @@ export default function CustomerDetailPage() {
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [showIade, setShowIade] = useState(false);
+  const [showTahsilat, setShowTahsilat] = useState(false);
+  const [successAmount, setSuccessAmount] = useState<number | null>(null);
   const [invoicesShown, setInvoicesShown] = useState(10);
   const [paymentsShown, setPaymentsShown] = useState(10);
 
@@ -288,11 +439,38 @@ export default function CustomerDetailPage() {
           </div>
         </div>
 
+        {/* Success overlay */}
+        {successAmount !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-white rounded-2xl shadow-2xl px-8 py-6 flex flex-col items-center gap-3 pointer-events-auto border border-emerald-200 animate-in fade-in zoom-in duration-200">
+              <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+              </div>
+              <p className="text-lg font-bold text-slate-800">Ödeme Tamamlandı</p>
+              <p className="text-slate-600 text-sm">
+                <span className="font-semibold">{successAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {customer.currency || 'TRY'}</span> tahsil edildi
+              </p>
+              <p className="text-xs text-slate-400">
+                Kalan bakiye: {Math.max(0, (customer.balance || 0) - successAmount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {customer.currency || 'TRY'}
+              </p>
+              <button onClick={() => setSuccessAmount(null)} className="mt-1 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
+                Tamam
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setShowTahsilat(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
+            <Banknote className="w-4 h-4" /> Tahsilat Al
+          </button>
           <Link
             href={`/invoices/new?customerId=${customer.id}`}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
             <ShoppingCart className="w-4 h-4" /> Satış Yap
           </Link>
@@ -420,6 +598,18 @@ export default function CustomerDetailPage() {
 
       {showIade && (
         <IadeModal customer={customer} onClose={() => setShowIade(false)} onSaved={load} />
+      )}
+      {showTahsilat && (
+        <TahsilatModal
+          customer={customer}
+          onClose={() => setShowTahsilat(false)}
+          onSaved={(amount) => {
+            setShowTahsilat(false);
+            setSuccessAmount(amount);
+            load();
+            setTimeout(() => setSuccessAmount(null), 4000);
+          }}
+        />
       )}
     </AppShell>
   );

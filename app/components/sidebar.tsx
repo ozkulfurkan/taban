@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Calculator, Settings, Shield, LogOut, Menu, X, ChevronLeft,
-  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Wrench
+  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,6 +43,12 @@ export default function Sidebar() {
       links: [
         { href: '/products', label: 'Ürünler', icon: BoxIcon },
         { href: '/materials', label: 'Hammaddeler', icon: Package },
+      ],
+    },
+    {
+      title: 'Nakit Yönetimi',
+      links: [
+        { href: '/accounts', label: 'Hesaplarım', icon: Landmark },
       ],
     },
     {

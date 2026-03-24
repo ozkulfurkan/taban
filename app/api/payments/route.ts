@@ -28,7 +28,11 @@ export async function POST(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
   const body = await req.json();
-  const { invoiceId, purchaseId, customerId, supplierId, amount, currency, date, method, notes } = body;
+  const {
+    invoiceId, purchaseId, customerId, supplierId,
+    amount, currency, date, method, notes,
+    accountId, originalAmount, originalCurrency, exchangeRate,
+  } = body;
 
   if (!amount || parseFloat(amount) <= 0) {
     return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
@@ -43,8 +47,12 @@ export async function POST(req: NextRequest) {
         supplierId: supplierId || null,
         invoiceId: invoiceId || null,
         purchaseId: purchaseId || null,
+        accountId: accountId || null,
         amount: parseFloat(amount),
-        currency: currency || 'USD',
+        currency: currency || 'TRY',
+        originalAmount: originalAmount ? parseFloat(originalAmount) : null,
+        originalCurrency: originalCurrency || null,
+        exchangeRate: exchangeRate ? parseFloat(exchangeRate) : null,
         date: new Date(date || Date.now()),
         method: method || 'Nakit',
         notes: notes || null,
@@ -83,6 +91,15 @@ export async function POST(req: NextRequest) {
           data: { paidAmount: newPaid, status },
         });
       }
+    }
+
+    // Update account balance (increment by originalAmount in account's currency)
+    if (accountId) {
+      const incrementBy = originalAmount ? parseFloat(originalAmount) : parseFloat(amount);
+      await tx.account.update({
+        where: { id: accountId },
+        data: { balance: { increment: incrementBy } },
+      });
     }
 
     return p;
