@@ -78,17 +78,15 @@ export default function CustomersPage() {
                   className="grid grid-cols-[1fr_160px_140px] items-center hover:bg-slate-50 transition-colors group"
                 >
                   {/* Name cell */}
-                  <div className="px-3 py-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-block bg-cyan-500 group-hover:bg-cyan-600 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors max-w-xs truncate">
-                        {c.name}
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <span className="block w-full bg-cyan-500 group-hover:bg-cyan-600 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors truncate">
+                      {c.name}
+                    </span>
+                    {c.phone && (
+                      <span className="flex-shrink-0 bg-emerald-500 text-white text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap">
+                        {c.phone}
                       </span>
-                      {c.phone && (
-                        <span className="inline-block bg-emerald-500 text-white text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap">
-                          {c.phone}
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
 
                   {/* Balance */}
