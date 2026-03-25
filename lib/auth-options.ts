@@ -30,6 +30,7 @@ export const authOptions: NextAuthOptions = {
             companyName: user.company?.name ?? null,
             language: user.language,
             currency: user.currency,
+            allowedPages: (user as any).allowedPages ?? [],
           } as any;
         } catch (error) {
           console.error('Auth error:', error);
@@ -46,6 +47,7 @@ export const authOptions: NextAuthOptions = {
         token.companyName = user.companyName;
         token.language = user.language;
         token.currency = user.currency;
+        token.allowedPages = (user as any).allowedPages ?? [];
       }
       if (trigger === 'update' && session) {
         token.language = session.language ?? token.language;
@@ -61,6 +63,7 @@ export const authOptions: NextAuthOptions = {
         session.user.companyName = token.companyName;
         session.user.language = token.language;
         session.user.currency = token.currency;
+        (session.user as any).allowedPages = token.allowedPages ?? [];
       }
       return session;
     },

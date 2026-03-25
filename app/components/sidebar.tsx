@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Calculator, Settings, Shield, LogOut, Menu, X, ChevronLeft,
-  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText
+  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText, UserCog
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,6 +21,33 @@ export default function Sidebar() {
 
   const user = session?.user as any;
   const isAdmin = user?.role === 'ADMIN';
+  const isOwner = user?.role === 'COMPANY_OWNER';
+  const hasFullAccess = isAdmin || isOwner;
+  const allowedPages: string[] = user?.allowedPages ?? [];
+
+  // Map href prefix → permission key (must match ALL_PAGES keys in settings/users)
+  const PAGE_KEY: Record<string, string> = {
+    '/dashboard': 'dashboard',
+    '/customers': 'customers',
+    '/suppliers': 'suppliers',
+    '/invoices': 'invoices',
+    '/quotes': 'invoices',
+    '/payments': 'payments',
+    '/products': 'products',
+    '/materials': 'materials',
+    '/accounts': 'accounts',
+    '/cek-portfolyo': 'cek-portfolyo',
+    '/calculations': 'calculations',
+    '/settings': 'settings',
+  };
+
+  const canSee = (href: string) => {
+    if (hasFullAccess) return true;
+    // find the key for this href
+    const key = Object.entries(PAGE_KEY).find(([prefix]) => href.startsWith(prefix))?.[1];
+    if (!key) return true; // unknown → show
+    return allowedPages.includes(key);
+  };
 
   const sections: Section[] = [
     {
@@ -62,6 +89,7 @@ export default function Sidebar() {
       title: 'Sistem',
       links: [
         { href: '/settings', label: 'Ayarlar', icon: Settings },
+        ...(isAdmin || user?.role === 'COMPANY_OWNER' ? [{ href: '/settings/users', label: 'Kullanıcılar', icon: UserCog }] : []),
         ...(isAdmin ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
       ],
     },
@@ -107,7 +135,7 @@ export default function Sidebar() {
               <div className="mx-3 my-2 border-t border-blue-800/40" />
             )}
             <div className="px-2 space-y-0.5">
-              {section.links.map((link) => {
+              {section.links.filter(link => canSee(link.href)).map((link) => {
                 const Icon = link.icon;
                 const active = isActive(link.href);
                 return (

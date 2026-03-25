@@ -107,12 +107,17 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-blue-300">
-            {t('auth', 'noAccount')}{' '}
-            <Link href="/register" className="text-blue-400 hover:text-white font-medium transition-colors">
-              {t('auth', 'register')}
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <Link href="/forgot-password" className="text-sm text-blue-300 hover:text-white transition-colors">
+              Şifremi Unuttum
             </Link>
-          </p>
+            <p className="text-center text-sm text-blue-300">
+              {t('auth', 'noAccount')}{' '}
+              <Link href="/register" className="text-blue-400 hover:text-white font-medium transition-colors">
+                {t('auth', 'register')}
+              </Link>
+            </p>
+          </div>
         </div>
       </motion.div>
     </div>

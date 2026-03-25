@@ -57,6 +57,9 @@ model User {
   role             Role             @default(EDITOR)
   language         String           @default("tr")
   currency         String           @default("USD")
+  allowedPages     String[]         @default([])
+  resetToken       String?          @unique
+  resetTokenExpiry DateTime?
   companyId        String?
   company          Company?         @relation(fields: [companyId], references: [id])
   soleCalculations SoleCalculation[]
