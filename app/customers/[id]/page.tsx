@@ -775,6 +775,12 @@ export default function CustomerDetailPage() {
           >
             <FileText className="w-4 h-4" /> Teklif Hazırla
           </Link>
+          <Link
+            href={`/invoices/return?customerId=${customer.id}`}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
+            <RotateCcw className="w-4 h-4" /> İade Faturası
+          </Link>
           <div className="relative">
             <button
               onClick={() => setTahsilatDropdown(d => !d)}

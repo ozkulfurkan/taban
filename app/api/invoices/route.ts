@@ -33,9 +33,11 @@ export async function POST(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
   const body = await req.json();
-  const { items = [], ...rest } = body;
+  const { items = [], isReturn = false, ...rest } = body;
 
-  const subtotal = items.reduce((s: number, i: any) => {
+  const sign = isReturn ? -1 : 1;
+
+  const subtotal = sign * items.reduce((s: number, i: any) => {
     const qty = parseFloat(i.quantity) || 0;
     const price = parseFloat(i.unitPrice) || 0;
     const disc = parseFloat(i.discount) || 0;
@@ -46,7 +48,8 @@ export async function POST(req: NextRequest) {
   const total = subtotal + vatAmount;
 
   const now = new Date();
-  const invoiceNo = rest.invoiceNo || `FTR-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*9000)+1000}`;
+  const prefix = isReturn ? 'IAD' : 'FTR';
+  const invoiceNo = rest.invoiceNo || `${prefix}-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*9000)+1000}`;
 
   const invoice = await prisma.invoice.create({
     data: {
@@ -62,6 +65,7 @@ export async function POST(req: NextRequest) {
       total,
       paidAmount: 0,
       status: 'PENDING',
+      isReturn,
       notes: rest.notes || null,
       items: {
         create: items.map((i: any) => {
@@ -73,7 +77,7 @@ export async function POST(req: NextRequest) {
             quantity: qty,
             unitPrice: price,
             discount: disc,
-            total: qty * price * (1 - disc / 100),
+            total: sign * qty * price * (1 - disc / 100),
             notes: i.notes || null,
           };
         }),
@@ -81,5 +85,23 @@ export async function POST(req: NextRequest) {
     },
     include: { items: true, customer: true },
   });
+
+  // Update product stock for items that have a productId
+  const stockUpdates = items
+    .filter((i: any) => i.productId)
+    .map((i: any) => {
+      const qty = parseFloat(i.quantity) || 0;
+      // Sales decrease stock; returns put stock back
+      const delta = isReturn ? qty : -qty;
+      return prisma.product.updateMany({
+        where: { id: i.productId, companyId: user.companyId },
+        data: { stock: { increment: delta } },
+      });
+    });
+
+  if (stockUpdates.length > 0) {
+    await Promise.all(stockUpdates);
+  }
+
   return NextResponse.json(invoice);
 }

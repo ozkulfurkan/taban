@@ -376,6 +376,9 @@ function AlışModal({ supplier, onClose, onSaved }: {
           currency: form.currency,
           total,
           notes: form.notes || null,
+          items: items
+            .filter(i => i.qty && parseFloat(i.qty) > 0)
+            .map(i => ({ productId: i.productId || null, qty: i.qty, unitPrice: i.unitPrice })),
         }),
       });
       onSaved();

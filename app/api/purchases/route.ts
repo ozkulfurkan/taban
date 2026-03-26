@@ -24,10 +24,15 @@ export async function POST(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
   const body = await req.json();
-  const { supplierId, invoiceNo, date, currency, total, notes } = body;
+  const { supplierId, invoiceNo, date, currency, total, notes, items = [] } = body;
 
   if (!supplierId) return NextResponse.json({ error: 'supplierId required' }, { status: 400 });
-  if (!total || parseFloat(total) <= 0) return NextResponse.json({ error: 'Invalid total' }, { status: 400 });
+
+  const computedTotal = items.length > 0
+    ? items.reduce((s: number, i: any) => s + (parseFloat(i.qty) || 0) * (parseFloat(i.unitPrice) || 0), 0)
+    : parseFloat(total) || 0;
+
+  if (computedTotal <= 0) return NextResponse.json({ error: 'Invalid total' }, { status: 400 });
 
   const purchase = await prisma.purchase.create({
     data: {
@@ -36,10 +41,25 @@ export async function POST(req: NextRequest) {
       invoiceNo: invoiceNo || null,
       date: new Date(date || Date.now()),
       currency: currency || 'TRY',
-      total: parseFloat(total),
+      total: computedTotal,
       notes: notes || null,
     },
   });
+
+  // Increase product stock for items that have a productId
+  const stockUpdates = items
+    .filter((i: any) => i.productId)
+    .map((i: any) => {
+      const qty = parseFloat(i.qty) || 0;
+      return prisma.product.updateMany({
+        where: { id: i.productId, companyId: user.companyId },
+        data: { stock: { increment: qty } },
+      });
+    });
+
+  if (stockUpdates.length > 0) {
+    await Promise.all(stockUpdates);
+  }
 
   return NextResponse.json(purchase, { status: 201 });
 }
