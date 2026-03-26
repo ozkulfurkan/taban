@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { Users, Plus, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CustomersPage() {
+  const { t } = useLanguage();
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -30,14 +32,14 @@ export default function CustomersPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Müşteriler</h1>
-            <p className="text-slate-500 text-sm">{customers.length} müşteri</p>
+            <h1 className="text-2xl font-bold text-slate-800">{t('customers', 'title')}</h1>
+            <p className="text-slate-500 text-sm">{customers.length} {t('customers', 'title').toLowerCase()}</p>
           </div>
           <Link
             href="/customers/new"
             className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm"
           >
-            <Plus className="w-4 h-4" /> Yeni Müşteri
+            <Plus className="w-4 h-4" /> {t('customers', 'newCustomer')}
           </Link>
         </div>
 
@@ -47,7 +49,7 @@ export default function CustomersPage() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="İsim, e-posta veya telefon ara..."
+            placeholder={t('customers', 'searchPlaceholder')}
             className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm"
           />
         </div>
@@ -58,15 +60,15 @@ export default function CustomersPage() {
         ) : !filtered.length ? (
           <div className="text-center py-16 bg-white rounded-xl shadow-sm">
             <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-400">{search ? 'Sonuç bulunamadı' : 'Henüz müşteri eklenmedi'}</p>
+            <p className="text-slate-400">{search ? t('customers', 'noResults') : t('customers', 'empty')}</p>
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Table header */}
             <div className="grid grid-cols-[1fr_160px_140px] items-center px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide">
-              <span>İsim / Unvan</span>
-              <span className="text-right">Açık Bakiye</span>
-              <span className="text-right pr-1">Toplam Fatura</span>
+              <span>{t('customers', 'nameTitle')}</span>
+              <span className="text-right">{t('customers', 'openBalance')}</span>
+              <span className="text-right pr-1">{t('customers', 'totalInvoiced')}</span>
             </div>
 
             {/* Rows */}

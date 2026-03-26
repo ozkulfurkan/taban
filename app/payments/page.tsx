@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { CreditCard, Loader2, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function PaymentsPage() {
+  const { t } = useLanguage();
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,8 +26,8 @@ export default function PaymentsPage() {
     <AppShell>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Ödemeler</h1>
-          <p className="text-slate-500 text-sm">{payments.length} işlem</p>
+          <h1 className="text-2xl font-bold text-slate-800">{t('payments', 'title')}</h1>
+          <p className="text-slate-500 text-sm">{payments.length} {t('common', 'actions').toLowerCase()}</p>
         </div>
 
         {/* Summary */}
@@ -35,7 +37,7 @@ export default function PaymentsPage() {
               <ArrowDownCircle className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-xs text-slate-500">Toplam Tahsilat</p>
+              <p className="text-xs text-slate-500">{t('payments', 'totalReceived')}</p>
               <p className="text-lg font-bold text-green-600">{totalReceived.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
@@ -44,7 +46,7 @@ export default function PaymentsPage() {
               <ArrowUpCircle className="w-5 h-5 text-red-500" />
             </div>
             <div>
-              <p className="text-xs text-slate-500">Toplam Ödeme</p>
+              <p className="text-xs text-slate-500">{t('payments', 'totalPaid')}</p>
               <p className="text-lg font-bold text-red-500">{totalPaid.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
@@ -55,19 +57,19 @@ export default function PaymentsPage() {
         ) : !payments.length ? (
           <div className="text-center py-16 bg-white rounded-xl shadow-sm">
             <CreditCard className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-400">Henüz ödeme kaydı yok</p>
+            <p className="text-slate-400">{t('payments', 'empty')}</p>
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  <th className="px-4 py-3 text-left">Tarih</th>
-                  <th className="px-4 py-3 text-left">Türü</th>
-                  <th className="px-4 py-3 text-left">Müşteri / Tedarikçi</th>
-                  <th className="px-4 py-3 text-left">Fatura</th>
-                  <th className="px-4 py-3 text-left">Yöntem</th>
-                  <th className="px-4 py-3 text-right">Tutar</th>
+                  <th className="px-4 py-3 text-left">{t('common', 'date')}</th>
+                  <th className="px-4 py-3 text-left">{t('payments', 'type')}</th>
+                  <th className="px-4 py-3 text-left">{t('payments', 'customerSupplier')}</th>
+                  <th className="px-4 py-3 text-left">{t('payments', 'invoice')}</th>
+                  <th className="px-4 py-3 text-left">{t('payments', 'method')}</th>
+                  <th className="px-4 py-3 text-right">{t('payments', 'amount')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -83,11 +85,11 @@ export default function PaymentsPage() {
                     <td className="px-4 py-3">
                       {p.type === 'RECEIVED' ? (
                         <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
-                          <ArrowDownCircle className="w-3.5 h-3.5" /> Tahsilat
+                          <ArrowDownCircle className="w-3.5 h-3.5" /> {t('payments', 'collection')}
                         </span>
                       ) : (
                         <span className="flex items-center gap-1 text-red-500 text-xs font-medium">
-                          <ArrowUpCircle className="w-3.5 h-3.5" /> Ödeme
+                          <ArrowUpCircle className="w-3.5 h-3.5" /> {t('payments', 'payment')}
                         </span>
                       )}
                     </td>

@@ -2,32 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { FileText, Plus, Trash2, Search, Loader2, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  DRAFT:     { label: 'Taslak',   color: 'bg-slate-100 text-slate-600' },
-  PENDING:   { label: 'Bekleyen', color: 'bg-yellow-100 text-yellow-700' },
-  PARTIAL:   { label: 'Kısmi',    color: 'bg-blue-100 text-blue-700' },
-  PAID:      { label: 'Ödendi',   color: 'bg-green-100 text-green-700' },
-  CANCELLED: { label: 'İptal',    color: 'bg-red-100 text-red-600' },
-};
-
-const STATUS_FILTERS = ['Tümü', 'PENDING', 'PARTIAL', 'PAID', 'DRAFT', 'CANCELLED'];
-const STATUS_FILTER_LABELS: Record<string, string> = {
-  Tümü: 'Tümü', PENDING: 'Bekleyen', PARTIAL: 'Kısmi', PAID: 'Ödendi', DRAFT: 'Taslak', CANCELLED: 'İptal'
-};
-
 export default function InvoicesPage() {
+  const { t } = useLanguage();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Tümü');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  const STATUS_LABELS = () => ({
+    DRAFT:     { label: t('invoices', 'statusDraft'),     color: 'bg-slate-100 text-slate-600' },
+    PENDING:   { label: t('invoices', 'statusPending'),   color: 'bg-yellow-100 text-yellow-700' },
+    PARTIAL:   { label: t('invoices', 'statusPartial'),   color: 'bg-blue-100 text-blue-700' },
+    PAID:      { label: t('invoices', 'statusPaid'),      color: 'bg-green-100 text-green-700' },
+    CANCELLED: { label: t('invoices', 'statusCancelled'), color: 'bg-red-100 text-red-600' },
+  } as Record<string, { label: string; color: string }>);
+
+  const STATUS_FILTERS = ['ALL', 'PENDING', 'PARTIAL', 'PAID', 'DRAFT', 'CANCELLED'];
 
   const load = (status?: string) => {
     setLoading(true);
-    const url = status && status !== 'Tümü' ? `/api/invoices?status=${status}` : '/api/invoices';
+    const url = status && status !== 'ALL' ? `/api/invoices?status=${status}` : '/api/invoices';
     fetch(url)
       .then(r => r.json())
       .then(d => setInvoices(Array.isArray(d) ? d : []))
@@ -38,7 +37,7 @@ export default function InvoicesPage() {
   useEffect(() => { load(statusFilter); }, [statusFilter]);
 
   const handleDelete = async (id: string, no: string) => {
-    if (!confirm(`"${no}" faturası silinsin mi?`)) return;
+    if (!confirm(`"${no}" ${t('invoices', 'statusDraft')}?`)) return;
     await fetch(`/api/invoices/${id}`, { method: 'DELETE' });
     setInvoices(prev => prev.filter(inv => inv.id !== id));
   };
@@ -52,16 +51,23 @@ export default function InvoicesPage() {
     .filter(inv => inv.status === 'PENDING' || inv.status === 'PARTIAL')
     .reduce((s, inv) => s + (inv.total - inv.paidAmount), 0);
 
+  const statusLabels = STATUS_LABELS();
+
+  const getFilterLabel = (s: string) => {
+    if (s === 'ALL') return t('invoices', 'all');
+    return statusLabels[s]?.label ?? s;
+  };
+
   return (
     <AppShell>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Faturalar</h1>
-            <p className="text-slate-500 text-sm">{invoices.length} fatura</p>
+            <h1 className="text-2xl font-bold text-slate-800">{t('invoices', 'title')}</h1>
+            <p className="text-slate-500 text-sm">{invoices.length} {t('invoices', 'title').toLowerCase()}</p>
           </div>
           <Link href="/invoices/new" className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm">
-            <Plus className="w-4 h-4" /> Yeni Fatura
+            <Plus className="w-4 h-4" /> {t('invoices', 'newInvoice')}
           </Link>
         </div>
 
@@ -69,7 +75,7 @@ export default function InvoicesPage() {
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" />
             <p className="text-sm text-yellow-800">
-              Toplam <span className="font-semibold">{totalPending.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span> tutarında bekleyen/kısmi alacak var.
+              {t('common', 'total')} <span className="font-semibold">{totalPending.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span> {t('invoices', 'pendingAlert')}
             </p>
           </div>
         )}
@@ -84,7 +90,7 @@ export default function InvoicesPage() {
                 statusFilter === s ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              {STATUS_FILTER_LABELS[s]}
+              {getFilterLabel(s)}
             </button>
           ))}
         </div>
@@ -94,7 +100,7 @@ export default function InvoicesPage() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Fatura no veya müşteri ara..."
+            placeholder={t('invoices', 'searchPlaceholder')}
             className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm"
           />
         </div>
@@ -104,25 +110,25 @@ export default function InvoicesPage() {
         ) : !filtered.length ? (
           <div className="text-center py-16 bg-white rounded-xl shadow-sm">
             <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-400">{search ? 'Sonuç bulunamadı' : 'Henüz fatura eklenmedi'}</p>
+            <p className="text-slate-400">{search ? t('invoices', 'noResults') : t('invoices', 'empty')}</p>
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  <th className="px-4 py-3 text-left">Fatura No</th>
-                  <th className="px-4 py-3 text-left">Müşteri</th>
-                  <th className="px-4 py-3 text-left">Tarih</th>
-                  <th className="px-4 py-3 text-right">Tutar</th>
-                  <th className="px-4 py-3 text-right">Kalan</th>
-                  <th className="px-4 py-3 text-center">Durum</th>
+                  <th className="px-4 py-3 text-left">{t('invoices', 'invoiceNo')}</th>
+                  <th className="px-4 py-3 text-left">{t('invoices', 'customer')}</th>
+                  <th className="px-4 py-3 text-left">{t('common', 'date')}</th>
+                  <th className="px-4 py-3 text-right">{t('invoices', 'amount')}</th>
+                  <th className="px-4 py-3 text-right">{t('invoices', 'remaining')}</th>
+                  <th className="px-4 py-3 text-center">{t('invoices', 'status')}</th>
                   <th className="px-4 py-3 w-20"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((inv, i) => {
-                  const st = STATUS_LABELS[inv.status] ?? STATUS_LABELS.PENDING;
+                  const st = statusLabels[inv.status] ?? statusLabels.PENDING;
                   const remaining = inv.total - inv.paidAmount;
                   return (
                     <motion.tr

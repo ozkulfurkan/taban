@@ -9,10 +9,8 @@ import {
   ChevronDown, PlusCircle, Trash2, CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/i18n/language-context';
 
-const STATUS_LABEL: Record<string, string> = {
-  DRAFT: 'Taslak', PENDING: 'Bekliyor', PARTIAL: 'Kısmi', PAID: 'Ödendi', CANCELLED: 'İptal',
-};
 const STATUS_COLOR: Record<string, string> = {
   DRAFT: 'bg-slate-100 text-slate-600',
   PENDING: 'bg-orange-100 text-orange-700',
@@ -24,6 +22,7 @@ const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı'];
 const CURRENCIES = ['TRY', 'USD', 'EUR'];
 
 function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose: () => void; onSaved: (amount: number) => void }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
     accountId: '',
@@ -120,7 +119,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
         <div className="bg-emerald-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
-          <h3 className="text-white font-semibold">Tahsilat Al</h3>
+          <h3 className="text-white font-semibold">{t('customerDetail', 'collect')}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <form onSubmit={handle} className="p-5 space-y-3">
@@ -128,15 +127,15 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
             {customer.name}
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'date')}</label>
             <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Kasa / Hesap *</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'account')}</label>
             <select required value={form.accountId} onChange={e => set('accountId', e.target.value)}
               className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white ${!form.accountId ? 'border-orange-300 bg-orange-50' : 'border-slate-200'}`}>
-              <option value="">— Kasa / Hesap seçin *</option>
+              <option value="">{t('modal', 'selectAccount')}</option>
               {accounts.map(a => (
                 <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>
               ))}
@@ -144,14 +143,14 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ödeme Dövizi</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'paymentCurrency')}</label>
               <select value={form.paymentCurrency} onChange={e => set('paymentCurrency', e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
                 {CURRENCIES.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Tutar *</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')}</label>
               <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => handleAmountChange(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-right" />
             </div>
@@ -161,7 +160,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-blue-700 mb-1">
-                    Kur (1 {form.paymentCurrency}={customer.currency || 'TRY'})
+                    {t('modal', 'rate')} (1 {form.paymentCurrency}={customer.currency || 'TRY'})
                   </label>
                   <input type="number" step="0.0000000001" min="0.0000000001" value={form.exchangeRate}
                     onChange={e => handleRateChange(e.target.value)} placeholder="0.0000"
@@ -169,33 +168,33 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-blue-700 mb-1">
-                    Kaydedilecek ({customer.currency || 'TRY'}) *
+                    {t('modal', 'recordedAmount')} ({customer.currency || 'TRY'}) *
                   </label>
                   <input type="number" step="0.01" min="0.01" value={form.recordedAmount}
                     onChange={e => handleRecordedChange(e.target.value)} placeholder="0.00"
                     className="w-full px-2 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white font-semibold" />
                 </div>
               </div>
-              <p className="text-xs text-blue-500">Kur veya Kaydedilecek Tutar'ı girin — diğeri otomatik hesaplanır.</p>
+              <p className="text-xs text-blue-500">{t('modal', 'rateHint')}</p>
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Ödeme Şekli</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'paymentMethod')}</label>
             <select value={form.method} onChange={e => set('method', e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
               {METHODS.map(m => <option key={m}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Not</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'notes')}</label>
             <input value={form.notes} onChange={e => set('notes', e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+            <button type="button" onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">{t('common', 'cancel')}</button>
             <button type="submit" disabled={saving || !canSave}
               className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />} Kaydet
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />} {t('common', 'save')}
             </button>
           </div>
         </form>
@@ -205,6 +204,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
 }
 
 function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({ amount: '', date: new Date().toISOString().split('T')[0], method: 'Nakit', notes: 'İade' });
   const [saving, setSaving] = useState(false);
 
@@ -236,36 +236,36 @@ function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () 
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
         <div className="bg-amber-500 rounded-t-2xl px-5 py-4 flex items-center justify-between">
-          <h3 className="text-white font-semibold">İade Al</h3>
+          <h3 className="text-white font-semibold">{t('modal', 'returnTitle')}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <form onSubmit={handle} className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tutar *</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')}</label>
             <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'date')}</label>
             <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Yöntem</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('customerDetail', 'method')}</label>
             <select value={form.method} onChange={e => setForm(p => ({ ...p, method: e.target.value }))}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white">
               {METHODS.map(m => <option key={m}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Not</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'notes')}</label>
             <input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">İptal</button>
+            <button type="button" onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">{t('common', 'cancel')}</button>
             <button type="submit" disabled={saving} className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} Kaydet
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} {t('common', 'save')}
             </button>
           </div>
         </form>
@@ -303,6 +303,7 @@ function calcAvgVade(checks: any[]) {
 }
 
 function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: string; onClose: () => void; onAdd: (cek: any) => void }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     borclu: defaultBorclu,
     islemTarihi: new Date().toISOString().split('T')[0],
@@ -371,7 +372,7 @@ function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: stri
             </select>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">İptal</button>
+            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">{t('common', 'cancel')}</button>
             <button onClick={handleAdd} disabled={!form.vadesi || !form.tutar}
               className="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg disabled:opacity-50">Tamam</button>
           </div>
@@ -382,6 +383,7 @@ function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: stri
 }
 
 function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLanguage();
   const [islem, setIslem] = useState(ISLEM_OPTIONS[0]);
   const [aciklama, setAciklama] = useState('');
   const [checks, setChecks] = useState<any[]>([]);
@@ -448,7 +450,7 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
             {/* Yeni Çek Ekle */}
             <button onClick={() => setShowTanim(true)}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
-              <PlusCircle className="w-4 h-4" /> Yeni Çek Ekle
+              <PlusCircle className="w-4 h-4" /> {t('customerDetail', 'addCheck')}
             </button>
 
             {/* Check list */}
@@ -457,7 +459,7 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
                     <tr>
-                      <th className="px-3 py-2 text-left">Tutar</th>
+                      <th className="px-3 py-2 text-left">{t('customerDetail', 'amount')}</th>
                       <th className="px-3 py-2 text-left">Vade</th>
                       <th className="px-3 py-2 text-left">Banka</th>
                       <th className="px-3 py-2 text-left">No</th>
@@ -502,10 +504,10 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
           </div>
 
           <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 flex-shrink-0">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">İptal</button>
+            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">{t('common', 'cancel')}</button>
             <button onClick={handleSave} disabled={saving || checks.length === 0}
               className="px-5 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium disabled:opacity-50 flex items-center gap-2">
-              {saving && <Loader2 className="w-4 h-4 animate-spin" />} Kaydet
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />} {t('common', 'save')}
             </button>
           </div>
         </div>
@@ -523,6 +525,7 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
 }
 
 export default function CustomerDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const [customer, setCustomer] = useState<any>(null);
@@ -538,6 +541,14 @@ export default function CustomerDetailPage() {
   const [invoicesShown, setInvoicesShown] = useState(10);
   const [paymentsShown, setPaymentsShown] = useState(10);
   const [cekler, setCekler] = useState<any[]>([]);
+
+  const STATUS_LABEL: Record<string, string> = {
+    DRAFT: t('invoices', 'statusDraft'),
+    PENDING: t('invoices', 'statusPending'),
+    PARTIAL: t('invoices', 'statusPartial'),
+    PAID: t('invoices', 'statusPaid'),
+    CANCELLED: t('invoices', 'statusCancelled'),
+  };
 
   const load = () => {
     if (!params?.id) return;
@@ -678,9 +689,9 @@ export default function CustomerDetailPage() {
                     rows={2} className="w-full px-3 py-1.5 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none resize-none bg-white" />
                 </div>
                 <div className="sm:col-span-2 flex gap-2">
-                  <button onClick={() => setEditing(false)} className="px-4 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+                  <button onClick={() => setEditing(false)} className="px-4 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">{t('common', 'cancel')}</button>
                   <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-60">
-                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Kaydet
+                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} {t('common', 'save')}
                   </button>
                 </div>
               </div>
@@ -719,17 +730,17 @@ export default function CustomerDetailPage() {
           return (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="rounded-xl p-4 text-white bg-orange-500 shadow-sm">
-                <p className="text-xs font-medium opacity-80 mb-1">Açık Bakiyesi</p>
+                <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'balance')}</p>
                 <p className="text-xl font-bold">{(customer.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
                 <p className="text-xs opacity-70 mt-0.5">{customer.currency || 'TRY'}</p>
               </div>
               <div className="rounded-xl p-4 text-white bg-blue-500 shadow-sm">
-                <p className="text-xs font-medium opacity-80 mb-1">Toplam Fatura</p>
+                <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'totalInvoiced')}</p>
                 <p className="text-xl font-bold">{(customer.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
                 <p className="text-xs opacity-70 mt-0.5">{(customer.invoices || []).length} fatura</p>
               </div>
               <div className="rounded-xl p-4 text-white bg-teal-500 shadow-sm">
-                <p className="text-xs font-medium opacity-80 mb-1">Tahsilat</p>
+                <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'totalPaid')}</p>
                 <p className="text-xl font-bold">{(customer.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
                 <p className="text-xs opacity-70 mt-0.5">{(customer.payments || []).length} ödeme</p>
               </div>
@@ -767,7 +778,7 @@ export default function CustomerDetailPage() {
             href={`/invoices/new?customerId=${customer.id}`}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
-            <ShoppingCart className="w-4 h-4" /> Satış Yap
+            <ShoppingCart className="w-4 h-4" /> {t('customerDetail', 'newSale')}
           </Link>
           <Link
             href={`/quotes/new?customerId=${customer.id}`}
@@ -779,14 +790,14 @@ export default function CustomerDetailPage() {
             href={`/invoices/return?customerId=${customer.id}`}
             className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
-            <RotateCcw className="w-4 h-4" /> İade Faturası
+            <RotateCcw className="w-4 h-4" /> {t('customerDetail', 'returnInvoice')}
           </Link>
           <div className="relative">
             <button
               onClick={() => setTahsilatDropdown(d => !d)}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
             >
-              <Banknote className="w-4 h-4" /> Tahsilat Al <ChevronDown className="w-3 h-3" />
+              <Banknote className="w-4 h-4" /> {t('customerDetail', 'collect')} <ChevronDown className="w-3 h-3" />
             </button>
             {tahsilatDropdown && (
               <>
@@ -812,31 +823,31 @@ export default function CustomerDetailPage() {
             onClick={() => setShowIade(true)}
             className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
-            <RotateCcw className="w-4 h-4" /> İade Al
+            <RotateCcw className="w-4 h-4" /> {t('modal', 'returnTitle')}
           </button>
           <Link href={`/customers/${params.id}/ekstre`}
             className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
-            <Download className="w-4 h-4" /> Hesap Ekstresi
+            <Download className="w-4 h-4" /> {t('customerDetail', 'accountStatement')}
           </Link>
         </div>
 
         {/* Previous Sales */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
-            <h2 className="font-semibold text-white text-sm uppercase tracking-wide">Önceki Satışlar</h2>
+            <h2 className="font-semibold text-white text-sm uppercase tracking-wide">{t('customerDetail', 'previousSales')}</h2>
             <Link href="/invoices" className="text-slate-300 hover:text-white text-xs transition-colors">Tümünü gör →</Link>
           </div>
           {!customer.invoices?.length ? (
-            <div className="py-8 text-center text-slate-400 text-sm">Henüz satış yok</div>
+            <div className="py-8 text-center text-slate-400 text-sm">{t('customerDetail', 'noSales')}</div>
           ) : (
             <>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
-                  <th className="px-4 py-2 text-left">Tarih</th>
-                  <th className="px-4 py-2 text-left">No</th>
-                  <th className="px-4 py-2 text-right">Tutar</th>
+                  <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
+                  <th className="px-4 py-2 text-left">{t('customerDetail', 'invoiceNo')}</th>
+                  <th className="px-4 py-2 text-right">{t('customerDetail', 'amount')}</th>
                   <th className="w-8"></th>
                 </tr>
               </thead>
@@ -876,15 +887,15 @@ export default function CustomerDetailPage() {
         {customer.returns?.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3 bg-red-700">
-              <h2 className="font-semibold text-white text-sm uppercase tracking-wide">İadeler</h2>
+              <h2 className="font-semibold text-white text-sm uppercase tracking-wide">{t('customerDetail', 'returns')}</h2>
               <span className="text-red-200 text-xs">{customer.returns.length} iade</span>
             </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
-                  <th className="px-4 py-2 text-left">Tarih</th>
-                  <th className="px-4 py-2 text-left">No</th>
-                  <th className="px-4 py-2 text-right">Tutar</th>
+                  <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
+                  <th className="px-4 py-2 text-left">{t('customerDetail', 'invoiceNo')}</th>
+                  <th className="px-4 py-2 text-right">{t('customerDetail', 'amount')}</th>
                   <th className="w-8"></th>
                 </tr>
               </thead>
@@ -927,18 +938,18 @@ export default function CustomerDetailPage() {
           return (
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
-                <h2 className="font-semibold text-white text-sm uppercase tracking-wide">Önceki Ödemeler</h2>
+                <h2 className="font-semibold text-white text-sm uppercase tracking-wide">{t('customerDetail', 'previousPayments')}</h2>
               </div>
               {!merged.length ? (
-                <div className="py-8 text-center text-slate-400 text-sm">Henüz ödeme yok</div>
+                <div className="py-8 text-center text-slate-400 text-sm">{t('customerDetail', 'noPayments')}</div>
               ) : (
                 <>
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
-                        <th className="px-4 py-2 text-left">Tarih</th>
-                        <th className="px-4 py-2 text-right">Tutar</th>
-                        <th className="px-4 py-2 text-left">Şekli</th>
+                        <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
+                        <th className="px-4 py-2 text-right">{t('customerDetail', 'amount')}</th>
+                        <th className="px-4 py-2 text-left">{t('customerDetail', 'method')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">

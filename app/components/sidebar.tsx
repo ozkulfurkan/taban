@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 type LinkItem = { href: string; label: string; icon: any; special?: boolean };
 type Section = { title?: string; links: LinkItem[] };
@@ -18,6 +19,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useLanguage();
 
   const user = session?.user as any;
   const isAdmin = user?.role === 'ADMIN';
@@ -43,54 +45,53 @@ export default function Sidebar() {
 
   const canSee = (href: string) => {
     if (hasFullAccess) return true;
-    // find the key for this href
     const key = Object.entries(PAGE_KEY).find(([prefix]) => href.startsWith(prefix))?.[1];
-    if (!key) return true; // unknown → show
+    if (!key) return true;
     return allowedPages.includes(key);
   };
 
   const sections: Section[] = [
     {
       links: [
-        { href: '/dashboard', label: 'Ana Sayfa', icon: LayoutDashboard },
+        { href: '/dashboard', label: t('nav', 'home'), icon: LayoutDashboard },
       ],
     },
     {
-      title: 'Ticari',
+      title: t('nav', 'commercial'),
       links: [
-        { href: '/customers', label: 'Müşteriler', icon: Users },
-        { href: '/suppliers', label: 'Tedarikçiler', icon: Truck },
-        { href: '/invoices', label: 'Satışlar', icon: Receipt },
-        { href: '/quotes/new', label: 'Teklifler', icon: FileText },
-        { href: '/payments', label: 'Ödemeler', icon: CreditCard },
+        { href: '/customers', label: t('nav', 'customers'), icon: Users },
+        { href: '/suppliers', label: t('nav', 'suppliers'), icon: Truck },
+        { href: '/invoices', label: t('nav', 'sales'), icon: Receipt },
+        { href: '/quotes/new', label: t('nav', 'quotes'), icon: FileText },
+        { href: '/payments', label: t('nav', 'payments'), icon: CreditCard },
       ],
     },
     {
-      title: 'Stok',
+      title: t('nav', 'stock'),
       links: [
-        { href: '/products', label: 'Ürünler', icon: BoxIcon },
-        { href: '/materials', label: 'Hammaddeler', icon: Package },
+        { href: '/products', label: t('nav', 'products'), icon: BoxIcon },
+        { href: '/materials', label: t('nav', 'rawMaterials'), icon: Package },
       ],
     },
     {
-      title: 'Nakit Yönetimi',
+      title: t('nav', 'cashManagement'),
       links: [
-        { href: '/accounts', label: 'Hesaplarım', icon: Landmark },
-        { href: '/cek-portfolyo', label: 'Çek Portföyü', icon: ScrollText },
+        { href: '/accounts', label: t('nav', 'accounts'), icon: Landmark },
+        { href: '/cek-portfolyo', label: t('nav', 'checkPortfolio'), icon: ScrollText },
       ],
     },
     {
-      title: 'Araçlar',
+      title: t('nav', 'tools'),
       links: [
-        { href: '/calculations/new', label: 'Taban Maliyet Hesapla', icon: Calculator, special: true },
+        { href: '/calculations/new', label: t('nav', 'soleCalc'), icon: Calculator, special: true },
       ],
     },
     {
-      title: 'Sistem',
+      title: t('nav', 'system'),
       links: [
-        { href: '/settings', label: 'Ayarlar', icon: Settings },
-        ...(isAdmin || user?.role === 'COMPANY_OWNER' ? [{ href: '/settings/users', label: 'Kullanıcılar', icon: UserCog }] : []),
-        ...(isAdmin ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
+        { href: '/settings', label: t('nav', 'settings'), icon: Settings },
+        ...(isAdmin || user?.role === 'COMPANY_OWNER' ? [{ href: '/settings/users', label: t('nav', 'users'), icon: UserCog }] : []),
+        ...(isAdmin ? [{ href: '/admin', label: t('nav', 'admin'), icon: Shield }] : []),
       ],
     },
   ];
@@ -177,7 +178,7 @@ export default function Sidebar() {
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-blue-200 hover:bg-red-600/20 hover:text-red-300 transition-all w-full"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span>Çıkış Yap</span>}
+          {!collapsed && <span>{t('nav', 'logout')}</span>}
         </button>
       </div>
     </div>

@@ -2,19 +2,11 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import AppShell from '@/app/components/app-shell';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { Loader2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
 const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
-
-const DURUM_LABEL: Record<string, string> = {
-  PORTFOY: 'Portföyde',
-  BANKAYA_VERILDI: 'Bankaya Verildi',
-  TEDARIKCI_VERILDI: 'Tedarikçiye Verildi',
-  ODENDI: 'Ödendi',
-  KARSILIKS: 'Karşılıksız',
-  IPTAL: 'İptal',
-};
 
 const DURUM_COLOR: Record<string, string> = {
   PORTFOY: 'bg-blue-100 text-blue-700',
@@ -24,25 +16,6 @@ const DURUM_COLOR: Record<string, string> = {
   KARSILIKS: 'bg-red-100 text-red-700',
   IPTAL: 'bg-slate-100 text-slate-600',
 };
-
-const TABS = [
-  { key: '', label: 'Tüm Çekler' },
-  { key: 'PORTFOY', label: 'Portföydekiler' },
-  { key: 'TEDARIKCI_VERILDI', label: 'Tedarikçiye Verilenler' },
-  { key: 'BANKAYA_VERILDI', label: 'Bankaya Verilenler' },
-  { key: 'ODENDI', label: 'Ödenmişler' },
-  { key: 'KARSILIKS', label: 'Karşılıksız Çıkanlar' },
-  { key: 'IPTAL', label: 'İptaller' },
-];
-
-const ISLEMLER = [
-  { key: 'PORTFOY', label: 'Portföye al' },
-  { key: 'BANKAYA_VERILDI', label: 'Bankaya gönder' },
-  { key: 'TEDARIKCI_VERILDI', label: 'Tedarikçiye ver' },
-  { key: 'ODENDI', label: 'Tahsil et (Ödendi)' },
-  { key: 'KARSILIKS', label: 'Karşılıksız olarak işaretle' },
-  { key: 'IPTAL', label: 'İptal et' },
-];
 
 function calcAvgVade(cekler: any[]) {
   const total = cekler.reduce((s, c) => s + Number(c.tutar), 0);
@@ -58,12 +31,41 @@ function calcAvgVade(cekler: any[]) {
 }
 
 export default function CekPortfoyuPage() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState('');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  const DURUM_LABEL: Record<string, string> = {
+    PORTFOY: t('checks', 'statusPortfoy'),
+    BANKAYA_VERILDI: t('checks', 'statusBankaya'),
+    TEDARIKCI_VERILDI: t('checks', 'statusTedarikci'),
+    ODENDI: t('checks', 'statusOdendi'),
+    KARSILIKS: t('checks', 'statusKarsiliks'),
+    IPTAL: t('checks', 'statusIptal'),
+  };
+
+  const TABS = [
+    { key: '', label: t('checks', 'all') },
+    { key: 'PORTFOY', label: t('checks', 'inPortfolio') },
+    { key: 'TEDARIKCI_VERILDI', label: t('checks', 'sentToSupplier') },
+    { key: 'BANKAYA_VERILDI', label: t('checks', 'sentToBank') },
+    { key: 'ODENDI', label: t('checks', 'paid') },
+    { key: 'KARSILIKS', label: t('checks', 'bounced') },
+    { key: 'IPTAL', label: t('checks', 'cancelled') },
+  ];
+
+  const ISLEMLER = [
+    { key: 'PORTFOY', label: t('checks', 'addToPortfolio') },
+    { key: 'BANKAYA_VERILDI', label: t('checks', 'sendToBank') },
+    { key: 'TEDARIKCI_VERILDI', label: t('checks', 'sendToSupplier') },
+    { key: 'ODENDI', label: t('checks', 'collect') },
+    { key: 'KARSILIKS', label: t('checks', 'markBounced') },
+    { key: 'IPTAL', label: t('checks', 'cancelCheck') },
+  ];
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,7 +95,7 @@ export default function CekPortfoyuPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bu çeki silmek istediğinize emin misiniz?')) return;
+    if (!confirm(t('checks', 'deleteConfirm'))) return;
     await fetch(`/api/cek/${id}`, { method: 'DELETE' });
     load();
   };
@@ -116,18 +118,18 @@ export default function CekPortfoyuPage() {
     <AppShell>
       <div className="space-y-5">
         <div className="bg-teal-600 rounded-xl px-6 py-4">
-          <h1 className="text-white font-bold text-lg uppercase tracking-wide">Çek Portföyü</h1>
+          <h1 className="text-white font-bold text-lg uppercase tracking-wide">{t('checks', 'title')}</h1>
         </div>
 
         {/* Tabs */}
         <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
           <div className="flex border-b border-slate-100 min-w-max">
-            {TABS.map(t => (
-              <button key={t.key} onClick={() => handleTabChange(t.key)}
+            {TABS.map(tb => (
+              <button key={tb.key} onClick={() => handleTabChange(tb.key)}
                 className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
-                  tab === t.key ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+                  tab === tb.key ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}>
-                {t.label}
+                {tb.label}
               </button>
             ))}
           </div>
@@ -136,24 +138,24 @@ export default function CekPortfoyuPage() {
         {/* Summary cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-orange-500 rounded-xl p-4 text-white shadow-sm">
-            <p className="text-xs font-medium opacity-80 mb-1">Çek Sayısı</p>
+            <p className="text-xs font-medium opacity-80 mb-1">{t('checks', 'count')}</p>
             <p className="text-2xl font-bold">{data?.total ?? '—'}</p>
           </div>
           <div className="bg-blue-500 rounded-xl p-4 text-white shadow-sm">
-            <p className="text-xs font-medium opacity-80 mb-1">Toplam Tutar</p>
+            <p className="text-xs font-medium opacity-80 mb-1">{t('checks', 'totalAmount')}</p>
             <p className="text-2xl font-bold">{fmt(totalTutar)} TL</p>
           </div>
           <div className="bg-emerald-500 rounded-xl p-4 text-white shadow-sm">
-            <p className="text-xs font-medium opacity-80 mb-1">Ortalama Vade</p>
+            <p className="text-xs font-medium opacity-80 mb-1">{t('checks', 'avgMaturity')}</p>
             <p className="text-xl font-bold">
-              {avgVade ? `${fmtDate(avgVade.date)} (${avgVade.days} gün)` : '—'}
+              {avgVade ? `${fmtDate(avgVade.date)} (${avgVade.days} ${t('checks', 'days')})` : '—'}
             </p>
           </div>
         </div>
 
         {/* Search + Refresh */}
         <div className="flex gap-2">
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="İsim, vade, seri no ara..."
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('checks', 'searchPlaceholder')}
             className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500 bg-white" />
           <button onClick={load} className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm">
             <RefreshCw className="w-4 h-4" />
@@ -164,22 +166,22 @@ export default function CekPortfoyuPage() {
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-teal-500" /></div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm py-16 text-center text-slate-400">Kayıt bulunamadı</div>
+          <div className="bg-white rounded-xl shadow-sm py-16 text-center text-slate-400">{t('checks', 'noResults')}</div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[900px]">
                 <thead>
                   <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
-                    <th className="px-3 py-2.5 text-left">Borçlu</th>
-                    <th className="px-3 py-2.5 text-left">Alındığı Tarih</th>
-                    <th className="px-3 py-2.5 text-left">Vadesi</th>
-                    <th className="px-3 py-2.5 text-left">Bankası</th>
-                    <th className="px-3 py-2.5 text-left">No</th>
-                    <th className="px-3 py-2.5 text-left">Açıklama</th>
-                    <th className="px-3 py-2.5 text-right">Tutar</th>
-                    <th className="px-3 py-2.5 text-center">Durum</th>
-                    <th className="px-3 py-2.5 text-center">İşlemler</th>
+                    <th className="px-3 py-2.5 text-left">{t('checks', 'debtor')}</th>
+                    <th className="px-3 py-2.5 text-left">{t('checks', 'receivedDate')}</th>
+                    <th className="px-3 py-2.5 text-left">{t('checks', 'maturity')}</th>
+                    <th className="px-3 py-2.5 text-left">{t('checks', 'bank')}</th>
+                    <th className="px-3 py-2.5 text-left">{t('checks', 'no')}</th>
+                    <th className="px-3 py-2.5 text-left">{t('checks', 'description')}</th>
+                    <th className="px-3 py-2.5 text-right">{t('checks', 'amount')}</th>
+                    <th className="px-3 py-2.5 text-center">{t('checks', 'status')}</th>
+                    <th className="px-3 py-2.5 text-center">{t('checks', 'actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -203,7 +205,7 @@ export default function CekPortfoyuPage() {
                             onClick={() => setOpenDropdown(openDropdown === c.id ? null : c.id)}
                             className="px-3 py-1 bg-slate-600 hover:bg-slate-700 text-white text-xs rounded-lg"
                           >
-                            İşlemler ▾
+                            {t('checks', 'actions')} ▾
                           </button>
                           {openDropdown === c.id && (
                             <>
@@ -219,7 +221,7 @@ export default function CekPortfoyuPage() {
                                 <div className="border-t border-slate-100" />
                                 <button onClick={() => { setOpenDropdown(null); handleDelete(c.id); }}
                                   className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
-                                  Çeki sil
+                                  {t('checks', 'deleteCheck')}
                                 </button>
                               </div>
                             </>
@@ -235,7 +237,7 @@ export default function CekPortfoyuPage() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
-                <span className="text-xs text-slate-500">Sayfa {page} / {totalPages} — {data.total} kayıt</span>
+                <span className="text-xs text-slate-500">{t('checks', 'page')} {page} / {totalPages} — {data.total} {t('checks', 'records')}</span>
                 <div className="flex gap-1">
                   <button disabled={page === 1} onClick={() => setPage(p => p - 1)}
                     className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-40">

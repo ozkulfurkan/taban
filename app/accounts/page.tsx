@@ -2,17 +2,18 @@
 
 import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { Plus, ChevronDown, Loader2, Pencil, Trash2, X, Save, Landmark } from 'lucide-react';
 
 const ACCOUNT_TYPES = ['Kasa', 'Banka', 'POS'];
 const CURRENCIES = ['TRY', 'USD', 'EUR'];
 const COLORS = [
-  { label: 'Mavi', value: '#3B82F6' },
-  { label: 'Yeşil', value: '#10B981' },
-  { label: 'Turuncu', value: '#F59E0B' },
-  { label: 'Kırmızı', value: '#EF4444' },
-  { label: 'Mor', value: '#8B5CF6' },
-  { label: 'Gri', value: '#6B7280' },
+  { labelTr: 'Mavi',    labelEn: 'Blue',   value: '#3B82F6' },
+  { labelTr: 'Yeşil',   labelEn: 'Green',  value: '#10B981' },
+  { labelTr: 'Turuncu', labelEn: 'Orange', value: '#F59E0B' },
+  { labelTr: 'Kırmızı', labelEn: 'Red',    value: '#EF4444' },
+  { labelTr: 'Mor',     labelEn: 'Purple', value: '#8B5CF6' },
+  { labelTr: 'Gri',     labelEn: 'Gray',   value: '#6B7280' },
 ];
 
 type Account = {
@@ -29,11 +30,15 @@ function AccountModal({
   typeOverride,
   onClose,
   onSaved,
+  t,
+  isEn,
 }: {
   initial?: Account | null;
   typeOverride?: string;
   onClose: () => void;
   onSaved: () => void;
+  t: (s: string, k: string) => string;
+  isEn: boolean;
 }) {
   const isEdit = !!initial;
   const [form, setForm] = useState({
@@ -66,42 +71,42 @@ function AccountModal({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
         <div className="rounded-t-2xl px-5 py-4 flex items-center justify-between" style={{ backgroundColor: form.color }}>
-          <h3 className="text-white font-semibold">{isEdit ? 'Hesabı Düzenle' : `${form.type} Ekle`}</h3>
+          <h3 className="text-white font-semibold">{isEdit ? t('accounts', 'editTitle') : `${form.type} ${t('accounts', 'add')}`}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tanım *</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('accounts', 'description')}</label>
             <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Örn. TL Kasa, Garanti TL"
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Hesap Türü</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('accounts', 'accountType')}</label>
             <select value={form.type} onChange={e => set('type', e.target.value)} disabled={!!typeOverride && !isEdit}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white disabled:bg-slate-50 disabled:text-slate-500">
-              {ACCOUNT_TYPES.map(t => <option key={t}>{t}</option>)}
+              {ACCOUNT_TYPES.map(tp => <option key={tp}>{tp}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Para Birimi</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('common', 'currency')}</label>
               <select value={form.currency} onChange={e => set('currency', e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                 {CURRENCIES.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Güncel Bakiye</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('accounts', 'currentBalance')}</label>
               <input type="number" step="0.01" value={form.balance} onChange={e => set('balance', e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-2">Etiket Rengi</label>
+            <label className="block text-xs font-medium text-slate-500 mb-2">{t('accounts', 'labelColor')}</label>
             <div className="flex gap-2 flex-wrap">
               {COLORS.map(c => (
                 <button key={c.value} type="button" onClick={() => set('color', c.value)}
-                  title={c.label}
+                  title={isEn ? c.labelEn : c.labelTr}
                   className="w-8 h-8 rounded-full border-2 transition-all"
                   style={{
                     backgroundColor: c.value,
@@ -112,10 +117,10 @@ function AccountModal({
             </div>
           </div>
           <div className="flex gap-3 pt-1">
-            <button onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+            <button onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">{t('common', 'cancel')}</button>
             <button onClick={handleSave} disabled={saving || !form.name.trim()}
               className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Kaydet
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {t('common', 'save')}
             </button>
           </div>
         </div>
@@ -124,7 +129,7 @@ function AccountModal({
   );
 }
 
-function AccountCard({ account, onEdit, onDelete }: { account: Account; onEdit: () => void; onDelete: () => void }) {
+function AccountCard({ account, onEdit, onDelete, t }: { account: Account; onEdit: () => void; onDelete: () => void; t: (s: string, k: string) => string }) {
   const [showMenu, setShowMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -148,11 +153,11 @@ function AccountCard({ account, onEdit, onDelete }: { account: Account; onEdit: 
         <div className="absolute right-2 top-2 bg-white border border-slate-200 rounded-lg shadow-lg z-10 py-1 min-w-[120px]">
           <button onClick={(e) => { e.stopPropagation(); onEdit(); setShowMenu(false); }}
             className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-            <Pencil className="w-3.5 h-3.5" /> Düzenle
+            <Pencil className="w-3.5 h-3.5" /> {t('common', 'edit')}
           </button>
           <button onClick={(e) => { e.stopPropagation(); onDelete(); setShowMenu(false); }}
             className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50">
-            <Trash2 className="w-3.5 h-3.5" /> Sil
+            <Trash2 className="w-3.5 h-3.5" /> {t('common', 'delete')}
           </button>
         </div>
       )}
@@ -170,6 +175,8 @@ function groupTotals(accounts: Account[], type: string) {
 }
 
 export default function AccountsPage() {
+  const { t, language } = useLanguage();
+  const isEn = language === 'en';
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<{ open: boolean; edit?: Account | null; typeOverride?: string }>({ open: false });
@@ -190,7 +197,7 @@ export default function AccountsPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bu hesabı silmek istediğinize emin misiniz?')) return;
+    if (!confirm(t('accounts', 'deleteConfirm'))) return;
     await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
     load();
   };
@@ -198,9 +205,9 @@ export default function AccountsPage() {
   const openAdd = (type: string) => { setDropdownOpen(false); setModal({ open: true, edit: null, typeOverride: type }); };
 
   const sections: { type: string; label: string }[] = [
-    { type: 'Kasa', label: 'KASA' },
-    { type: 'Banka', label: 'BANKA HESAPLARI' },
-    { type: 'POS', label: 'POS HESAPLARI' },
+    { type: 'Kasa', label: t('accounts', 'cash') },
+    { type: 'Banka', label: t('accounts', 'bank') },
+    { type: 'POS', label: t('accounts', 'pos') },
   ];
 
   return (
@@ -209,20 +216,20 @@ export default function AccountsPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Hesaplarım</h1>
-            <p className="text-slate-500 text-sm">{accounts.length} hesap</p>
+            <h1 className="text-2xl font-bold text-slate-800">{t('accounts', 'title')}</h1>
+            <p className="text-slate-500 text-sm">{accounts.length} {isEn ? 'accounts' : 'hesap'}</p>
           </div>
           <div ref={dropRef} className="relative">
             <button onClick={() => setDropdownOpen(d => !d)}
               className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm">
-              <Plus className="w-4 h-4" /> Yeni Hesap Ekle <ChevronDown className="w-4 h-4" />
+              <Plus className="w-4 h-4" /> {t('accounts', 'newAccount')} <ChevronDown className="w-4 h-4" />
             </button>
             {dropdownOpen && (
               <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-20 py-1 min-w-[180px]">
-                {ACCOUNT_TYPES.map(t => (
-                  <button key={t} onClick={() => openAdd(t)}
+                {ACCOUNT_TYPES.map(tp => (
+                  <button key={tp} onClick={() => openAdd(tp)}
                     className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 text-left">
-                    <Landmark className="w-4 h-4 text-slate-400" /> {t} Ekle
+                    <Landmark className="w-4 h-4 text-slate-400" /> {tp} {t('accounts', 'add')}
                   </button>
                 ))}
               </div>
@@ -246,7 +253,7 @@ export default function AccountsPage() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {items.map(a => (
-                      <AccountCard key={a.id} account={a}
+                      <AccountCard key={a.id} account={a} t={t}
                         onEdit={() => setModal({ open: true, edit: a })}
                         onDelete={() => handleDelete(a.id)} />
                     ))}
@@ -257,8 +264,8 @@ export default function AccountsPage() {
             {accounts.length === 0 && (
               <div className="text-center py-20 bg-white rounded-xl shadow-sm">
                 <Landmark className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-400">Henüz hesap eklenmedi</p>
-                <p className="text-sm text-slate-400 mt-1">Yukarıdaki butonu kullanarak kasa veya banka hesabı ekleyin</p>
+                <p className="text-slate-400">{t('accounts', 'empty')}</p>
+                <p className="text-sm text-slate-400 mt-1">{t('accounts', 'emptyHint')}</p>
               </div>
             )}
           </div>
@@ -271,6 +278,8 @@ export default function AccountsPage() {
           typeOverride={modal.typeOverride}
           onClose={() => setModal({ open: false })}
           onSaved={load}
+          t={t}
+          isEn={isEn}
         />
       )}
     </AppShell>

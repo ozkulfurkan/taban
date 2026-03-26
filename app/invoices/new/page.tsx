@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle } from 'lucide-react';
 
 interface LineItem {
@@ -35,6 +36,7 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
   initial: LineItem; currency: string; products: any[];
   onConfirm: (item: LineItem) => void; onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const [item, setItem] = useState<LineItem>({ ...initial });
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
@@ -48,7 +50,6 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
     setItem(prev => ({ ...prev, productId: p.id, description: p.name, unitPrice: String(p.unitPrice) }));
   };
 
-  // If initial has a productId, pre-select the product for stock display
   useEffect(() => {
     if (initial.productId && !selectedProduct) {
       const p = products.find(p => p.id === initial.productId);
@@ -68,28 +69,28 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div className="bg-emerald-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
-          <h3 className="text-white font-semibold text-base">{item.description || 'Ürün / Hizmet'}</h3>
+          <h3 className="text-white font-semibold text-base">{item.description || t('newInvoice', 'product')}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           {products.length > 0 && (
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ürün Kataloğundan Seç</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'selectFromCatalog')}</label>
               <select value={item.productId ?? ''} onChange={e => handleProductSelect(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
-                <option value="">Manuel giriş...</option>
+                <option value="">{t('newInvoice', 'manualEntry')}</option>
                 {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Ürün / Hizmet Adı</label>
-            <input value={item.description} onChange={e => set('description', e.target.value)} placeholder="Açıklama girin"
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'productName')}</label>
+            <input value={item.description} onChange={e => set('description', e.target.value)} placeholder={t('newInvoice', 'enterDescription')}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Miktar (Ad)</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'qty')}</label>
               <input
                 type="text"
                 inputMode="decimal"
@@ -99,7 +100,7 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Stok Durumu</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'stockLabel')}</label>
               <div className={`px-3 py-2 border rounded-lg text-sm ${
                 selectedProduct
                   ? selectedProduct.stock <= 0
@@ -113,7 +114,7 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Fiyat</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'unitPrice')}</label>
               <div className="flex">
                 <input
                   type="text"
@@ -126,7 +127,7 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">İndirim</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'discount')}</label>
               <div className="flex">
                 <input
                   type="text"
@@ -141,29 +142,29 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
           </div>
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-xs text-slate-500">Brüt</span>
+              <span className="text-xs text-slate-500">{t('newInvoice', 'gross')}</span>
               <span className="text-sm text-slate-600">{gross.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {currency}</span>
             </div>
             {disc > 0 && (
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs text-slate-500">İndirim (-%{disc})</span>
+                <span className="text-xs text-slate-500">{t('newInvoice', 'discountPct')}{disc})</span>
                 <span className="text-sm text-red-500">-{discAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {currency}</span>
               </div>
             )}
             <div className="flex justify-between items-center border-t border-amber-200 pt-2 mt-1">
-              <span className="text-sm font-bold text-slate-700">TOPLAM</span>
+              <span className="text-sm font-bold text-slate-700">{t('newInvoice', 'total')}</span>
               <span className="text-lg font-bold text-slate-800">{total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {currency}</span>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama (isteğe bağlı)</label>
-            <input value={item.notes} onChange={e => set('notes', e.target.value)} placeholder="isteğe bağlı açıklama girebilirsiniz"
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'optionalNotes')}</label>
+            <input value={item.notes} onChange={e => set('notes', e.target.value)} placeholder={t('newInvoice', 'enterDescription')}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
           </div>
           <button type="button" onClick={() => { if (item.description || item.unitPrice) onConfirm(item); }}
             disabled={!item.description && !item.unitPrice}
             className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
-            <Plus className="w-4 h-4" /> Ekle
+            <Plus className="w-4 h-4" /> {t('common', 'add')}
           </button>
         </div>
       </div>
@@ -176,6 +177,7 @@ function CurrencyWarning({ invoiceCurrency, customerCurrency, onConfirm, onCance
   invoiceCurrency: string; customerCurrency: string;
   onConfirm: () => void; onCancel: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
@@ -184,23 +186,18 @@ function CurrencyWarning({ invoiceCurrency, customerCurrency, onConfirm, onCance
           <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
             <AlertTriangle className="w-5 h-5 text-amber-600" />
           </div>
-          <h3 className="text-base font-semibold text-slate-800">Para Birimi Uyuşmazlığı</h3>
+          <h3 className="text-base font-semibold text-slate-800">{t('newInvoice', 'currencyMismatch')}</h3>
         </div>
         <p className="text-sm text-slate-600 mb-2">
-          Seçilen para birimi (<strong className="text-slate-800">{invoiceCurrency}</strong>), müşterinin
-          tanımlı para biriminden (<strong className="text-slate-800">{customerCurrency}</strong>) farklı.
+          <strong className="text-slate-800">{invoiceCurrency}</strong> {t('newInvoice', 'currencyMismatchDesc')} <strong className="text-slate-800">{customerCurrency}</strong>
         </p>
-        <p className="text-xs text-slate-400 mb-5">
-          Devam etmek istiyor musunuz?
-        </p>
+        <p className="text-xs text-slate-400 mb-5">{t('newInvoice', 'continueQuestion')}</p>
         <div className="flex gap-3">
-          <button onClick={onCancel}
-            className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
-            İptal
+          <button onClick={onCancel} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+            {t('common', 'cancel')}
           </button>
-          <button onClick={onConfirm}
-            className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium">
-            Yine de Devam Et
+          <button onClick={onConfirm} className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium">
+            {t('newInvoice', 'continue')}
           </button>
         </div>
       </div>
@@ -212,6 +209,7 @@ function CurrencyWarning({ invoiceCurrency, customerCurrency, onConfirm, onCance
 export default function NewInvoicePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -252,7 +250,6 @@ export default function NewInvoicePage() {
 
   const selectedCustomer = customers.find(c => c.id === form.customerId);
 
-  // Auto-set currency when customer changes
   useEffect(() => {
     if (selectedCustomer?.currency) {
       setField('currency', selectedCustomer.currency);
@@ -301,8 +298,8 @@ export default function NewInvoicePage() {
   const total = subtotal + vatAmount;
 
   const handleSubmit = async () => {
-    if (!form.customerId) return alert('Müşteri seçiniz');
-    if (items.length === 0) return alert('En az bir kalem ekleyiniz');
+    if (!form.customerId) return alert(t('newInvoice', 'selectCustomer'));
+    if (items.length === 0) return alert(t('newInvoice', 'noItems'));
     setSaving(true);
     try {
       const res = await fetch('/api/invoices', {
@@ -324,7 +321,7 @@ export default function NewInvoicePage() {
         {/* Top action bar */}
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => router.back()} className="flex items-center gap-1.5 px-3 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Geri Dön
+            <ArrowLeft className="w-4 h-4" /> {t('common', 'back')}
           </button>
           <button
             onClick={handleSubmit}
@@ -332,7 +329,7 @@ export default function NewInvoicePage() {
             className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Fatura Kaydet
+            {saving ? t('newInvoice', 'saving') : t('newInvoice', 'save')}
           </button>
         </div>
 
@@ -342,12 +339,12 @@ export default function NewInvoicePage() {
           <div className="w-full lg:w-[340px] lg:flex-shrink-0 bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="bg-blue-600 px-4 py-3">
               <p className="text-white font-semibold text-sm truncate">
-                {selectedCustomer?.name || 'Müşteri Seçilmedi'}
+                {selectedCustomer?.name || t('newInvoice', 'noCustomer')}
               </p>
             </div>
             <div className="p-4 space-y-3">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Müşteri *</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'customer')} *</label>
                 {lockedCustomerId ? (
                   <div className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg text-sm text-slate-700 font-medium">
                     {selectedCustomer?.name || lockedCustomerId}
@@ -355,38 +352,38 @@ export default function NewInvoicePage() {
                 ) : (
                   <select required value={form.customerId} onChange={e => setField('customerId', e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                    <option value="">Müşteri seçin...</option>
+                    <option value="">{t('newInvoice', 'selectCustomerPlaceholder')}</option>
                     {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Belge No</label>
-                <input value={form.invoiceNo} onChange={e => setField('invoiceNo', e.target.value)} placeholder="Otomatik oluşturulur"
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'invoiceNo')}</label>
+                <input value={form.invoiceNo} onChange={e => setField('invoiceNo', e.target.value)} placeholder={t('newInvoice', 'autoGenerated')}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Tarihi</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'date')}</label>
                 <input type="date" value={form.date} onChange={e => setField('date', e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Vadesi</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'dueDate')}</label>
                 <input type="date" value={form.dueDate} onChange={e => setField('dueDate', e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">İrsaliye No</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'irsaliyeNo')}</label>
                 <input value={form.irsaliyeNo} onChange={e => setField('irsaliyeNo', e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Sevk Tarihi</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'shippingDate')}</label>
                 <input type="date" value={form.sevkTarihi} onChange={e => setField('sevkTarihi', e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Para Birimi</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'currency')}</label>
                 <div className="relative">
                   <select
                     value={form.currency}
@@ -398,13 +395,13 @@ export default function NewInvoicePage() {
                   {selectedCustomer && form.currency !== selectedCustomer.currency && (
                     <div className="flex items-center gap-1.5 mt-1 text-xs text-amber-600">
                       <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                      Müşteri para birimi: {selectedCustomer.currency}
+                      {t('newInvoice', 'customerCurrency')} {selectedCustomer.currency}
                     </div>
                   )}
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'notes')}</label>
                 <textarea value={form.notes} onChange={e => setField('notes', e.target.value)} rows={3}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
               </div>
@@ -414,7 +411,7 @@ export default function NewInvoicePage() {
           {/* RIGHT PANEL */}
           <div className="flex-1 min-w-0 bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="bg-green-600 px-4 py-3">
-              <p className="text-white font-semibold text-sm uppercase tracking-wide">Ürün / Hizmetler</p>
+              <p className="text-white font-semibold text-sm uppercase tracking-wide">{t('newInvoice', 'productsTitle')}</p>
             </div>
             <div className="p-4 space-y-4">
               {/* Product search */}
@@ -425,13 +422,13 @@ export default function NewInvoicePage() {
                   onChange={e => { setProductSearch(e.target.value); setShowDropdown(true); }}
                   onFocus={() => setShowDropdown(true)}
                   onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-                  placeholder="Ürün isminden arayın veya barkod okutun"
+                  placeholder={t('newInvoice', 'searchProducts')}
                   className="w-full px-3 py-2.5 border-2 border-slate-200 focus:border-green-500 rounded-lg text-sm outline-none"
                 />
                 {showDropdown && productSearch.length >= 2 && (
                   <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
                     {filteredProducts.length === 0 ? (
-                      <div className="px-4 py-3 text-sm text-slate-400">Sonuç bulunamadı</div>
+                      <div className="px-4 py-3 text-sm text-slate-400">{t('common', 'noResults')}</div>
                     ) : (
                       filteredProducts.map(p => (
                         <button
@@ -449,14 +446,14 @@ export default function NewInvoicePage() {
                 )}
                 {showDropdown && productSearch.length > 0 && productSearch.length < 2 && (
                   <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-md z-10">
-                    <div className="px-4 py-3 text-sm text-slate-400">En az iki harf yazın...</div>
+                    <div className="px-4 py-3 text-sm text-slate-400">{t('newInvoice', 'typeMoreChars')}</div>
                   </div>
                 )}
               </div>
 
               <button type="button" onClick={() => openNewModal()}
                 className="flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium">
-                <Plus className="w-4 h-4" /> Manuel Kalem Ekle
+                <Plus className="w-4 h-4" /> {t('newInvoice', 'manualAddItem')}
               </button>
 
               {/* Items table */}
@@ -465,11 +462,11 @@ export default function NewInvoicePage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-xs text-slate-500 font-medium border-b">
-                        <th className="text-left pb-2">Ürün/Hizmet</th>
-                        <th className="text-right pb-2 px-2 w-20">Miktar</th>
-                        <th className="text-right pb-2 px-2 w-28">Birim Fiyat</th>
-                        <th className="text-right pb-2 px-2 w-16">İndirim</th>
-                        <th className="text-right pb-2 w-28">Toplam</th>
+                        <th className="text-left pb-2">{t('newInvoice', 'product')}</th>
+                        <th className="text-right pb-2 px-2 w-20">{t('newInvoice', 'qty')}</th>
+                        <th className="text-right pb-2 px-2 w-28">{t('newInvoice', 'unitPrice')}</th>
+                        <th className="text-right pb-2 px-2 w-16">{t('newInvoice', 'discount')}</th>
+                        <th className="text-right pb-2 w-28">{t('common', 'total')}</th>
                         <th className="w-14"></th>
                       </tr>
                     </thead>
@@ -511,24 +508,24 @@ export default function NewInvoicePage() {
               {items.length > 0 && (
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">KDV Oranı</span>
+                    <span className="text-sm text-slate-500">{t('newInvoice', 'vatRate')}</span>
                     <select value={form.vatRate} onChange={e => setField('vatRate', e.target.value)}
                       className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white w-24">
                       {VAT_RATES.map(r => <option key={r} value={r}>%{r}</option>)}
                     </select>
                   </div>
                   <div className="flex justify-between text-sm text-slate-600">
-                    <span>Ara Toplam</span>
+                    <span>{t('newInvoice', 'subtotal')}</span>
                     <span>{subtotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
                   </div>
                   {vatRate > 0 && (
                     <div className="flex justify-between text-sm text-slate-600">
-                      <span>KDV (%{vatRate})</span>
+                      <span>{t('newInvoice', 'vatAmount')} (%{vatRate})</span>
                       <span>{vatAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-base font-bold text-slate-800 border-t pt-2">
-                    <span>Genel Toplam</span>
+                    <span>{t('newInvoice', 'grandTotal')}</span>
                     <span>{total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
                   </div>
                 </div>
@@ -536,7 +533,7 @@ export default function NewInvoicePage() {
 
               {items.length === 0 && (
                 <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm">
-                  Ürün aramak için yukarıya yazın veya "Manuel Kalem Ekle" butonunu kullanın
+                  {t('newInvoice', 'emptyItemsHint')}
                 </div>
               )}
             </div>
