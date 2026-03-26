@@ -836,7 +836,6 @@ export default function CustomerDetailPage() {
                 <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
                   <th className="px-4 py-2 text-left">Tarih</th>
                   <th className="px-4 py-2 text-left">No</th>
-                  <th className="px-4 py-2 text-center">Durum</th>
                   <th className="px-4 py-2 text-right">Tutar</th>
                   <th className="w-8"></th>
                 </tr>
@@ -846,9 +845,6 @@ export default function CustomerDetailPage() {
                   <tr key={inv.id} className="hover:bg-slate-50/50">
                     <td className="px-4 py-2.5 text-slate-500">{new Date(inv.date).toLocaleDateString('tr-TR')}</td>
                     <td className="px-4 py-2.5 font-medium text-slate-700">{inv.invoiceNo}</td>
-                    <td className="px-4 py-2.5 text-center">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[inv.status]}`}>{STATUS_LABEL[inv.status]}</span>
-                    </td>
                     <td className="px-4 py-2.5 text-right font-semibold text-slate-800">
                       {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                       <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
@@ -875,6 +871,43 @@ export default function CustomerDetailPage() {
             </>
           )}
         </div>
+
+        {/* Return Invoices */}
+        {customer.returns?.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 bg-red-700">
+              <h2 className="font-semibold text-white text-sm uppercase tracking-wide">İadeler</h2>
+              <span className="text-red-200 text-xs">{customer.returns.length} iade</span>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+                  <th className="px-4 py-2 text-left">Tarih</th>
+                  <th className="px-4 py-2 text-left">No</th>
+                  <th className="px-4 py-2 text-right">Tutar</th>
+                  <th className="w-8"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {customer.returns.map((inv: any) => (
+                  <tr key={inv.id} className="hover:bg-red-50/30">
+                    <td className="px-4 py-2.5 text-slate-500">{new Date(inv.date).toLocaleDateString('tr-TR')}</td>
+                    <td className="px-4 py-2.5 font-medium text-red-700">{inv.invoiceNo}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-red-600">
+                      {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                      <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
+                    </td>
+                    <td className="pr-3">
+                      <Link href={`/invoices/${inv.id}`} className="p-1.5 text-slate-300 hover:text-red-500 block transition-colors">
+                        <ChevronRight className="w-4 h-4" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Previous Payments (merged with checks) */}
         {(() => {

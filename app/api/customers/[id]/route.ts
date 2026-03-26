@@ -8,26 +8,33 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
 
-  const customer = await prisma.customer.findFirst({
-    where: { id: params.id, companyId: user.companyId },
-    include: {
-      invoices: { orderBy: { date: 'desc' } },
-      payments: { orderBy: { date: 'desc' } },
-    },
-  });
+  const [customer, totalInvoiced, totalPaid] = await Promise.all([
+    prisma.customer.findFirst({
+      where: { id: params.id, companyId: user.companyId },
+      include: {
+        invoices: { orderBy: { date: 'desc' } },
+        payments: { orderBy: { date: 'desc' } },
+      },
+    }),
+    prisma.invoice.aggregate({
+      where: { customerId: params.id },
+      _sum: { total: true },
+    }),
+    prisma.payment.aggregate({
+      where: { customerId: params.id, type: 'RECEIVED' },
+      _sum: { amount: true },
+    }),
+  ]);
   if (!customer) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const totalInvoiced = await prisma.invoice.aggregate({
-    where: { customerId: params.id },
-    _sum: { total: true },
-  });
-  const totalPaid = await prisma.payment.aggregate({
-    where: { customerId: params.id, type: 'RECEIVED' },
-    _sum: { amount: true },
-  });
+  // Split regular sales from return invoices
+  const salesInvoices = customer.invoices.filter((inv: any) => !inv.isReturn);
+  const returnInvoices = customer.invoices.filter((inv: any) => inv.isReturn);
 
   return NextResponse.json({
     ...customer,
+    invoices: salesInvoices,
+    returns: returnInvoices,
     totalInvoiced: totalInvoiced._sum.total ?? 0,
     totalPaid: totalPaid._sum.amount ?? 0,
     balance: (totalInvoiced._sum.total ?? 0) - (totalPaid._sum.amount ?? 0),
