@@ -362,9 +362,12 @@ function AlışModal({ supplier, onClose, onSaved }: {
     } finally { setCreatingProduct(false); }
   };
 
+  const validItems = items.filter(i => parseFloat(i.qty) > 0 && parseFloat(i.unitPrice) > 0);
+  const canSavePurchase = validItems.length > 0 && total > 0;
+
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (total <= 0) return;
+    if (!canSavePurchase) return;
     setSaving(true);
     try {
       await fetch('/api/purchases', {
@@ -377,9 +380,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
           currency: form.currency,
           total,
           notes: form.notes || null,
-          items: items
-            .filter(i => i.qty && parseFloat(i.qty) > 0)
-            .map(i => ({ productId: i.productId || null, qty: i.qty, unitPrice: i.unitPrice })),
+          items: validItems.map(i => ({ productId: i.productId || null, qty: i.qty, unitPrice: i.unitPrice })),
         }),
       });
       onSaved();
@@ -477,9 +478,13 @@ function AlışModal({ supplier, onClose, onSaved }: {
                         </div>
                         <div>
                           <label className="text-slate-400 mb-0.5 block">Birim Fiyat</label>
-                          <input type="number" step="0.01" min="0" value={item.unitPrice}
+                          <input type="number" step="0.01" min="0.01" value={item.unitPrice}
                             onChange={e => updateItem(item.id, 'unitPrice', e.target.value)}
-                            className="w-full px-2 py-1 border border-slate-200 rounded text-right outline-none focus:ring-1 focus:ring-indigo-400" />
+                            className={`w-full px-2 py-1 border rounded text-right outline-none focus:ring-1 focus:ring-indigo-400 ${
+                              parseFloat(item.qty) > 0 && !parseFloat(item.unitPrice)
+                                ? 'border-orange-300 bg-orange-50'
+                                : 'border-slate-200'
+                            }`} />
                         </div>
                         <div>
                           <label className="text-slate-400 mb-0.5 block">{t('supplierDetail', 'amount')}</label>
@@ -543,7 +548,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
           <div className="flex gap-3 p-5 border-t flex-shrink-0">
             <button type="button" onClick={onClose}
               className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">{t('common', 'cancel')}</button>
-            <button type="submit" disabled={saving || total <= 0}
+            <button type="submit" disabled={saving || !canSavePurchase}
               className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />} {t('common', 'save')}
             </button>
