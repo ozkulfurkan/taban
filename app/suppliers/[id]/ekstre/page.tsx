@@ -70,17 +70,52 @@ export default function SupplierEkstrePage() {
           bakiye: balance,
         });
       } else {
-        const isIade = ev.notes?.toLowerCase().includes('iade');
-        balance -= ev.amount;
-        rows.push({
-          id: ev.id,
-          date: ev.date,
-          hareket: isIade ? 'İade' : 'Ödeme',
-          aciklama: [ev.method, ev.notes && ev.notes !== 'İade' ? ev.notes : ''].filter(Boolean).join(' — '),
-          borc: 0,
-          alacak: ev.amount,
-          bakiye: balance,
-        });
+        const method = ev.method || '';
+        const notesStr = ev.notes || '';
+        if (method === 'Borç Fişi') {
+          balance += ev.amount;
+          rows.push({
+            id: ev.id,
+            date: ev.date,
+            hareket: 'Borç Fişi',
+            aciklama: notesStr.replace(/^Vade:[^\s|]+\s*\|?\s*/, ''),
+            borc: ev.amount,
+            alacak: 0,
+            bakiye: balance,
+          });
+        } else if (method === 'Alacak Fişi') {
+          balance -= ev.amount;
+          rows.push({
+            id: ev.id,
+            date: ev.date,
+            hareket: 'Alacak Fişi',
+            aciklama: notesStr.replace(/^Vade:[^\s|]+\s*\|?\s*/, ''),
+            borc: 0,
+            alacak: ev.amount,
+            bakiye: balance,
+          });
+        } else if (method === 'Bakiye Düzeltme') {
+          const isPositive = notesStr.startsWith('+');
+          if (isPositive) {
+            balance += ev.amount;
+            rows.push({ id: ev.id, date: ev.date, hareket: 'Bakiye Düzeltme', aciklama: notesStr.replace(/^[+-]\s*\|?\s*/, ''), borc: ev.amount, alacak: 0, bakiye: balance });
+          } else {
+            balance -= ev.amount;
+            rows.push({ id: ev.id, date: ev.date, hareket: 'Bakiye Düzeltme', aciklama: notesStr.replace(/^[+-]\s*\|?\s*/, ''), borc: 0, alacak: ev.amount, bakiye: balance });
+          }
+        } else {
+          const isIade = notesStr.toLowerCase().includes('iade');
+          balance -= ev.amount;
+          rows.push({
+            id: ev.id,
+            date: ev.date,
+            hareket: isIade ? 'İade' : 'Ödeme',
+            aciklama: [method, notesStr && notesStr !== 'İade' ? notesStr : ''].filter(Boolean).join(' — '),
+            borc: 0,
+            alacak: ev.amount,
+            bakiye: balance,
+          });
+        }
       }
     });
   }
@@ -237,6 +272,10 @@ export default function SupplierEkstrePage() {
                             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                               r.hareket === 'Alış' ? 'bg-indigo-100 text-indigo-700' :
                               r.hareket === 'Ödeme' ? 'bg-teal-100 text-teal-700' :
+                              r.hareket === 'İade' ? 'bg-red-100 text-red-700' :
+                              r.hareket === 'Borç Fişi' ? 'bg-orange-100 text-orange-700' :
+                              r.hareket === 'Alacak Fişi' ? 'bg-purple-100 text-purple-700' :
+                              r.hareket === 'Bakiye Düzeltme' ? 'bg-slate-100 text-slate-600' :
                               'bg-amber-100 text-amber-700'
                             }`}>{r.hareket}</span>
                           </td>

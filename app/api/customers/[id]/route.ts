@@ -8,36 +8,41 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
 
-  const [customer, totalInvoiced, totalPaid] = await Promise.all([
-    prisma.customer.findFirst({
-      where: { id: params.id, companyId: user.companyId },
-      include: {
-        invoices: { orderBy: { date: 'desc' } },
-        payments: { orderBy: { date: 'desc' } },
-      },
-    }),
-    prisma.invoice.aggregate({
-      where: { customerId: params.id },
-      _sum: { total: true },
-    }),
-    prisma.payment.aggregate({
-      where: { customerId: params.id, type: 'RECEIVED' },
-      _sum: { amount: true },
-    }),
-  ]);
+  const customer = await prisma.customer.findFirst({
+    where: { id: params.id, companyId: user.companyId },
+    include: {
+      invoices: { orderBy: { date: 'desc' } },
+      payments: { orderBy: { date: 'desc' }, select: { amount: true, method: true, notes: true, id: true, date: true, currency: true } },
+    },
+  });
   if (!customer) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Split regular sales from return invoices
   const salesInvoices = customer.invoices.filter((inv: any) => !inv.isReturn);
   const returnInvoices = customer.invoices.filter((inv: any) => inv.isReturn);
+
+  const totalNormalInvoiced = salesInvoices.reduce((s: number, i: any) => s + i.total, 0);
+  const totalReturnInvoiced = returnInvoices.reduce((s: number, i: any) => s + i.total, 0);
+
+  let balanceDelta = 0;
+  let totalPaid = 0;
+  for (const p of customer.payments) {
+    if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
+      balanceDelta += p.amount;
+    } else {
+      balanceDelta -= p.amount;
+      totalPaid += p.amount;
+    }
+  }
+
+  const balance = totalNormalInvoiced - totalReturnInvoiced + balanceDelta;
 
   return NextResponse.json({
     ...customer,
     invoices: salesInvoices,
     returns: returnInvoices,
-    totalInvoiced: totalInvoiced._sum.total ?? 0,
-    totalPaid: totalPaid._sum.amount ?? 0,
-    balance: (totalInvoiced._sum.total ?? 0) - (totalPaid._sum.amount ?? 0),
+    totalInvoiced: totalNormalInvoiced,
+    totalPaid,
+    balance,
   });
 }
 

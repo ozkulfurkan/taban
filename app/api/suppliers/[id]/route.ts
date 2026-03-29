@@ -12,25 +12,31 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     where: { id: params.id, companyId: user.companyId },
     include: {
       purchases: { orderBy: { date: 'desc' } },
-      payments: { orderBy: { date: 'desc' } },
+      payments: { orderBy: { date: 'desc' }, select: { amount: true, method: true, notes: true, id: true, date: true, currency: true } },
     },
   });
   if (!supplier) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const totalPurchased = await prisma.purchase.aggregate({
-    where: { supplierId: params.id },
-    _sum: { total: true },
-  });
-  const totalPaid = await prisma.payment.aggregate({
-    where: { supplierId: params.id, type: 'PAID' },
-    _sum: { amount: true },
-  });
+  const totalPurchased = supplier.purchases.reduce((s: number, p: any) => s + p.total, 0);
+
+  let balanceDelta = 0;
+  let totalPaid = 0;
+  for (const p of supplier.payments) {
+    if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
+      balanceDelta += p.amount;
+    } else {
+      balanceDelta -= p.amount;
+      totalPaid += p.amount;
+    }
+  }
+
+  const balance = totalPurchased + balanceDelta;
 
   return NextResponse.json({
     ...supplier,
-    totalPurchased: totalPurchased._sum.total ?? 0,
-    totalPaid: totalPaid._sum.amount ?? 0,
-    balance: (totalPurchased._sum.total ?? 0) - (totalPaid._sum.amount ?? 0),
+    totalPurchased,
+    totalPaid,
+    balance,
   });
 }
 

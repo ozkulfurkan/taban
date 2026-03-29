@@ -274,6 +274,178 @@ function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () 
   );
 }
 
+function BorcAlacakFisModal({ customer, onClose, onSaved }: { customer: any; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    tip: 'Alacak Fişi',
+    date: new Date().toISOString().split('T')[0],
+    dueDate: new Date().toISOString().split('T')[0],
+    amount: '',
+    notes: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
+
+  const handle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.amount || parseFloat(form.amount) <= 0) return;
+    setSaving(true);
+    try {
+      const notesArr = [form.dueDate ? `Vade:${form.dueDate}` : '', form.notes].filter(Boolean);
+      await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: customer.id,
+          amount: parseFloat(form.amount),
+          currency: customer.currency || 'TRY',
+          date: form.date,
+          method: form.tip,
+          notes: notesArr.join(' | ') || null,
+        }),
+      });
+      onSaved();
+      onClose();
+    } catch (err) { console.error(err); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+        <div className="bg-teal-500 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <h3 className="text-white font-semibold">Borç-Alacak Fişleri</h3>
+          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+        <form onSubmit={handle} className="p-5 space-y-3">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 text-xs text-yellow-800">
+            Herhangi bir tahsilat, ödeme, satış ya da iade işlemi olmadan müşterinizin bakiyesini değiştirmek için borç ya da alacak fişi kaydı oluşturabilirsiniz. Müşterinizin güncel borç bakiyesi burada gireceğiniz tutar kadar değişecek ve ekstresine yansıyacaktır.
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">İşlem Tipi</label>
+            <select value={form.tip} onChange={e => set('tip', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+              <option>Alacak Fişi</option>
+              <option>Borç Fişi</option>
+            </select>
+            <p className="text-xs mt-1 text-slate-400">
+              {form.tip === 'Borç Fişi' ? 'müşteri borçlanacak' : 'müşteri alacaklanacak'}
+            </p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">İşlem Tarihi</label>
+            <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Vade Tarihi</label>
+            <input type="date" value={form.dueDate} onChange={e => set('dueDate', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Tutar</label>
+            <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
+            <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={3}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none resize-none" />
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition-colors">
+              ✕ Vazgeç
+            </button>
+            <button type="submit" disabled={saving || !form.amount || parseFloat(form.amount) <= 0}
+              className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} ✓ Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function BakiyeDuzeltModal({ customer, currentBalance, onClose, onSaved }: {
+  customer: any; currentBalance: number; onClose: () => void; onSaved: () => void;
+}) {
+  const [targetBalance, setTargetBalance] = useState('');
+  const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const target = parseFloat(targetBalance);
+  const delta = isNaN(target) ? null : target - currentBalance;
+
+  const handle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (delta === null || delta === 0) return;
+    setSaving(true);
+    try {
+      const direction = delta > 0 ? '+' : '-';
+      await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: customer.id,
+          amount: Math.abs(delta),
+          currency: customer.currency || 'TRY',
+          date: new Date().toISOString().split('T')[0],
+          method: 'Bakiye Düzeltme',
+          notes: direction + (notes ? ' | ' + notes : ''),
+        }),
+      });
+      onSaved();
+      onClose();
+    } catch (err) { console.error(err); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+        <div className="bg-teal-500 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <h3 className="text-white font-semibold">Bakiye Değiştirme</h3>
+          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+        <form onSubmit={handle} className="p-5 space-y-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600">
+            Mevcut Bakiye: <span className="font-semibold text-slate-800">
+              {currentBalance.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {customer.currency || 'TRY'}
+            </span>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">
+              Yeni Bakiye ({customer.currency || 'TL'})
+            </label>
+            <input required type="number" step="0.01" value={targetBalance} onChange={e => setTargetBalance(e.target.value)}
+              placeholder="0,00"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
+            {delta !== null && delta !== 0 && (
+              <p className={`text-xs mt-1 ${delta > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                {delta > 0 ? `+${delta.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} borç eklenir` : `${Math.abs(delta).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} borç silinir`}
+              </p>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none resize-none" />
+          </div>
+          <div className="flex justify-end">
+            <button type="submit" disabled={saving || delta === null || delta === 0}
+              className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50 transition-colors">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : '💾'} Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 const ISLEM_OPTIONS = [
   'Müşteriden Alınan Çek Kaydı',
   'Müşteriye Verilen Çek Kaydı',
@@ -536,6 +708,8 @@ export default function CustomerDetailPage() {
   const [showIade, setShowIade] = useState(false);
   const [showTahsilat, setShowTahsilat] = useState(false);
   const [showCek, setShowCek] = useState(false);
+  const [showBorcFis, setShowBorcFis] = useState(false);
+  const [showBakiyeDuzelt, setShowBakiyeDuzelt] = useState(false);
   const [tahsilatDropdown, setTahsilatDropdown] = useState(false);
   const [successAmount, setSuccessAmount] = useState<number | null>(null);
   const [invoicesShown, setInvoicesShown] = useState(10);
@@ -797,7 +971,7 @@ export default function CustomerDetailPage() {
               onClick={() => setTahsilatDropdown(d => !d)}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
             >
-              <Banknote className="w-4 h-4" /> {t('customerDetail', 'collect')} <ChevronDown className="w-3 h-3" />
+              <Banknote className="w-4 h-4" /> Tahsilat/Ödeme <ChevronDown className="w-3 h-3" />
             </button>
             {tahsilatDropdown && (
               <>
@@ -814,6 +988,15 @@ export default function CustomerDetailPage() {
                   <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-400 hover:bg-slate-50 cursor-not-allowed"
                     onClick={() => setTahsilatDropdown(false)}>
                     <FileText className="w-4 h-4" /> Senet (yakında)
+                  </button>
+                  <hr className="border-slate-100" />
+                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                    onClick={() => { setShowBorcFis(true); setTahsilatDropdown(false); }}>
+                    <FileText className="w-4 h-4 text-teal-500" /> Borç/Alacak Fişi
+                  </button>
+                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                    onClick={() => { setShowBakiyeDuzelt(true); setTahsilatDropdown(false); }}>
+                    <PlusCircle className="w-4 h-4 text-slate-500" /> Bakiye Düzelt
                   </button>
                 </div>
               </>
@@ -1019,6 +1202,21 @@ export default function CustomerDetailPage() {
           customer={customer}
           onClose={() => setShowCek(false)}
           onSaved={() => { setShowCek(false); load(); }}
+        />
+      )}
+      {showBorcFis && (
+        <BorcAlacakFisModal
+          customer={customer}
+          onClose={() => setShowBorcFis(false)}
+          onSaved={() => { setShowBorcFis(false); load(); }}
+        />
+      )}
+      {showBakiyeDuzelt && (
+        <BakiyeDuzeltModal
+          customer={customer}
+          currentBalance={customer.balance ?? 0}
+          onClose={() => setShowBakiyeDuzelt(false)}
+          onSaved={() => { setShowBakiyeDuzelt(false); load(); }}
         />
       )}
     </AppShell>

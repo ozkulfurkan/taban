@@ -62,44 +62,114 @@ export default function CustomerEkstrePage() {
 
     events.forEach(ev => {
       if (ev._type === 'invoice') {
-        balance += ev.total;
-        rows.push({
-          id: ev.id,
-          date: ev.date,
-          dueDate: ev.dueDate,
-          hareket: 'Satış',
-          belgeNo: ev.invoiceNo,
-          aciklama: ev.notes || '',
-          borc: ev.total,
-          alacak: 0,
-          bakiye: balance,
-        });
-        (ev.items || []).forEach((item: any, i: number) => {
+        if (ev.isReturn) {
+          // İade faturası → alacak sütunu, bakiye azalır
+          balance -= ev.total;
           rows.push({
-            id: `${ev.id}-item-${i}`,
+            id: ev.id,
             date: ev.date,
-            hareket: '',
-            aciklama: item.description,
-            miktar: item.quantity ? `${item.quantity.toLocaleString('tr-TR')}` : '',
-            fiyat: item.unitPrice,
+            dueDate: ev.dueDate,
+            hareket: 'İade',
+            belgeNo: ev.invoiceNo,
+            aciklama: ev.notes || '',
             borc: 0,
+            alacak: ev.total,
+            bakiye: balance,
+          });
+        } else {
+          balance += ev.total;
+          rows.push({
+            id: ev.id,
+            date: ev.date,
+            dueDate: ev.dueDate,
+            hareket: 'Satış',
+            belgeNo: ev.invoiceNo,
+            aciklama: ev.notes || '',
+            borc: ev.total,
             alacak: 0,
             bakiye: balance,
-            isSubRow: true,
           });
-        });
+          (ev.items || []).forEach((item: any, i: number) => {
+            rows.push({
+              id: `${ev.id}-item-${i}`,
+              date: ev.date,
+              hareket: '',
+              aciklama: item.description,
+              miktar: item.quantity ? `${item.quantity.toLocaleString('tr-TR')}` : '',
+              fiyat: item.unitPrice,
+              borc: 0,
+              alacak: 0,
+              bakiye: balance,
+              isSubRow: true,
+            });
+          });
+        }
       } else {
-        const isIade = ev.notes?.toLowerCase().includes('iade');
-        balance -= ev.amount;
-        rows.push({
-          id: ev.id,
-          date: ev.date,
-          hareket: isIade ? 'İade' : 'Tahsilat',
-          aciklama: [ev.method, ev.notes && ev.notes !== 'İade' ? ev.notes : ''].filter(Boolean).join(' — '),
-          borc: 0,
-          alacak: ev.amount,
-          bakiye: balance,
-        });
+        // Ödeme / Tahsilat
+        const method = ev.method || '';
+        const notesStr = ev.notes || '';
+        if (method === 'Borç Fişi') {
+          // Borç fişi → bakiye artar (müşteri borçlanır)
+          balance += ev.amount;
+          rows.push({
+            id: ev.id,
+            date: ev.date,
+            hareket: 'Borç Fişi',
+            aciklama: notesStr.replace(/^Vade:[^\s|]+\s*\|?\s*/, ''),
+            borc: ev.amount,
+            alacak: 0,
+            bakiye: balance,
+          });
+        } else if (method === 'Alacak Fişi') {
+          // Alacak fişi → bakiye azalır (müşteri alacaklanır)
+          balance -= ev.amount;
+          rows.push({
+            id: ev.id,
+            date: ev.date,
+            hareket: 'Alacak Fişi',
+            aciklama: notesStr.replace(/^Vade:[^\s|]+\s*\|?\s*/, ''),
+            borc: 0,
+            alacak: ev.amount,
+            bakiye: balance,
+          });
+        } else if (method === 'Bakiye Düzeltme') {
+          const isPositive = notesStr.startsWith('+');
+          if (isPositive) {
+            balance += ev.amount;
+            rows.push({
+              id: ev.id,
+              date: ev.date,
+              hareket: 'Bakiye Düzeltme',
+              aciklama: notesStr.replace(/^[+-]\s*\|?\s*/, ''),
+              borc: ev.amount,
+              alacak: 0,
+              bakiye: balance,
+            });
+          } else {
+            balance -= ev.amount;
+            rows.push({
+              id: ev.id,
+              date: ev.date,
+              hareket: 'Bakiye Düzeltme',
+              aciklama: notesStr.replace(/^[+-]\s*\|?\s*/, ''),
+              borc: 0,
+              alacak: ev.amount,
+              bakiye: balance,
+            });
+          }
+        } else {
+          const isIade = notesStr.toLowerCase().includes('iade');
+          balance -= ev.amount;
+          rows.push({
+            id: ev.id,
+            date: ev.date,
+            hareket: isIade ? 'İade' : 'Tahsilat',
+            aciklama: [method, notesStr && notesStr !== 'İade' ? notesStr : ''].filter(Boolean).join(' — '),
+            borc: 0,
+            alacak: ev.amount,
+            bakiye: balance,
+          });
+        }
       }
     });
   }
@@ -275,7 +345,7 @@ export default function CustomerEkstrePage() {
                     <tbody>
                       {rows.map(r => (
                         <tr key={r.id}
-                          className={r.isSubRow ? 'bg-amber-50 border-b border-amber-100' : 'border-b border-slate-100 hover:bg-slate-50/50'}>
+                          className={r.isSubRow ? 'bg-amber-50 border-b border-amber-100' : r.hareket === 'İade' ? 'border-b border-red-100 bg-red-50/40' : 'border-b border-slate-100 hover:bg-slate-50/50'}>
                           <td className="px-3 py-2 text-slate-500 whitespace-nowrap">
                             {!r.isSubRow ? fmtDate(r.date) : ''}
                           </td>
@@ -287,6 +357,10 @@ export default function CustomerEkstrePage() {
                               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                                 r.hareket === 'Satış' ? 'bg-blue-100 text-blue-700' :
                                 r.hareket === 'Tahsilat' ? 'bg-emerald-100 text-emerald-700' :
+                                r.hareket === 'İade' ? 'bg-red-100 text-red-700' :
+                                r.hareket === 'Borç Fişi' ? 'bg-orange-100 text-orange-700' :
+                                r.hareket === 'Alacak Fişi' ? 'bg-purple-100 text-purple-700' :
+                                r.hareket === 'Bakiye Düzeltme' ? 'bg-slate-100 text-slate-600' :
                                 'bg-amber-100 text-amber-700'
                               }`}>{r.hareket}</span>
                             )}

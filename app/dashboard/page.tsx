@@ -12,11 +12,6 @@ import Link from 'next/link';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
 const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
-const fmtShort = (n: number): string => {
-  if (n >= 1_000_000) return (n / 1_000_000).toLocaleString('tr-TR', { minimumFractionDigits: 1 }) + 'M';
-  if (n >= 1_000) return (n / 1_000).toLocaleString('tr-TR', { minimumFractionDigits: 1 }) + 'B';
-  return fmt(n);
-};
 
 const ASSET_KEYS = ['kasa', 'pos', 'cek', 'senet', 'stok', 'acikHesap', 'calisanlar'];
 
@@ -132,7 +127,7 @@ export default function DashboardPage() {
                 <TrendingUp className="w-4 h-4 text-orange-500" />
               </div>
             </div>
-            <p className="text-xl font-bold text-slate-800">{fmtShort(data?.totalReceivables ?? 0)}</p>
+            <p className="text-xl font-bold text-slate-800">{fmt(data?.totalReceivables ?? 0)}</p>
             <p className="text-xs text-slate-400 mt-0.5">TL</p>
           </div>
 
@@ -143,7 +138,7 @@ export default function DashboardPage() {
                 <TrendingDown className="w-4 h-4 text-red-500" />
               </div>
             </div>
-            <p className="text-xl font-bold text-slate-800">{fmtShort(data?.totalPayables ?? 0)}</p>
+            <p className="text-xl font-bold text-slate-800">{fmt(data?.totalPayables ?? 0)}</p>
             <p className="text-xs text-slate-400 mt-0.5">TL</p>
           </div>
 
@@ -154,7 +149,7 @@ export default function DashboardPage() {
                 <DollarSign className="w-4 h-4 text-blue-500" />
               </div>
             </div>
-            <p className="text-xl font-bold text-slate-800">{fmtShort(data?.dailyCiro ?? 0)}</p>
+            <p className="text-xl font-bold text-slate-800">{fmt(data?.dailyCiro ?? 0)}</p>
             <p className="text-xs text-slate-400 mt-0.5">{t('dashboard', 'today')}</p>
           </div>
 
@@ -165,7 +160,7 @@ export default function DashboardPage() {
                 <BarChart2 className="w-4 h-4 text-emerald-500" />
               </div>
             </div>
-            <p className="text-xl font-bold text-slate-800">{fmtShort(data?.monthlyCiro ?? 0)}</p>
+            <p className="text-xl font-bold text-slate-800">{fmt(data?.monthlyCiro ?? 0)}</p>
             <p className="text-xs text-slate-400 mt-0.5">{t('dashboard', 'thisMonthLabel')}</p>
           </div>
         </div>
