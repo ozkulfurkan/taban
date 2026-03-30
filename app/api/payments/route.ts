@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     invoiceId, purchaseId, customerId, supplierId,
     amount, currency, date, method, notes,
     accountId, originalAmount, originalCurrency, exchangeRate,
+    _type,
   } = body;
 
   if (!amount || parseFloat(amount) <= 0) {
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     const p = await tx.payment.create({
       data: {
         companyId: user.companyId,
-        type: customerId ? 'RECEIVED' : 'PAID',
+        type: (_type as any) || (customerId ? 'RECEIVED' : 'PAID'),
         customerId: customerId || null,
         supplierId: supplierId || null,
         invoiceId: invoiceId || null,

@@ -38,6 +38,7 @@ export default function CekPortfoyuPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ cek: any; durum: string } | null>(null);
 
   const DURUM_LABEL: Record<string, string> = {
     PORTFOY: t('checks', 'statusPortfoy'),
@@ -84,12 +85,20 @@ export default function CekPortfoyuPage() {
     setPage(1);
   };
 
-  const handleDurumChange = async (id: string, durum: string) => {
+  const handleDurumChange = (cek: any, durum: string) => {
     setOpenDropdown(null);
+    if (cek.durum === 'TEDARIKCI_VERILDI' && durum === 'PORTFOY') {
+      setConfirmModal({ cek, durum });
+      return;
+    }
+    applyDurumChange(cek.id, durum, false);
+  };
+
+  const applyDurumChange = async (id: string, durum: string, removeSupplierPayment: boolean) => {
     await fetch(`/api/cek/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ durum }),
+      body: JSON.stringify({ durum, ...(removeSupplierPayment ? { removeSupplierPayment: true } : {}) }),
     });
     load();
   };
@@ -213,7 +222,7 @@ export default function CekPortfoyuPage() {
                               <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 z-20 min-w-[220px] overflow-hidden">
                                 {ISLEMLER.filter(i => i.key !== c.durum).map(i => (
                                   <button key={i.key}
-                                    onClick={() => handleDurumChange(c.id, i.key)}
+                                    onClick={() => handleDurumChange(c, i.key)}
                                     className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
                                     {i.label}
                                   </button>
@@ -253,6 +262,45 @@ export default function CekPortfoyuPage() {
           </div>
         )}
       </div>
+      {/* Confirm modal: TEDARIKCI_VERILDI → PORTFOY */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-amber-500 text-lg">⚠</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">Çek Portföye Geri Alınıyor</h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  <span className="font-semibold text-slate-700">{confirmModal.cek.borclu}</span> çeki tedarikçiye verilmiş durumda.
+                </p>
+              </div>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+              Portföye geri alındığında tedarikçi hesabından ilgili çek ödemesi <span className="font-semibold">otomatik olarak silinecek</span> ve bakiye güncellecek.
+            </div>
+            <div className="flex gap-2 justify-end pt-1">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                Vazgeç
+              </button>
+              <button
+                onClick={() => {
+                  applyDurumChange(confirmModal.cek.id, confirmModal.durum, true);
+                  setConfirmModal(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors"
+              >
+                Evet, Portföye Al
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

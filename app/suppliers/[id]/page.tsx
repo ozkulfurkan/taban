@@ -732,6 +732,446 @@ function AlışModal({ supplier, onClose, onSaved }: {
   );
 }
 
+// ── Tedarikçi Çek Ödeme ────────────────────────────────────────────────────
+const BANKS = [
+  'Akbank', 'Garanti BBVA', 'İş Bankası', 'Yapı Kredi', 'Ziraat Bankası',
+  'Halkbank', 'VakıfBank', 'DenizBank', 'QNB Finansbank', 'Fibabanka',
+  'TEB', 'HSBC', 'ING', 'Şekerbank', 'Kuveyt Türk', 'Albaraka Türk', 'Diğer',
+];
+const fmtC = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+const fmtDateC = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
+
+function calcAvgVadeC(checks: any[]) {
+  const total = checks.reduce((s, c) => s + Number(c.tutar), 0);
+  if (!total) return null;
+  const today = Date.now();
+  const weightedDays = checks.reduce((s, c) => {
+    return s + Number(c.tutar) * ((new Date(c.vadesi).getTime() - today) / 86400000);
+  }, 0);
+  const avgDays = Math.round(weightedDays / total);
+  return { date: new Date(today + avgDays * 86400000), days: avgDays };
+}
+
+function KendiCekTanimModal({ supplierName, onClose, onAdd }: {
+  supplierName: string; onClose: () => void; onAdd: (cek: any) => void;
+}) {
+  const [form, setForm] = useState({
+    borclu: supplierName,
+    islemTarihi: new Date().toISOString().split('T')[0],
+    vadesi: '',
+    tutar: '',
+    currency: 'TRY',
+    seriNo: '',
+    bankasi: '',
+  });
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="bg-teal-500 rounded-t-2xl px-6 py-4 flex items-center justify-between">
+          <h3 className="text-white font-bold">Çek Tanımı (Kendi Çekiniz)</h3>
+          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">İşlem Tarihi</label>
+              <input type="date" value={form.islemTarihi} onChange={e => set('islemTarihi', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">Vadesi *</label>
+              <input type="date" value={form.vadesi} onChange={e => set('vadesi', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Borçlu</label>
+            <input value={form.borclu} onChange={e => set('borclu', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Tutar *</label>
+            <div className="flex gap-2">
+              <input type="number" placeholder="0.00" value={form.tutar} onChange={e => set('tutar', e.target.value)}
+                className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+              <select value={form.currency} onChange={e => set('currency', e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500 bg-white">
+                <option>TRY</option><option>USD</option><option>EUR</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Seri No</label>
+            <input value={form.seriNo} onChange={e => set('seriNo', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Bankası</label>
+            <select value={form.bankasi} onChange={e => set('bankasi', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500 bg-white">
+              <option value="">Seçin</option>
+              {BANKS.map(b => <option key={b}>{b}</option>)}
+            </select>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={onClose}
+              className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">İptal</button>
+            <button onClick={() => { if (!form.vadesi || !form.tutar) return; onAdd({ ...form, id: Math.random().toString(36).slice(2), _kendi: true }); onClose(); }}
+              disabled={!form.vadesi || !form.tutar}
+              className="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg disabled:opacity-50">Tamam</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PortfoySecimModal({ onClose, onConfirm }: {
+  onClose: () => void; onConfirm: (checks: any[], verilisTarihi: string) => void;
+}) {
+  const [cekler, setCekler] = useState<any[]>([]);
+  const [loadingC, setLoadingC] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
+  const [dropOpen, setDropOpen] = useState(false);
+  const [verilisTarihi, setVerilisTarihi] = useState(new Date().toISOString().split('T')[0]);
+
+  useEffect(() => {
+    fetch('/api/cek?durum=PORTFOY&all=true')
+      .then(r => r.json())
+      .then(d => { setCekler(d.cekler || []); setLoadingC(false); });
+  }, []);
+
+  const toggle = (id: string) =>
+    setSelectedIds(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+
+  const filtered = cekler.filter(c =>
+    `${c.borclu} ${c.seriNo || ''} ${c.tutar} ${c.customer?.name || ''}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+        <div className="bg-teal-500 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <h3 className="text-white font-bold">Portföydeki Müşteri Çekleri</h3>
+          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Çeki Verdiğiniz Tarih</label>
+            <input type="date" value={verilisTarihi} onChange={e => setVerilisTarihi(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Vereceğiniz çekleri seçin</label>
+            <div className="relative">
+              <button onClick={() => setDropOpen(o => !o)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white flex items-center justify-between hover:bg-slate-50">
+                <span className="text-slate-600">
+                  {selectedIds.length === 0 ? 'Çek seçin...' : `${selectedIds.length} çek seçildi`}
+                </span>
+                <ChevronDown className="w-4 h-4 text-slate-400" />
+              </button>
+              {dropOpen && (
+                <div className="absolute top-full left-0 right-0 z-20 bg-white border border-slate-200 rounded-lg shadow-xl mt-1 flex flex-col" style={{ maxHeight: 280 }}>
+                  <div className="p-2 border-b border-slate-100 flex-shrink-0">
+                    <div className="flex items-center gap-2 px-2 py-1.5 border border-slate-200 rounded-lg">
+                      <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Arama..."
+                        className="outline-none text-sm flex-1" autoFocus />
+                    </div>
+                  </div>
+                  <div className="overflow-y-auto">
+                    {loadingC ? (
+                      <div className="py-4 text-center"><Loader2 className="w-5 h-5 animate-spin text-teal-500 mx-auto" /></div>
+                    ) : filtered.length === 0 ? (
+                      <div className="py-4 text-center text-slate-400 text-sm">Portföyde çek bulunamadı</div>
+                    ) : filtered.map(c => {
+                      const sel = selectedIds.includes(c.id);
+                      return (
+                        <div key={c.id} onClick={() => toggle(c.id)}
+                          className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${sel ? 'bg-blue-600 text-white' : 'hover:bg-slate-50'}`}>
+                          <div className={`w-4 h-4 border-2 rounded flex items-center justify-center flex-shrink-0 text-xs font-bold ${sel ? 'border-white bg-white text-blue-600' : 'border-slate-300'}`}>
+                            {sel && '✓'}
+                          </div>
+                          <span className="text-xs leading-tight">
+                            {c.borclu}{c.customer?.name ? ` (${c.customer.name})` : ''} — {fmtDateC(c.vadesi)} — {fmtC(c.tutar)} {c.currency} No:{c.seriNo || '—'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="px-5 pb-5 flex justify-end">
+          <button onClick={() => { const sel = cekler.filter(c => selectedIds.includes(c.id)); onConfirm(sel, verilisTarihi); onClose(); }}
+            disabled={selectedIds.length === 0}
+            className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors">
+            Tamam
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TedarikciCekModal({ supplier, onClose, onSaved }: {
+  supplier: any; onClose: () => void; onSaved: () => void;
+}) {
+  const [kendiCekler, setKendiCekler] = useState<any[]>([]);
+  const [portfoyCekler, setPortfoyCekler] = useState<any[]>([]);
+  const [aciklama, setAciklama] = useState('');
+  const [showKendiTanim, setShowKendiTanim] = useState(false);
+  const [showPortfoy, setShowPortfoy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toggleKey, setToggleKey] = useState(0);
+  const [showToggle, setShowToggle] = useState(false);
+
+  const allChecks = [...kendiCekler, ...portfoyCekler];
+  const totalTutar = allChecks.reduce((s, c) => s + Number(c.tutar), 0);
+  const avgVade = calcAvgVadeC(allChecks);
+
+  // Re-animate toggle on every change
+  useEffect(() => {
+    if (allChecks.length > 0) {
+      setShowToggle(true);
+      setToggleKey(k => k + 1);
+    } else {
+      setShowToggle(false);
+    }
+  }, [allChecks.length, totalTutar]); // eslint-disable-line
+
+  const removeCheck = (id: string) => {
+    setKendiCekler(p => p.filter(c => c.id !== id));
+    setPortfoyCekler(p => p.filter(c => c.id !== id));
+  };
+
+  const handlePortfoyConfirm = (checks: any[], verilisTarihi: string) => {
+    const withDate = checks.map(c => ({ ...c, _portfoy: true, _verilisTarihi: verilisTarihi }));
+    setPortfoyCekler(prev => {
+      const existingIds = prev.map(c => c.id);
+      return [...prev, ...withDate.filter(c => !existingIds.includes(c.id))];
+    });
+  };
+
+  const handleSave = async () => {
+    if (!allChecks.length) return;
+    setSaving(true);
+    try {
+      await Promise.all([
+        // Kendi çekleri → çek kaydı oluştur + ödeme kaydı
+        ...kendiCekler.map(c =>
+          fetch('/api/cek', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              supplierId: supplier.id,
+              borclu: c.borclu,
+              islem: 'Tedarikçiye Verilen Çek Kaydı',
+              aciklama: aciklama || null,
+              islemTarihi: c.islemTarihi,
+              vadesi: c.vadesi,
+              tutar: parseFloat(c.tutar),
+              currency: c.currency,
+              seriNo: c.seriNo || null,
+              bankasi: c.bankasi || null,
+            }),
+          })
+        ),
+        // Kendi çekleri → ödeme kaydı (bakiye düşsün)
+        ...kendiCekler.map(c =>
+          fetch('/api/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              supplierId: supplier.id,
+              amount: parseFloat(c.tutar),
+              currency: c.currency || 'TRY',
+              date: c.islemTarihi,
+              method: 'Çek',
+              notes: [
+                c.seriNo ? `Çek No: ${c.seriNo}` : '',
+                c.bankasi ? `Banka: ${c.bankasi}` : '',
+                `Vade: ${fmtDateC(c.vadesi)}`,
+                aciklama,
+              ].filter(Boolean).join(' | '),
+            }),
+          })
+        ),
+        // Portföy çekleri → durumu güncelle + ödeme kaydı
+        ...portfoyCekler.map(c =>
+          fetch(`/api/cek/${c.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              durum: 'TEDARIKCI_VERILDI',
+              supplierId: supplier.id,
+              islemTarihi: new Date(c._verilisTarihi || Date.now()),
+              aciklama: aciklama || null,
+            }),
+          })
+        ),
+        ...portfoyCekler.map(c =>
+          fetch('/api/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              supplierId: supplier.id,
+              amount: parseFloat(c.tutar),
+              currency: c.currency || 'TRY',
+              date: c._verilisTarihi || new Date().toISOString().split('T')[0],
+              method: 'Çek',
+              notes: [
+                c.seriNo ? `Çek No: ${c.seriNo}` : '',
+                c.bankasi ? `Banka: ${c.bankasi}` : '',
+                `Vade: ${fmtDateC(c.vadesi)}`,
+                c.borclu ? `Sahibi: ${c.borclu}` : '',
+                aciklama,
+              ].filter(Boolean).join(' | '),
+            }),
+          })
+        ),
+      ]);
+      onSaved();
+      onClose();
+    } catch (err) { console.error(err); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <>
+      {/* Floating toggle — top-left */}
+      {showToggle && (
+        <div key={toggleKey}
+          className="fixed top-4 left-4 z-[100] bg-white border border-teal-300 rounded-xl shadow-xl px-4 py-3 min-w-[200px] animate-in slide-in-from-left duration-300">
+          <p className="text-xs font-semibold text-teal-700 mb-0.5">
+            Toplam: {fmtC(totalTutar)} TL
+          </p>
+          {avgVade && (
+            <p className="text-xs text-slate-500">
+              Ort. Vade: {fmtDateC(avgVade.date)} ({avgVade.days} gün)
+            </p>
+          )}
+          <p className="text-xs text-slate-400 mt-0.5">{allChecks.length} çek seçili</p>
+        </div>
+      )}
+
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+          <div className="bg-teal-600 rounded-t-2xl px-6 py-4 flex items-center justify-between flex-shrink-0">
+            <h2 className="text-white font-bold flex items-center gap-2">
+              Tedarikçiye Çek Ödemesi — {supplier.name}
+            </h2>
+            <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+          </div>
+
+          <div className="p-6 space-y-4 overflow-y-auto flex-1">
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button onClick={() => setShowKendiTanim(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
+                <Plus className="w-4 h-4" /> Yeni Çek Ekle (kendi çekiniz)
+              </button>
+              <button onClick={() => setShowPortfoy(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
+                <Plus className="w-4 h-4" /> Müşteri Çeki Ekle (portföyden)
+              </button>
+            </div>
+
+            {/* Check table */}
+            {allChecks.length > 0 && (
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Çek Tutarı</th>
+                      <th className="px-3 py-2 text-left">Döviz Karşılığı</th>
+                      <th className="px-3 py-2 text-left">Vade</th>
+                      <th className="px-3 py-2 text-left">Sahibi</th>
+                      <th className="px-3 py-2 text-left">Banka</th>
+                      <th className="px-3 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allChecks.map(c => (
+                      <tr key={c.id} className="border-t border-slate-100">
+                        <td className="px-3 py-2 font-medium">{fmtC(Number(c.tutar))} {c.currency}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-1">
+                            <input type="number" defaultValue={c.tutar} className="w-24 px-2 py-1 border border-slate-200 rounded text-xs text-right" readOnly />
+                            <span className="text-xs text-slate-400">{c.currency}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-slate-500 text-xs">{fmtDateC(c.vadesi)}</td>
+                        <td className="px-3 py-2 text-slate-500 text-xs max-w-[120px] truncate">{c.borclu}</td>
+                        <td className="px-3 py-2 text-slate-500 text-xs">{c.bankasi || '—'}</td>
+                        <td className="px-3 py-2 text-center">
+                          <button onClick={() => removeCheck(c.id)} className="text-red-400 hover:text-red-600">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {/* Summary */}
+                <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-wrap gap-6 text-sm">
+                  <div><span className="text-slate-500 font-medium">Toplam Tutar: </span><span className="font-bold">{fmtC(totalTutar)} TL</span></div>
+                  {avgVade && (
+                    <div><span className="text-slate-500 font-medium">Ortalama Vade: </span>
+                      <span className="font-bold">{fmtDateC(avgVade.date)} ({avgVade.days} gün)</span></div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {allChecks.length === 0 && (
+              <div className="border-2 border-dashed border-slate-200 rounded-xl py-10 text-center text-slate-400 text-sm">
+                Henüz çek eklenmedi
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">Açıklama</label>
+              <textarea value={aciklama} onChange={e => setAciklama(e.target.value)} rows={2}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500 resize-none" />
+            </div>
+          </div>
+
+          <div className="flex gap-3 p-5 border-t flex-shrink-0">
+            <button onClick={onClose}
+              className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+            <button onClick={handleSave} disabled={saving || allChecks.length === 0}
+              className="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Kaydet
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {showKendiTanim && (
+        <KendiCekTanimModal
+          supplierName={supplier.name}
+          onClose={() => setShowKendiTanim(false)}
+          onAdd={cek => setKendiCekler(p => [...p, cek])}
+        />
+      )}
+      {showPortfoy && (
+        <PortfoySecimModal
+          onClose={() => setShowPortfoy(false)}
+          onConfirm={handlePortfoyConfirm}
+        />
+      )}
+    </>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────
 export default function SupplierDetailPage() {
   const { t } = useLanguage();
@@ -747,6 +1187,7 @@ export default function SupplierDetailPage() {
   const [showIade, setShowIade] = useState(false);
   const [showBorcFis, setShowBorcFis] = useState(false);
   const [showBakiyeDuzelt, setShowBakiyeDuzelt] = useState(false);
+  const [showTedarikciCek, setShowTedarikciCek] = useState(false);
   const [odemeDropdown, setOdemeDropdown] = useState(false);
   const [successAmount, setSuccessAmount] = useState<number | null>(null);
   const [purchasesShown, setPurchasesShown] = useState(10);
@@ -782,6 +1223,12 @@ export default function SupplierDetailPage() {
     setSupplier((prev: any) => ({ ...prev, ...form }));
     setEditing(false);
     setSaving(false);
+  };
+
+  const handleDeletePayment = async (id: string) => {
+    if (!confirm('Bu ödeme silinecek. Emin misiniz?')) return;
+    await fetch(`/api/payments/${id}`, { method: 'DELETE' });
+    load();
   };
 
   const handleExtrePdf = async () => {
@@ -984,6 +1431,10 @@ export default function SupplierDetailPage() {
                     onClick={() => { setShowOdeme(true); setOdemeDropdown(false); }}>
                     <Banknote className="w-4 h-4 text-teal-500" /> Nakit / KK / Banka
                   </button>
+                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                    onClick={() => { setShowTedarikciCek(true); setOdemeDropdown(false); }}>
+                    <FileText className="w-4 h-4 text-indigo-500" /> Çek
+                  </button>
                   <hr className="border-slate-100" />
                   <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
                     onClick={() => { setShowBorcFis(true); setOdemeDropdown(false); }}>
@@ -1073,11 +1524,12 @@ export default function SupplierDetailPage() {
                     <th className="px-4 py-2 text-left">{t('supplierDetail', 'date')}</th>
                     <th className="px-4 py-2 text-right">{t('supplierDetail', 'amount')}</th>
                     <th className="px-4 py-2 text-left">{t('supplierDetail', 'method')}</th>
+                    <th className="px-4 py-2 w-8"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {supplier.payments.slice(0, paymentsShown).map((p: any) => (
-                    <tr key={p.id} className="hover:bg-slate-50/50">
+                    <tr key={p.id} className="hover:bg-slate-50/50 group">
                       <td className="px-4 py-2.5 text-slate-500">{new Date(p.date).toLocaleDateString('tr-TR')}</td>
                       <td className="px-4 py-2.5 text-right font-semibold text-teal-600">
                         {p.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
@@ -1085,6 +1537,12 @@ export default function SupplierDetailPage() {
                       </td>
                       <td className="px-4 py-2.5 text-slate-600">
                         {p.method}{p.notes ? ` (${p.notes})` : ''}
+                      </td>
+                      <td className="px-2 py-2.5 text-center">
+                        <button onClick={() => handleDeletePayment(p.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -1121,6 +1579,13 @@ export default function SupplierDetailPage() {
             load();
             setTimeout(() => setSuccessAmount(null), 4000);
           }}
+        />
+      )}
+      {showTedarikciCek && (
+        <TedarikciCekModal
+          supplier={supplier}
+          onClose={() => setShowTedarikciCek(false)}
+          onSaved={() => { setShowTedarikciCek(false); load(); }}
         />
       )}
       {showBorcFis && (

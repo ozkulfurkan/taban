@@ -754,6 +754,12 @@ export default function CustomerDetailPage() {
     setSaving(false);
   };
 
+  const handleDeletePayment = async (id: string) => {
+    if (!confirm('Bu ödeme silinecek. Emin misiniz?')) return;
+    await fetch(`/api/payments/${id}`, { method: 'DELETE' });
+    load();
+  };
+
   const handleExtrePdf = async () => {
     const { default: jsPDF } = await import('jspdf');
     if (!customer) return;
@@ -1133,11 +1139,12 @@ export default function CustomerDetailPage() {
                         <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
                         <th className="px-4 py-2 text-right">{t('customerDetail', 'amount')}</th>
                         <th className="px-4 py-2 text-left">{t('customerDetail', 'method')}</th>
+                        <th className="px-4 py-2 w-8"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {shown.map((row: any) => row._type === 'payment' ? (
-                        <tr key={row.id} className="hover:bg-slate-50/50">
+                        <tr key={row.id} className="hover:bg-slate-50/50 group">
                           <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
                           <td className="px-4 py-2.5 text-right font-semibold text-emerald-600">
                             {row.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
@@ -1145,6 +1152,12 @@ export default function CustomerDetailPage() {
                           </td>
                           <td className="px-4 py-2.5 text-slate-600">
                             {row.method}{row.notes ? ` (${row.notes})` : ''}
+                          </td>
+                          <td className="px-2 py-2.5 text-center">
+                            <button onClick={() => handleDeletePayment(row.id)}
+                              className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
                           </td>
                         </tr>
                       ) : (
@@ -1163,6 +1176,7 @@ export default function CustomerDetailPage() {
                               'bg-cyan-100 text-cyan-700'
                             }`}>{DURUM_LABEL[row.durum] || row.durum}</span>
                           </td>
+                          <td className="px-2 py-2.5"></td>
                         </tr>
                       ))}
                     </tbody>

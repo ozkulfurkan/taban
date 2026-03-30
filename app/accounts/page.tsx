@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Plus, ChevronDown, Loader2, Pencil, Trash2, X, Save, Landmark } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const ACCOUNT_TYPES = ['Kasa', 'Banka', 'POS'];
 const CURRENCIES = ['TRY', 'USD', 'EUR'];
@@ -130,6 +131,7 @@ function AccountModal({
 }
 
 function AccountCard({ account, onEdit, onDelete, t }: { account: Account; onEdit: () => void; onDelete: () => void; t: (s: string, k: string) => string }) {
+  const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -144,23 +146,30 @@ function AccountCard({ account, onEdit, onDelete, t }: { account: Account; onEdi
   return (
     <div ref={ref} className="relative bg-white rounded-xl shadow-sm border-l-4 p-4 cursor-pointer hover:shadow-md transition-shadow"
       style={{ borderLeftColor: account.color }}
-      onClick={() => setShowMenu(s => !s)}>
+      onClick={() => router.push(`/accounts/${account.id}`)}>
       <p className="text-sm font-semibold text-slate-700 truncate">{account.name}</p>
       <p className="text-base font-bold mt-1" style={{ color: account.color }}>
         {account.currency} {formatted}
       </p>
-      {showMenu && (
-        <div className="absolute right-2 top-2 bg-white border border-slate-200 rounded-lg shadow-lg z-10 py-1 min-w-[120px]">
-          <button onClick={(e) => { e.stopPropagation(); onEdit(); setShowMenu(false); }}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-            <Pencil className="w-3.5 h-3.5" /> {t('common', 'edit')}
-          </button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(); setShowMenu(false); }}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50">
-            <Trash2 className="w-3.5 h-3.5" /> {t('common', 'delete')}
-          </button>
-        </div>
-      )}
+      <div className="absolute right-2 top-2">
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowMenu(s => !s); }}
+          className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600">
+          <ChevronDown className="w-4 h-4" />
+        </button>
+        {showMenu && (
+          <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 py-1 min-w-[120px]">
+            <button onClick={(e) => { e.stopPropagation(); onEdit(); setShowMenu(false); }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+              <Pencil className="w-3.5 h-3.5" /> {t('common', 'edit')}
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onDelete(); setShowMenu(false); }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50">
+              <Trash2 className="w-3.5 h-3.5" /> {t('common', 'delete')}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

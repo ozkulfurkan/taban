@@ -16,19 +16,36 @@ export async function GET() {
   });
 
   const result = await Promise.all(suppliers.map(async (s) => {
-    const totalPurchased = await prisma.purchase.aggregate({
-      where: { supplierId: s.id },
-      _sum: { total: true },
-    });
-    const totalPaid = await prisma.payment.aggregate({
-      where: { supplierId: s.id, type: 'PAID' },
-      _sum: { amount: true },
-    });
+    const [purchases, payments] = await Promise.all([
+      prisma.purchase.findMany({
+        where: { supplierId: s.id },
+        select: { total: true },
+      }),
+      prisma.payment.findMany({
+        where: { supplierId: s.id, type: 'PAID' },
+        select: { amount: true, method: true, notes: true },
+      }),
+    ]);
+
+    const totalPurchased = purchases.reduce((s, p) => s + p.total, 0);
+
+    let balanceDelta = 0;
+    let totalPaid = 0;
+    for (const p of payments) {
+      if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
+        balanceDelta += p.amount;
+      } else {
+        balanceDelta -= p.amount;
+        totalPaid += p.amount;
+      }
+    }
+    const balance = totalPurchased + balanceDelta;
+
     return {
       ...s,
-      totalPurchased: totalPurchased._sum.total ?? 0,
-      totalPaid: totalPaid._sum.amount ?? 0,
-      balance: (totalPurchased._sum.total ?? 0) - (totalPaid._sum.amount ?? 0),
+      totalPurchased,
+      totalPaid,
+      balance,
     };
   }));
 

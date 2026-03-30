@@ -17,21 +17,39 @@ export async function GET() {
     orderBy: { name: 'asc' },
   });
 
-  // Cari bakiye hesapla
+  // Cari bakiye hesapla (detay sayfasıyla aynı mantık)
   const result = await Promise.all(customers.map(async (c) => {
-    const totalInvoiced = await prisma.invoice.aggregate({
-      where: { customerId: c.id },
-      _sum: { total: true },
-    });
-    const totalPaid = await prisma.payment.aggregate({
-      where: { customerId: c.id, type: 'RECEIVED' },
-      _sum: { amount: true },
-    });
+    const [invoices, payments] = await Promise.all([
+      prisma.invoice.findMany({
+        where: { customerId: c.id },
+        select: { total: true, isReturn: true },
+      }),
+      prisma.payment.findMany({
+        where: { customerId: c.id, type: 'RECEIVED' },
+        select: { amount: true, method: true, notes: true },
+      }),
+    ]);
+
+    const totalNormal = invoices.filter(i => !i.isReturn).reduce((s, i) => s + i.total, 0);
+    const totalReturn = invoices.filter(i => i.isReturn).reduce((s, i) => s + i.total, 0);
+
+    let balanceDelta = 0;
+    let totalPaid = 0;
+    for (const p of payments) {
+      if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
+        balanceDelta += p.amount;
+      } else {
+        balanceDelta -= p.amount;
+        totalPaid += p.amount;
+      }
+    }
+    const balance = totalNormal - totalReturn + balanceDelta;
+
     return {
       ...c,
-      totalInvoiced: totalInvoiced._sum.total ?? 0,
-      totalPaid: totalPaid._sum.amount ?? 0,
-      balance: (totalInvoiced._sum.total ?? 0) - (totalPaid._sum.amount ?? 0),
+      totalInvoiced: totalNormal,
+      totalPaid,
+      balance,
     };
   }));
 

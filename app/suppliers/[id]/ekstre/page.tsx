@@ -120,6 +120,10 @@ export default function SupplierEkstrePage() {
     });
   }
 
+  const totalBorc = rows.reduce((s, r) => s + r.borc, 0);
+  const totalAlacak = rows.reduce((s, r) => s + r.alacak, 0);
+  const lastBalance = rows.length > 0 ? rows[rows.length - 1].bakiye : 0;
+
   const handleExcel = () => {
     if (!data) return;
     const BOM = '\uFEFF';
@@ -176,7 +180,7 @@ export default function SupplierEkstrePage() {
 
     y += 4;
     doc.setFont('helvetica','bold');
-    doc.text(`Toplam Borc: ${fmt(data.totalDebit)}  |  Toplam Alacak: ${fmt(data.totalCredit)}  |  Bakiye: ${fmt(data.balance)}`, M, y);
+    doc.text(`Toplam Borc: ${fmt(totalBorc)}  |  Toplam Alacak: ${fmt(totalAlacak)}  |  Bakiye: ${fmt(lastBalance)}`, M, y);
     doc.save(`${tr(data.supplier?.name||'ekstre')}_hesap_ekstresi.pdf`);
   };
 
@@ -220,15 +224,15 @@ export default function SupplierEkstrePage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="rounded-xl p-4 text-white bg-red-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">Toplam Borç</p>
-                <p className="text-2xl font-bold">{fmt(data.totalDebit)}</p>
+                <p className="text-2xl font-bold">{fmt(totalBorc)}</p>
               </div>
               <div className="rounded-xl p-4 text-white bg-blue-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">Toplam Alacak</p>
-                <p className="text-2xl font-bold">{fmt(data.totalCredit)}</p>
+                <p className="text-2xl font-bold">{fmt(totalAlacak)}</p>
               </div>
               <div className="rounded-xl p-4 text-white bg-emerald-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">Bakiye</p>
-                <p className="text-2xl font-bold">{fmt(data.balance)}</p>
+                <p className="text-2xl font-bold">{fmt(lastBalance)}</p>
               </div>
             </div>
 
@@ -296,9 +300,9 @@ export default function SupplierEkstrePage() {
                     <tfoot>
                       <tr className="bg-slate-100 font-bold text-sm">
                         <td colSpan={4} className="px-3 py-3 text-slate-600">TOPLAM</td>
-                        <td className="px-3 py-3 text-right text-red-600">{fmt(data.totalDebit)}</td>
-                        <td className="px-3 py-3 text-right text-teal-600">{fmt(data.totalCredit)}</td>
-                        <td className="px-3 py-3 text-right text-slate-800">{fmt(data.balance)}</td>
+                        <td className="px-3 py-3 text-right text-red-600">{fmt(totalBorc)}</td>
+                        <td className="px-3 py-3 text-right text-teal-600">{fmt(totalAlacak)}</td>
+                        <td className="px-3 py-3 text-right text-slate-800">{fmt(lastBalance)}</td>
                       </tr>
                     </tfoot>
                   </table>
