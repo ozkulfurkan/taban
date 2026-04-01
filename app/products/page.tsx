@@ -5,10 +5,12 @@ import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { BoxIcon, Plus, Trash2, Pencil, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 export default function ProductsPage() {
   const { t, formatCurrency } = useLanguage();
+  const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -83,7 +85,8 @@ export default function ProductsPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.03 }}
-                    className="hover:bg-slate-50/50"
+                    className="hover:bg-blue-50/50 cursor-pointer"
+                    onClick={() => router.push(`/products/${p.id}`)}
                   >
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-800">{p.name}</p>
@@ -100,11 +103,8 @@ export default function ProductsPage() {
                         {p.stock} {p.unit}
                       </span>
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-1 justify-end">
-                        <Link href={`/products/${p.id}`} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                          <Pencil className="w-4 h-4" />
-                        </Link>
                         <button onClick={() => handleDelete(p.id, p.name)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>

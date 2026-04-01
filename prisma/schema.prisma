@@ -132,19 +132,33 @@ enum PaymentType {
 }
 
 model Product {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   companyId   String
-  company     Company  @relation(fields: [companyId], references: [id])
+  company     Company       @relation(fields: [companyId], references: [id])
   code        String?
   name        String
   description String?
-  unit        String   @default("çift")
-  unitPrice   Float    @default(0)
-  currency    String   @default("USD")
-  stock       Float    @default(0)
+  unit        String        @default("çift")
+  unitPrice   Float         @default(0)
+  currency    String        @default("USD")
+  stock       Float         @default(0)
   notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  parts       ProductPart[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ProductPart {
+  id            String   @id @default(cuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name          String
+  quantity      Float    @default(1)
+  gramsPerPiece Float    @default(0)
+  notes         String?
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Customer {
