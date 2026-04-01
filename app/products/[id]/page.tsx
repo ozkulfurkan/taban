@@ -37,6 +37,9 @@ export default function ProductDetailPage() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [showCost, setShowCost] = useState(false);
+  const [priceWarning, setPriceWarning] = useState<{ totalCost: number; currency: string } | null>(null);
+  const [newPrice, setNewPrice] = useState('');
+  const [updatingPrice, setUpdatingPrice] = useState(false);
 
   // Edit state
   const [editForm, setEditForm] = useState<any>({});
@@ -88,6 +91,9 @@ export default function ProductDetailPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleSave = async () => {
+    // Validate: part name required
+    const emptyName = editParts.find(p => !p.name.trim());
+    if (emptyName) { alert('Tüm parçalar için parça adı girilmelidir.'); return; }
     setSaving(true);
     try {
       const res = await fetch(`/api/products/${params.id}`, {
@@ -100,6 +106,20 @@ export default function ProductDetailPage() {
     } finally { setSaving(false); }
   };
 
+  const handleUpdatePrice = async () => {
+    if (!newPrice || parseFloat(newPrice) <= 0) return;
+    setUpdatingPrice(true);
+    try {
+      const res = await fetch(`/api/products/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...product, unitPrice: newPrice, parts: product.parts, extraCosts: product.extraCosts }),
+      });
+      const updated = await res.json();
+      if (!updated?.error) { setProduct(updated); setPriceWarning(null); }
+    } finally { setUpdatingPrice(false); }
+  };
+
   // Computed cost values
   const calcCosts = useCallback(() => {
     if (!product || !company) return null;
@@ -109,13 +129,14 @@ export default function ProductDetailPage() {
 
     let totalMaterialCost = 0;
     const partCosts = (product.parts || []).map((p: any) => {
-      if (!p.material) return { ...p, netGrams: 0, cost: 0 };
-      const netGrams = p.gramsPerPiece * (1 - p.wasteRate / 100);
-      const netKg = netGrams / 1000;
+      if (!p.material) return { ...p, netGrams: p.gramsPerPiece, brutGrams: p.gramsPerPiece, cost: 0 };
+      const netGrams = p.gramsPerPiece; // user enters NET gram
+      const brutGrams = netGrams * (1 + p.wasteRate / 100); // fire increases raw material needed
+      const brutKg = brutGrams / 1000;
       const priceConverted = convertCurrency(p.material.pricePerKg, p.material.currency, toCurrency, usdToTry, eurToTry);
-      const cost = netKg * priceConverted;
+      const cost = brutKg * priceConverted;
       totalMaterialCost += cost;
-      return { ...p, netGrams, cost };
+      return { ...p, netGrams, brutGrams, cost };
     });
 
     const laborCost = convertCurrency(product.laborCostPerPair, product.laborCurrency, toCurrency, usdToTry, eurToTry);
@@ -144,10 +165,7 @@ export default function ProductDetailPage() {
     setEditParts(p => p.map((row, idx) => idx === i ? { ...row, [f]: v } : row));
 
   const onMaterialSelect = (i: number, matId: string) => {
-    const mat = materials.find(m => m.id === matId);
-    setEditParts(p => p.map((row, idx) => idx === i
-      ? { ...row, materialId: matId, name: mat ? mat.name : row.name }
-      : row));
+    setEditParts(p => p.map((row, idx) => idx === i ? { ...row, materialId: matId } : row));
   };
 
   const addExtra = () => setEditExtras(p => [...p, emptyExtra()]);
@@ -172,7 +190,14 @@ export default function ProductDetailPage() {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => { setShowCost(true); setTimeout(() => costRef.current?.scrollIntoView({ behavior: 'smooth' }), 50); }}
+          <button onClick={() => {
+            setShowCost(true);
+            setTimeout(() => costRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+            if (costs && product && costs.totalCost > product.unitPrice) {
+              setNewPrice(costs.totalCost.toFixed(4));
+              setPriceWarning({ totalCost: costs.totalCost, currency: costs.toCurrency });
+            }
+          }}
             className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
             <Calculator className="w-4 h-4" /> Maliyet Hesapla
           </button>
@@ -322,9 +347,9 @@ export default function ProductDetailPage() {
                       <th className="px-3 py-2.5 text-left w-8">#</th>
                       <th className="px-3 py-2.5 text-left">Hammadde</th>
                       <th className="px-3 py-2.5 text-left">Parça Adı</th>
-                      <th className="px-3 py-2.5 text-right">Brüt Gram</th>
-                      <th className="px-3 py-2.5 text-right">Fire %</th>
                       <th className="px-3 py-2.5 text-right">Net Gram</th>
+                      <th className="px-3 py-2.5 text-right">Fire %</th>
+                      <th className="px-3 py-2.5 text-right">Brüt Gram</th>
                       {!editing && <th className="px-3 py-2.5 text-right">Maliyet</th>}
                       {editing && <th className="w-8"></th>}
                     </tr>
@@ -334,9 +359,10 @@ export default function ProductDetailPage() {
                       editParts.length === 0 ? (
                         <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400 text-sm">Henüz parça eklenmedi.</td></tr>
                       ) : editParts.map((part, idx) => {
-                        const brut = parseFloat(part.gramsPerPiece) || 0;
+                        const net = parseFloat(part.gramsPerPiece) || 0;
                         const fire = parseFloat(part.wasteRate) || 0;
-                        const net = brut * (1 - fire / 100);
+                        const brut = net * (1 + fire / 100);
+                        const nameEmpty = !part.name.trim();
                         return (
                           <tr key={idx} className="hover:bg-slate-50/50">
                             <td className="px-3 py-2 text-slate-400 text-xs">{idx + 1}</td>
@@ -351,8 +377,8 @@ export default function ProductDetailPage() {
                             </td>
                             <td className="px-3 py-2">
                               <input value={part.name} onChange={e => setPart(idx, 'name', e.target.value)}
-                                placeholder="Parça adı"
-                                className="w-full px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
+                                placeholder="Parça adı *"
+                                className={`w-full px-2 py-1 border rounded text-sm outline-none focus:ring-1 focus:ring-blue-400 ${nameEmpty ? 'border-red-300 bg-red-50' : 'border-slate-200'}`} />
                             </td>
                             <td className="px-3 py-2">
                               <input type="number" step="0.01" min="0" value={part.gramsPerPiece}
@@ -368,7 +394,7 @@ export default function ProductDetailPage() {
                                 <span className="text-xs text-slate-400">%</span>
                               </div>
                             </td>
-                            <td className="px-3 py-2 text-right text-slate-600 font-medium">{net > 0 ? fmt2(net) : '—'}</td>
+                            <td className="px-3 py-2 text-right text-slate-600 font-medium">{brut > 0 ? fmt2(brut) : '—'}</td>
                             <td className="px-3 py-2">
                               <button onClick={() => removePart(idx)} className="p-1 text-red-400 hover:text-red-600">
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -381,7 +407,8 @@ export default function ProductDetailPage() {
                       parts.length === 0 ? (
                         <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-300 text-sm">Parça eklenmemiş</td></tr>
                       ) : parts.map((part: any, idx: number) => {
-                        const net = part.gramsPerPiece * (1 - part.wasteRate / 100);
+                        const netGrams = part.gramsPerPiece; // user-entered net
+                        const brutGrams = netGrams * (1 + part.wasteRate / 100); // calculated
                         const partCost = costs?.partCosts?.[idx]?.cost ?? 0;
                         return (
                           <tr key={part.id} className="hover:bg-slate-50/50">
@@ -391,9 +418,9 @@ export default function ProductDetailPage() {
                               {part.material && <p className="text-xs text-slate-400">{fmt(part.material.pricePerKg)} {part.material.currency}/kg</p>}
                             </td>
                             <td className="px-3 py-2.5 text-slate-600">{part.name}</td>
-                            <td className="px-3 py-2.5 text-right text-slate-600">{fmt2(part.gramsPerPiece)} gr</td>
+                            <td className="px-3 py-2.5 text-right text-slate-600">{fmt2(netGrams)} gr</td>
                             <td className="px-3 py-2.5 text-right text-slate-500">%{part.wasteRate}</td>
-                            <td className="px-3 py-2.5 text-right text-slate-700 font-medium">{fmt2(net)} gr</td>
+                            <td className="px-3 py-2.5 text-right text-slate-700 font-medium">{fmt2(brutGrams)} gr</td>
                             <td className="px-3 py-2.5 text-right font-semibold text-blue-700">
                               {costs ? `${fmt2(partCost)} ${costs.toCurrency}` : '—'}
                             </td>
@@ -409,7 +436,7 @@ export default function ProductDetailPage() {
                         <td className="px-3 py-2.5 text-right text-blue-800">{fmt2(totalGrams)} gr</td>
                         <td></td>
                         <td className="px-3 py-2.5 text-right text-blue-800">
-                          {fmt2(parts.reduce((s: number, p: any) => s + p.gramsPerPiece * (1 - p.wasteRate / 100), 0))} gr
+                          {fmt2(parts.reduce((s: number, p: any) => s + p.gramsPerPiece * (1 + p.wasteRate / 100), 0))} gr
                         </td>
                         <td className="px-3 py-2.5 text-right text-blue-700">{fmt2(costs.totalMaterialCost)} {costs.toCurrency}</td>
                       </tr>
@@ -590,6 +617,55 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Price Warning Modal */}
+      {priceWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setPriceWarning(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="bg-red-500 px-5 py-4 flex items-center justify-between">
+              <h3 className="text-white font-bold text-sm">⚠️ Fiyat Uyarısı</h3>
+              <button onClick={() => setPriceWarning(null)} className="text-white/80 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-slate-700 text-sm font-medium">
+                Dikkat! Ürün satış fiyatı hesaplanan maliyet fiyatından düşük.
+              </p>
+              <div className="bg-red-50 rounded-xl p-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Mevcut Satış Fiyatı</span>
+                  <span className="font-semibold text-slate-700">{fmt2(product.unitPrice)} {product.currency}</span>
+                </div>
+                <div className="flex justify-between text-red-600 font-bold border-t border-red-200 pt-2">
+                  <span>Hesaplanan Maliyet</span>
+                  <span>{fmt2(priceWarning.totalCost)} {priceWarning.currency}</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Yeni Satış Fiyatı ({product.currency})</label>
+                <input
+                  type="number" step="0.0001" min="0"
+                  value={newPrice}
+                  onChange={e => setNewPrice(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-blue-400 font-medium"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setPriceWarning(null)}
+                  className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                  Vazgeç
+                </button>
+                <button onClick={handleUpdatePrice} disabled={updatingPrice || !newPrice}
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                  {updatingPrice ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Fiyatı Güncelle
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
