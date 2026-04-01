@@ -68,18 +68,19 @@ model User {
 }
 
 model Material {
-  id          String         @id @default(cuid())
-  companyId   String
-  company     Company        @relation(fields: [companyId], references: [id])
-  name        String
-  supplier    String?
-  pricePerKg  Float
-  currency    String         @default("USD")
-  description String?
-  soleParts   SolePart[]
+  id           String         @id @default(cuid())
+  companyId    String
+  company      Company        @relation(fields: [companyId], references: [id])
+  name         String
+  supplier     String?
+  pricePerKg   Float
+  currency     String         @default("USD")
+  description  String?
+  soleParts    SolePart[]
+  productParts ProductPart[]
   priceHistory PriceHistory[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 }
 
 model PriceHistory {
@@ -132,33 +133,52 @@ enum PaymentType {
 }
 
 model Product {
-  id          String        @id @default(cuid())
-  companyId   String
-  company     Company       @relation(fields: [companyId], references: [id])
-  code        String?
-  name        String
-  description String?
-  unit        String        @default("çift")
-  unitPrice   Float         @default(0)
-  currency    String        @default("USD")
-  stock       Float         @default(0)
-  notes       String?
-  parts       ProductPart[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id               String             @id @default(cuid())
+  companyId        String
+  company          Company            @relation(fields: [companyId], references: [id])
+  code             String?
+  name             String
+  description      String?
+  unit             String             @default("çift")
+  unitPrice        Float              @default(0)
+  currency         String             @default("USD")
+  stock            Float              @default(0)
+  notes            String?
+  laborCostPerPair Float              @default(0)
+  laborCurrency    String             @default("USD")
+  ciftPerKoli      Float              @default(0)
+  koliFiyati       Float              @default(0)
+  koliCurrency     String             @default("USD")
+  parts            ProductPart[]
+  extraCosts       ProductExtraCost[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 }
 
 model ProductPart {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   productId     String
-  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  materialId    String?
+  material      Material? @relation(fields: [materialId], references: [id])
   name          String
-  quantity      Float    @default(1)
-  gramsPerPiece Float    @default(0)
-  notes         String?
-  sortOrder     Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  gramsPerPiece Float     @default(0)
+  wasteRate     Float     @default(0)
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model ProductExtraCost {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  amount    Float    @default(0)
+  currency  String   @default("USD")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Customer {

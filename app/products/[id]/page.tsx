@@ -1,56 +1,88 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
-import { ArrowLeft, Loader2, Save, Plus, Trash2, Pencil, X, Package } from 'lucide-react';
+import {
+  ArrowLeft, Loader2, Save, Plus, Trash2, Pencil, X,
+  Package, Calculator, ChevronDown, ChevronUp,
+} from 'lucide-react';
 
 const UNITS = ['çift', 'adet', 'kg', 'metre', 'paket'];
 const CURRENCIES = ['USD', 'EUR', 'TRY'];
+const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+const fmt2 = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function emptyPart() {
-  return { name: '', quantity: '1', gramsPerPiece: '', notes: '' };
+function convertCurrency(amount: number, from: string, to: string, usdToTry: number, eurToTry: number) {
+  if (from === to || amount === 0) return amount;
+  // to TRY
+  const inTry = from === 'TRY' ? amount : from === 'USD' ? amount * usdToTry : amount * eurToTry;
+  if (to === 'TRY') return inTry;
+  if (to === 'USD') return inTry / usdToTry;
+  return inTry / eurToTry;
 }
+
+function emptyPart() { return { materialId: '', name: '', gramsPerPiece: '', wasteRate: '0' }; }
+function emptyExtra() { return { name: '', amount: '', currency: 'USD' }; }
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const costRef = useRef<HTMLDivElement>(null);
 
   const [product, setProduct] = useState<any>(null);
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [company, setCompany] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [showCost, setShowCost] = useState(false);
 
+  // Edit state
   const [editForm, setEditForm] = useState<any>({});
   const [editParts, setEditParts] = useState<any[]>([]);
+  const [editExtras, setEditExtras] = useState<any[]>([]);
 
   const load = useCallback(() => {
     if (!params?.id) return;
     setLoading(true);
-    fetch(`/api/products/${params.id}`)
-      .then(r => r.json())
-      .then(d => {
-        if (!d?.error) {
-          setProduct(d);
-          setEditForm({
-            name: d.name || '',
-            code: d.code || '',
-            description: d.description || '',
-            unit: d.unit || 'çift',
-            unitPrice: String(d.unitPrice ?? ''),
-            currency: d.currency || 'USD',
-            stock: String(d.stock ?? ''),
-            notes: d.notes || '',
-          });
-          setEditParts((d.parts || []).map((p: any) => ({
-            name: p.name,
-            quantity: String(p.quantity),
-            gramsPerPiece: String(p.gramsPerPiece),
-            notes: p.notes || '',
-          })));
-        }
-      })
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch(`/api/products/${params.id}`).then(r => r.json()),
+      fetch('/api/materials').then(r => r.json()),
+      fetch('/api/company').then(r => r.json()),
+    ]).then(([prod, mats, comp]) => {
+      if (!prod?.error) {
+        setProduct(prod);
+        setEditForm({
+          name: prod.name || '',
+          code: prod.code || '',
+          description: prod.description || '',
+          unit: prod.unit || 'çift',
+          unitPrice: String(prod.unitPrice ?? ''),
+          currency: prod.currency || 'USD',
+          stock: String(prod.stock ?? ''),
+          notes: prod.notes || '',
+          laborCostPerPair: String(prod.laborCostPerPair ?? '0'),
+          laborCurrency: prod.laborCurrency || 'USD',
+          ciftPerKoli: String(prod.ciftPerKoli ?? '0'),
+          koliFiyati: String(prod.koliFiyati ?? '0'),
+          koliCurrency: prod.koliCurrency || 'USD',
+        });
+        setEditParts((prod.parts || []).map((p: any) => ({
+          materialId: p.materialId || '',
+          name: p.name,
+          gramsPerPiece: String(p.gramsPerPiece),
+          wasteRate: String(p.wasteRate),
+        })));
+        setEditExtras((prod.extraCosts || []).map((e: any) => ({
+          name: e.name,
+          amount: String(e.amount),
+          currency: e.currency,
+        })));
+      }
+      setMaterials(Array.isArray(mats) ? mats : []);
+      if (comp && !comp.error) setCompany(comp);
+    }).finally(() => setLoading(false));
   }, [params?.id]);
 
   useEffect(() => { load(); }, [load]);
@@ -61,35 +93,73 @@ export default function ProductDetailPage() {
       const res = await fetch(`/api/products/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...editForm, parts: editParts }),
+        body: JSON.stringify({ ...editForm, parts: editParts, extraCosts: editExtras }),
       });
       const updated = await res.json();
-      if (!updated?.error) {
-        setProduct(updated);
-        setEditing(false);
-      }
+      if (!updated?.error) { setProduct(updated); setEditing(false); }
     } finally { setSaving(false); }
   };
+
+  // Computed cost values
+  const calcCosts = useCallback(() => {
+    if (!product || !company) return null;
+    const usdToTry = company.usdToTry || 1;
+    const eurToTry = company.eurToTry || 1;
+    const toCurrency = product.currency;
+
+    let totalMaterialCost = 0;
+    const partCosts = (product.parts || []).map((p: any) => {
+      if (!p.material) return { ...p, netGrams: 0, cost: 0 };
+      const netGrams = p.gramsPerPiece * (1 - p.wasteRate / 100);
+      const netKg = netGrams / 1000;
+      const priceConverted = convertCurrency(p.material.pricePerKg, p.material.currency, toCurrency, usdToTry, eurToTry);
+      const cost = netKg * priceConverted;
+      totalMaterialCost += cost;
+      return { ...p, netGrams, cost };
+    });
+
+    const laborCost = convertCurrency(product.laborCostPerPair, product.laborCurrency, toCurrency, usdToTry, eurToTry);
+
+    const packagingCostPerPair = product.ciftPerKoli > 0
+      ? convertCurrency(product.koliFiyati, product.koliCurrency, toCurrency, usdToTry, eurToTry) / product.ciftPerKoli
+      : 0;
+
+    let totalExtraCost = 0;
+    const extraConverted = (product.extraCosts || []).map((e: any) => {
+      const c = convertCurrency(e.amount, e.currency, toCurrency, usdToTry, eurToTry);
+      totalExtraCost += c;
+      return { ...e, converted: c };
+    });
+
+    const totalCost = totalMaterialCost + laborCost + packagingCostPerPair + totalExtraCost;
+
+    return { partCosts, totalMaterialCost, laborCost, packagingCostPerPair, extraConverted, totalExtraCost, totalCost, toCurrency };
+  }, [product, company]);
+
+  const costs = calcCosts();
 
   const addPart = () => setEditParts(p => [...p, emptyPart()]);
   const removePart = (i: number) => setEditParts(p => p.filter((_, idx) => idx !== i));
   const setPart = (i: number, f: string, v: string) =>
     setEditParts(p => p.map((row, idx) => idx === i ? { ...row, [f]: v } : row));
 
-  if (loading) return (
-    <AppShell>
-      <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
-    </AppShell>
-  );
-  if (!product) return (
-    <AppShell>
-      <div className="text-center py-16 text-slate-400">Ürün bulunamadı</div>
-    </AppShell>
-  );
+  const onMaterialSelect = (i: number, matId: string) => {
+    const mat = materials.find(m => m.id === matId);
+    setEditParts(p => p.map((row, idx) => idx === i
+      ? { ...row, materialId: matId, name: mat ? mat.name : row.name }
+      : row));
+  };
+
+  const addExtra = () => setEditExtras(p => [...p, emptyExtra()]);
+  const removeExtra = (i: number) => setEditExtras(p => p.filter((_, idx) => idx !== i));
+  const setExtra = (i: number, f: string, v: string) =>
+    setEditExtras(p => p.map((row, idx) => idx === i ? { ...row, [f]: v } : row));
+
+  if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div></AppShell>;
+  if (!product) return <AppShell><div className="text-center py-16 text-slate-400">Ürün bulunamadı</div></AppShell>;
 
   const parts: any[] = product.parts || [];
-  const totalParts = parts.reduce((s: number, p: any) => s + p.quantity, 0);
-  const totalGrams = parts.reduce((s: number, p: any) => s + p.quantity * p.gramsPerPiece, 0);
+  const totalGrams = parts.reduce((s: number, p: any) => s + p.gramsPerPiece, 0);
 
   return (
     <AppShell>
@@ -102,6 +172,10 @@ export default function ProductDetailPage() {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
+          <button onClick={() => { setShowCost(true); setTimeout(() => costRef.current?.scrollIntoView({ behavior: 'smooth' }), 50); }}
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+            <Calculator className="w-4 h-4" /> Maliyet Hesapla
+          </button>
           {!editing ? (
             <button onClick={() => setEditing(true)}
               className="flex items-center gap-2 px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium">
@@ -124,7 +198,7 @@ export default function ProductDetailPage() {
         {/* Two-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-          {/* LEFT: Product info */}
+          {/* LEFT: Product info + cost summary */}
           <div className="space-y-3">
             {/* Product header */}
             <div className="bg-blue-700 rounded-xl px-4 py-3 flex items-center justify-between">
@@ -145,28 +219,28 @@ export default function ProductDetailPage() {
               <div className="divide-y divide-slate-100">
                 {[
                   { label: 'Ürün Adı', field: 'name', type: 'text', value: product.name },
-                  { label: 'Ürün Kodu', field: 'code', type: 'text', value: product.code || '—' },
-                  { label: 'Birim', field: 'unit', type: 'select-unit', value: product.unit },
-                  { label: 'Fiyat', field: 'unitPrice', type: 'number', value: `${Number(product.unitPrice).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${product.currency}` },
-                  { label: 'Para Birimi', field: 'currency', type: 'select-currency', value: product.currency },
+                  { label: 'Kod', field: 'code', type: 'text', value: product.code || '—' },
+                  { label: 'Birim', field: 'unit', type: 'sel-unit', value: product.unit },
+                  { label: 'Fiyat', field: 'unitPrice', type: 'number', value: `${fmt2(product.unitPrice)} ${product.currency}` },
+                  { label: 'Para Birimi', field: 'currency', type: 'sel-cur', value: product.currency },
                   { label: 'Stok', field: 'stock', type: 'number', value: `${product.stock} ${product.unit}` },
                 ].map(row => (
                   <div key={row.field} className="flex items-center px-4 py-2.5">
                     <span className="text-xs font-semibold text-slate-500 w-24 flex-shrink-0">{row.label}</span>
                     {editing ? (
-                      row.type === 'select-unit' ? (
-                        <select value={editForm[row.field] || ''} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
+                      row.type === 'sel-unit' ? (
+                        <select value={editForm[row.field]} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
                           className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none">
                           {UNITS.map(u => <option key={u}>{u}</option>)}
                         </select>
-                      ) : row.type === 'select-currency' ? (
-                        <select value={editForm[row.field] || ''} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
+                      ) : row.type === 'sel-cur' ? (
+                        <select value={editForm[row.field]} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
                           className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none">
                           {CURRENCIES.map(c => <option key={c}>{c}</option>)}
                         </select>
                       ) : (
                         <input type={row.type === 'number' ? 'number' : 'text'} step="0.0001"
-                          value={editForm[row.field] || ''}
+                          value={editForm[row.field]}
                           onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
                           className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
                       )
@@ -175,20 +249,10 @@ export default function ProductDetailPage() {
                     )}
                   </div>
                 ))}
-                {/* Description */}
-                <div className="px-4 py-2.5">
-                  <span className="text-xs font-semibold text-slate-500 block mb-1">Açıklama</span>
-                  {editing ? (
-                    <textarea value={editForm.description || ''} onChange={e => setEditForm((p: any) => ({ ...p, description: e.target.value }))} rows={2}
-                      className="w-full px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400 resize-none" />
-                  ) : (
-                    <p className="text-sm text-slate-600">{product.description || <span className="text-slate-300 italic">—</span>}</p>
-                  )}
-                </div>
                 <div className="px-4 py-2.5">
                   <span className="text-xs font-semibold text-slate-500 block mb-1">Notlar</span>
                   {editing ? (
-                    <textarea value={editForm.notes || ''} onChange={e => setEditForm((p: any) => ({ ...p, notes: e.target.value }))} rows={2}
+                    <textarea value={editForm.notes} onChange={e => setEditForm((p: any) => ({ ...p, notes: e.target.value }))} rows={2}
                       className="w-full px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400 resize-none" />
                   ) : (
                     <p className="text-sm text-slate-600">{product.notes || <span className="text-slate-300 italic">—</span>}</p>
@@ -197,30 +261,51 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Summary card */}
-            {parts.length > 0 && !editing && (
-              <div className="bg-white rounded-xl shadow-sm p-4 space-y-2">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Parça Özeti</p>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Toplam Parça Çeşidi</span>
-                  <span className="font-semibold text-slate-700">{parts.length} çeşit</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Toplam Adet</span>
-                  <span className="font-semibold text-slate-700">{totalParts.toLocaleString('tr-TR')} adet</span>
-                </div>
-                <div className="flex justify-between text-sm font-bold border-t pt-2">
-                  <span className="text-slate-600">Toplam Ağırlık</span>
-                  <span className="text-blue-700">{totalGrams.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} gr</span>
-                </div>
+            {/* Maliyet Özeti */}
+            {costs && (
+              <div ref={costRef} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <button onClick={() => setShowCost(s => !s)}
+                  className="w-full px-4 py-3 flex items-center justify-between bg-blue-600 hover:bg-blue-700 transition-colors">
+                  <span className="text-white font-bold text-sm flex items-center gap-2">
+                    <Calculator className="w-4 h-4" /> Maliyet Özeti
+                  </span>
+                  {showCost ? <ChevronUp className="w-4 h-4 text-white" /> : <ChevronDown className="w-4 h-4 text-white" />}
+                </button>
+                {showCost && (
+                  <div className="p-4 space-y-1.5 text-sm">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Hammadde Maliyeti</span>
+                      <span className="font-medium">{fmt2(costs.totalMaterialCost)} {costs.toCurrency}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>İşçilik Maliyeti</span>
+                      <span className="font-medium">{fmt2(costs.laborCost)} {costs.toCurrency}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Koli Maliyeti (çift başına)</span>
+                      <span className="font-medium">{fmt2(costs.packagingCostPerPair)} {costs.toCurrency}</span>
+                    </div>
+                    {costs.extraConverted.map((e: any) => (
+                      <div key={e.name} className="flex justify-between text-slate-600">
+                        <span>{e.name}</span>
+                        <span className="font-medium">{fmt2(e.converted)} {costs.toCurrency}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between font-bold text-slate-800 text-base pt-2 border-t border-slate-200">
+                      <span>TOPLAM MALİYET</span>
+                      <span className="text-blue-700">{fmt2(costs.totalCost)} {costs.toCurrency}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* RIGHT: Parts table */}
-          <div className="lg:col-span-2">
+          {/* RIGHT: All sections */}
+          <div className="lg:col-span-2 space-y-4">
+
+            {/* ── 1. Parça / Hammadde ─────────────────────────────────────── */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              {/* Header */}
               <div className="bg-blue-600 px-4 py-3 flex items-center justify-between">
                 <h2 className="text-white font-bold text-sm uppercase tracking-wide">Parça / Hammadde Listesi</h2>
                 {editing && (
@@ -230,54 +315,60 @@ export default function ProductDetailPage() {
                   </button>
                 )}
               </div>
-
-              {/* Table */}
               <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[500px]">
+                <table className="w-full text-sm min-w-[560px]">
                   <thead>
                     <tr className="bg-blue-50 text-xs font-semibold text-slate-600 border-b border-blue-100">
                       <th className="px-3 py-2.5 text-left w-8">#</th>
+                      <th className="px-3 py-2.5 text-left">Hammadde</th>
                       <th className="px-3 py-2.5 text-left">Parça Adı</th>
-                      <th className="px-3 py-2.5 text-right">Adet</th>
-                      <th className="px-3 py-2.5 text-right">Gram / Adet</th>
-                      <th className="px-3 py-2.5 text-right">Toplam Gram</th>
+                      <th className="px-3 py-2.5 text-right">Brüt Gram</th>
+                      <th className="px-3 py-2.5 text-right">Fire %</th>
+                      <th className="px-3 py-2.5 text-right">Net Gram</th>
+                      {!editing && <th className="px-3 py-2.5 text-right">Maliyet</th>}
                       {editing && <th className="w-8"></th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {editing ? (
                       editParts.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-sm">
-                            Henüz parça eklenmedi. "Parça Ekle" butonuna tıklayın.
-                          </td>
-                        </tr>
+                        <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400 text-sm">Henüz parça eklenmedi.</td></tr>
                       ) : editParts.map((part, idx) => {
-                        const qty = parseFloat(part.quantity) || 0;
-                        const gramsEach = parseFloat(part.gramsPerPiece) || 0;
-                        const total = qty * gramsEach;
+                        const brut = parseFloat(part.gramsPerPiece) || 0;
+                        const fire = parseFloat(part.wasteRate) || 0;
+                        const net = brut * (1 - fire / 100);
                         return (
                           <tr key={idx} className="hover:bg-slate-50/50">
                             <td className="px-3 py-2 text-slate-400 text-xs">{idx + 1}</td>
+                            <td className="px-3 py-2">
+                              <select value={part.materialId} onChange={e => onMaterialSelect(idx, e.target.value)}
+                                className="w-full px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none focus:ring-1 focus:ring-blue-400">
+                                <option value="">— Seç —</option>
+                                {materials.map(m => (
+                                  <option key={m.id} value={m.id}>{m.name} ({fmt(m.pricePerKg)} {m.currency}/kg)</option>
+                                ))}
+                              </select>
+                            </td>
                             <td className="px-3 py-2">
                               <input value={part.name} onChange={e => setPart(idx, 'name', e.target.value)}
                                 placeholder="Parça adı"
                                 className="w-full px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
                             </td>
                             <td className="px-3 py-2">
-                              <input type="number" step="1" min="0" value={part.quantity}
-                                onChange={e => setPart(idx, 'quantity', e.target.value)}
-                                className="w-20 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-blue-400" />
-                            </td>
-                            <td className="px-3 py-2">
                               <input type="number" step="0.01" min="0" value={part.gramsPerPiece}
                                 onChange={e => setPart(idx, 'gramsPerPiece', e.target.value)}
                                 placeholder="0"
-                                className="w-24 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-blue-400" />
+                                className="w-20 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-blue-400" />
                             </td>
-                            <td className="px-3 py-2 text-right text-slate-600 font-medium">
-                              {total > 0 ? total.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '—'}
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-1 justify-end">
+                                <input type="number" step="0.1" min="0" max="100" value={part.wasteRate}
+                                  onChange={e => setPart(idx, 'wasteRate', e.target.value)}
+                                  className="w-16 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-blue-400" />
+                                <span className="text-xs text-slate-400">%</span>
+                              </div>
                             </td>
+                            <td className="px-3 py-2 text-right text-slate-600 font-medium">{net > 0 ? fmt2(net) : '—'}</td>
                             <td className="px-3 py-2">
                               <button onClick={() => removePart(idx)} className="p-1 text-red-400 hover:text-red-600">
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -288,56 +379,214 @@ export default function ProductDetailPage() {
                       })
                     ) : (
                       parts.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="px-4 py-12 text-center text-slate-400 text-sm">
-                            <Package className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-                            Henüz parça eklenmemiş. Düzenle butonuna tıklayarak parça ekleyebilirsiniz.
-                          </td>
-                        </tr>
+                        <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-300 text-sm">Parça eklenmemiş</td></tr>
                       ) : parts.map((part: any, idx: number) => {
-                        const total = part.quantity * part.gramsPerPiece;
+                        const net = part.gramsPerPiece * (1 - part.wasteRate / 100);
+                        const partCost = costs?.partCosts?.[idx]?.cost ?? 0;
                         return (
                           <tr key={part.id} className="hover:bg-slate-50/50">
                             <td className="px-3 py-2.5 text-slate-400 text-xs">{idx + 1}</td>
-                            <td className="px-3 py-2.5 text-slate-700 font-medium">{part.name}</td>
-                            <td className="px-3 py-2.5 text-right text-slate-600">{part.quantity.toLocaleString('tr-TR')}</td>
-                            <td className="px-3 py-2.5 text-right text-slate-600">{part.gramsPerPiece.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} gr</td>
-                            <td className="px-3 py-2.5 text-right font-semibold text-blue-700">{total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} gr</td>
+                            <td className="px-3 py-2.5">
+                              <p className="font-medium text-slate-700">{part.material?.name || '—'}</p>
+                              {part.material && <p className="text-xs text-slate-400">{fmt(part.material.pricePerKg)} {part.material.currency}/kg</p>}
+                            </td>
+                            <td className="px-3 py-2.5 text-slate-600">{part.name}</td>
+                            <td className="px-3 py-2.5 text-right text-slate-600">{fmt2(part.gramsPerPiece)} gr</td>
+                            <td className="px-3 py-2.5 text-right text-slate-500">%{part.wasteRate}</td>
+                            <td className="px-3 py-2.5 text-right text-slate-700 font-medium">{fmt2(net)} gr</td>
+                            <td className="px-3 py-2.5 text-right font-semibold text-blue-700">
+                              {costs ? `${fmt2(partCost)} ${costs.toCurrency}` : '—'}
+                            </td>
                           </tr>
                         );
                       })
                     )}
                   </tbody>
-                  {/* Totals footer */}
-                  {!editing && parts.length > 0 && (
+                  {!editing && parts.length > 0 && costs && (
                     <tfoot>
                       <tr className="bg-blue-50 border-t-2 border-blue-200 font-bold">
-                        <td colSpan={2} className="px-3 py-2.5 text-blue-800 text-sm">TOPLAM</td>
-                        <td className="px-3 py-2.5 text-right text-blue-800">{totalParts.toLocaleString('tr-TR')} adet</td>
-                        <td className="px-3 py-2.5 text-right text-blue-500 text-xs font-normal">—</td>
-                        <td className="px-3 py-2.5 text-right text-blue-800">{totalGrams.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} gr</td>
-                      </tr>
-                    </tfoot>
-                  )}
-                  {editing && editParts.length > 0 && (
-                    <tfoot>
-                      <tr className="bg-blue-50 border-t-2 border-blue-200 font-bold">
-                        <td colSpan={2} className="px-3 py-2.5 text-blue-800 text-sm">TOPLAM</td>
-                        <td className="px-3 py-2.5 text-right text-blue-800">
-                          {editParts.reduce((s, p) => s + (parseFloat(p.quantity) || 0), 0).toLocaleString('tr-TR')} adet
-                        </td>
-                        <td className="px-3 py-2.5 text-right text-blue-500 text-xs font-normal">—</td>
-                        <td className="px-3 py-2.5 text-right text-blue-800">
-                          {editParts.reduce((s, p) => s + (parseFloat(p.quantity) || 0) * (parseFloat(p.gramsPerPiece) || 0), 0)
-                            .toLocaleString('tr-TR', { minimumFractionDigits: 2 })} gr
-                        </td>
+                        <td colSpan={3} className="px-3 py-2.5 text-blue-800 text-sm">TOPLAM</td>
+                        <td className="px-3 py-2.5 text-right text-blue-800">{fmt2(totalGrams)} gr</td>
                         <td></td>
+                        <td className="px-3 py-2.5 text-right text-blue-800">
+                          {fmt2(parts.reduce((s: number, p: any) => s + p.gramsPerPiece * (1 - p.wasteRate / 100), 0))} gr
+                        </td>
+                        <td className="px-3 py-2.5 text-right text-blue-700">{fmt2(costs.totalMaterialCost)} {costs.toCurrency}</td>
                       </tr>
                     </tfoot>
                   )}
                 </table>
               </div>
             </div>
+
+            {/* ── 2. İşçilik Maliyeti ─────────────────────────────────────── */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="bg-green-600 px-4 py-3">
+                <h2 className="text-white font-bold text-sm uppercase tracking-wide">İşçilik Maliyeti</h2>
+              </div>
+              <div className="p-4">
+                {editing ? (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Çift Başına İşçilik</label>
+                      <input type="number" step="0.01" min="0" value={editForm.laborCostPerPair}
+                        onChange={e => setEditForm((p: any) => ({ ...p, laborCostPerPair: e.target.value }))}
+                        placeholder="0"
+                        className="w-36 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-green-400" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Para Birimi</label>
+                      <select value={editForm.laborCurrency}
+                        onChange={e => setEditForm((p: any) => ({ ...p, laborCurrency: e.target.value }))}
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none">
+                        {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-500">Çift başına işçilik maliyeti</span>
+                    <span className="font-bold text-green-700 text-base">
+                      {fmt2(product.laborCostPerPair)} {product.laborCurrency}
+                      {costs && product.laborCurrency !== product.currency && (
+                        <span className="text-xs font-normal text-slate-400 ml-2">
+                          ≈ {fmt2(costs.laborCost)} {product.currency}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── 3. Koli Maliyeti ────────────────────────────────────────── */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="bg-orange-500 px-4 py-3">
+                <h2 className="text-white font-bold text-sm uppercase tracking-wide">Koli Maliyeti</h2>
+              </div>
+              <div className="p-4">
+                {editing ? (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Kolide Çift Sayısı</label>
+                      <input type="number" step="1" min="0" value={editForm.ciftPerKoli}
+                        onChange={e => setEditForm((p: any) => ({ ...p, ciftPerKoli: e.target.value }))}
+                        placeholder="0"
+                        className="w-28 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-orange-400" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Koli Fiyatı</label>
+                      <input type="number" step="0.01" min="0" value={editForm.koliFiyati}
+                        onChange={e => setEditForm((p: any) => ({ ...p, koliFiyati: e.target.value }))}
+                        placeholder="0"
+                        className="w-36 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-orange-400" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Para Birimi</label>
+                      <select value={editForm.koliCurrency}
+                        onChange={e => setEditForm((p: any) => ({ ...p, koliCurrency: e.target.value }))}
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none">
+                        {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-xs text-slate-400 mb-0.5">Kolide Çift</p>
+                      <p className="font-semibold text-slate-700">{product.ciftPerKoli} çift</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 mb-0.5">Koli Fiyatı</p>
+                      <p className="font-semibold text-slate-700">{fmt2(product.koliFiyati)} {product.koliCurrency}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 mb-0.5">Çift Başına Koli</p>
+                      <p className="font-bold text-orange-600">
+                        {costs && product.ciftPerKoli > 0
+                          ? `${fmt2(costs.packagingCostPerPair)} ${product.currency}`
+                          : '—'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── 4. Ekstra Maliyetler ─────────────────────────────────────── */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="bg-purple-600 px-4 py-3 flex items-center justify-between">
+                <h2 className="text-white font-bold text-sm uppercase tracking-wide">Ekstra Maliyetler</h2>
+                {editing && (
+                  <button onClick={addExtra}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-medium">
+                    <Plus className="w-3.5 h-3.5" /> Ekle
+                  </button>
+                )}
+              </div>
+              {editing ? (
+                <div className="p-4 space-y-2">
+                  {editExtras.length === 0 ? (
+                    <p className="text-sm text-slate-400 text-center py-4">Ekstra maliyet eklenmedi.</p>
+                  ) : editExtras.map((ec, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input value={ec.name} onChange={e => setExtra(idx, 'name', e.target.value)}
+                        placeholder="Maliyet adı (örn: Nakliye)"
+                        className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-1 focus:ring-purple-400" />
+                      <input type="number" step="0.01" min="0" value={ec.amount} onChange={e => setExtra(idx, 'amount', e.target.value)}
+                        placeholder="0"
+                        className="w-28 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-purple-400" />
+                      <select value={ec.currency} onChange={e => setExtra(idx, 'currency', e.target.value)}
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none">
+                        {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                      </select>
+                      <button onClick={() => removeExtra(idx)} className="p-1.5 text-red-400 hover:text-red-600">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div>
+                  {(!product.extraCosts || product.extraCosts.length === 0) ? (
+                    <p className="text-sm text-slate-300 text-center py-6">Ekstra maliyet eklenmemiş.</p>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-purple-50 text-xs font-semibold text-slate-600 border-b border-purple-100">
+                          <th className="px-4 py-2.5 text-left">Açıklama</th>
+                          <th className="px-4 py-2.5 text-right">Tutar</th>
+                          {costs && <th className="px-4 py-2.5 text-right">{product.currency} cinsinden</th>}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {product.extraCosts.map((ec: any, idx: number) => (
+                          <tr key={ec.id} className="hover:bg-slate-50/50">
+                            <td className="px-4 py-2.5 text-slate-700">{ec.name}</td>
+                            <td className="px-4 py-2.5 text-right font-medium text-slate-600">{fmt2(ec.amount)} {ec.currency}</td>
+                            {costs && (
+                              <td className="px-4 py-2.5 text-right font-semibold text-purple-700">
+                                {fmt2(costs.extraConverted[idx]?.converted ?? 0)} {product.currency}
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                      {costs && (
+                        <tfoot>
+                          <tr className="bg-purple-50 border-t-2 border-purple-200 font-bold">
+                            <td className="px-4 py-2.5 text-purple-800 text-sm">TOPLAM</td>
+                            <td></td>
+                            <td className="px-4 py-2.5 text-right text-purple-700">{fmt2(costs.totalExtraCost)} {product.currency}</td>
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
+                  )}
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </div>

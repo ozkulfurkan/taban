@@ -10,7 +10,13 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 
   const product = await prisma.product.findFirst({
     where: { id: params.id, companyId: user.companyId },
-    include: { parts: { orderBy: { sortOrder: 'asc' } } },
+    include: {
+      parts: {
+        include: { material: { select: { id: true, name: true, pricePerKg: true, currency: true } } },
+        orderBy: { sortOrder: 'asc' },
+      },
+      extraCosts: { orderBy: { sortOrder: 'asc' } },
+    },
   });
   if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(product);
@@ -22,7 +28,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const user = session.user as any;
 
   const body = await req.json();
-  const { parts, ...productFields } = body;
+  const { parts, extraCosts, ...productFields } = body;
 
   await prisma.$transaction(async (tx) => {
     await tx.product.updateMany({
@@ -36,6 +42,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         currency: productFields.currency || 'USD',
         stock: parseFloat(productFields.stock) || 0,
         notes: productFields.notes || null,
+        laborCostPerPair: parseFloat(productFields.laborCostPerPair) || 0,
+        laborCurrency: productFields.laborCurrency || 'USD',
+        ciftPerKoli: parseFloat(productFields.ciftPerKoli) || 0,
+        koliFiyati: parseFloat(productFields.koliFiyati) || 0,
+        koliCurrency: productFields.koliCurrency || 'USD',
       },
     });
 
@@ -45,10 +56,25 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         await tx.productPart.createMany({
           data: parts.map((p: any, idx: number) => ({
             productId: params.id,
+            materialId: p.materialId || null,
             name: p.name || '',
-            quantity: parseFloat(p.quantity) || 0,
             gramsPerPiece: parseFloat(p.gramsPerPiece) || 0,
-            notes: p.notes || null,
+            wasteRate: parseFloat(p.wasteRate) || 0,
+            sortOrder: idx,
+          })),
+        });
+      }
+    }
+
+    if (Array.isArray(extraCosts)) {
+      await tx.productExtraCost.deleteMany({ where: { productId: params.id } });
+      if (extraCosts.length > 0) {
+        await tx.productExtraCost.createMany({
+          data: extraCosts.map((e: any, idx: number) => ({
+            productId: params.id,
+            name: e.name || '',
+            amount: parseFloat(e.amount) || 0,
+            currency: e.currency || 'USD',
             sortOrder: idx,
           })),
         });
@@ -58,7 +84,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const updated = await prisma.product.findFirst({
     where: { id: params.id, companyId: user.companyId },
-    include: { parts: { orderBy: { sortOrder: 'asc' } } },
+    include: {
+      parts: {
+        include: { material: { select: { id: true, name: true, pricePerKg: true, currency: true } } },
+        orderBy: { sortOrder: 'asc' },
+      },
+      extraCosts: { orderBy: { sortOrder: 'asc' } },
+    },
   });
   return NextResponse.json(updated);
 }
