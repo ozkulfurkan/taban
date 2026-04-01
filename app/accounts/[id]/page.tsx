@@ -105,33 +105,51 @@ function HesapIslemModal({
 
 // ── Modal: Hesaplar Arası Transfer ────────────────────────────────────────────
 function TransferModal({
-  sourceAccount, allAccounts, onClose, onSaved,
-}: { sourceAccount: any; allAccounts: any[]; onClose: () => void; onSaved: () => void }) {
+  sourceAccount, allAccounts, preselectedTargetId, onClose, onSaved,
+}: { sourceAccount: any; allAccounts: any[]; preselectedTargetId?: string; onClose: () => void; onSaved: () => void }) {
   const others = allAccounts.filter(a => a.id !== sourceAccount.id);
   const [form, setForm] = useState({
-    targetId: others[0]?.id || '',
+    targetId: preselectedTargetId || others[0]?.id || '',
     amount: '',
     exchangeRate: '',
+    targetAmount: '',
     date: new Date().toISOString().split('T')[0],
     notes: '',
   });
   const [saving, setSaving] = useState(false);
-  const set = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
 
   const targetAccount = allAccounts.find(a => a.id === form.targetId);
   const isCrossCurrency = targetAccount && targetAccount.currency !== sourceAccount.currency;
-  const targetAmount = isCrossCurrency && form.amount && form.exchangeRate
-    ? parseFloat(form.amount) / parseFloat(form.exchangeRate)
-    : null;
+
+  const handleAmountChange = (v: string) => {
+    const amt = parseFloat(v);
+    const rate = parseFloat(form.exchangeRate);
+    const newTargetAmount = amt > 0 && rate > 0 ? String((amt / rate).toFixed(4)) : '';
+    setForm(p => ({ ...p, amount: v, targetAmount: newTargetAmount }));
+  };
+
+  const handleExchangeRateChange = (v: string) => {
+    const amt = parseFloat(form.amount);
+    const rate = parseFloat(v);
+    const newTargetAmount = amt > 0 && rate > 0 ? String((amt / rate).toFixed(4)) : '';
+    setForm(p => ({ ...p, exchangeRate: v, targetAmount: newTargetAmount }));
+  };
+
+  const handleTargetAmountChange = (v: string) => {
+    const amt = parseFloat(form.amount);
+    const tgt = parseFloat(v);
+    const newRate = amt > 0 && tgt > 0 ? String((amt / tgt).toFixed(4)) : '';
+    setForm(p => ({ ...p, targetAmount: v, exchangeRate: newRate }));
+  };
 
   const handleSave = async () => {
     if (!form.amount || parseFloat(form.amount) <= 0 || !form.targetId) return;
-    if (isCrossCurrency && (!form.exchangeRate || parseFloat(form.exchangeRate) <= 0)) return;
+    if (isCrossCurrency && (!form.targetAmount || parseFloat(form.targetAmount) <= 0)) return;
     setSaving(true);
     try {
       const notesBase = form.notes ? `Transfer — ${form.notes}` : 'Transfer';
       const sourceAmountVal = parseFloat(form.amount);
-      const destAmountVal = isCrossCurrency && targetAmount != null ? targetAmount : sourceAmountVal;
+      const destAmountVal = isCrossCurrency ? parseFloat(form.targetAmount) : sourceAmountVal;
 
       await fetch('/api/payments', {
         method: 'POST',
@@ -172,25 +190,19 @@ function TransferModal({
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
-            <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Opsiyonel" rows={2}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none resize-none" />
-          </div>
-          <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">İşlem Tarihi</label>
-            <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
+            <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Gönderilecek Hesap</label>
-            <select value={form.targetId} onChange={e => set('targetId', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-              {others.map(a => <option key={a.id} value={a.id}>{a.name} ({a.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {a.currency})</option>)}
-            </select>
+            <div className="w-full px-3 py-2 border border-slate-100 rounded-lg text-sm bg-slate-50 text-slate-700 font-medium">
+              {targetAccount ? `${targetAccount.name} (${targetAccount.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${targetAccount.currency})` : '—'}
+            </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1 font-bold text-slate-700">Gönderilen Tutar</label>
-            <input type="number" step="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
+            <label className="block text-xs font-medium text-slate-700 font-bold mb-1">Gönderilen Tutar</label>
+            <input type="number" step="0.01" value={form.amount} onChange={e => handleAmountChange(e.target.value)}
               placeholder="0,00"
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right font-medium" />
           </div>
@@ -200,26 +212,29 @@ function TransferModal({
                 <label className="block text-xs font-medium text-slate-500 mb-1">
                   Döviz Kuru <span className="text-slate-400">({sourceAccount.currency} / {targetAccount.currency})</span>
                 </label>
-                <input type="number" step="0.0001" value={form.exchangeRate} onChange={e => set('exchangeRate', e.target.value)}
+                <input type="number" step="0.0001" value={form.exchangeRate} onChange={e => handleExchangeRateChange(e.target.value)}
                   placeholder="0,0000"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1 font-bold">
+                <label className="block text-xs font-medium text-slate-700 font-bold mb-1">
                   Karşı Hesaba Geçen Tutar <span className="text-slate-400 font-normal">({targetAccount.currency})</span>
                 </label>
-                <div className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right bg-slate-50 font-medium text-slate-700">
-                  {targetAmount != null && !isNaN(targetAmount)
-                    ? targetAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })
-                    : '0,00'}
-                </div>
+                <input type="number" step="0.0001" value={form.targetAmount} onChange={e => handleTargetAmountChange(e.target.value)}
+                  placeholder="0,00"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right font-medium" />
               </div>
             </>
           )}
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
+            <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Opsiyonel" rows={2}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none resize-none" />
+          </div>
           <div className="flex gap-3 pt-1">
             <button onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
             <button onClick={handleSave}
-              disabled={saving || !form.amount || !form.targetId || (isCrossCurrency && !form.exchangeRate)}
+              disabled={saving || !form.amount || !form.targetId || (isCrossCurrency && !form.targetAmount)}
               className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Transfer Yap
             </button>
@@ -318,6 +333,7 @@ export default function AccountEkstrePage() {
   const [openRowMenu, setOpenRowMenu] = useState<string | null>(null);
   const [transferDropdown, setTransferDropdown] = useState(false);
   const [modal, setModal] = useState<'giris' | 'cikis' | 'transfer' | 'edit' | null>(null);
+  const [transferTargetId, setTransferTargetId] = useState<string>('');
 
   const load = useCallback(async () => {
     if (!params?.id) return;
@@ -407,7 +423,7 @@ export default function AccountEkstrePage() {
                 <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 z-20 min-w-[220px] overflow-hidden">
                   {allAccounts.filter((a: any) => a.id !== params?.id).map((a: any) => (
                     <button key={a.id}
-                      onClick={() => { setTransferDropdown(false); setModal('transfer'); }}
+                      onClick={() => { setTransferDropdown(false); setTransferTargetId(a.id); setModal('transfer'); }}
                       className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: a.color }} />
                       {a.name}
@@ -526,7 +542,7 @@ export default function AccountEkstrePage() {
         <HesapIslemModal accountId={account.id} type="ÇIKIŞ" onClose={() => setModal(null)} onSaved={load} />
       )}
       {modal === 'transfer' && account && (
-        <TransferModal sourceAccount={account} allAccounts={allAccounts} onClose={() => setModal(null)} onSaved={load} />
+        <TransferModal sourceAccount={account} allAccounts={allAccounts} preselectedTargetId={transferTargetId} onClose={() => setModal(null)} onSaved={load} />
       )}
     </AppShell>
   );
