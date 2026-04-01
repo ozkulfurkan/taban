@@ -1,45 +1,77 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
-import { ArrowLeft, Loader2, Download, Plus, CheckCircle2, Building2 } from 'lucide-react';
+import {
+  Loader2, Printer, Pencil, X, CreditCard, Building2,
+  Save, ChevronLeft, CheckCircle2,
+} from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
 const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
+const toInput = (d: string | Date | null) => d ? new Date(d).toISOString().split('T')[0] : '';
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  DRAFT:     { label: 'Taslak',   color: 'bg-slate-100 text-slate-600' },
-  PENDING:   { label: 'Bekleyen', color: 'bg-yellow-100 text-yellow-700' },
-  PARTIAL:   { label: 'Kısmi',    color: 'bg-blue-100 text-blue-700' },
-  PAID:      { label: 'Ödendi',   color: 'bg-green-100 text-green-700' },
-  CANCELLED: { label: 'İptal',    color: 'bg-red-100 text-red-600' },
-};
-
-const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı'];
+const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı', 'POS'];
 
 export default function PurchaseDetailPage() {
   const params = useParams();
   const router = useRouter();
+
   const [purchase, setPurchase] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [showPayForm, setShowPayForm] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
+
+  const [editForm, setEditForm] = useState<any>({});
   const [payForm, setPayForm] = useState({
     amount: '', method: 'Nakit', date: new Date().toISOString().split('T')[0], notes: '',
   });
 
-  const load = () => {
+  const load = useCallback(() => {
     if (!params?.id) return;
     setLoading(true);
     fetch(`/api/purchases/${params.id}`)
       .then(r => r.json())
-      .then(d => { if (!d?.error) setPurchase(d); })
-      .catch(console.error)
+      .then(d => {
+        if (!d?.error) {
+          setPurchase(d);
+          setEditForm({
+            invoiceNo: d.invoiceNo || '',
+            date: toInput(d.date),
+            currency: d.currency || 'TRY',
+            notes: d.notes || '',
+          });
+        }
+      })
       .finally(() => setLoading(false));
+  }, [params?.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/purchases/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      const updated = await res.json();
+      if (!updated?.error) { setPurchase(updated); setEditing(false); }
+    } finally { setSaving(false); }
   };
 
-  useEffect(() => { load(); }, [params?.id]);
+  const handleDelete = async () => {
+    if (!confirm('Bu alış faturası silinecek. Bağlı ödemeler de silinir. Emin misiniz?')) return;
+    setDeleting(true);
+    await fetch(`/api/purchases/${params.id}`, { method: 'DELETE' });
+    router.back();
+  };
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,196 +94,279 @@ export default function PurchaseDetailPage() {
       setShowPayForm(false);
       setPayForm({ amount: '', method: 'Nakit', date: new Date().toISOString().split('T')[0], notes: '' });
       load();
-    } catch (e) { console.error(e); }
-    finally { setPayLoading(false); }
+    } finally { setPayLoading(false); }
   };
 
-  if (loading) return (
-    <AppShell>
-      <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-teal-600" /></div>
-    </AppShell>
-  );
-  if (!purchase) return (
-    <AppShell>
-      <div className="text-center py-16 text-slate-400">Alış faturası bulunamadı</div>
-    </AppShell>
-  );
+  if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-teal-600" /></div></AppShell>;
+  if (!purchase) return <AppShell><div className="text-center py-16 text-slate-400">Alış faturası bulunamadı</div></AppShell>;
 
   const remaining = purchase.total - purchase.paidAmount;
-  const st = STATUS_LABELS[purchase.status] ?? STATUS_LABELS.PENDING;
 
   return (
     <AppShell>
-      <div className="max-w-3xl space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-              <ArrowLeft className="w-5 h-5 text-slate-600" />
+      <div className="space-y-4 max-w-6xl">
+
+        {/* Back */}
+        <button onClick={() => router.back()} className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 text-sm">
+          <ChevronLeft className="w-4 h-4" /> Geri Dön
+        </button>
+
+        {/* Action buttons */}
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => handlePdf(purchase)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium">
+            <Printer className="w-4 h-4" /> Yazdır
+          </button>
+          {!editing ? (
+            <button onClick={() => setEditing(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium">
+              <Pencil className="w-4 h-4" /> Düzenle
             </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-slate-800">{purchase.invoiceNo || 'Alış Faturası'}</h1>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${st.color}`}>{st.label}</span>
-              </div>
-              <p className="text-slate-500 text-sm">{purchase.supplier?.name}</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            {purchase.status !== 'PAID' && purchase.status !== 'CANCELLED' && (
-              <button onClick={() => setShowPayForm(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors">
-                <Plus className="w-4 h-4" /> Ödeme Kaydet
+          ) : (
+            <>
+              <button onClick={handleSave} disabled={saving}
+                className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Kaydet
               </button>
-            )}
-          </div>
+              <button onClick={() => { setEditing(false); load(); }}
+                className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium">
+                <X className="w-4 h-4" /> Vazgeç
+              </button>
+            </>
+          )}
+          <button onClick={handleDelete} disabled={deleting}
+            className="flex items-center gap-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60">
+            <X className="w-4 h-4" /> İptal Et
+          </button>
+          <button onClick={() => setShowPayForm(s => !s)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium">
+            <CreditCard className="w-4 h-4" /> Ödeme Kaydet
+          </button>
+          <Link href={`/suppliers/${purchase.supplierId}`}
+            className="flex items-center gap-2 px-3 py-1.5 bg-orange-400 hover:bg-orange-500 text-white rounded-lg text-sm font-medium">
+            <Building2 className="w-4 h-4" /> Tedarikçi Sayfası
+          </Link>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl shadow-sm p-4 text-center">
-            <p className="text-xs text-slate-500 mb-1">Toplam</p>
-            <p className="text-lg font-bold text-slate-800">{fmt(purchase.total)}</p>
-            <p className="text-xs text-slate-400">{purchase.currency}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm p-4 text-center">
-            <p className="text-xs text-slate-500 mb-1">Ödenen</p>
-            <p className="text-lg font-bold text-teal-600">{fmt(purchase.paidAmount)}</p>
-            <p className="text-xs text-slate-400">{purchase.currency}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm p-4 text-center">
-            <p className="text-xs text-slate-500 mb-1">Kalan</p>
-            <p className={`text-lg font-bold ${remaining > 0 ? 'text-red-500' : 'text-teal-600'}`}>{fmt(remaining)}</p>
-            <p className="text-xs text-slate-400">{purchase.currency}</p>
-          </div>
-        </div>
-
-        {/* Payment Form */}
+        {/* Payment form inline */}
         {showPayForm && (
-          <div className="bg-teal-50 border border-teal-200 rounded-xl p-5">
-            <h3 className="font-semibold text-teal-800 mb-4 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5" /> Ödeme Kaydet
-            </h3>
-            <form onSubmit={handlePayment} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
+            <form onSubmit={handlePayment} className="flex flex-wrap gap-3 items-end">
               <div>
-                <label className="block text-xs font-medium text-teal-700 mb-1">Tutar *</label>
-                <input required type="number" step="0.01" min="0.01"
-                  value={payForm.amount}
+                <label className="block text-xs font-medium text-teal-700 mb-1">Tutar</label>
+                <input required type="number" step="0.01" value={payForm.amount}
                   onChange={e => setPayForm(p => ({ ...p, amount: e.target.value }))}
-                  placeholder={`Max: ${fmt(remaining)}`}
-                  className="w-full px-3 py-2 border border-teal-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 outline-none" />
+                  placeholder={`Kalan: ${fmt(remaining)}`}
+                  className="w-36 px-3 py-2 border border-teal-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-teal-700 mb-1">Yöntem</label>
                 <select value={payForm.method} onChange={e => setPayForm(p => ({ ...p, method: e.target.value }))}
-                  className="w-full px-3 py-2 border border-teal-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 outline-none bg-white">
-                  {METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                  className="px-3 py-2 border border-teal-300 rounded-lg text-sm outline-none bg-white">
+                  {METHODS.map(m => <option key={m}>{m}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-teal-700 mb-1">Tarih</label>
                 <input type="date" value={payForm.date} onChange={e => setPayForm(p => ({ ...p, date: e.target.value }))}
-                  className="w-full px-3 py-2 border border-teal-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 outline-none" />
+                  className="px-3 py-2 border border-teal-300 rounded-lg text-sm outline-none" />
               </div>
-              <div>
+              <div className="flex-1 min-w-[140px]">
                 <label className="block text-xs font-medium text-teal-700 mb-1">Not</label>
                 <input value={payForm.notes} onChange={e => setPayForm(p => ({ ...p, notes: e.target.value }))}
-                  className="w-full px-3 py-2 border border-teal-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-400 outline-none" />
+                  className="w-full px-3 py-2 border border-teal-300 rounded-lg text-sm outline-none" />
               </div>
-              <div className="sm:col-span-2 flex gap-3">
-                <button type="button" onClick={() => setShowPayForm(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">İptal</button>
-                <button type="submit" disabled={payLoading}
-                  className="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                  {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Kaydet
-                </button>
-              </div>
+              <button type="submit" disabled={payLoading}
+                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-60">
+                {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Kaydet
+              </button>
+              <button type="button" onClick={() => setShowPayForm(false)}
+                className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                İptal
+              </button>
             </form>
           </div>
         )}
 
-        {/* Purchase Details */}
-        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-          {/* Supplier info */}
-          <div className="flex items-center gap-3 pb-3 border-b">
-            <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-5 h-5 text-teal-600" />
-            </div>
-            <div>
-              <p className="font-semibold text-slate-800">{purchase.supplier?.name}</p>
-              {purchase.supplier?.taxId && <p className="text-xs text-slate-400">VKN: {purchase.supplier.taxId}</p>}
-              {purchase.supplier?.phone && <p className="text-xs text-slate-400">{purchase.supplier.phone}</p>}
-            </div>
-          </div>
+        {/* Main two-column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Tarih</p>
-              <p className="font-medium text-slate-700">{fmtDate(purchase.date)}</p>
-            </div>
-            {purchase.invoiceNo && (
+          {/* LEFT: Supplier info + Purchase meta */}
+          <div className="space-y-3">
+            {/* Supplier header */}
+            <div className="bg-teal-700 rounded-xl px-4 py-3 flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-400 mb-0.5">Belge No</p>
-                <p className="font-medium text-slate-700">{purchase.invoiceNo}</p>
+                <p className="text-white font-bold text-sm">{purchase.supplier?.name}</p>
+                {purchase.supplier?.taxId && <p className="text-teal-200 text-xs mt-0.5">VKN: {purchase.supplier.taxId}</p>}
               </div>
-            )}
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Para Birimi</p>
-              <p className="font-medium text-slate-700">{purchase.currency}</p>
+              <Building2 className="w-5 h-5 text-teal-300" />
             </div>
-            <div>
-              <p className="text-xs text-slate-400 mb-0.5">Durum</p>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${st.color}`}>{st.label}</span>
-            </div>
-          </div>
 
-          <div className="border-t pt-3 space-y-1 text-sm">
-            <div className="flex justify-between font-bold text-slate-800 text-base">
-              <span>Toplam</span>
-              <span>{fmt(purchase.total)} {purchase.currency}</span>
-            </div>
-            {purchase.paidAmount > 0 && (
-              <div className="flex justify-between text-teal-600">
-                <span>Ödenen</span>
-                <span>{fmt(purchase.paidAmount)} {purchase.currency}</span>
-              </div>
-            )}
-            {remaining > 0 && (
-              <div className="flex justify-between text-red-500 font-medium">
-                <span>Kalan</span>
-                <span>{fmt(remaining)} {purchase.currency}</span>
-              </div>
-            )}
-          </div>
-
-          {purchase.notes && (
-            <div className="border-t pt-3">
-              <p className="text-xs text-slate-400 mb-1">Notlar</p>
-              <p className="text-sm text-slate-600">{purchase.notes}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Payment History */}
-        {purchase.payments?.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="font-semibold text-slate-700 mb-4">Ödeme Geçmişi</h3>
-            <div className="space-y-2">
-              {purchase.payments.map((p: any) => (
-                <div key={p.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-slate-700">{fmtDate(p.date)} — {p.method}</p>
-                    {p.notes && <p className="text-xs text-slate-400">{p.notes}</p>}
-                  </div>
-                  <span className="font-semibold text-teal-600">
-                    {fmt(p.amount)} {p.currency}
-                  </span>
+            {/* Purchase meta card */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              {editing && (
+                <div className="bg-amber-50 px-4 py-2 border-b border-amber-100">
+                  <p className="text-xs text-amber-600 font-medium">Düzenleme modu aktif</p>
                 </div>
-              ))}
+              )}
+              <div className="divide-y divide-slate-100">
+                {[
+                  { label: 'Belge No', field: 'invoiceNo', type: 'text', value: purchase.invoiceNo || '—' },
+                  { label: 'Tarihi', field: 'date', type: 'date', value: fmtDate(purchase.date) },
+                  { label: 'Para Birimi', field: 'currency', type: 'select', value: purchase.currency },
+                ].map(row => (
+                  <div key={row.field} className="flex items-center px-4 py-2.5">
+                    <span className="text-xs font-semibold text-slate-500 w-24 flex-shrink-0">{row.label}</span>
+                    {editing ? (
+                      row.type === 'select' ? (
+                        <select value={editForm[row.field] || ''} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
+                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none">
+                          {['TRY', 'USD', 'EUR'].map(c => <option key={c}>{c}</option>)}
+                        </select>
+                      ) : (
+                        <input type={row.type} value={editForm[row.field] || ''} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
+                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
+                      )
+                    ) : (
+                      <span className="text-sm text-slate-700 font-medium">{row.value}</span>
+                    )}
+                  </div>
+                ))}
+                {/* Notes */}
+                <div className="px-4 py-2.5">
+                  <span className="text-xs font-semibold text-slate-500 block mb-1">Notlar</span>
+                  {editing ? (
+                    <textarea value={editForm.notes || ''} onChange={e => setEditForm((p: any) => ({ ...p, notes: e.target.value }))} rows={2}
+                      className="w-full px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400 resize-none" />
+                  ) : (
+                    <p className="text-sm text-slate-600">{purchase.notes || <span className="text-slate-300 italic">—</span>}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Payment history */}
+            {purchase.payments?.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Ödeme Geçmişi</p>
+                <div className="space-y-2">
+                  {purchase.payments.map((p: any) => (
+                    <div key={p.id} className="flex justify-between text-sm">
+                      <span className="text-slate-500">{fmtDate(p.date)} — {p.method}</span>
+                      <span className="font-semibold text-teal-600">{fmt(p.amount)}</span>
+                    </div>
+                  ))}
+                  {remaining > 0 && (
+                    <div className="flex justify-between text-sm font-bold text-red-500 pt-2 border-t">
+                      <span>Kalan</span>
+                      <span>{fmt(remaining)} {purchase.currency}</span>
+                    </div>
+                  )}
+                  {remaining <= 0 && (
+                    <div className="text-center text-xs text-teal-600 font-semibold pt-1">Tümü Ödendi ✓</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT: Totals summary */}
+          <div className="lg:col-span-2 space-y-3">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              {/* Header */}
+              <div className="bg-teal-600 px-4 py-3">
+                <h2 className="text-white font-bold text-sm uppercase tracking-wide">Alış Özeti</h2>
+              </div>
+
+              {/* Amount display */}
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-slate-50 rounded-xl p-4 text-center">
+                    <p className="text-xs text-slate-500 mb-1">Toplam Tutar</p>
+                    <p className="text-xl font-bold text-slate-800">{fmt(purchase.total)}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{purchase.currency}</p>
+                  </div>
+                  <div className="bg-teal-50 rounded-xl p-4 text-center">
+                    <p className="text-xs text-slate-500 mb-1">Ödenen</p>
+                    <p className="text-xl font-bold text-teal-600">{fmt(purchase.paidAmount)}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{purchase.currency}</p>
+                  </div>
+                  <div className={`rounded-xl p-4 text-center ${remaining > 0 ? 'bg-red-50' : 'bg-green-50'}`}>
+                    <p className="text-xs text-slate-500 mb-1">Kalan</p>
+                    <p className={`text-xl font-bold ${remaining > 0 ? 'text-red-500' : 'text-green-600'}`}>{fmt(remaining)}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{purchase.currency}</p>
+                  </div>
+                </div>
+
+                {/* Totals breakdown */}
+                <div className="border-t pt-4">
+                  <div className="max-w-xs ml-auto space-y-2 text-sm">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Fatura Tutarı</span>
+                      <span>{fmt(purchase.total)} {purchase.currency}</span>
+                    </div>
+                    {purchase.paidAmount > 0 && (
+                      <div className="flex justify-between text-teal-600">
+                        <span>Ödenen</span>
+                        <span>- {fmt(purchase.paidAmount)} {purchase.currency}</span>
+                      </div>
+                    )}
+                    <div className={`flex justify-between font-bold text-base pt-2 border-t ${remaining > 0 ? 'text-red-500' : 'text-teal-600'}`}>
+                      <span>KALAN BORÇ</span>
+                      <span>{fmt(remaining)} {purchase.currency}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Supplier contact info */}
+                {(purchase.supplier?.phone || purchase.supplier?.email) && (
+                  <div className="border-t pt-4">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Tedarikçi Bilgileri</p>
+                    <div className="space-y-1 text-sm">
+                      {purchase.supplier?.phone && (
+                        <div className="flex gap-2">
+                          <span className="text-slate-400 w-16 flex-shrink-0">Telefon</span>
+                          <span className="text-slate-700">{purchase.supplier.phone}</span>
+                        </div>
+                      )}
+                      {purchase.supplier?.email && (
+                        <div className="flex gap-2">
+                          <span className="text-slate-400 w-16 flex-shrink-0">E-posta</span>
+                          <span className="text-slate-700">{purchase.supplier.email}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </AppShell>
   );
+}
+
+async function handlePdf(purchase: any) {
+  const { default: jsPDF } = await import('jspdf');
+  const tr = (s: string) => (s || '').replace(/ğ/g, 'g').replace(/Ğ/g, 'G').replace(/ü/g, 'u').replace(/Ü/g, 'U')
+    .replace(/ş/g, 's').replace(/Ş/g, 'S').replace(/ı/g, 'i').replace(/İ/g, 'I')
+    .replace(/ö/g, 'o').replace(/Ö/g, 'O').replace(/ç/g, 'c').replace(/Ç/g, 'C');
+  const fmt2 = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210; const M = 15; let y = M;
+  doc.setFillColor(13, 148, 136); doc.rect(0, 0, W, 24, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+  doc.text('ALIS FATURASI', M, 11);
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.text(tr(purchase.invoiceNo || ''), M, 19);
+  doc.text(tr(purchase.supplier?.name ?? ''), W - M, 11, { align: 'right' });
+  doc.text(new Date(purchase.date).toLocaleDateString('tr-TR'), W - M, 19, { align: 'right' });
+  y = 34;
+  doc.setTextColor(30, 30, 30); doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+  doc.text(`Toplam: ${fmt2(purchase.total)} ${purchase.currency}`, M, y); y += 8;
+  doc.text(`Odenen: ${fmt2(purchase.paidAmount)} ${purchase.currency}`, M, y); y += 8;
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Kalan: ${fmt2(purchase.total - purchase.paidAmount)} ${purchase.currency}`, M, y);
+  doc.save(`${tr(purchase.invoiceNo || 'alis-faturasi')}.pdf`);
 }
