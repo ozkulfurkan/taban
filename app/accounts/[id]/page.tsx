@@ -105,46 +105,55 @@ function HesapIslemModal({
 
 // ── Modal: Hesaplar Arası Transfer ────────────────────────────────────────────
 function TransferModal({
-  sourceAccountId, allAccounts, onClose, onSaved,
-}: { sourceAccountId: string; allAccounts: any[]; onClose: () => void; onSaved: () => void }) {
-  const others = allAccounts.filter(a => a.id !== sourceAccountId);
+  sourceAccount, allAccounts, onClose, onSaved,
+}: { sourceAccount: any; allAccounts: any[]; onClose: () => void; onSaved: () => void }) {
+  const others = allAccounts.filter(a => a.id !== sourceAccount.id);
   const [form, setForm] = useState({
     targetId: others[0]?.id || '',
     amount: '',
+    exchangeRate: '',
     date: new Date().toISOString().split('T')[0],
     notes: '',
   });
   const [saving, setSaving] = useState(false);
   const set = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
 
+  const targetAccount = allAccounts.find(a => a.id === form.targetId);
+  const isCrossCurrency = targetAccount && targetAccount.currency !== sourceAccount.currency;
+  const targetAmount = isCrossCurrency && form.amount && form.exchangeRate
+    ? parseFloat(form.amount) / parseFloat(form.exchangeRate)
+    : null;
+
   const handleSave = async () => {
     if (!form.amount || parseFloat(form.amount) <= 0 || !form.targetId) return;
+    if (isCrossCurrency && (!form.exchangeRate || parseFloat(form.exchangeRate) <= 0)) return;
     setSaving(true);
     try {
-      const notes = form.notes ? `Transfer${form.notes ? ` — ${form.notes}` : ''}` : 'Transfer';
-      // Çıkış (kaynak hesaptan düş)
+      const notesBase = form.notes ? `Transfer — ${form.notes}` : 'Transfer';
+      const sourceAmountVal = parseFloat(form.amount);
+      const destAmountVal = isCrossCurrency && targetAmount != null ? targetAmount : sourceAmountVal;
+
       await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          accountId: sourceAccountId,
-          amount: form.amount,
+          accountId: sourceAccount.id,
+          amount: sourceAmountVal,
           date: form.date,
           method: 'Transfer',
-          notes: `${notes} → ${allAccounts.find(a => a.id === form.targetId)?.name || ''}`,
+          notes: `${notesBase} → ${targetAccount?.name || ''}`,
           _type: 'PAID',
         }),
       });
-      // Giriş (hedef hesaba ekle)
       await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accountId: form.targetId,
-          amount: form.amount,
+          amount: destAmountVal,
           date: form.date,
           method: 'Transfer',
-          notes: `${notes} ← ${allAccounts.find(a => a.id === sourceAccountId)?.name || ''}`,
+          notes: `${notesBase} ← ${sourceAccount.name || ''}`,
           _type: 'RECEIVED',
         }),
       });
@@ -157,39 +166,62 @@ function TransferModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm">
-        <div className="rounded-t-2xl px-5 py-4 flex items-center justify-between bg-orange-500">
-          <h3 className="text-white font-semibold">Hesaplar Arası Transfer</h3>
+        <div className="rounded-t-2xl px-5 py-4 flex items-center justify-between bg-teal-500">
+          <h3 className="text-white font-semibold">Başka Hesaba Transfer</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Hedef Hesap</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
+            <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Opsiyonel" rows={2}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none resize-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">İşlem Tarihi</label>
+            <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Gönderilecek Hesap</label>
             <select value={form.targetId} onChange={e => set('targetId', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none bg-white">
-              {others.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+              {others.map(a => <option key={a.id} value={a.id}>{a.name} ({a.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {a.currency})</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tutar</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1 font-bold text-slate-700">Gönderilen Tutar</label>
             <input type="number" step="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
               placeholder="0,00"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none text-right" />
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right font-medium" />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
-            <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
-            <input value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Opsiyonel"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
-          </div>
+          {isCrossCurrency && (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">
+                  Döviz Kuru <span className="text-slate-400">({sourceAccount.currency} / {targetAccount.currency})</span>
+                </label>
+                <input type="number" step="0.0001" value={form.exchangeRate} onChange={e => set('exchangeRate', e.target.value)}
+                  placeholder="0,0000"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1 font-bold">
+                  Karşı Hesaba Geçen Tutar <span className="text-slate-400 font-normal">({targetAccount.currency})</span>
+                </label>
+                <div className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right bg-slate-50 font-medium text-slate-700">
+                  {targetAmount != null && !isNaN(targetAmount)
+                    ? targetAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })
+                    : '0,00'}
+                </div>
+              </div>
+            </>
+          )}
           <div className="flex gap-3 pt-1">
             <button onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
-            <button onClick={handleSave} disabled={saving || !form.amount || !form.targetId}
-              className="flex-1 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Transferi Yap
+            <button onClick={handleSave}
+              disabled={saving || !form.amount || !form.targetId || (isCrossCurrency && !form.exchangeRate)}
+              className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Transfer Yap
             </button>
           </div>
         </div>
@@ -494,7 +526,7 @@ export default function AccountEkstrePage() {
         <HesapIslemModal accountId={account.id} type="ÇIKIŞ" onClose={() => setModal(null)} onSaved={load} />
       )}
       {modal === 'transfer' && account && (
-        <TransferModal sourceAccountId={account.id} allAccounts={allAccounts} onClose={() => setModal(null)} onSaved={load} />
+        <TransferModal sourceAccount={account} allAccounts={allAccounts} onClose={() => setModal(null)} onSaved={load} />
       )}
     </AppShell>
   );

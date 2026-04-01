@@ -1190,6 +1190,7 @@ export default function SupplierDetailPage() {
   const [showTedarikciCek, setShowTedarikciCek] = useState(false);
   const [odemeDropdown, setOdemeDropdown] = useState(false);
   const [successAmount, setSuccessAmount] = useState<number | null>(null);
+  const [cekPortfoyToast, setCekPortfoyToast] = useState(false);
   const [purchasesShown, setPurchasesShown] = useState(10);
   const [paymentsShown, setPaymentsShown] = useState(10);
 
@@ -1225,9 +1226,17 @@ export default function SupplierDetailPage() {
     setSaving(false);
   };
 
-  const handleDeletePayment = async (id: string) => {
-    if (!confirm('Bu ödeme silinecek. Emin misiniz?')) return;
+  const handleDeletePayment = async (id: string, method?: string) => {
+    const isCek = method === 'Çek';
+    const msg = isCek
+      ? 'Bu çek ödemesi silinecek ve çek portföye geri dönecek. Emin misiniz?'
+      : 'Bu ödeme silinecek. Emin misiniz?';
+    if (!confirm(msg)) return;
     await fetch(`/api/payments/${id}`, { method: 'DELETE' });
+    if (isCek) {
+      setCekPortfoyToast(true);
+      setTimeout(() => setCekPortfoyToast(false), 3500);
+    }
     load();
   };
 
@@ -1391,6 +1400,17 @@ export default function SupplierDetailPage() {
           </motion.div>
         </div>
 
+        {/* Çek portföy toast */}
+        {cekPortfoyToast && (
+          <div className="fixed bottom-6 right-6 z-50 bg-cyan-600 text-white rounded-xl shadow-xl px-5 py-3 flex items-center gap-3 animate-in slide-in-from-bottom duration-300">
+            <span className="text-lg">✓</span>
+            <div>
+              <p className="font-semibold text-sm">Çek Portföye Döndürüldü</p>
+              <p className="text-xs text-cyan-100">Çek portföy ekranında görüntülenebilir</p>
+            </div>
+          </div>
+        )}
+
         {/* Success overlay */}
         {successAmount !== null && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
@@ -1477,13 +1497,15 @@ export default function SupplierDetailPage() {
                     <th className="px-4 py-2 text-left">{t('supplierDetail', 'invoiceNo')}</th>
                     <th className="px-4 py-2 text-center">Durum</th>
                     <th className="px-4 py-2 text-right">{t('supplierDetail', 'amount')}</th>
+                    <th className="w-8"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {supplier.purchases.slice(0, purchasesShown).map((p: any) => (
-                    <tr key={p.id} className="hover:bg-slate-50/50">
+                    <tr key={p.id} className="hover:bg-teal-50/50 cursor-pointer transition-colors"
+                      onClick={() => router.push(`/purchases/${p.id}`)}>
                       <td className="px-4 py-2.5 text-slate-500">{new Date(p.date).toLocaleDateString('tr-TR')}</td>
-                      <td className="px-4 py-2.5 font-medium text-slate-700">{p.invoiceNo || '—'}</td>
+                      <td className="px-4 py-2.5 font-medium text-teal-600">{p.invoiceNo || '—'}</td>
                       <td className="px-4 py-2.5 text-center">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[p.status]}`}>
                           {STATUS_LABEL[p.status]}
@@ -1492,6 +1514,9 @@ export default function SupplierDetailPage() {
                       <td className="px-4 py-2.5 text-right font-semibold text-slate-800">
                         {p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                         <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
+                      </td>
+                      <td className="pr-3 text-slate-300">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
                       </td>
                     </tr>
                   ))}
@@ -1539,7 +1564,7 @@ export default function SupplierDetailPage() {
                         {p.method}{p.notes ? ` (${p.notes})` : ''}
                       </td>
                       <td className="px-2 py-2.5 text-center">
-                        <button onClick={() => handleDeletePayment(p.id)}
+                        <button onClick={() => handleDeletePayment(p.id, p.method)}
                           className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
