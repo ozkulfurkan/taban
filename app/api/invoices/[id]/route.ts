@@ -70,6 +70,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           const disc = parseFloat(i.discount) || 0;
           return {
             invoiceId: params.id,
+            productId: i.productId || null,
             description: i.description,
             quantity: qty,
             unitPrice: price,

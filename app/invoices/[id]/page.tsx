@@ -6,7 +6,7 @@ import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
 import {
   Loader2, Printer, Pencil, X, CreditCard, User,
-  Plus, Trash2, Save, ChevronLeft,
+  Plus, Trash2, Save, ChevronLeft, Package, CheckCircle,
 } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
@@ -39,6 +39,42 @@ export default function InvoiceDetailPage() {
   const [payForm, setPayForm] = useState({
     amount: '', method: 'Nakit', date: new Date().toISOString().split('T')[0], notes: '',
   });
+
+  // Stok düşümü state
+  const [showStokModal, setShowStokModal] = useState(false);
+  const [stokData, setStokData] = useState<any>(null);
+  const [stokLoading, setStokLoading] = useState(false);
+  const [stokSaving, setStokSaving] = useState(false);
+  const [stokAdjustments, setStokAdjustments] = useState<any[]>([]);
+
+  const handleStokOpen = async () => {
+    setStokLoading(true);
+    setShowStokModal(true);
+    try {
+      const res = await fetch(`/api/invoices/${params.id}/stok-dusumu`);
+      const data = await res.json();
+      setStokData(data);
+      setStokAdjustments((data.adjustments || []).map((a: any) => ({ ...a, kgInput: String(a.kgAmount) })));
+    } finally { setStokLoading(false); }
+  };
+
+  const handleStokOnayla = async () => {
+    setStokSaving(true);
+    try {
+      await fetch(`/api/invoices/${params.id}/stok-dusumu`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adjustments: stokAdjustments.map(a => ({
+            materialId: a.materialId,
+            kgAmount: parseFloat(a.kgInput) || 0,
+          })),
+        }),
+      });
+      setShowStokModal(false);
+      load();
+    } finally { setStokSaving(false); }
+  };
 
   const load = useCallback(() => {
     if (!params?.id) return;
@@ -208,6 +244,19 @@ export default function InvoiceDetailPage() {
             className="flex items-center gap-2 px-3 py-1.5 bg-orange-400 hover:bg-orange-500 text-white rounded-lg text-sm font-medium">
             <User className="w-4 h-4" /> Müşteri Sayfası
           </Link>
+          {/* Stok düşümü butonu */}
+          {(invoice.items || []).some((i: any) => i.productId) && (
+            invoice.stockDeducted ? (
+              <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium">
+                <CheckCircle className="w-4 h-4" /> Stok Düşümü Yapıldı
+              </span>
+            ) : (
+              <button onClick={handleStokOpen}
+                className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium">
+                <Package className="w-4 h-4" /> Stok Düşümünü Onayla
+              </button>
+            )
+          )}
         </div>
 
         {/* Payment form inline */}
@@ -472,6 +521,95 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Stok Düşümü Modalı */}
+      {showStokModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowStokModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+            <div className="bg-amber-500 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+              <h3 className="text-white font-semibold text-base flex items-center gap-2">
+                <Package className="w-5 h-5" /> Hammadde Stok Düşümü
+              </h3>
+              <button onClick={() => setShowStokModal(false)} className="text-white/80 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              {stokLoading ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin text-amber-500" /></div>
+              ) : stokAdjustments.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-sm">
+                  Bu faturada ürün kataloğundan seçilmiş kalem bulunamadı.
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-500 mb-4">
+                    Aşağıdaki miktarlar ürün reçetesine göre hesaplandı. Düzenleyebilirsiniz.
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
+                          <th className="px-3 py-2 text-left">Hammadde</th>
+                          <th className="px-3 py-2 text-right">Mevcut Stok (kg)</th>
+                          <th className="px-3 py-2 text-right">Hesaplanan (kg)</th>
+                          <th className="px-3 py-2 text-right">Düşülecek (kg)</th>
+                          <th className="px-3 py-2 text-right">Sonraki Stok (kg)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {stokAdjustments.map((adj: any, idx: number) => {
+                          const dusulecek = parseFloat(adj.kgInput) || 0;
+                          const sonraki = adj.currentStock - dusulecek;
+                          return (
+                            <tr key={adj.materialId} className="hover:bg-slate-50/50">
+                              <td className="px-3 py-2.5 font-medium text-slate-700">{adj.name}</td>
+                              <td className="px-3 py-2.5 text-right text-slate-500">
+                                {adj.currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 3 })}
+                              </td>
+                              <td className="px-3 py-2.5 text-right text-slate-400 text-xs">
+                                {adj.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 3 })}
+                              </td>
+                              <td className="px-3 py-2.5 text-right">
+                                <input
+                                  type="number" step="0.001" min="0"
+                                  value={adj.kgInput}
+                                  onChange={e => setStokAdjustments(p => p.map((a, i) => i === idx ? { ...a, kgInput: e.target.value } : a))}
+                                  className="w-28 px-2 py-1 border border-amber-300 rounded text-sm text-right outline-none focus:ring-2 focus:ring-amber-400"
+                                />
+                              </td>
+                              <td className={`px-3 py-2.5 text-right font-semibold ${sonraki < 0 ? 'text-red-600' : 'text-slate-700'}`}>
+                                {sonraki.toLocaleString('tr-TR', { minimumFractionDigits: 3 })}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {stokAdjustments.some(a => (a.currentStock - (parseFloat(a.kgInput) || 0)) < 0) && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600">
+                      ⚠ Bazı hammaddeler için stok yetersiz. Yine de kaydedebilirsiniz (stok negatife düşer).
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-3 mt-5">
+                    <button onClick={() => setShowStokModal(false)}
+                      className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                      Vazgeç
+                    </button>
+                    <button onClick={handleStokOnayla} disabled={stokSaving}
+                      className="flex items-center gap-2 px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold disabled:opacity-60">
+                      {stokSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
+                      Onayla ve Düşür
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

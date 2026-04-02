@@ -6,7 +6,7 @@ import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
 import {
   Loader2, Printer, Pencil, X, CreditCard, Building2,
-  Save, ChevronLeft, CheckCircle2,
+  Save, ChevronLeft, CheckCircle2, Layers, Plus, Trash2,
 } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
@@ -31,6 +31,55 @@ export default function PurchaseDetailPage() {
   const [payForm, setPayForm] = useState({
     amount: '', method: 'Nakit', date: new Date().toISOString().split('T')[0], notes: '',
   });
+
+  // Hammadde girişleri
+  const [purchaseMaterials, setPurchaseMaterials] = useState<any[]>([]);
+  const [matList, setMatList] = useState<any[]>([]);
+  const [newMat, setNewMat] = useState({ materialId: '', kgAmount: '', pricePerKg: '' });
+  const [matSaving, setMatSaving] = useState(false);
+  const [matDeleting, setMatDeleting] = useState<string | null>(null);
+
+  const loadPurchaseMaterials = useCallback(() => {
+    if (!params?.id) return;
+    fetch(`/api/purchases/${params.id}/hammaddeler`)
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d)) setPurchaseMaterials(d); });
+  }, [params?.id]);
+
+  useEffect(() => {
+    fetch('/api/materials').then(r => r.json()).then(d => { if (Array.isArray(d)) setMatList(d); });
+    loadPurchaseMaterials();
+  }, [loadPurchaseMaterials]);
+
+  const handleAddMat = async () => {
+    if (!newMat.materialId || !newMat.kgAmount) return;
+    setMatSaving(true);
+    try {
+      await fetch(`/api/purchases/${params.id}/hammaddeler`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          materialId: newMat.materialId,
+          kgAmount: parseFloat(newMat.kgAmount),
+          pricePerKg: newMat.pricePerKg ? parseFloat(newMat.pricePerKg) : null,
+        }),
+      });
+      setNewMat({ materialId: '', kgAmount: '', pricePerKg: '' });
+      loadPurchaseMaterials();
+    } finally { setMatSaving(false); }
+  };
+
+  const handleDeleteMat = async (entryId: string) => {
+    setMatDeleting(entryId);
+    try {
+      await fetch(`/api/purchases/${params.id}/hammaddeler`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entryId }),
+      });
+      loadPurchaseMaterials();
+    } finally { setMatDeleting(null); }
+  };
 
   const load = useCallback(() => {
     if (!params?.id) return;
@@ -270,8 +319,90 @@ export default function PurchaseDetailPage() {
             )}
           </div>
 
-          {/* RIGHT: Totals summary */}
+          {/* RIGHT: Totals + Hammadde girişleri */}
           <div className="lg:col-span-2 space-y-3">
+            {/* Hammadde Girişleri */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="bg-emerald-600 px-4 py-3 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-white" />
+                <h2 className="text-white font-bold text-sm uppercase tracking-wide">Hammadde Girişleri</h2>
+              </div>
+              <div className="p-4 space-y-3">
+                {/* Yeni giriş formu */}
+                <div className="flex flex-wrap gap-2 items-end">
+                  <div className="flex-1 min-w-[160px]">
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Hammadde</label>
+                    <select value={newMat.materialId} onChange={e => setNewMat(p => ({ ...p, materialId: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-400 bg-white">
+                      <option value="">Seç...</option>
+                      {matList.map(m => (
+                        <option key={m.id} value={m.id}>{m.name} ({(m.stock ?? 0).toFixed(2)} kg stok)</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="w-28">
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Kg Miktarı</label>
+                    <input type="number" step="0.001" min="0" value={newMat.kgAmount}
+                      onChange={e => setNewMat(p => ({ ...p, kgAmount: e.target.value }))}
+                      placeholder="0.000"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-emerald-400" />
+                  </div>
+                  <div className="w-32">
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Birim Fiyat (opsiyonel)</label>
+                    <input type="number" step="0.01" min="0" value={newMat.pricePerKg}
+                      onChange={e => setNewMat(p => ({ ...p, pricePerKg: e.target.value }))}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-emerald-400" />
+                  </div>
+                  <button onClick={handleAddMat} disabled={matSaving || !newMat.materialId || !newMat.kgAmount}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
+                    {matSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    Ekle
+                  </button>
+                </div>
+
+                {/* Giriş listesi */}
+                {purchaseMaterials.length === 0 ? (
+                  <div className="text-center py-4 text-slate-400 text-sm italic">Henüz hammadde girişi yok</div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
+                        <th className="px-3 py-2 text-left">Hammadde</th>
+                        <th className="px-3 py-2 text-right">Kg Miktarı</th>
+                        <th className="px-3 py-2 text-right">Birim Fiyat</th>
+                        <th className="px-3 py-2 text-right">Mevcut Stok</th>
+                        <th className="px-3 py-2 w-8"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {purchaseMaterials.map((pm: any) => (
+                        <tr key={pm.id} className="hover:bg-slate-50/50">
+                          <td className="px-3 py-2.5 font-medium text-slate-700">{pm.material?.name}</td>
+                          <td className="px-3 py-2.5 text-right text-emerald-600 font-semibold">
+                            {pm.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg
+                          </td>
+                          <td className="px-3 py-2.5 text-right text-slate-500">
+                            {pm.pricePerKg ? `${pm.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${pm.material?.currency}` : '—'}
+                          </td>
+                          <td className="px-3 py-2.5 text-right text-slate-500">
+                            {(pm.material?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg
+                          </td>
+                          <td className="px-2 py-2.5 text-center">
+                            <button onClick={() => handleDeleteMat(pm.id)}
+                              disabled={matDeleting === pm.id}
+                              className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-all">
+                              {matDeleting === pm.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               {/* Header */}
               <div className="bg-teal-600 px-4 py-3">

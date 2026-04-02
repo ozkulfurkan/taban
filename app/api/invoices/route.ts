@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
           const disc = parseFloat(i.discount) || 0;
           return {
             description: i.description,
+            productId: i.productId || null,
             quantity: qty,
             unitPrice: price,
             discount: disc,

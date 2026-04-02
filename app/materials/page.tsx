@@ -5,7 +5,7 @@ import AppShell from '@/app/components/app-shell';
 import Modal from '@/app/components/modal';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { useSession } from 'next-auth/react';
-import { Package, Plus, Search, Edit2, Trash2, History, Loader2 } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, History, Loader2, Layers } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function MaterialsPage() {
@@ -23,6 +23,27 @@ export default function MaterialsPage() {
   const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState({ name: '', supplier: '', pricePerKg: '', currency: 'USD', description: '' });
   const [saving, setSaving] = useState(false);
+
+  // Stok güncelleme
+  const [stokModal, setStokModal] = useState<any>(null);
+  const [stokDelta, setStokDelta] = useState('');
+  const [stokSign, setStokSign] = useState<1 | -1>(1);
+  const [stokSaving, setStokSaving] = useState(false);
+
+  const handleStokSave = async () => {
+    if (!stokModal || !stokDelta) return;
+    setStokSaving(true);
+    try {
+      await fetch(`/api/materials/${stokModal.id}/stok`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delta: stokSign * (parseFloat(stokDelta) || 0) }),
+      });
+      setStokModal(null);
+      setStokDelta('');
+      fetchMaterials();
+    } finally { setStokSaving(false); }
+  };
 
   const fetchMaterials = useCallback(async () => {
     try {
@@ -149,7 +170,23 @@ export default function MaterialsPage() {
                     <p className="font-semibold text-slate-800">{formatCurrency(mat?.pricePerKg ?? 0)}/kg</p>
                     <p className="text-xs text-slate-400">{mat?.currency ?? ''}</p>
                   </div>
+                  {/* Stok */}
+                  <div className="text-right min-w-[80px]">
+                    <p className={`font-semibold text-sm ${(mat?.stock ?? 0) <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                      {(mat?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                    </p>
+                    <p className="text-xs text-slate-400">Stok</p>
+                  </div>
                   <div className="flex items-center gap-1">
+                    {canEdit && (
+                      <button
+                        onClick={() => { setStokModal(mat); setStokDelta(''); setStokSign(1); }}
+                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                        title="Stok Güncelle"
+                      >
+                        <Layers className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => setHistoryModal(mat)}
                       className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -241,6 +278,72 @@ export default function MaterialsPage() {
           )}
         </div>
       </Modal>
+      {/* Stok Güncelleme Modalı */}
+      {stokModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setStokModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="bg-emerald-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+              <h3 className="text-white font-semibold text-base">Stok Güncelle — {stokModal.name}</h3>
+              <button onClick={() => setStokModal(null)} className="text-white/80 hover:text-white">
+                <span className="text-lg font-bold">×</span>
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="text-center">
+                <p className="text-xs text-slate-500">Mevcut Stok</p>
+                <p className="text-2xl font-bold text-slate-700">
+                  {(stokModal.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setStokSign(1)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${stokSign === 1 ? 'bg-emerald-600 text-white border-emerald-600' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                >
+                  + Stok Ekle
+                </button>
+                <button
+                  onClick={() => setStokSign(-1)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${stokSign === -1 ? 'bg-red-500 text-white border-red-500' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                >
+                  − Stok Azalt
+                </button>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Miktar (kg)</label>
+                <input
+                  type="number" step="0.001" min="0"
+                  value={stokDelta}
+                  onChange={e => setStokDelta(e.target.value)}
+                  placeholder="0.000"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-emerald-400"
+                  autoFocus
+                />
+              </div>
+              {stokDelta && (
+                <div className="text-center text-sm">
+                  <span className="text-slate-500">Yeni stok: </span>
+                  <span className="font-bold text-slate-700">
+                    {((stokModal.stock ?? 0) + stokSign * (parseFloat(stokDelta) || 0)).toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg
+                  </span>
+                </div>
+              )}
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setStokModal(null)}
+                  className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm">
+                  Vazgeç
+                </button>
+                <button onClick={handleStokSave} disabled={stokSaving || !stokDelta}
+                  className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
+                  {stokSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Kaydet
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
