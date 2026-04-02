@@ -299,19 +299,27 @@ export default function ProductDetailPage() {
                           onKeyDown={e => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              const v = sizeInput.trim();
-                              if (v && !editSizes.includes(v)) setEditSizes(p => [...p, v]);
+                              const vals = sizeInput.split(',').map(v => v.trim()).filter(Boolean);
+                              setEditSizes(p => {
+                                const next = [...p];
+                                vals.forEach(v => { if (!next.includes(v)) next.push(v); });
+                                return next;
+                              });
                               setSizeInput('');
                             }
                           }}
-                          placeholder="36, 37, S, M..."
+                          placeholder="36,37,38 veya S,M,L"
                           className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400"
                         />
                         <button
                           type="button"
                           onClick={() => {
-                            const v = sizeInput.trim();
-                            if (v && !editSizes.includes(v)) setEditSizes(p => [...p, v]);
+                            const vals = sizeInput.split(',').map(v => v.trim()).filter(Boolean);
+                            setEditSizes(p => {
+                              const next = [...p];
+                              vals.forEach(v => { if (!next.includes(v)) next.push(v); });
+                              return next;
+                            });
                             setSizeInput('');
                           }}
                           className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium"
@@ -319,6 +327,7 @@ export default function ProductDetailPage() {
                           Ekle
                         </button>
                       </div>
+                      <p className="text-xs text-slate-400">Virgülle ayırarak toplu ekleyebilirsiniz: <span className="font-medium text-slate-500">36,37,38,39,40</span></p>
                       <div className="flex flex-wrap gap-1.5">
                         {editSizes.map(s => (
                           <span key={s} className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">

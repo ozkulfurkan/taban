@@ -59,6 +59,8 @@ function QuoteForm() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [productSearch, setProductSearch] = useState('');
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [showCustomerDrop, setShowCustomerDrop] = useState(false);
 
   useEffect(() => {
     fetch('/api/company').then(r => r.json()).then(d => {
@@ -66,6 +68,9 @@ function QuoteForm() {
         setCompany(d);
         if (d?.vatRate) setVatRate(String(d.vatRate));
       }
+    }).catch(() => {});
+    fetch('/api/customers').then(r => r.json()).then(d => {
+      if (Array.isArray(d)) setCustomers(d);
     }).catch(() => {});
     if (calcId) {
       fetch(`/api/calculations/${calcId}`).then(r => r.json()).then(d => {
@@ -357,9 +362,48 @@ function QuoteForm() {
         <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
           <h2 className="font-semibold text-blue-600 text-sm uppercase tracking-wide">Müşteri Bilgileri</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+            <div className="relative">
               <label className="block text-xs font-medium text-slate-600 mb-1">Firma Adı</label>
-              <input value={customer.firmName} onChange={e => setCustomer({ ...customer, firmName: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <input
+                value={customer.firmName}
+                onChange={e => {
+                  setCustomer({ ...customer, firmName: e.target.value });
+                  setShowCustomerDrop(true);
+                }}
+                onFocus={() => setShowCustomerDrop(true)}
+                onBlur={() => setTimeout(() => setShowCustomerDrop(false), 150)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                autoComplete="off"
+              />
+              {showCustomerDrop && customer.firmName.length > 0 && (() => {
+                const q = customer.firmName.toLowerCase();
+                const filtered = customers.filter(c => c.name?.toLowerCase().includes(q));
+                if (!filtered.length) return null;
+                return (
+                  <ul className="absolute z-30 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                    {filtered.map(c => (
+                      <li key={c.id}>
+                        <button
+                          type="button"
+                          onMouseDown={() => {
+                            setCustomer({
+                              firmName: c.name ?? '',
+                              address: c.address ?? '',
+                              taxId: c.taxId ?? '',
+                              email: c.email ?? '',
+                            });
+                            setShowCustomerDrop(false);
+                          }}
+                          className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm text-slate-700"
+                        >
+                          <span className="font-medium">{c.name}</span>
+                          {c.taxId && <span className="text-slate-400 text-xs ml-2">VKN: {c.taxId}</span>}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()}
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Vergi Kimlik No</label>
