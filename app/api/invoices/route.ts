@@ -117,7 +117,16 @@ export async function POST(req: NextRequest) {
 
   // Otomatik hammadde stoğu düşümü (sadece satış faturalarında)
   if (productItems.length > 0 && !isReturn) {
-    const uniqueProductIds = [...new Set(productItems.map((i: any) => i.productId))];
+    const ids: string[] = [];
+
+for (let i = 0; i < productItems.length; i++) {
+  const id = productItems[i].productId;
+  if (ids.indexOf(id) === -1) {
+    ids.push(id);
+  }
+}
+
+const uniqueProductIds = ids;
     const products = await prisma.product.findMany({
       where: { id: { in: uniqueProductIds as string[] }, companyId: user.companyId },
       include: { parts: true },
