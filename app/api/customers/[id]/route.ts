@@ -52,6 +52,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const user = session.user as any;
 
   const body = await req.json();
+  // currency değiştirilmesine izin verme — oluşturulurken belirlenir, sonradan değişmez
   const customer = await prisma.customer.updateMany({
     where: { id: params.id, companyId: user.companyId },
     data: {
@@ -61,7 +62,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       email: body.email || null,
       phone: body.phone || null,
       address: body.address || null,
-      currency: body.currency || 'TRY',
       notes: body.notes || null,
     },
   });

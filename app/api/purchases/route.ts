@@ -24,9 +24,25 @@ export async function POST(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
   const body = await req.json();
-  const { supplierId, invoiceNo, date, currency, total, notes, items = [] } = body;
+  const { supplierId, invoiceNo, date, total, notes, items = [] } = body;
+  let { currency } = body;
 
   if (!supplierId) return NextResponse.json({ error: 'supplierId required' }, { status: 400 });
+
+  // Para birimi doğrulama: tedarikçi para birimiyle eşleşmeli
+  const supplier = await prisma.supplier.findFirst({
+    where: { id: supplierId, companyId: user.companyId },
+    select: { currency: true },
+  });
+  if (supplier?.currency) {
+    if (currency && currency !== supplier.currency) {
+      return NextResponse.json(
+        { error: `Para birimi uyumsuz. Tedarikçi para birimi: ${supplier.currency}` },
+        { status: 400 }
+      );
+    }
+    currency = supplier.currency;
+  }
 
   const computedTotal = items.length > 0
     ? items.reduce((s: number, i: any) => s + (parseFloat(i.qty) || 0) * (parseFloat(i.unitPrice) || 0), 0)

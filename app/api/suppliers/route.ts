@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
       email: body.email || null,
       phone: body.phone || null,
       address: body.address || null,
+      currency: body.currency || 'USD',
       notes: body.notes || null,
     },
   });

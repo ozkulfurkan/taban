@@ -862,10 +862,10 @@ export default function CustomerDetailPage() {
                 ))}
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">Para Birimi</label>
-                  <select value={form.currency ?? 'TRY'} onChange={e => setForm((p: any) => ({...p, currency: e.target.value}))}
-                    className="w-full px-3 py-1.5 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white">
-                    {['TRY','USD','EUR'].map(c => <option key={c}>{c}</option>)}
-                  </select>
+                  <div className="flex items-center gap-2 px-3 py-1.5 border border-slate-200 rounded-lg bg-slate-50">
+                    <span className="text-sm font-semibold text-slate-700">{customer.currency || 'TRY'}</span>
+                    <span className="text-xs text-slate-400">(değiştirilemez)</span>
+                  </div>
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-slate-600 mb-1">Adres</label>

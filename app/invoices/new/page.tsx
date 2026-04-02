@@ -384,21 +384,20 @@ export default function NewInvoicePage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'currency')}</label>
-                <div className="relative">
+                {selectedCustomer ? (
+                  <div className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg text-sm">
+                    <span className="font-semibold text-slate-700">{selectedCustomer.currency}</span>
+                    <span className="text-xs text-slate-400">(müşteri para birimi)</span>
+                  </div>
+                ) : (
                   <select
                     value={form.currency}
-                    onChange={e => handleCurrencyChange(e.target.value)}
+                    onChange={e => setField('currency', e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                   >
                     {CURRENCIES.map(c => <option key={c}>{c}</option>)}
                   </select>
-                  {selectedCustomer && form.currency !== selectedCustomer.currency && (
-                    <div className="flex items-center gap-1.5 mt-1 text-xs text-amber-600">
-                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-                      {t('newInvoice', 'customerCurrency')} {selectedCustomer.currency}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'notes')}</label>

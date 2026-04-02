@@ -466,7 +466,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
     invoiceNo: '',
-    currency: 'TRY',
+    currency: supplier.currency || 'USD',
     notes: '',
   });
   const [items, setItems] = useState<LineItem[]>([
@@ -590,10 +590,10 @@ function AlışModal({ supplier, onClose, onSaved }: {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Döviz</label>
-              <select value={form.currency} onChange={e => setForm(p => ({ ...p, currency: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                {CURRENCIES.map(c => <option key={c}>{c}</option>)}
-              </select>
+              <div className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg text-sm">
+                <span className="font-semibold text-slate-700">{supplier.currency || 'USD'}</span>
+                <span className="text-xs text-slate-400">(tedarikçi para birimi)</span>
+              </div>
             </div>
 
             {/* Line items */}
@@ -1338,6 +1338,13 @@ export default function SupplierDetailPage() {
                       className="w-full px-3 py-1.5 border border-cyan-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-400 outline-none bg-white" />
                   </div>
                 ))}
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Para Birimi</label>
+                  <div className="flex items-center gap-2 px-3 py-1.5 border border-slate-200 rounded-lg bg-slate-50">
+                    <span className="text-sm font-semibold text-slate-700">{supplier.currency || 'USD'}</span>
+                    <span className="text-xs text-slate-400">(değiştirilemez)</span>
+                  </div>
+                </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-slate-600 mb-1">Adres</label>
                   <textarea value={form.address ?? ''} onChange={e => setForm((p: any) => ({ ...p, address: e.target.value }))}
@@ -1365,6 +1372,9 @@ export default function SupplierDetailPage() {
                   {supplier.address && <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />{supplier.address}</div>}
                   {supplier.taxId && <div className="flex items-center gap-2"><Hash className="w-4 h-4 text-slate-400" />VKN: {supplier.taxId}</div>}
                   {supplier.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-slate-400" />{supplier.phone}</div>}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded">{supplier.currency || 'USD'}</span>
+                  </div>
                   {supplier.notes && <p className="text-xs text-slate-400 italic mt-1">{supplier.notes}</p>}
                 </div>
               </>
