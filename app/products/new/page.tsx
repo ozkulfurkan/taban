@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
 const UNITS = ['çift', 'adet', 'kg', 'metre', 'paket'];
 const CURRENCIES = ['USD', 'EUR', 'TRY'];
@@ -26,7 +27,7 @@ export default function NewProductPage() {
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, unitPrice: fromPriceInput(form.unitPrice) }),
       });
       const data = await res.json();
       if (data.id) router.push('/products');
@@ -62,7 +63,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Birim Fiyat</label>
-              <input type="number" step="0.0001" min="0" value={form.unitPrice} onChange={e => set('unitPrice', e.target.value)} placeholder="0.00" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <input type="text" inputMode="decimal" value={form.unitPrice} onChange={e => set('unitPrice', normalizePriceInput(e.target.value))} onKeyDown={blockDot} placeholder="0,00" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Para Birimi</label>

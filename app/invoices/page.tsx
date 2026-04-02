@@ -140,7 +140,10 @@ export default function InvoicesPage() {
                     >
                       <td className="px-4 py-3 font-medium text-slate-800">{inv.invoiceNo}</td>
                       <td className="px-4 py-3 text-slate-600">{inv.customer?.name ?? '—'}</td>
-                      <td className="px-4 py-3 text-slate-500">{new Date(inv.date).toLocaleDateString('tr-TR')}</td>
+                      <td className="px-4 py-3 text-slate-500">
+                        <div>{new Date(inv.date).toLocaleDateString('tr-TR')}</div>
+                        <div className="text-xs text-slate-400">{new Date(inv.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
+                      </td>
                       <td className="px-4 py-3 text-right font-semibold text-slate-800">
                         {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                         <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>

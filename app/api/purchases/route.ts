@@ -62,19 +62,38 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Increase product stock for items that have a productId
-  const stockUpdates = items
-    .filter((i: any) => i.productId)
-    .map((i: any) => {
-      const qty = parseFloat(i.qty) || 0;
-      return prisma.product.updateMany({
+  // Handle items: update product/material stock and create PurchaseMaterial records
+  const ops: Promise<any>[] = [];
+
+  for (const i of items) {
+    const qty = parseFloat(i.qty) || 0;
+    const unitPrice = parseFloat(i.unitPrice) || 0;
+
+    if (i.productId) {
+      ops.push(prisma.product.updateMany({
         where: { id: i.productId, companyId: user.companyId },
         data: { stock: { increment: qty } },
-      });
-    });
+      }));
+    }
 
-  if (stockUpdates.length > 0) {
-    await Promise.all(stockUpdates);
+    if (i.materialId) {
+      ops.push(prisma.purchaseMaterial.create({
+        data: {
+          purchaseId: purchase.id,
+          materialId: i.materialId,
+          kgAmount: qty,
+          pricePerKg: unitPrice || null,
+        },
+      }));
+      ops.push(prisma.material.updateMany({
+        where: { id: i.materialId, companyId: user.companyId },
+        data: { stock: { increment: qty } },
+      }));
+    }
+  }
+
+  if (ops.length > 0) {
+    await Promise.all(ops);
   }
 
   return NextResponse.json(purchase, { status: 201 });

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle } from 'lucide-react';
+import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
 interface LineItem {
   productId?: string;
@@ -25,9 +26,9 @@ const VAT_RATES = ['0', '1', '8', '10', '18', '20'];
 const EMPTY_ITEM: LineItem = { description: '', quantity: '1', unitPrice: '', discount: '0', notes: '' };
 
 function lineTotal(item: LineItem) {
-  const qty = parseFloat(item.quantity) || 0;
-  const price = parseFloat(item.unitPrice) || 0;
-  const disc = parseFloat(item.discount) || 0;
+  const qty = fromPriceInput(item.quantity);
+  const price = fromPriceInput(item.unitPrice);
+  const disc = fromPriceInput(item.discount);
   return qty * price * (1 - disc / 100);
 }
 
@@ -48,7 +49,7 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
     if (!p) return;
     setSelectedProduct(p);
     // Ürün para birimi fatura para birimiyle aynıysa fiyatı kopyala, farklıysa boş bırak (kullanıcı fatura para biriminde fiyat girsin)
-    const unitPrice = p.currency === currency ? String(p.unitPrice) : '';
+    const unitPrice = p.currency === currency ? toPriceInput(p.unitPrice) : '';
     setItem(prev => ({ ...prev, productId: p.id, description: p.name, unitPrice }));
   };
 
@@ -59,9 +60,9 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
     }
   }, []);
 
-  const qty = parseFloat(item.quantity) || 0;
-  const price = parseFloat(item.unitPrice) || 0;
-  const disc = parseFloat(item.discount) || 0;
+  const qty = fromPriceInput(item.quantity);
+  const price = fromPriceInput(item.unitPrice);
+  const disc = fromPriceInput(item.discount);
   const gross = qty * price;
   const discAmount = gross * disc / 100;
   const total = gross - discAmount;
@@ -122,7 +123,8 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
                   type="text"
                   inputMode="decimal"
                   value={item.unitPrice}
-                  onChange={e => set('unitPrice', e.target.value)}
+                  onChange={e => set('unitPrice', normalizePriceInput(e.target.value))}
+                  onKeyDown={blockDot}
                   className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0"
                 />
                 <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs font-semibold text-slate-600 flex items-center">{currency}</span>
@@ -140,7 +142,8 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
                   type="text"
                   inputMode="decimal"
                   value={item.discount}
-                  onChange={e => set('discount', e.target.value)}
+                  onChange={e => set('discount', normalizePriceInput(e.target.value))}
+                  onKeyDown={blockDot}
                   className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0"
                 />
                 <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs text-slate-500 flex items-center">%</span>
@@ -230,16 +233,20 @@ export default function NewInvoicePage() {
 
   const lockedCustomerId = searchParams?.get('customerId') ?? '';
 
-  const [form, setForm] = useState({
-    customerId: lockedCustomerId,
-    invoiceNo: '',
-    date: new Date().toISOString().split('T')[0],
-    dueDate: '',
-    irsaliyeNo: '',
-    sevkTarihi: new Date().toISOString().split('T')[0],
-    currency: 'USD',
-    vatRate: '0',
-    notes: '',
+  const [form, setForm] = useState(() => {
+    const now = new Date();
+    return {
+      customerId: lockedCustomerId,
+      invoiceNo: '',
+      date: now.toISOString().split('T')[0],
+      time: now.toTimeString().slice(0, 5),
+      dueDate: '',
+      irsaliyeNo: '',
+      sevkTarihi: now.toISOString().split('T')[0],
+      currency: 'USD',
+      vatRate: '0',
+      notes: '',
+    };
   });
 
   const [items, setItems] = useState<LineItem[]>([]);
@@ -296,7 +303,7 @@ export default function NewInvoicePage() {
   const handleProductClick = (product: any) => {
     setProductSearch('');
     setShowDropdown(false);
-    openNewModal({ productId: product.id, description: product.name, unitPrice: String(product.unitPrice) });
+    openNewModal({ productId: product.id, description: product.name, unitPrice: toPriceInput(product.unitPrice) });
   };
 
   const subtotal = items.reduce((s, it) => s + lineTotal(it), 0);
@@ -312,7 +319,7 @@ export default function NewInvoicePage() {
       const res = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, items }),
+        body: JSON.stringify({ ...form, date: form.date + 'T' + form.time, items }),
       });
       const data = await res.json();
       if (data.id) {
@@ -371,8 +378,12 @@ export default function NewInvoicePage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'date')}</label>
-                <input type="date" value={form.date} onChange={e => setField('date', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <div className="flex gap-2">
+                  <input type="date" value={form.date} onChange={e => setField('date', e.target.value)}
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <input type="time" value={form.time} onChange={e => setField('time', e.target.value)}
+                    className="w-28 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'dueDate')}</label>

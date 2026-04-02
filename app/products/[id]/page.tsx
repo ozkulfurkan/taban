@@ -7,6 +7,7 @@ import {
   ArrowLeft, Loader2, Save, Plus, Trash2, Pencil, X,
   Package, Calculator, ChevronDown, ChevronUp,
 } from 'lucide-react';
+import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
 const UNITS = ['çift', 'adet', 'kg', 'metre', 'paket'];
 const CURRENCIES = ['USD', 'EUR', 'TRY'];
@@ -63,14 +64,14 @@ export default function ProductDetailPage() {
           code: prod.code || '',
           description: prod.description || '',
           unit: prod.unit || 'çift',
-          unitPrice: String(prod.unitPrice ?? ''),
+          unitPrice: toPriceInput(prod.unitPrice ?? ''),
           currency: prod.currency || 'USD',
           stock: String(prod.stock ?? ''),
           notes: prod.notes || '',
-          laborCostPerPair: String(prod.laborCostPerPair ?? '0'),
+          laborCostPerPair: toPriceInput(prod.laborCostPerPair ?? '0'),
           laborCurrency: prod.laborCurrency || 'USD',
           ciftPerKoli: String(prod.ciftPerKoli ?? '0'),
-          koliFiyati: String(prod.koliFiyati ?? '0'),
+          koliFiyati: toPriceInput(prod.koliFiyati ?? '0'),
           koliCurrency: prod.koliCurrency || 'USD',
         });
         setEditParts((prod.parts || []).map((p: any) => ({
@@ -81,7 +82,7 @@ export default function ProductDetailPage() {
         })));
         setEditExtras((prod.extraCosts || []).map((e: any) => ({
           name: e.name,
-          amount: String(e.amount),
+          amount: toPriceInput(e.amount),
           currency: e.currency,
         })));
         setEditSizes(prod.sizes || []);
@@ -102,7 +103,15 @@ export default function ProductDetailPage() {
       const res = await fetch(`/api/products/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...editForm, parts: editParts, extraCosts: editExtras, sizes: editSizes }),
+        body: JSON.stringify({
+          ...editForm,
+          unitPrice: fromPriceInput(editForm.unitPrice),
+          laborCostPerPair: fromPriceInput(editForm.laborCostPerPair),
+          koliFiyati: fromPriceInput(editForm.koliFiyati),
+          parts: editParts,
+          extraCosts: editExtras.map((e: any) => ({ ...e, amount: fromPriceInput(e.amount) })),
+          sizes: editSizes,
+        }),
       });
       const updated = await res.json();
       if (!updated?.error) { setProduct(updated); setEditing(false); }
@@ -110,13 +119,13 @@ export default function ProductDetailPage() {
   };
 
   const handleUpdatePrice = async () => {
-    if (!newPrice || parseFloat(newPrice) <= 0) return;
+    if (!newPrice || fromPriceInput(newPrice) <= 0) return;
     setUpdatingPrice(true);
     try {
       const res = await fetch(`/api/products/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...product, unitPrice: newPrice, parts: product.parts, extraCosts: product.extraCosts }),
+        body: JSON.stringify({ ...product, unitPrice: fromPriceInput(newPrice), parts: product.parts, extraCosts: product.extraCosts }),
       });
       const updated = await res.json();
       if (!updated?.error) { setProduct(updated); setPriceWarning(null); }
@@ -197,7 +206,7 @@ export default function ProductDetailPage() {
             setShowCost(true);
             setTimeout(() => costRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
             if (costs && product && costs.totalCost > product.unitPrice) {
-              setNewPrice(costs.totalCost.toFixed(4));
+              setNewPrice(toPriceInput(costs.totalCost.toFixed(4)));
               setPriceWarning({ totalCost: costs.totalCost, currency: costs.toCurrency });
             }
           }}
@@ -266,8 +275,14 @@ export default function ProductDetailPage() {
                           className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none">
                           {CURRENCIES.map(c => <option key={c}>{c}</option>)}
                         </select>
+                      ) : row.field === 'unitPrice' ? (
+                        <input type="text" inputMode="decimal"
+                          value={editForm[row.field]}
+                          onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: normalizePriceInput(e.target.value) }))}
+                          onKeyDown={blockDot}
+                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
                       ) : (
-                        <input type={row.type === 'number' ? 'number' : 'text'} step="0.0001"
+                        <input type={row.type === 'number' ? 'number' : 'text'} step="0.01"
                           value={editForm[row.field]}
                           onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
                           className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
@@ -524,8 +539,9 @@ export default function ProductDetailPage() {
                   <div className="flex items-center gap-3 flex-wrap">
                     <div>
                       <label className="block text-xs font-medium text-slate-500 mb-1">Çift Başına İşçilik</label>
-                      <input type="number" step="0.01" min="0" value={editForm.laborCostPerPair}
-                        onChange={e => setEditForm((p: any) => ({ ...p, laborCostPerPair: e.target.value }))}
+                      <input type="text" inputMode="decimal" value={editForm.laborCostPerPair}
+                        onChange={e => setEditForm((p: any) => ({ ...p, laborCostPerPair: normalizePriceInput(e.target.value) }))}
+                        onKeyDown={blockDot}
                         placeholder="0"
                         className="w-36 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-green-400" />
                     </div>
@@ -571,8 +587,9 @@ export default function ProductDetailPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500 mb-1">Koli Fiyatı</label>
-                      <input type="number" step="0.01" min="0" value={editForm.koliFiyati}
-                        onChange={e => setEditForm((p: any) => ({ ...p, koliFiyati: e.target.value }))}
+                      <input type="text" inputMode="decimal" value={editForm.koliFiyati}
+                        onChange={e => setEditForm((p: any) => ({ ...p, koliFiyati: normalizePriceInput(e.target.value) }))}
+                        onKeyDown={blockDot}
                         placeholder="0"
                         className="w-36 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-orange-400" />
                     </div>
@@ -628,7 +645,8 @@ export default function ProductDetailPage() {
                       <input value={ec.name} onChange={e => setExtra(idx, 'name', e.target.value)}
                         placeholder="Maliyet adı (örn: Nakliye)"
                         className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-1 focus:ring-purple-400" />
-                      <input type="number" step="0.01" min="0" value={ec.amount} onChange={e => setExtra(idx, 'amount', e.target.value)}
+                      <input type="text" inputMode="decimal" value={ec.amount} onChange={e => setExtra(idx, 'amount', normalizePriceInput(e.target.value))}
+                        onKeyDown={blockDot}
                         placeholder="0"
                         className="w-28 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-purple-400" />
                       <select value={ec.currency} onChange={e => setExtra(idx, 'currency', e.target.value)}
@@ -714,9 +732,10 @@ export default function ProductDetailPage() {
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Yeni Satış Fiyatı ({product.currency})</label>
                 <input
-                  type="number" step="0.0001" min="0"
+                  type="text" inputMode="decimal"
                   value={newPrice}
-                  onChange={e => setNewPrice(e.target.value)}
+                  onChange={e => setNewPrice(normalizePriceInput(e.target.value))}
+                  onKeyDown={blockDot}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-blue-400 font-medium"
                 />
               </div>

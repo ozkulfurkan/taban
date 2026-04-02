@@ -6,6 +6,7 @@ import Modal from '@/app/components/modal';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { useSession } from 'next-auth/react';
 import { Package, Plus, Search, Edit2, Trash2, History, Loader2, Layers } from 'lucide-react';
+import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { motion } from 'framer-motion';
 
 export default function MaterialsPage() {
@@ -72,7 +73,7 @@ export default function MaterialsPage() {
     setForm({
       name: mat?.name ?? '',
       supplier: mat?.supplier ?? '',
-      pricePerKg: String(mat?.pricePerKg ?? ''),
+      pricePerKg: toPriceInput(mat?.pricePerKg ?? ''),
       currency: mat?.currency ?? 'USD',
       description: mat?.description ?? '',
     });
@@ -87,7 +88,7 @@ export default function MaterialsPage() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, pricePerKg: fromPriceInput(form.pricePerKg) }),
       });
       if (res.ok) {
         setModalOpen(false);
@@ -232,7 +233,7 @@ export default function MaterialsPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'pricePerKg')}</label>
-              <input type="number" step="0.01" value={form.pricePerKg} onChange={(e) => setForm({ ...form, pricePerKg: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              <input type="text" inputMode="decimal" value={form.pricePerKg} onChange={(e) => setForm({ ...form, pricePerKg: normalizePriceInput(e.target.value) })} onKeyDown={blockDot} placeholder="0,00" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">{t('common', 'currency')}</label>

@@ -11,6 +11,7 @@ import {
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/language-context';
+import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
 const STATUS_COLOR: Record<string, string> = {
   DRAFT: 'bg-slate-100 text-slate-600',
@@ -457,85 +458,96 @@ function BakiyeDuzeltModal({ supplier, currentBalance, onClose, onSaved }: {
 }
 
 // ── AlışModal ──────────────────────────────────────────────────────────────
-type LineItem = { id: number; productId: string; productName: string; qty: string; unitPrice: string };
+type ItemType = 'product' | 'material';
+type LineItem = { id: number; itemType: ItemType; refId: string; itemName: string; qty: string; unitPrice: string };
 
 function AlışModal({ supplier, onClose, onSaved }: {
   supplier: any; onClose: () => void; onSaved: () => void;
 }) {
   const { t } = useLanguage();
-  const [form, setForm] = useState({
-    date: new Date().toISOString().split('T')[0],
-    invoiceNo: '',
-    currency: supplier.currency || 'USD',
-    notes: '',
+  const [form, setForm] = useState(() => {
+    const now = new Date();
+    return {
+      date: now.toISOString().split('T')[0],
+      time: now.toTimeString().slice(0, 5),
+      invoiceNo: '',
+      currency: supplier.currency || 'USD',
+      notes: '',
+    };
   });
   const [items, setItems] = useState<LineItem[]>([
-    { id: 1, productId: '', productName: '', qty: '1', unitPrice: '' },
+    { id: 1, itemType: 'material', refId: '', itemName: '', qty: '1', unitPrice: '' },
   ]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [productList, setProductList] = useState<any[]>([]);
+  const [materialList, setMaterialList] = useState<any[]>([]);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
-  const [showNewProduct, setShowNewProduct] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: '', unitPrice: '', currency: 'TRY' });
+  const [showNewItem, setShowNewItem] = useState<number | null>(null); // item.id
+  const [newItemForm, setNewItemForm] = useState({ name: '', unitPrice: '', currency: 'TRY', pricePerKg: '' });
   const [saving, setSaving] = useState(false);
-  const [creatingProduct, setCreatingProduct] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [creatingItem, setCreatingItem] = useState(false);
 
   useEffect(() => {
-    fetch('/api/products').then(r => r.json()).then(d => setProducts(Array.isArray(d) ? d : []));
+    fetch('/api/products').then(r => r.json()).then(d => setProductList(Array.isArray(d) ? d : []));
+    fetch('/api/materials').then(r => r.json()).then(d => setMaterialList(Array.isArray(d) ? d : []));
   }, []);
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setOpenDropdown(null);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  const closeDropdown = () => setOpenDropdown(null);
 
-  const total = items.reduce((sum, it) => sum + (parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0), 0);
+  const total = items.reduce((sum, it) => sum + (parseFloat(it.qty) || 0) * fromPriceInput(it.unitPrice), 0);
 
-  const addRow = () => setItems(p => [...p, { id: Date.now(), productId: '', productName: '', qty: '1', unitPrice: '' }]);
+  const addRow = () => setItems(p => [...p, { id: Date.now(), itemType: 'material', refId: '', itemName: '', qty: '1', unitPrice: '' }]);
   const removeRow = (id: number) => setItems(p => p.filter(r => r.id !== id));
   const updateItem = (id: number, field: keyof LineItem, value: string) =>
     setItems(p => p.map(r => r.id === id ? { ...r, [field]: value } : r));
+  const setItemType = (id: number, type: ItemType) =>
+    setItems(p => p.map(r => r.id === id ? { ...r, itemType: type, refId: '', itemName: '' } : r));
 
-  const selectProduct = (itemId: number, product: any) => {
+  const selectRef = (itemId: number, ref: any, type: ItemType) => {
+    const price = type === 'material' ? toPriceInput(ref.pricePerKg || '') : toPriceInput(ref.unitPrice || '');
     setItems(p => p.map(r => r.id === itemId
-      ? { ...r, productId: product.id, productName: product.name, unitPrice: String(product.unitPrice) }
+      ? { ...r, refId: ref.id, itemName: ref.name, unitPrice: price }
       : r));
     setOpenDropdown(null);
   };
 
-  const filteredProducts = (query: string) => {
-    const q = query.toLowerCase();
-    if (!q) return products.slice(0, 8);
-    return products.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
+  const filteredList = (item: LineItem) => {
+    const list = item.itemType === 'material' ? materialList : productList;
+    const q = item.itemName.toLowerCase();
+    if (!q) return list.slice(0, 8);
+    return list.filter(x => x.name.toLowerCase().includes(q)).slice(0, 8);
   };
 
-  const handleCreateProduct = async () => {
-    if (!newProduct.name || !newProduct.unitPrice) return;
-    setCreatingProduct(true);
+  const handleCreateItem = async (itemId: number, itemType: ItemType) => {
+    if (!newItemForm.name) return;
+    const price = itemType === 'material' ? newItemForm.pricePerKg : newItemForm.unitPrice;
+    if (!price) return;
+    setCreatingItem(true);
     try {
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newProduct.name, unitPrice: parseFloat(newProduct.unitPrice), currency: newProduct.currency }),
-      });
-      const created = await res.json();
-      setProducts(p => [...p, created]);
-      const emptyRow = items.find(r => !r.productId);
-      if (emptyRow) {
-        selectProduct(emptyRow.id, created);
+      let created: any;
+      if (itemType === 'material') {
+        const res = await fetch('/api/materials', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newItemForm.name, pricePerKg: fromPriceInput(price), currency: newItemForm.currency }),
+        });
+        created = await res.json();
+        setMaterialList(p => [...p, created]);
       } else {
-        const newId = Date.now();
-        setItems(p => [...p, { id: newId, productId: created.id, productName: created.name, qty: '1', unitPrice: String(created.unitPrice) }]);
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newItemForm.name, unitPrice: fromPriceInput(price), currency: newItemForm.currency }),
+        });
+        created = await res.json();
+        setProductList(p => [...p, created]);
       }
-      setNewProduct({ name: '', unitPrice: '', currency: 'TRY' });
-      setShowNewProduct(false);
-    } finally { setCreatingProduct(false); }
+      selectRef(itemId, created, itemType);
+      setNewItemForm({ name: '', unitPrice: '', currency: 'TRY', pricePerKg: '' });
+      setShowNewItem(null);
+    } finally { setCreatingItem(false); }
   };
 
-  const validItems = items.filter(i => parseFloat(i.qty) > 0 && parseFloat(i.unitPrice) > 0);
+  const validItems = items.filter(i => parseFloat(i.qty) > 0 && fromPriceInput(i.unitPrice) > 0);
   const canSavePurchase = validItems.length > 0 && total > 0;
 
   const handle = async (e: React.FormEvent) => {
@@ -549,11 +561,17 @@ function AlışModal({ supplier, onClose, onSaved }: {
         body: JSON.stringify({
           supplierId: supplier.id,
           invoiceNo: form.invoiceNo || null,
-          date: form.date,
+          date: form.date + 'T' + form.time,
           currency: form.currency,
           total,
           notes: form.notes || null,
-          items: validItems.map(i => ({ productId: i.productId || null, qty: i.qty, unitPrice: i.unitPrice })),
+          items: validItems.map(i => ({
+            productId: i.itemType === 'product' ? (i.refId || null) : null,
+            materialId: i.itemType === 'material' ? (i.refId || null) : null,
+            description: i.itemName,
+            qty: i.qty,
+            unitPrice: fromPriceInput(i.unitPrice),
+          })),
         }),
       });
       onSaved();
@@ -571,15 +589,19 @@ function AlışModal({ supplier, onClose, onSaved }: {
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <form onSubmit={handle} className="flex flex-col flex-1 overflow-hidden">
-          <div className="p-5 space-y-3 overflow-y-auto flex-1" ref={dropdownRef}>
+          <div className="p-5 space-y-3 overflow-y-auto flex-1">
             <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 text-sm text-indigo-800 font-medium truncate">
               {supplier.name}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'date')}</label>
-                <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                <div className="flex gap-2">
+                  <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                  <input type="time" value={form.time} onChange={e => setForm(p => ({ ...p, time: e.target.value }))}
+                    className="w-24 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">{t('supplierDetail', 'invoiceNo')}</label>
@@ -599,7 +621,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
             {/* Line items */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-medium text-slate-500">Ürünler</label>
+                <label className="block text-xs font-medium text-slate-500">Kalemler</label>
                 <button type="button" onClick={addRow}
                   className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium">
                   <Plus className="w-3.5 h-3.5" /> Satır Ekle
@@ -607,36 +629,57 @@ function AlışModal({ supplier, onClose, onSaved }: {
               </div>
               <div className="space-y-2">
                 {items.map(item => {
-                  const rowTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0);
-                  const fp = filteredProducts(item.productName);
+                  const rowTotal = (parseFloat(item.qty) || 0) * fromPriceInput(item.unitPrice);
+                  const fp = filteredList(item);
+                  const isOpen = openDropdown === item.id;
+                  const isMaterial = item.itemType === 'material';
                   return (
                     <div key={item.id} className="border border-slate-200 rounded-lg p-2 space-y-2">
-                      <div className="relative flex items-center gap-2">
-                        <Search className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                        <input
-                          value={item.productName}
-                          onChange={e => {
-                            updateItem(item.id, 'productName', e.target.value);
-                            updateItem(item.id, 'productId', '');
-                            setOpenDropdown(item.id);
-                          }}
-                          onFocus={() => setOpenDropdown(item.id)}
-                          placeholder="Ürün ara veya yaz..."
-                          className="flex-1 text-sm outline-none"
-                        />
+                      {/* Type toggle */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex rounded-md overflow-hidden border border-slate-200 text-xs">
+                          <button type="button"
+                            onClick={() => setItemType(item.id, 'material')}
+                            className={`px-2.5 py-1 font-medium transition-colors ${isMaterial ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+                            Hammadde
+                          </button>
+                          <button type="button"
+                            onClick={() => setItemType(item.id, 'product')}
+                            className={`px-2.5 py-1 font-medium transition-colors ${!isMaterial ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+                            Ürün
+                          </button>
+                        </div>
                         {items.length > 1 && (
                           <button type="button" onClick={() => removeRow(item.id)}>
                             <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
                           </button>
                         )}
-                        {openDropdown === item.id && fp.length > 0 && (
+                      </div>
+                      {/* Search input */}
+                      <div className="relative flex items-center gap-2">
+                        <Search className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                        <input
+                          value={item.itemName}
+                          onChange={e => {
+                            updateItem(item.id, 'itemName', e.target.value);
+                            updateItem(item.id, 'refId', '');
+                            setOpenDropdown(item.id);
+                          }}
+                          onFocus={() => setOpenDropdown(item.id)}
+                          onBlur={() => setTimeout(closeDropdown, 150)}
+                          placeholder={isMaterial ? 'Hammadde ara veya yaz...' : 'Ürün ara veya yaz...'}
+                          className="flex-1 text-sm outline-none"
+                        />
+                        {isOpen && fp.length > 0 && (
                           <div className="absolute left-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 w-full max-h-40 overflow-y-auto">
-                            {fp.map((prod: any) => (
-                              <button key={prod.id} type="button"
-                                onMouseDown={() => selectProduct(item.id, prod)}
+                            {fp.map((ref: any) => (
+                              <button key={ref.id} type="button"
+                                onMouseDown={() => selectRef(item.id, ref, item.itemType)}
                                 className="w-full text-left px-3 py-1.5 text-sm hover:bg-indigo-50 flex items-center justify-between">
-                                <span>{prod.name}</span>
-                                <span className="text-xs text-slate-400">{prod.unitPrice} {prod.currency}</span>
+                                <span>{ref.name}</span>
+                                <span className="text-xs text-slate-400">
+                                  {isMaterial ? `${ref.pricePerKg} ${ref.currency}/kg` : `${ref.unitPrice} ${ref.currency}`}
+                                </span>
                               </button>
                             ))}
                           </div>
@@ -644,17 +687,18 @@ function AlışModal({ supplier, onClose, onSaved }: {
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-xs">
                         <div>
-                          <label className="text-slate-400 mb-0.5 block">Miktar</label>
+                          <label className="text-slate-400 mb-0.5 block">{isMaterial ? 'Miktar (kg)' : 'Miktar'}</label>
                           <input type="number" step="0.01" min="0.01" value={item.qty}
                             onChange={e => updateItem(item.id, 'qty', e.target.value)}
                             className="w-full px-2 py-1 border border-slate-200 rounded text-right outline-none focus:ring-1 focus:ring-indigo-400" />
                         </div>
                         <div>
-                          <label className="text-slate-400 mb-0.5 block">Birim Fiyat</label>
-                          <input type="number" step="0.01" min="0.01" value={item.unitPrice}
-                            onChange={e => updateItem(item.id, 'unitPrice', e.target.value)}
+                          <label className="text-slate-400 mb-0.5 block">{isMaterial ? 'Kg Fiyatı' : 'Birim Fiyat'}</label>
+                          <input type="text" inputMode="decimal" value={item.unitPrice}
+                            onChange={e => updateItem(item.id, 'unitPrice', normalizePriceInput(e.target.value))}
+                            onKeyDown={blockDot}
                             className={`w-full px-2 py-1 border rounded text-right outline-none focus:ring-1 focus:ring-indigo-400 ${
-                              parseFloat(item.qty) > 0 && !parseFloat(item.unitPrice)
+                              parseFloat(item.qty) > 0 && !fromPriceInput(item.unitPrice)
                                 ? 'border-orange-300 bg-orange-50'
                                 : 'border-slate-200'
                             }`} />
@@ -666,43 +710,47 @@ function AlışModal({ supplier, onClose, onSaved }: {
                           </div>
                         </div>
                       </div>
+                      {/* New item inline form */}
+                      {showNewItem === item.id ? (
+                        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 space-y-2">
+                          <p className="text-xs font-medium text-indigo-700">
+                            {isMaterial ? 'Yeni Hammadde Ekle (Kataloğa eklenecek)' : 'Yeni Ürün Ekle (Kataloğa eklenecek)'}
+                          </p>
+                          <input value={newItemForm.name} onChange={e => setNewItemForm(p => ({ ...p, name: e.target.value }))}
+                            placeholder={isMaterial ? 'Hammadde adı' : 'Ürün adı'}
+                            className="w-full px-2 py-1.5 border border-indigo-200 rounded text-sm outline-none" />
+                          <div className="grid grid-cols-2 gap-2">
+                            <input type="text" inputMode="decimal"
+                              value={isMaterial ? newItemForm.pricePerKg : newItemForm.unitPrice}
+                              onChange={e => { const v = normalizePriceInput(e.target.value); setNewItemForm(p => isMaterial ? { ...p, pricePerKg: v } : { ...p, unitPrice: v }); }}
+                              onKeyDown={blockDot}
+                              placeholder={isMaterial ? 'Kg fiyatı' : 'Birim fiyat'}
+                              className="px-2 py-1.5 border border-indigo-200 rounded text-sm outline-none text-right" />
+                            <select value={newItemForm.currency} onChange={e => setNewItemForm(p => ({ ...p, currency: e.target.value }))}
+                              className="px-2 py-1.5 border border-indigo-200 rounded text-sm outline-none bg-white">
+                              {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                            </select>
+                          </div>
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => { setShowNewItem(null); setNewItemForm({ name: '', unitPrice: '', currency: 'TRY', pricePerKg: '' }); }}
+                              className="flex-1 py-1 border border-slate-200 rounded text-xs text-slate-500 hover:bg-slate-50">{t('common', 'cancel')}</button>
+                            <button type="button" onClick={() => handleCreateItem(item.id, item.itemType)}
+                              disabled={creatingItem || !newItemForm.name || !(isMaterial ? newItemForm.pricePerKg : newItemForm.unitPrice)}
+                              className="flex-1 py-1 bg-indigo-600 text-white rounded text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1">
+                              {creatingItem ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />} Ekle
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => { setShowNewItem(item.id); setNewItemForm({ name: '', unitPrice: '', currency: 'TRY', pricePerKg: '' }); }}
+                          className="text-xs text-indigo-500 hover:text-indigo-700 underline">
+                          Listede olmayan {isMaterial ? 'hammadde' : 'ürün'} eklemek için tıklayın
+                        </button>
+                      )}
                     </div>
                   );
                 })}
               </div>
-
-              {!showNewProduct ? (
-                <button type="button" onClick={() => setShowNewProduct(true)}
-                  className="mt-2 text-xs text-indigo-500 hover:text-indigo-700 underline">
-                  Listede olmayan ürün eklemek için tıklayın
-                </button>
-              ) : (
-                <div className="mt-2 bg-indigo-50 border border-indigo-200 rounded-lg p-3 space-y-2">
-                  <p className="text-xs font-medium text-indigo-700">Yeni Ürün Ekle</p>
-                  <input value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))}
-                    placeholder="Ürün adı"
-                    className="w-full px-2 py-1.5 border border-indigo-200 rounded text-sm outline-none" />
-                  <div className="grid grid-cols-2 gap-2">
-                    <input type="number" step="0.01" value={newProduct.unitPrice}
-                      onChange={e => setNewProduct(p => ({ ...p, unitPrice: e.target.value }))}
-                      placeholder="Birim fiyat"
-                      className="px-2 py-1.5 border border-indigo-200 rounded text-sm outline-none text-right" />
-                    <select value={newProduct.currency} onChange={e => setNewProduct(p => ({ ...p, currency: e.target.value }))}
-                      className="px-2 py-1.5 border border-indigo-200 rounded text-sm outline-none bg-white">
-                      {CURRENCIES.map(c => <option key={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => setShowNewProduct(false)}
-                      className="flex-1 py-1 border border-slate-200 rounded text-xs text-slate-500 hover:bg-slate-50">{t('common', 'cancel')}</button>
-                    <button type="button" onClick={handleCreateProduct}
-                      disabled={creatingProduct || !newProduct.name || !newProduct.unitPrice}
-                      className="flex-1 py-1 bg-indigo-600 text-white rounded text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1">
-                      {creatingProduct ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />} Ekle
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="bg-slate-50 rounded-lg px-4 py-3 flex items-center justify-between">
@@ -1514,7 +1562,10 @@ export default function SupplierDetailPage() {
                   {supplier.purchases.slice(0, purchasesShown).map((p: any) => (
                     <tr key={p.id} className="hover:bg-teal-50/50 cursor-pointer transition-colors"
                       onClick={() => router.push(`/purchases/${p.id}`)}>
-                      <td className="px-4 py-2.5 text-slate-500">{new Date(p.date).toLocaleDateString('tr-TR')}</td>
+                      <td className="px-4 py-2.5 text-slate-500">
+                        <div>{new Date(p.date).toLocaleDateString('tr-TR')}</div>
+                        <div className="text-xs text-slate-400">{new Date(p.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
+                      </td>
                       <td className="px-4 py-2.5 font-medium text-teal-600">{p.invoiceNo || '—'}</td>
                       <td className="px-4 py-2.5 text-center">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[p.status]}`}>

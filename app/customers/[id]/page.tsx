@@ -1065,7 +1065,10 @@ export default function CustomerDetailPage() {
                   {customer.invoices.slice(0, invoicesShown).map((inv: any) => (
                     <tr key={inv.id} className="hover:bg-blue-50/50 cursor-pointer transition-colors"
                       onClick={() => router.push(`/invoices/${inv.id}`)}>
-                      <td className="px-4 py-2.5 text-slate-500">{new Date(inv.date).toLocaleDateString('tr-TR')}</td>
+                      <td className="px-4 py-2.5 text-slate-500">
+                        <div>{new Date(inv.date).toLocaleDateString('tr-TR')}</div>
+                        <div className="text-xs text-slate-400">{new Date(inv.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
+                      </td>
                       <td className="px-4 py-2.5 font-medium text-blue-600">{inv.invoiceNo}</td>
                       <td className="px-4 py-2.5 text-right font-semibold text-slate-800">
                         {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
@@ -1205,7 +1208,10 @@ export default function CustomerDetailPage() {
                 {customer.returns.map((inv: any) => (
                   <tr key={inv.id} className="bg-red-50/50 hover:bg-red-50 cursor-pointer transition-colors"
                     onClick={() => router.push(`/invoices/${inv.id}`)}>
-                    <td className="px-4 py-2.5 text-slate-500">{new Date(inv.date).toLocaleDateString('tr-TR')}</td>
+                    <td className="px-4 py-2.5 text-slate-500">
+                      <div>{new Date(inv.date).toLocaleDateString('tr-TR')}</div>
+                      <div className="text-xs text-slate-400">{new Date(inv.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
+                    </td>
                     <td className="px-4 py-2.5 font-medium text-red-700">{inv.invoiceNo}</td>
                     <td className="px-4 py-2.5 text-right font-semibold text-red-600">
                       {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
