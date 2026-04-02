@@ -260,7 +260,7 @@ async function main() {
     await prisma.cek.upsert({
       where: { id: cek.id },
       update: {},
-      create: { ...cek, companyId: CID },
+      create: { ...cek, companyId: CID, durum: cek.durum as any },
     });
   }
   console.log('  ✅ 10 çek oluşturuldu');
