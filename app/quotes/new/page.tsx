@@ -56,6 +56,9 @@ function QuoteForm() {
   const [notes, setNotes] = useState('');
   const [company, setCompany] = useState<any>(null);
   const [generating, setGenerating] = useState(false);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [productSearch, setProductSearch] = useState('');
 
   useEffect(() => {
     fetch('/api/company').then(r => r.json()).then(d => {
@@ -101,6 +104,36 @@ function QuoteForm() {
   const updateAdet = (rowId: string, numara: string, val: string) =>
     setRows(prev => prev.map(r => r.id === rowId ? { ...r, adetler: { ...r.adetler, [numara]: val } } : r));
   const removeRow = (id: string) => setRows(prev => prev.filter(r => r.id !== id));
+
+  const openProductModal = () => {
+    setProductSearch('');
+    setShowProductModal(true);
+    fetch('/api/products').then(r => r.json()).then(d => {
+      if (Array.isArray(d)) setProducts(d);
+    }).catch(() => {});
+  };
+
+  const selectProduct = (prod: any) => {
+    // Merge product sizes into numaralar
+    const prodSizes: string[] = prod.sizes || [];
+    if (prodSizes.length > 0) {
+      setNumaralar(prev => {
+        const merged = [...prev];
+        prodSizes.forEach(s => { if (!merged.includes(s)) merged.push(s); });
+        return merged;
+      });
+    }
+    // Add a new row with product info pre-filled
+    setRows(prev => [...prev, {
+      id: Math.random().toString(36).slice(2),
+      tabanAd: prod.name || '',
+      tabanKod: prod.code || '',
+      renk: '',
+      birimFiyat: String(prod.unitPrice ?? ''),
+      adetler: {},
+    }]);
+    setShowProductModal(false);
+  };
 
   // Calculations
   const rowTotal = (row: RowEntry) => numaralar.reduce((s, n) => s + (Number(row.adetler[n]) || 0), 0);
@@ -491,12 +524,20 @@ function QuoteForm() {
           </div>
 
           <div className="p-4 border-t flex justify-between items-center flex-wrap gap-3">
-            <button
-              onClick={() => setRows(prev => [...prev, newRow()])}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
-            >
-              <Plus className="w-4 h-4" /> Satır Ekle
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setRows(prev => [...prev, newRow()])}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+              >
+                <Plus className="w-4 h-4" /> Satır Ekle
+              </button>
+              <button
+                onClick={openProductModal}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" /> Ürün Ekle
+              </button>
+            </div>
 
             {/* Summary */}
             <div className="text-right space-y-1">
@@ -578,6 +619,67 @@ function QuoteForm() {
           {docType === 'teklif' ? 'Teklif PDF Oluştur' : 'Sipariş Onayı PDF Oluştur'}
         </button>
       </div>
+
+      {/* Product Picker Modal */}
+      {showProductModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowProductModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh]">
+            <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+              <h3 className="text-white font-semibold">Ürün Seç</h3>
+              <button onClick={() => setShowProductModal(false)} className="text-white/80 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 border-b">
+              <input
+                value={productSearch}
+                onChange={e => setProductSearch(e.target.value)}
+                placeholder="Ürün adı veya kodu ara..."
+                autoFocus
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {products.length === 0 ? (
+                <div className="py-10 text-center text-slate-400 text-sm">Ürün bulunamadı</div>
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {products
+                    .filter(p => {
+                      const q = productSearch.toLowerCase();
+                      return !q || p.name?.toLowerCase().includes(q) || p.code?.toLowerCase().includes(q);
+                    })
+                    .map(prod => (
+                      <li key={prod.id}>
+                        <button
+                          onClick={() => selectProduct(prod)}
+                          className="w-full flex items-center justify-between px-5 py-3 hover:bg-blue-50 transition-colors text-left"
+                        >
+                          <div>
+                            <p className="font-medium text-slate-800 text-sm">{prod.name}</p>
+                            <p className="text-xs text-slate-400">{prod.code ? `Kod: ${prod.code}` : ''}</p>
+                            {(prod.sizes || []).length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {prod.sizes.map((s: string) => (
+                                  <span key={s} className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-semibold">{s}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right ml-4">
+                            <p className="font-semibold text-blue-600 text-sm">{prod.unitPrice?.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                            <p className="text-xs text-slate-400">{prod.currency}</p>
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

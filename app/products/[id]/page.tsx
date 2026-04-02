@@ -45,6 +45,8 @@ export default function ProductDetailPage() {
   const [editForm, setEditForm] = useState<any>({});
   const [editParts, setEditParts] = useState<any[]>([]);
   const [editExtras, setEditExtras] = useState<any[]>([]);
+  const [editSizes, setEditSizes] = useState<string[]>([]);
+  const [sizeInput, setSizeInput] = useState('');
 
   const load = useCallback(() => {
     if (!params?.id) return;
@@ -82,6 +84,7 @@ export default function ProductDetailPage() {
           amount: String(e.amount),
           currency: e.currency,
         })));
+        setEditSizes(prod.sizes || []);
       }
       setMaterials(Array.isArray(mats) ? mats : []);
       if (comp && !comp.error) setCompany(comp);
@@ -99,7 +102,7 @@ export default function ProductDetailPage() {
       const res = await fetch(`/api/products/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...editForm, parts: editParts, extraCosts: editExtras }),
+        body: JSON.stringify({ ...editForm, parts: editParts, extraCosts: editExtras, sizes: editSizes }),
       });
       const updated = await res.json();
       if (!updated?.error) { setProduct(updated); setEditing(false); }
@@ -281,6 +284,62 @@ export default function ProductDetailPage() {
                       className="w-full px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400 resize-none" />
                   ) : (
                     <p className="text-sm text-slate-600">{product.notes || <span className="text-slate-300 italic">—</span>}</p>
+                  )}
+                </div>
+
+                {/* Boylar */}
+                <div className="px-4 py-2.5">
+                  <span className="text-xs font-semibold text-slate-500 block mb-2">Boylar</span>
+                  {editing ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          value={sizeInput}
+                          onChange={e => setSizeInput(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const v = sizeInput.trim();
+                              if (v && !editSizes.includes(v)) setEditSizes(p => [...p, v]);
+                              setSizeInput('');
+                            }
+                          }}
+                          placeholder="36, 37, S, M..."
+                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const v = sizeInput.trim();
+                            if (v && !editSizes.includes(v)) setEditSizes(p => [...p, v]);
+                            setSizeInput('');
+                          }}
+                          className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium"
+                        >
+                          Ekle
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {editSizes.map(s => (
+                          <span key={s} className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                            {s}
+                            <button type="button" onClick={() => setEditSizes(p => p.filter(x => x !== s))} className="hover:text-red-600">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                        {editSizes.length === 0 && <span className="text-xs text-slate-400 italic">Henüz boy eklenmedi</span>}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(product.sizes || []).length === 0
+                        ? <span className="text-sm text-slate-300 italic">—</span>
+                        : (product.sizes || []).map((s: string) => (
+                            <span key={s} className="px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">{s}</span>
+                          ))
+                      }
+                    </div>
                   )}
                 </div>
               </div>

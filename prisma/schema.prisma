@@ -144,6 +144,7 @@ model Product {
   currency         String             @default("USD")
   stock            Float              @default(0)
   notes            String?
+  sizes            String[]           @default([])
   laborCostPerPair Float              @default(0)
   laborCurrency    String             @default("USD")
   ciftPerKoli      Float              @default(0)

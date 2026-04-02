@@ -1041,54 +1041,148 @@ export default function CustomerDetailPage() {
           </Link>
         </div>
 
-        {/* Previous Sales */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
-            <h2 className="font-semibold text-white text-sm uppercase tracking-wide">{t('customerDetail', 'previousSales')}</h2>
-            <Link href="/invoices" className="text-slate-300 hover:text-white text-xs transition-colors">Tümünü gör →</Link>
-          </div>
-          {!customer.invoices?.length ? (
-            <div className="py-8 text-center text-slate-400 text-sm">{t('customerDetail', 'noSales')}</div>
-          ) : (
-            <>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
-                  <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
-                  <th className="px-4 py-2 text-left">{t('customerDetail', 'invoiceNo')}</th>
-                  <th className="px-4 py-2 text-right">{t('customerDetail', 'amount')}</th>
-                  <th className="w-8"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {customer.invoices.slice(0, invoicesShown).map((inv: any) => (
-                  <tr key={inv.id} className="hover:bg-blue-50/50 cursor-pointer transition-colors"
-                    onClick={() => router.push(`/invoices/${inv.id}`)}>
-                    <td className="px-4 py-2.5 text-slate-500">{new Date(inv.date).toLocaleDateString('tr-TR')}</td>
-                    <td className="px-4 py-2.5 font-medium text-blue-600">{inv.invoiceNo}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-slate-800">
-                      {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                      <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
-                    </td>
-                    <td className="pr-3 text-slate-300">
-                      <ChevronRight className="w-4 h-4" />
-                    </td>
+        {/* Previous Sales + Previous Payments (side by side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
+              <h2 className="font-semibold text-white text-sm uppercase tracking-wide">{t('customerDetail', 'previousSales')}</h2>
+              <Link href="/invoices" className="text-slate-300 hover:text-white text-xs transition-colors">Tümünü gör →</Link>
+            </div>
+            {!customer.invoices?.length ? (
+              <div className="py-8 text-center text-slate-400 text-sm">{t('customerDetail', 'noSales')}</div>
+            ) : (
+              <>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+                    <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
+                    <th className="px-4 py-2 text-left">{t('customerDetail', 'invoiceNo')}</th>
+                    <th className="px-4 py-2 text-right">{t('customerDetail', 'amount')}</th>
+                    <th className="w-8"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {customer.invoices.length > invoicesShown && (
-              <div className="px-4 py-3 border-t text-center">
-                <button
-                  onClick={() => setInvoicesShown(p => p + 10)}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Daha Fazla Göster ({customer.invoices.length - invoicesShown} adet daha)
-                </button>
-              </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {customer.invoices.slice(0, invoicesShown).map((inv: any) => (
+                    <tr key={inv.id} className="hover:bg-blue-50/50 cursor-pointer transition-colors"
+                      onClick={() => router.push(`/invoices/${inv.id}`)}>
+                      <td className="px-4 py-2.5 text-slate-500">{new Date(inv.date).toLocaleDateString('tr-TR')}</td>
+                      <td className="px-4 py-2.5 font-medium text-blue-600">{inv.invoiceNo}</td>
+                      <td className="px-4 py-2.5 text-right font-semibold text-slate-800">
+                        {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
+                      </td>
+                      <td className="pr-3 text-slate-300">
+                        <ChevronRight className="w-4 h-4" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {customer.invoices.length > invoicesShown && (
+                <div className="px-4 py-3 border-t text-center">
+                  <button
+                    onClick={() => setInvoicesShown(p => p + 10)}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Daha Fazla Göster ({customer.invoices.length - invoicesShown} adet daha)
+                  </button>
+                </div>
+              )}
+              </>
             )}
-            </>
-          )}
+          </div>
+
+          {/* Previous Payments (merged with checks) */}
+          {(() => {
+            const DURUM_LABEL: Record<string, string> = {
+              PORTFOY: 'Portföyde', BANKAYA_VERILDI: 'Bankaya Verildi',
+              TEDARIKCI_VERILDI: 'Tedarikçiye Verildi', ODENDI: 'Tahsil Edildi',
+              KARSILIKS: 'Karşılıksız', IPTAL: 'İptal',
+            };
+            const paymentRows = (customer.payments || []).map((p: any) => ({
+              _type: 'payment', _date: new Date(p.date), ...p,
+            }));
+            const cekRows = cekler.map((c: any) => ({
+              _type: 'cek', _date: new Date(c.islemTarihi), ...c,
+            }));
+            const merged = [...paymentRows, ...cekRows].sort((a, b) => b._date.getTime() - a._date.getTime());
+            const shown = merged.slice(0, paymentsShown);
+
+            const getPaymentRowBg = (row: any) => {
+              if (row.method === 'Borç Fişi' || row.method === 'Alacak Fişi') return 'bg-slate-100/60';
+              if (row.method === 'Bakiye Düzeltme') return 'bg-yellow-50/60';
+              return '';
+            };
+
+            const getPaymentTipBadge = (row: any) => {
+              if (row.method === 'Borç Fişi') return <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600">Borç Fişi</span>;
+              if (row.method === 'Alacak Fişi') return <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600">Alacak Fişi</span>;
+              if (row.method === 'Bakiye Düzeltme') return <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Bakiye Düzeltme</span>;
+              return <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Tahsilat</span>;
+            };
+
+            return (
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
+                  <h2 className="font-semibold text-white text-sm uppercase tracking-wide">{t('customerDetail', 'previousPayments')}</h2>
+                </div>
+                {!merged.length ? (
+                  <div className="py-8 text-center text-slate-400 text-sm">{t('customerDetail', 'noPayments')}</div>
+                ) : (
+                  <>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+                          <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
+                          <th className="px-4 py-2 text-left">Tip</th>
+                          <th className="px-4 py-2 text-right">{t('customerDetail', 'amount')}</th>
+                          <th className="px-4 py-2 w-8"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {shown.map((row: any) => row._type === 'payment' ? (
+                          <tr key={row.id} className={`group ${getPaymentRowBg(row)}`}>
+                            <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
+                            <td className="px-4 py-2.5">{getPaymentTipBadge(row)}</td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-emerald-600">
+                              {row.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                              <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
+                            </td>
+                            <td className="px-2 py-2.5 text-center">
+                              <button onClick={() => handleDeletePayment(row.id, row.method)}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                            </td>
+                          </tr>
+                        ) : (
+                          <tr key={row.id} className="bg-cyan-50/40">
+                            <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
+                            <td className="px-4 py-2.5">
+                              <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-cyan-100 text-cyan-700">Çek</span>
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-cyan-700">
+                              {row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                              <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
+                            </td>
+                            <td className="px-2 py-2.5"></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {merged.length > paymentsShown && (
+                      <div className="px-4 py-3 border-t text-center">
+                        <button onClick={() => setPaymentsShown(p => p + 10)}
+                          className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                          Daha Fazla Göster ({merged.length - paymentsShown} adet daha)
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Return Invoices */}
@@ -1109,7 +1203,7 @@ export default function CustomerDetailPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {customer.returns.map((inv: any) => (
-                  <tr key={inv.id} className="hover:bg-red-50/50 cursor-pointer transition-colors"
+                  <tr key={inv.id} className="bg-red-50/50 hover:bg-red-50 cursor-pointer transition-colors"
                     onClick={() => router.push(`/invoices/${inv.id}`)}>
                     <td className="px-4 py-2.5 text-slate-500">{new Date(inv.date).toLocaleDateString('tr-TR')}</td>
                     <td className="px-4 py-2.5 font-medium text-red-700">{inv.invoiceNo}</td>
@@ -1126,92 +1220,6 @@ export default function CustomerDetailPage() {
             </table>
           </div>
         )}
-
-        {/* Previous Payments (merged with checks) */}
-        {(() => {
-          const DURUM_LABEL: Record<string, string> = {
-            PORTFOY: 'Portföyde', BANKAYA_VERILDI: 'Bankaya Verildi',
-            TEDARIKCI_VERILDI: 'Tedarikçiye Verildi', ODENDI: 'Tahsil Edildi',
-            KARSILIKS: 'Karşılıksız', IPTAL: 'İptal',
-          };
-          const paymentRows = (customer.payments || []).map((p: any) => ({
-            _type: 'payment', _date: new Date(p.date), ...p,
-          }));
-          const cekRows = cekler.map((c: any) => ({
-            _type: 'cek', _date: new Date(c.islemTarihi), ...c,
-          }));
-          const merged = [...paymentRows, ...cekRows].sort((a, b) => b._date.getTime() - a._date.getTime());
-          const shown = merged.slice(0, paymentsShown);
-          return (
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
-                <h2 className="font-semibold text-white text-sm uppercase tracking-wide">{t('customerDetail', 'previousPayments')}</h2>
-              </div>
-              {!merged.length ? (
-                <div className="py-8 text-center text-slate-400 text-sm">{t('customerDetail', 'noPayments')}</div>
-              ) : (
-                <>
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
-                        <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
-                        <th className="px-4 py-2 text-right">{t('customerDetail', 'amount')}</th>
-                        <th className="px-4 py-2 text-left">{t('customerDetail', 'method')}</th>
-                        <th className="px-4 py-2 w-8"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {shown.map((row: any) => row._type === 'payment' ? (
-                        <tr key={row.id} className="hover:bg-slate-50/50 group">
-                          <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold text-emerald-600">
-                            {row.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                            <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
-                          </td>
-                          <td className="px-4 py-2.5 text-slate-600">
-                            {row.method}{row.notes ? ` (${row.notes})` : ''}
-                          </td>
-                          <td className="px-2 py-2.5 text-center">
-                            <button onClick={() => handleDeletePayment(row.id, row.method)}
-                              className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                            </button>
-                          </td>
-                        </tr>
-                      ) : (
-                        <tr key={row.id} className="hover:bg-slate-50/50 bg-cyan-50/40">
-                          <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold text-cyan-700">
-                            {row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                            <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
-                          </td>
-                          <td className="px-4 py-2.5 text-slate-600">
-                            Çek ({new Date(row.vadesi).toLocaleDateString('tr-TR')})
-                            <span className={`ml-2 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                              row.durum === 'ODENDI' ? 'bg-green-100 text-green-700' :
-                              row.durum === 'IPTAL' ? 'bg-slate-100 text-slate-500' :
-                              row.durum === 'KARSILIKS' ? 'bg-red-100 text-red-600' :
-                              'bg-cyan-100 text-cyan-700'
-                            }`}>{DURUM_LABEL[row.durum] || row.durum}</span>
-                          </td>
-                          <td className="px-2 py-2.5"></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {merged.length > paymentsShown && (
-                    <div className="px-4 py-3 border-t text-center">
-                      <button onClick={() => setPaymentsShown(p => p + 10)}
-                        className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                        Daha Fazla Göster ({merged.length - paymentsShown} adet daha)
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          );
-        })()}
       </div>
 
       {showIade && (

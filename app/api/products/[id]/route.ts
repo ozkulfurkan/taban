@@ -42,6 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         currency: productFields.currency || 'USD',
         stock: parseFloat(productFields.stock) || 0,
         notes: productFields.notes || null,
+        sizes: Array.isArray(productFields.sizes) ? productFields.sizes : [],
         laborCostPerPair: parseFloat(productFields.laborCostPerPair) || 0,
         laborCurrency: productFields.laborCurrency || 'USD',
         ciftPerKoli: parseFloat(productFields.ciftPerKoli) || 0,
