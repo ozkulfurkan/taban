@@ -193,24 +193,29 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
                 <p className="text-xs font-semibold text-purple-700">Parçalar — renk/kod seç:</p>
                 {parts.map((p: any) => {
                   const variants: any[] = p.material?.variants ?? [];
+                  const hasMaterial = !!p.material;
                   return (
-                    <div key={p.id} className="flex items-center justify-between gap-2 text-xs">
-                      <span className="text-purple-800 font-medium min-w-0 truncate">{p.name} · {p.material?.name ?? '—'}</span>
-                      {variants.length > 0 ? (
+                    <div key={p.id} className="space-y-0.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-purple-800 font-medium min-w-0 truncate">{p.name}</span>
+                        <span className="text-xs text-purple-500 flex-shrink-0">{p.material?.name ?? '—'}</span>
+                      </div>
+                      {hasMaterial && (
                         <select
                           value={partVariantSelections[p.id] ?? ''}
                           onChange={e => setPartVariantSelections(prev => ({ ...prev, [p.id]: e.target.value }))}
-                          className="text-xs px-2 py-1 border border-purple-300 rounded bg-white outline-none focus:ring-1 focus:ring-purple-400 max-w-[160px]"
+                          className="w-full text-xs px-2 py-1.5 border border-purple-200 rounded-lg bg-white outline-none focus:ring-1 focus:ring-purple-400"
                         >
-                          <option value="">— Renk/Kod Seç —</option>
+                          <option value="">— Renk / Kod Seç —</option>
+                          {variants.length === 0 && (
+                            <option disabled value="">Henüz varyant eklenmemiş</option>
+                          )}
                           {variants.map((v: any) => (
                             <option key={v.id} value={v.id}>
-                              {v.colorName}{v.code ? ` (${v.code})` : ''} — {(v.stock ?? 0).toFixed(2)}kg
+                              {v.colorName}{v.code ? ` · ${v.code}` : ''} — stok: {(v.stock ?? 0).toFixed(2)} kg
                             </option>
                           ))}
                         </select>
-                      ) : (
-                        <span className="text-slate-400 text-xs italic">Varyant yok</span>
                       )}
                     </div>
                   );
