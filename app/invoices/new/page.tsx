@@ -14,6 +14,7 @@ interface LineItem {
   unitPrice: string;
   discount: string;
   notes: string;
+  partVariants?: { partId: string; variantId: string }[];
 }
 
 interface ModalState {
@@ -40,23 +41,33 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
   const { t } = useLanguage();
   const [item, setItem] = useState<LineItem>({ ...initial });
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  // partId -> variantId selections made at sale time
+  const [partVariantSelections, setPartVariantSelections] = useState<Record<string, string>>({});
 
   const set = (field: keyof LineItem, val: string) => setItem(p => ({ ...p, [field]: val }));
 
   const handleProductSelect = (productId: string) => {
-    if (!productId) { setSelectedProduct(null); return; }
-    const p = products.find(p => p.id === productId);
+    if (!productId) { setSelectedProduct(null); setPartVariantSelections({}); return; }
+    const p = products.find((p: any) => p.id === productId);
     if (!p) return;
     setSelectedProduct(p);
-    // Ürün para birimi fatura para birimiyle aynıysa fiyatı kopyala, farklıysa boş bırak (kullanıcı fatura para biriminde fiyat girsin)
+    setPartVariantSelections({});
     const unitPrice = p.currency === currency ? toPriceInput(p.unitPrice) : '';
-    setItem(prev => ({ ...prev, productId: p.id, description: p.name, unitPrice }));
+    setItem(prev => ({ ...prev, productId: p.id, description: p.name, unitPrice, partVariants: undefined }));
   };
 
   useEffect(() => {
     if (initial.productId && !selectedProduct) {
-      const p = products.find(p => p.id === initial.productId);
-      if (p) setSelectedProduct(p);
+      const p = products.find((p: any) => p.id === initial.productId);
+      if (p) {
+        setSelectedProduct(p);
+        // Restore existing partVariants if editing
+        if (initial.partVariants) {
+          const map: Record<string, string> = {};
+          initial.partVariants.forEach(pv => { map[pv.partId] = pv.variantId; });
+          setPartVariantSelections(map);
+        }
+      }
     }
   }, []);
 
@@ -166,9 +177,9 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
               <span className="text-lg font-bold text-slate-800">{total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {currency}</span>
             </div>
           </div>
-          {/* Parts info */}
+          {/* Parts info + variant selection */}
           {selectedProduct && (() => {
-            const parts = selectedProduct.parts ?? [];
+            const parts: any[] = selectedProduct.parts ?? [];
             if (parts.length === 0) {
               return (
                 <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
@@ -178,19 +189,32 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
               );
             }
             return (
-              <div className="bg-purple-50 border border-purple-200 rounded-xl p-3">
-                <p className="text-xs font-semibold text-purple-700 mb-1.5">Parçalar (stok düşümü yapılacak):</p>
-                <div className="space-y-1">
-                  {parts.map((p: any) => (
-                    <div key={p.id} className="flex items-center justify-between text-xs">
-                      <span className="text-purple-800 font-medium">{p.name}</span>
-                      <span className="text-purple-600">
-                        {p.material?.name ?? '—'}
-                        {p.materialVariant ? ` · ${p.materialVariant.colorName}${p.materialVariant.code ? ` (${p.materialVariant.code})` : ''}` : ''}
-                      </span>
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 space-y-2">
+                <p className="text-xs font-semibold text-purple-700">Parçalar — renk/kod seç:</p>
+                {parts.map((p: any) => {
+                  const variants: any[] = p.material?.variants ?? [];
+                  return (
+                    <div key={p.id} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="text-purple-800 font-medium min-w-0 truncate">{p.name} · {p.material?.name ?? '—'}</span>
+                      {variants.length > 0 ? (
+                        <select
+                          value={partVariantSelections[p.id] ?? ''}
+                          onChange={e => setPartVariantSelections(prev => ({ ...prev, [p.id]: e.target.value }))}
+                          className="text-xs px-2 py-1 border border-purple-300 rounded bg-white outline-none focus:ring-1 focus:ring-purple-400 max-w-[160px]"
+                        >
+                          <option value="">— Renk/Kod Seç —</option>
+                          {variants.map((v: any) => (
+                            <option key={v.id} value={v.id}>
+                              {v.colorName}{v.code ? ` (${v.code})` : ''} — {(v.stock ?? 0).toFixed(2)}kg
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-slate-400 text-xs italic">Varyant yok</span>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             );
           })()}
@@ -199,7 +223,14 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
             <input value={item.notes} onChange={e => set('notes', e.target.value)} placeholder={t('newInvoice', 'enterDescription')}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
           </div>
-          <button type="button" onClick={() => { if (item.description || item.unitPrice) onConfirm(item); }}
+          <button type="button" onClick={() => {
+            if (item.description || item.unitPrice) {
+              const partVariants = Object.entries(partVariantSelections)
+                .filter(([, vId]) => vId)
+                .map(([partId, variantId]) => ({ partId, variantId }));
+              onConfirm({ ...item, partVariants: partVariants.length > 0 ? partVariants : undefined });
+            }
+          }}
             disabled={!item.description && !item.unitPrice}
             className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" /> {t('common', 'add')}
@@ -428,19 +459,37 @@ export default function NewInvoicePage() {
       if (!product || !product.parts || product.parts.length === 0) continue;
       hasAnyParts = true;
       const qty = fromPriceInput(item.quantity);
+      // Build partId -> variantId map from this item's selections
+      const pvMap: Record<string, string> = {};
+      (item.partVariants ?? []).forEach(pv => { pvMap[pv.partId] = pv.variantId; });
+
       for (const part of product.parts) {
         const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
         const kgUsed = (grossGrams * qty) / 1000;
-        const key = part.materialVariantId || part.materialId || part.id;
-        if (!key) continue;
+
+        const selectedVariantId = pvMap[part.id];
+        let key: string;
+        let matName: string;
+        let variantInfo: string;
+        let currentStock: number;
+
+        if (selectedVariantId) {
+          // User selected a specific variant at sale time
+          const variant = (part.material?.variants ?? []).find((v: any) => v.id === selectedVariantId);
+          key = selectedVariantId;
+          matName = part.material?.name ?? '—';
+          variantInfo = variant ? `${variant.colorName}${variant.code ? ` (${variant.code})` : ''}` : '';
+          currentStock = variant?.stock ?? 0;
+        } else if (part.materialId) {
+          key = part.materialId;
+          matName = part.material?.name ?? '—';
+          variantInfo = '';
+          currentStock = part.material?.stock ?? 0;
+        } else {
+          continue;
+        }
+
         const existing = deductionMap.get(key);
-        const matName = part.material?.name ?? '—';
-        const variantInfo = part.materialVariant
-          ? `${part.materialVariant.colorName}${part.materialVariant.code ? ` (${part.materialVariant.code})` : ''}`
-          : '';
-        const currentStock = part.materialVariant
-          ? (part.materialVariant.stock ?? 0)
-          : (part.material?.stock ?? 0);
         if (existing) {
           existing.kgAmount += kgUsed;
         } else {

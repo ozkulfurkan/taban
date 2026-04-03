@@ -133,17 +133,28 @@ const uniqueProductIds = ids;
     });
 
     // Hammadde ve varyant bazında kg kullanımını topla
-    const materialMap = new Map<string, number>();  // materialId -> kgAmount (for parts without variant)
-    const variantMap = new Map<string, number>();   // materialVariantId -> kgAmount (for parts with variant)
+    const materialMap = new Map<string, number>();  // materialId -> kgAmount
+    const variantMap = new Map<string, number>();   // variantId -> kgAmount
 
     for (const item of productItems) {
       const qty = parseFloat(item.quantity) || 0;
-      const product = products.find(p => p.id === item.productId);
+      const product = products.find((p: any) => p.id === item.productId);
       if (!product) continue;
+
+      // Build partId -> variantId map from sale-time selections
+      const pvMap: Record<string, string> = {};
+      if (Array.isArray(item.partVariants)) {
+        item.partVariants.forEach((pv: any) => { pvMap[pv.partId] = pv.variantId; });
+      }
+
       for (const part of product.parts) {
         const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
         const kgUsed = (grossGrams * qty) / 1000;
-        if (part.materialVariantId) {
+
+        const selectedVariantId = pvMap[part.id];
+        if (selectedVariantId) {
+          variantMap.set(selectedVariantId, (variantMap.get(selectedVariantId) || 0) + kgUsed);
+        } else if (part.materialVariantId) {
           variantMap.set(part.materialVariantId, (variantMap.get(part.materialVariantId) || 0) + kgUsed);
         } else if (part.materialId) {
           materialMap.set(part.materialId, (materialMap.get(part.materialId) || 0) + kgUsed);

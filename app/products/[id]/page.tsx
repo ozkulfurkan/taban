@@ -462,21 +462,6 @@ export default function ProductDetailPage() {
                                   <option key={m.id} value={m.id}>{m.name} ({fmt(m.pricePerKg)} {m.currency}/kg)</option>
                                 ))}
                               </select>
-                              {/* Variant select — shown when selected material has variants */}
-                              {(() => {
-                                const mat = materials.find((m: any) => m.id === part.materialId);
-                                const variants = mat?.variants ?? [];
-                                if (variants.length === 0) return null;
-                                return (
-                                  <select value={part.materialVariantId} onChange={e => onVariantSelect(idx, e.target.value)}
-                                    className="w-full mt-1 px-2 py-1 border border-purple-200 rounded text-sm bg-purple-50 outline-none focus:ring-1 focus:ring-purple-400">
-                                    <option value="">— Renk/Kod Seç —</option>
-                                    {variants.map((v: any) => (
-                                      <option key={v.id} value={v.id}>{v.colorName}{v.code ? ` (${v.code})` : ''} — {(v.stock ?? 0).toFixed(2)} kg</option>
-                                    ))}
-                                  </select>
-                                );
-                              })()}
                             </td>
                             <td className="px-3 py-2">
                               <input value={part.name} onChange={e => setPart(idx, 'name', e.target.value)}
@@ -518,11 +503,6 @@ export default function ProductDetailPage() {
                             <td className="px-3 py-2.5 text-slate-400 text-xs">{idx + 1}</td>
                             <td className="px-3 py-2.5">
                               <p className="font-medium text-slate-700">{part.material?.name || '—'}</p>
-                              {part.materialVariant && (
-                                <p className="text-xs text-purple-600 font-medium">
-                                  {part.materialVariant.colorName}{part.materialVariant.code ? ` · ${part.materialVariant.code}` : ''} — {(part.materialVariant.stock ?? 0).toFixed(2)} kg stok
-                                </p>
-                              )}
                               {part.material && <p className="text-xs text-slate-400">{fmt(part.material.pricePerKg)} {part.material.currency}/kg</p>}
                             </td>
                             <td className="px-3 py-2.5 text-slate-600">{part.name}</td>

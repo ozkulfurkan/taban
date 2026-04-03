@@ -514,7 +514,9 @@ function AlışModal({ supplier, onClose, onSaved }: {
     const list = item.itemType === 'material' ? materialList : productList;
     const q = item.itemName.toLowerCase();
     if (!q) return list.slice(0, 8);
-    return list.filter(x => x.name.toLowerCase().includes(q)).slice(0, 8);
+    return list.filter((x: any) =>
+      x.name.toLowerCase().includes(q) || (x.code && x.code.toLowerCase().includes(q))
+    ).slice(0, 8);
   };
 
   const handleCreateItem = async (itemId: number, itemType: ItemType) => {
@@ -675,9 +677,12 @@ function AlışModal({ supplier, onClose, onSaved }: {
                             {fp.map((ref: any) => (
                               <button key={ref.id} type="button"
                                 onMouseDown={() => selectRef(item.id, ref, item.itemType)}
-                                className="w-full text-left px-3 py-1.5 text-sm hover:bg-indigo-50 flex items-center justify-between">
-                                <span>{ref.name}</span>
-                                <span className="text-xs text-slate-400">
+                                className="w-full text-left px-3 py-1.5 text-sm hover:bg-indigo-50 flex items-center justify-between gap-2">
+                                <span className="min-w-0">
+                                  {ref.name}
+                                  {ref.code && <span className="ml-1.5 text-xs text-slate-400 font-mono">{ref.code}</span>}
+                                </span>
+                                <span className="text-xs text-slate-400 flex-shrink-0">
                                   {isMaterial ? `${ref.pricePerKg} ${ref.currency}/kg` : `${ref.unitPrice} ${ref.currency}`}
                                 </span>
                               </button>
