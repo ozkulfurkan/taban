@@ -513,18 +513,15 @@ export default function InvoiceDetailPage() {
                                       <div key={part.id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-xs shadow-sm">
                                         <span className="font-semibold text-slate-700">{part.name}</span>
                                         <span className="text-slate-300">|</span>
-                                        <span className="text-slate-500">{part.material?.name ?? '—'}</span>
-                                        {part.materialVariant ? (
-                                          <>
-                                            <span className="text-slate-300">|</span>
-                                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-semibold">
-                                              {part.materialVariant.colorName}
-                                            </span>
-                                            {part.materialVariant.code && (
-                                              <span className="text-slate-400 font-mono">{part.materialVariant.code}</span>
-                                            )}
-                                          </>
-                                        ) : null}
+                                        <span className="text-slate-600">
+                                          {part.material?.name ?? '—'}
+                                          {part.materialVariant?.code && (
+                                            <span className="text-slate-400"> / {part.materialVariant.code}</span>
+                                          )}
+                                          {part.materialVariant?.colorName && (
+                                            <span className="text-slate-400"> / {part.materialVariant.colorName}</span>
+                                          )}
+                                        </span>
                                         <span className="text-slate-300">|</span>
                                         <span className="text-slate-500">{part.gramsPerPiece}gr/adet</span>
                                         <span className="text-slate-300">→</span>
