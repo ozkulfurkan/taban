@@ -79,14 +79,14 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
   const total = gross - discAmount;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col">
         <div className="bg-emerald-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold text-base">{item.description || t('newInvoice', 'product')}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto flex-1">
           {products.length > 0 && (
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'selectFromCatalog')}</label>
@@ -228,6 +228,9 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
             <input value={item.notes} onChange={e => set('notes', e.target.value)} placeholder={t('newInvoice', 'enterDescription')}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
           </div>
+        </div>
+        {/* Sticky footer */}
+        <div className="px-5 pb-4 pt-3 border-t border-slate-100 flex-shrink-0">
           <button type="button" onClick={() => {
             if (item.description || item.unitPrice) {
               const partVariants = Object.entries(partVariantSelections)
