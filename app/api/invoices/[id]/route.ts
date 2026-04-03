@@ -8,7 +8,21 @@ async function getInvoice(id: string, companyId: string) {
     where: { id, companyId },
     include: {
       customer: { select: { id: true, name: true, taxId: true, email: true, phone: true } },
-      items: true,
+      items: {
+        include: {
+          product: {
+            include: {
+              parts: {
+                include: {
+                  material: { select: { id: true, name: true } },
+                  materialVariant: { select: { id: true, colorName: true, code: true } },
+                },
+                orderBy: { sortOrder: 'asc' },
+              },
+            },
+          },
+        },
+      },
       payments: { orderBy: { date: 'desc' } },
     },
   });

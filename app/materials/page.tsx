@@ -7,7 +7,7 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { useSession } from 'next-auth/react';
 import {
   Package, Plus, Search, Edit2, Trash2, History, Loader2, Layers,
-  ChevronDown, ChevronRight, Palette, X,
+  ChevronDown, ChevronRight, Palette, X, FileText, TrendingUp, TrendingDown, RotateCcw,
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,6 +41,20 @@ export default function MaterialsPage() {
   const [stokDelta, setStokDelta] = useState('');
   const [stokSign, setStokSign] = useState<1 | -1>(1);
   const [stokSaving, setStokSaving] = useState(false);
+
+  // Stok Ekstresi modal
+  const [ekstreModal, setEkstreModal] = useState<{ name: string; data: any } | null>(null);
+  const [ekstreLoading, setEkstreLoading] = useState(false);
+
+  const openEkstre = async (mat: any) => {
+    setEkstreLoading(true);
+    setEkstreModal({ name: mat.name, data: null });
+    try {
+      const res = await fetch(`/api/materials/${mat.id}/ekstre`);
+      const data = await res.json();
+      setEkstreModal({ name: mat.name, data });
+    } finally { setEkstreLoading(false); }
+  };
 
   const handleStokSave = async () => {
     if (!stokModal || !stokDelta) return;
@@ -302,6 +316,13 @@ export default function MaterialsPage() {
                             <Palette className="w-4 h-4" />
                           </button>
                         )}
+                        <button
+                          onClick={() => openEkstre(mat)}
+                          className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                          title="Stok Ekstresi"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => setHistoryModal(mat)}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -595,6 +616,142 @@ export default function MaterialsPage() {
                   Kaydet
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Stok Ekstresi Modal ─────────────────────────────────────────── */}
+      {ekstreModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEkstreModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="bg-teal-700 px-5 py-4 flex items-center justify-between flex-shrink-0">
+              <div>
+                <h3 className="text-white font-bold text-base flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> Stok Ekstresi
+                </h3>
+                <p className="text-teal-200 text-sm mt-0.5">{ekstreModal.name}</p>
+              </div>
+              <button onClick={() => setEkstreModal(null)} className="text-white/80 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto">
+              {ekstreLoading || !ekstreModal.data ? (
+                <div className="flex justify-center items-center py-20">
+                  <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                </div>
+              ) : (
+                <>
+                  {/* Özet kartları */}
+                  <div className="grid grid-cols-3 gap-3 p-5 pb-3">
+                    <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                      <p className="text-xs text-emerald-600 font-semibold mb-1">Toplam Alış</p>
+                      <p className="text-lg font-bold text-emerald-700">
+                        {ekstreModal.data.entries
+                          .filter((e: any) => e.type === 'alis' || e.type === 'iade')
+                          .reduce((s: number, e: any) => s + e.kgAmount, 0)
+                          .toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                      </p>
+                    </div>
+                    <div className="bg-red-50 rounded-xl p-3 text-center">
+                      <p className="text-xs text-red-600 font-semibold mb-1">Toplam Satış Tüketimi</p>
+                      <p className="text-lg font-bold text-red-700">
+                        {Math.abs(ekstreModal.data.entries
+                          .filter((e: any) => e.type === 'satis')
+                          .reduce((s: number, e: any) => s + e.kgAmount, 0))
+                          .toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                      </p>
+                    </div>
+                    <div className={`rounded-xl p-3 text-center ${(ekstreModal.data.material?.stock ?? 0) < 0 ? 'bg-red-50' : 'bg-teal-50'}`}>
+                      <p className="text-xs text-teal-600 font-semibold mb-1">Güncel Stok</p>
+                      <p className={`text-lg font-bold ${(ekstreModal.data.material?.stock ?? 0) < 0 ? 'text-red-700' : 'text-teal-700'}`}>
+                        {(ekstreModal.data.material?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Hareketler tablosu */}
+                  {ekstreModal.data.entries.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400 text-sm">Kayıtlı hareket bulunamadı</div>
+                  ) : (
+                    <div className="px-5 pb-5">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
+                            <th className="px-3 py-2.5 text-left">Tarih</th>
+                            <th className="px-3 py-2.5 text-left">İşlem</th>
+                            <th className="px-3 py-2.5 text-left">Müşteri / Tedarikçi</th>
+                            <th className="px-3 py-2.5 text-left">Ürün</th>
+                            <th className="px-3 py-2.5 text-left">Renk</th>
+                            <th className="px-3 py-2.5 text-right">Miktar (kg)</th>
+                            <th className="px-3 py-2.5 text-right">Fiyat</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {ekstreModal.data.entries.map((entry: any) => (
+                            <tr key={entry.id} className={`hover:bg-slate-50/50 ${
+                              entry.type === 'alis' ? 'hover:bg-emerald-50/30' :
+                              entry.type === 'iade' ? 'hover:bg-blue-50/30' :
+                              'hover:bg-red-50/30'
+                            }`}>
+                              <td className="px-3 py-2.5 text-slate-500 text-xs whitespace-nowrap">
+                                {new Date(entry.date).toLocaleDateString('tr-TR')}
+                              </td>
+                              <td className="px-3 py-2.5">
+                                {entry.type === 'alis' ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
+                                    <TrendingUp className="w-3 h-3" /> Alış
+                                  </span>
+                                ) : entry.type === 'iade' ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                                    <RotateCcw className="w-3 h-3" /> İade
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                                    <TrendingDown className="w-3 h-3" /> Satış
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2.5 font-medium text-slate-700 truncate max-w-[140px]">
+                                {entry.party}
+                                {entry.invoiceNo && (
+                                  <div className="text-xs text-slate-400 font-normal">{entry.invoiceNo}</div>
+                                )}
+                              </td>
+                              <td className="px-3 py-2.5 text-slate-600 truncate max-w-[120px]">
+                                {entry.product ?? <span className="text-slate-300 italic">—</span>}
+                              </td>
+                              <td className="px-3 py-2.5">
+                                {entry.variant ? (
+                                  <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                                    {entry.variant}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300 text-xs">—</span>
+                                )}
+                              </td>
+                              <td className={`px-3 py-2.5 text-right font-semibold ${entry.kgAmount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                {entry.kgAmount > 0 ? '+' : ''}{entry.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 3 })}
+                              </td>
+                              <td className="px-3 py-2.5 text-right text-slate-500 text-xs">
+                                {entry.pricePerKg
+                                  ? `${entry.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${entry.currency ?? ''}/kg`
+                                  : <span className="text-slate-300">—</span>
+                                }
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>

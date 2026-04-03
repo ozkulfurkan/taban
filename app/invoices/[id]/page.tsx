@@ -6,7 +6,7 @@ import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
 import {
   Loader2, Printer, Pencil, X, CreditCard, User,
-  Plus, Trash2, Save, ChevronLeft, Package, CheckCircle,
+  Plus, Trash2, Save, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers,
 } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
@@ -38,6 +38,14 @@ export default function InvoiceDetailPage() {
   // Payment form state
   const [payForm, setPayForm] = useState({
     amount: '', method: 'Nakit', date: new Date().toISOString().split('T')[0], notes: '',
+  });
+
+  // Expand edilmiş item satırları (ürün bileşenlerini göstermek için)
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const toggleItem = (id: string) => setExpandedItems(p => {
+    const n = new Set(p);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
   });
 
   // Stok düşümü state
@@ -459,17 +467,64 @@ export default function InvoiceDetailPage() {
                       const indirimTL = tutar * (item.discount ?? 0) / 100;
                       const net = tutar - indirimTL;
                       const kdv = net * invoice.vatRate / 100;
+                      const parts = item.product?.parts ?? [];
+                      const isExpanded = expandedItems.has(item.id);
                       return (
-                        <tr key={item.id} className="hover:bg-slate-50/50">
-                          <td className="px-3 py-2.5 text-slate-400 text-xs">{idx + 1}</td>
-                          <td className="px-3 py-2.5 text-slate-700">{item.description}</td>
-                          <td className="px-3 py-2.5 text-right text-slate-600">{item.quantity.toLocaleString('tr-TR')}</td>
-                          <td className="px-3 py-2.5 text-right text-slate-600">{fmt(item.unitPrice)}</td>
-                          <td className="px-3 py-2.5 text-right text-slate-600">{fmt(tutar)}</td>
-                          <td className="px-3 py-2.5 text-right text-slate-500">{fmt(indirimTL)}</td>
-                          <td className="px-3 py-2.5 text-right font-medium text-slate-700">{fmt(net)}</td>
-                          <td className="px-3 py-2.5 text-right text-slate-500">{fmt(kdv)}</td>
-                        </tr>
+                        <>
+                          <tr key={item.id} className={`hover:bg-slate-50/50 ${isExpanded ? 'bg-blue-50/30' : ''}`}>
+                            <td className="px-3 py-2.5 text-slate-400 text-xs">{idx + 1}</td>
+                            <td className="px-3 py-2.5 text-slate-700">
+                              <div className="flex items-center gap-1.5">
+                                {parts.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleItem(item.id)}
+                                    className="flex-shrink-0 p-0.5 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-100 transition-colors"
+                                    title="Ürün bileşenlerini göster"
+                                  >
+                                    {isExpanded
+                                      ? <ChevronDown className="w-3.5 h-3.5" />
+                                      : <ChevronRight className="w-3.5 h-3.5" />}
+                                  </button>
+                                )}
+                                <span>{item.description}</span>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5 text-right text-slate-600">{item.quantity.toLocaleString('tr-TR')}</td>
+                            <td className="px-3 py-2.5 text-right text-slate-600">{fmt(item.unitPrice)}</td>
+                            <td className="px-3 py-2.5 text-right text-slate-600">{fmt(tutar)}</td>
+                            <td className="px-3 py-2.5 text-right text-slate-500">{fmt(indirimTL)}</td>
+                            <td className="px-3 py-2.5 text-right font-medium text-slate-700">{fmt(net)}</td>
+                            <td className="px-3 py-2.5 text-right text-slate-500">{fmt(kdv)}</td>
+                          </tr>
+                          {isExpanded && parts.length > 0 && (
+                            <tr key={`${item.id}-parts`} className="bg-blue-50/40">
+                              <td></td>
+                              <td colSpan={7} className="px-4 py-2.5">
+                                <div className="flex items-center gap-1.5 mb-2">
+                                  <Layers className="w-3.5 h-3.5 text-blue-500" />
+                                  <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Ürün Bileşenleri (Hammadde / Renk)</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {parts.map((part: any) => (
+                                    <div key={part.id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-xs shadow-sm">
+                                      <span className="font-semibold text-slate-700">{part.name}</span>
+                                      <span className="text-slate-400">—</span>
+                                      <span className="text-slate-600">{part.material?.name ?? '—'}</span>
+                                      {part.materialVariant && (
+                                        <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-medium">
+                                          {part.materialVariant.colorName}
+                                          {part.materialVariant.code && ` (${part.materialVariant.code})`}
+                                        </span>
+                                      )}
+                                      <span className="text-slate-400 ml-1">{part.gramsPerPiece}gr</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       );
                     })}
                   </tbody>
