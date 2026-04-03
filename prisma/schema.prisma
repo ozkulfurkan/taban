@@ -81,8 +81,21 @@ model Material {
   productParts      ProductPart[]
   priceHistory      PriceHistory[]
   purchaseMaterials PurchaseMaterial[]
+  variants          MaterialVariant[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+}
+
+model MaterialVariant {
+  id           String        @id @default(cuid())
+  materialId   String
+  material     Material      @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  colorName    String
+  code         String?
+  stock        Float         @default(0)
+  productParts ProductPart[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model PriceHistory {
@@ -160,17 +173,19 @@ model Product {
 }
 
 model ProductPart {
-  id            String    @id @default(cuid())
-  productId     String
-  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  materialId    String?
-  material      Material? @relation(fields: [materialId], references: [id])
-  name          String
-  gramsPerPiece Float     @default(0)
-  wasteRate     Float     @default(0)
-  sortOrder     Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String           @id @default(cuid())
+  productId         String
+  product           Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  materialId        String?
+  material          Material?        @relation(fields: [materialId], references: [id])
+  materialVariantId String?
+  materialVariant   MaterialVariant? @relation(fields: [materialVariantId], references: [id])
+  name              String
+  gramsPerPiece     Float            @default(0)
+  wasteRate         Float            @default(0)
+  sortOrder         Int              @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 }
 
 model ProductExtraCost {

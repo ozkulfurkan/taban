@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
 interface LineItem {
@@ -166,6 +166,34 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
               <span className="text-lg font-bold text-slate-800">{total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {currency}</span>
             </div>
           </div>
+          {/* Parts info */}
+          {selectedProduct && (() => {
+            const parts = selectedProduct.parts ?? [];
+            if (parts.length === 0) {
+              return (
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                  <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-700">Ürün parça ve gramaj bilgisi belli olmadığı için hammadde stoklarında değişiklik olmayacaktır.</p>
+                </div>
+              );
+            }
+            return (
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-3">
+                <p className="text-xs font-semibold text-purple-700 mb-1.5">Parçalar (stok düşümü yapılacak):</p>
+                <div className="space-y-1">
+                  {parts.map((p: any) => (
+                    <div key={p.id} className="flex items-center justify-between text-xs">
+                      <span className="text-purple-800 font-medium">{p.name}</span>
+                      <span className="text-purple-600">
+                        {p.material?.name ?? '—'}
+                        {p.materialVariant ? ` · ${p.materialVariant.colorName}${p.materialVariant.code ? ` (${p.materialVariant.code})` : ''}` : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'optionalNotes')}</label>
             <input value={item.notes} onChange={e => set('notes', e.target.value)} placeholder={t('newInvoice', 'enterDescription')}
@@ -215,6 +243,63 @@ function CurrencyWarning({ invoiceCurrency, customerCurrency, onConfirm, onCance
   );
 }
 
+// ── Stock Confirmation Modal ──────────────────────────────────────────────────
+function StockConfirmModal({ deductions, onConfirm, onCancel, saving }: {
+  deductions: { name: string; variantInfo: string; kgAmount: number; currentStock: number }[];
+  onConfirm: () => void; onCancel: () => void; saving: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="bg-purple-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <h3 className="text-white font-semibold text-base">Hammadde Stok Düşümü Onayı</h3>
+          <button onClick={onCancel} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <p className="text-sm text-slate-600">Fatura kaydedildiğinde aşağıdaki hammaddeler stoktan düşülecektir:</p>
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Hammadde / Renk</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500">Düşüm (kg)</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500">Mevcut Stok</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {deductions.map((d, i) => (
+                  <tr key={i} className={d.currentStock < d.kgAmount ? 'bg-red-50' : ''}>
+                    <td className="px-3 py-2">
+                      <p className="font-medium text-slate-700">{d.name}</p>
+                      {d.variantInfo && <p className="text-xs text-purple-600">{d.variantInfo}</p>}
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold text-red-600">−{d.kgAmount.toFixed(3)} kg</td>
+                    <td className={`px-3 py-2 text-right font-medium ${d.currentStock < d.kgAmount ? 'text-red-600' : 'text-emerald-600'}`}>
+                      {d.currentStock.toFixed(3)} kg
+                      {d.currentStock < d.kgAmount && <span className="text-xs text-red-500 block">⚠ Yetersiz stok</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={onCancel} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+              Vazgeç
+            </button>
+            <button onClick={onConfirm} disabled={saving}
+              className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              Onayla ve Kaydet
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function NewInvoicePage() {
   const router = useRouter();
@@ -229,6 +314,7 @@ export default function NewInvoicePage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [currencyWarning, setCurrencyWarning] = useState(false);
   const [pendingCurrency, setPendingCurrency] = useState('');
+  const [stockConfirm, setStockConfirm] = useState<{ deductions: any[] } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const lockedCustomerId = searchParams?.get('customerId') ?? '';
@@ -311,9 +397,7 @@ export default function NewInvoicePage() {
   const vatAmount = subtotal * vatRate / 100;
   const total = subtotal + vatAmount;
 
-  const handleSubmit = async () => {
-    if (!form.customerId) return alert(t('newInvoice', 'selectCustomer'));
-    if (items.length === 0) return alert(t('newInvoice', 'noItems'));
+  const performSave = async () => {
     setSaving(true);
     try {
       const res = await fetch('/api/invoices', {
@@ -323,10 +407,53 @@ export default function NewInvoicePage() {
       });
       const data = await res.json();
       if (data.id) {
+        setStockConfirm(null);
         router.push(form.customerId ? `/customers/${form.customerId}` : `/invoices/${data.id}`);
       }
     } catch (e) { console.error(e); }
     finally { setSaving(false); }
+  };
+
+  const handleSubmit = () => {
+    if (!form.customerId) return alert(t('newInvoice', 'selectCustomer'));
+    if (items.length === 0) return alert(t('newInvoice', 'noItems'));
+
+    // Check if any item has a product with parts defined
+    const deductionMap = new Map<string, { name: string; variantInfo: string; kgAmount: number; currentStock: number }>();
+    let hasAnyParts = false;
+
+    for (const item of items) {
+      if (!item.productId) continue;
+      const product = products.find(p => p.id === item.productId);
+      if (!product || !product.parts || product.parts.length === 0) continue;
+      hasAnyParts = true;
+      const qty = fromPriceInput(item.quantity);
+      for (const part of product.parts) {
+        const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
+        const kgUsed = (grossGrams * qty) / 1000;
+        const key = part.materialVariantId || part.materialId || part.id;
+        if (!key) continue;
+        const existing = deductionMap.get(key);
+        const matName = part.material?.name ?? '—';
+        const variantInfo = part.materialVariant
+          ? `${part.materialVariant.colorName}${part.materialVariant.code ? ` (${part.materialVariant.code})` : ''}`
+          : '';
+        const currentStock = part.materialVariant
+          ? (part.materialVariant.stock ?? 0)
+          : (part.material?.stock ?? 0);
+        if (existing) {
+          existing.kgAmount += kgUsed;
+        } else {
+          deductionMap.set(key, { name: matName, variantInfo, kgAmount: kgUsed, currentStock });
+        }
+      }
+    }
+
+    if (hasAnyParts && deductionMap.size > 0) {
+      setStockConfirm({ deductions: Array.from(deductionMap.values()) });
+    } else {
+      performSave();
+    }
   };
 
   return (
@@ -492,6 +619,12 @@ export default function NewInvoicePage() {
                         <tr key={i} className="hover:bg-slate-50/50">
                           <td className="py-2 pr-2">
                             <p className="font-medium text-slate-800">{item.description}</p>
+                            {item.productId && (() => {
+                              const prod = products.find(p => p.id === item.productId);
+                              const parts = prod?.parts ?? [];
+                              if (parts.length === 0) return <p className="text-xs text-amber-500">⚠ Parça bilgisi yok</p>;
+                              return <p className="text-xs text-purple-600">{parts.map((p: any) => p.name).join(', ')}</p>;
+                            })()}
                             {item.notes && <p className="text-xs text-slate-400">{item.notes}</p>}
                           </td>
                           <td className="py-2 px-2 text-right text-slate-600">{item.quantity}</td>
@@ -576,6 +709,14 @@ export default function NewInvoicePage() {
           customerCurrency={selectedCustomer?.currency || ''}
           onConfirm={() => { setField('currency', pendingCurrency); setCurrencyWarning(false); }}
           onCancel={() => { setCurrencyWarning(false); }}
+        />
+      )}
+      {stockConfirm && (
+        <StockConfirmModal
+          deductions={stockConfirm.deductions}
+          onConfirm={performSave}
+          onCancel={() => setStockConfirm(null)}
+          saving={saving}
         />
       )}
     </AppShell>

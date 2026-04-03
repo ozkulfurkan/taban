@@ -22,7 +22,10 @@ export async function GET(req: NextRequest) {
 
     const materials = await prisma.material.findMany({
       where,
-      include: { priceHistory: { orderBy: { createdAt: 'desc' }, take: 10 } },
+      include: {
+        priceHistory: { orderBy: { createdAt: 'desc' }, take: 10 },
+        variants: { orderBy: { createdAt: 'asc' } },
+      },
       orderBy: { updatedAt: 'desc' },
     });
 

@@ -132,31 +132,52 @@ const uniqueProductIds = ids;
       include: { parts: true },
     });
 
-    // Hammadde bazında kg kullanımını topla
-    const materialMap = new Map<string, number>();
+    // Hammadde ve varyant bazında kg kullanımını topla
+    const materialMap = new Map<string, number>();  // materialId -> kgAmount (for parts without variant)
+    const variantMap = new Map<string, number>();   // materialVariantId -> kgAmount (for parts with variant)
+
     for (const item of productItems) {
       const qty = parseFloat(item.quantity) || 0;
       const product = products.find(p => p.id === item.productId);
       if (!product) continue;
       for (const part of product.parts) {
-        if (!part.materialId) continue;
         const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
         const kgUsed = (grossGrams * qty) / 1000;
-        materialMap.set(part.materialId, (materialMap.get(part.materialId) || 0) + kgUsed);
+        if (part.materialVariantId) {
+          variantMap.set(part.materialVariantId, (variantMap.get(part.materialVariantId) || 0) + kgUsed);
+        } else if (part.materialId) {
+          materialMap.set(part.materialId, (materialMap.get(part.materialId) || 0) + kgUsed);
+        }
       }
     }
 
-    if (materialMap.size > 0) {
-      const matUpdates = Array.from(materialMap.entries()).map(([materialId, kgAmount]) =>
+    const totalUpdates: Promise<any>[] = [];
+
+    // Deduct from Material.stock (parts without variant)
+    Array.from(materialMap.entries()).forEach(([materialId, kgAmount]) => {
+      totalUpdates.push(
         prisma.material.updateMany({
           where: { id: materialId, companyId: user.companyId },
           data: { stock: { decrement: kgAmount } },
         })
       );
-      await Promise.all([
-        ...matUpdates,
-        prisma.invoice.update({ where: { id: invoice.id }, data: { stockDeducted: true } }),
-      ]);
+    });
+
+    // Deduct from MaterialVariant.stock (parts with variant)
+    Array.from(variantMap.entries()).forEach(([variantId, kgAmount]) => {
+      totalUpdates.push(
+        prisma.materialVariant.updateMany({
+          where: { id: variantId },
+          data: { stock: { decrement: kgAmount } },
+        })
+      );
+    });
+
+    if (totalUpdates.length > 0) {
+      totalUpdates.push(
+        prisma.invoice.update({ where: { id: invoice.id }, data: { stockDeducted: true } })
+      );
+      await Promise.all(totalUpdates);
     }
   }
 

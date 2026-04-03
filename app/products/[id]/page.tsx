@@ -23,7 +23,7 @@ function convertCurrency(amount: number, from: string, to: string, usdToTry: num
   return inTry / eurToTry;
 }
 
-function emptyPart() { return { materialId: '', name: '', gramsPerPiece: '', wasteRate: '0' }; }
+function emptyPart() { return { materialId: '', materialVariantId: '', name: '', gramsPerPiece: '', wasteRate: '0' }; }
 function emptyExtra() { return { name: '', amount: '', currency: 'USD' }; }
 
 export default function ProductDetailPage() {
@@ -76,6 +76,7 @@ export default function ProductDetailPage() {
         });
         setEditParts((prod.parts || []).map((p: any) => ({
           materialId: p.materialId || '',
+          materialVariantId: p.materialVariantId || '',
           name: p.name,
           gramsPerPiece: String(p.gramsPerPiece),
           wasteRate: String(p.wasteRate),
@@ -177,7 +178,11 @@ export default function ProductDetailPage() {
     setEditParts(p => p.map((row, idx) => idx === i ? { ...row, [f]: v } : row));
 
   const onMaterialSelect = (i: number, matId: string) => {
-    setEditParts(p => p.map((row, idx) => idx === i ? { ...row, materialId: matId } : row));
+    setEditParts(p => p.map((row, idx) => idx === i ? { ...row, materialId: matId, materialVariantId: '' } : row));
+  };
+
+  const onVariantSelect = (i: number, variantId: string) => {
+    setEditParts(p => p.map((row, idx) => idx === i ? { ...row, materialVariantId: variantId } : row));
   };
 
   const addExtra = () => setEditExtras(p => [...p, emptyExtra()]);
@@ -457,6 +462,21 @@ export default function ProductDetailPage() {
                                   <option key={m.id} value={m.id}>{m.name} ({fmt(m.pricePerKg)} {m.currency}/kg)</option>
                                 ))}
                               </select>
+                              {/* Variant select — shown when selected material has variants */}
+                              {(() => {
+                                const mat = materials.find((m: any) => m.id === part.materialId);
+                                const variants = mat?.variants ?? [];
+                                if (variants.length === 0) return null;
+                                return (
+                                  <select value={part.materialVariantId} onChange={e => onVariantSelect(idx, e.target.value)}
+                                    className="w-full mt-1 px-2 py-1 border border-purple-200 rounded text-sm bg-purple-50 outline-none focus:ring-1 focus:ring-purple-400">
+                                    <option value="">— Renk/Kod Seç —</option>
+                                    {variants.map((v: any) => (
+                                      <option key={v.id} value={v.id}>{v.colorName}{v.code ? ` (${v.code})` : ''} — {(v.stock ?? 0).toFixed(2)} kg</option>
+                                    ))}
+                                  </select>
+                                );
+                              })()}
                             </td>
                             <td className="px-3 py-2">
                               <input value={part.name} onChange={e => setPart(idx, 'name', e.target.value)}
@@ -498,6 +518,11 @@ export default function ProductDetailPage() {
                             <td className="px-3 py-2.5 text-slate-400 text-xs">{idx + 1}</td>
                             <td className="px-3 py-2.5">
                               <p className="font-medium text-slate-700">{part.material?.name || '—'}</p>
+                              {part.materialVariant && (
+                                <p className="text-xs text-purple-600 font-medium">
+                                  {part.materialVariant.colorName}{part.materialVariant.code ? ` · ${part.materialVariant.code}` : ''} — {(part.materialVariant.stock ?? 0).toFixed(2)} kg stok
+                                </p>
+                              )}
                               {part.material && <p className="text-xs text-slate-400">{fmt(part.material.pricePerKg)} {part.material.currency}/kg</p>}
                             </td>
                             <td className="px-3 py-2.5 text-slate-600">{part.name}</td>
