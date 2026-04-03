@@ -506,31 +506,17 @@ export default function InvoiceDetailPage() {
                                   <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Ürün Bileşenleri (Hammadde / Renk)</span>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                  {parts.map((part: any) => {
-                                    const brutGr = part.gramsPerPiece * (1 + (part.wasteRate ?? 0) / 100);
-                                    const totalKg = (brutGr * item.quantity) / 1000;
-                                    return (
-                                      <div key={part.id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-xs shadow-sm">
-                                        <span className="font-semibold text-slate-700">{part.name}</span>
-                                        <span className="text-slate-300">|</span>
-                                        <span className="text-slate-600">
-                                          {part.material?.name ?? '—'}
-                                          {part.materialVariant?.code && (
-                                            <span className="text-slate-400"> / {part.materialVariant.code}</span>
-                                          )}
-                                          {part.materialVariant?.colorName && (
-                                            <span className="text-slate-400"> / {part.materialVariant.colorName}</span>
-                                          )}
-                                        </span>
-                                        <span className="text-slate-300">|</span>
-                                        <span className="text-slate-500">{part.gramsPerPiece}gr/adet</span>
-                                        <span className="text-slate-300">→</span>
-                                        <span className="font-bold text-teal-700">
-                                          {totalKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 3 })} kg toplam
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
+                                  {parts.map((part: any) => (
+                                    <div key={part.id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-xs shadow-sm">
+                                      <span className="font-semibold text-slate-700">{part.name}</span>
+                                      <span className="text-slate-300">|</span>
+                                      <span className="text-slate-600">
+                                        {part.material?.name ?? '—'}
+                                        {part.materialVariant?.code && ` / ${part.materialVariant.code}`}
+                                        {part.materialVariant?.colorName && ` / ${part.materialVariant.colorName}`}
+                                      </span>
+                                    </div>
+                                  ))}
                                 </div>
                               </td>
                             </tr>
