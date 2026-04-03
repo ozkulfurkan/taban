@@ -87,15 +87,16 @@ model Material {
 }
 
 model MaterialVariant {
-  id           String        @id @default(cuid())
-  materialId   String
-  material     Material      @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  colorName    String
-  code         String?
-  stock        Float         @default(0)
-  productParts ProductPart[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                String             @id @default(cuid())
+  materialId        String
+  material          Material           @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  colorName         String
+  code              String?
+  stock             Float              @default(0)
+  productParts      ProductPart[]
+  purchaseMaterials PurchaseMaterial[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 }
 
 model PriceHistory {
@@ -296,14 +297,16 @@ model Purchase {
 }
 
 model PurchaseMaterial {
-  id         String   @id @default(cuid())
-  purchaseId String
-  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  materialId String
-  material   Material @relation(fields: [materialId], references: [id])
-  kgAmount   Float    @default(0)
-  pricePerKg Float?
-  createdAt  DateTime @default(now())
+  id                String           @id @default(cuid())
+  purchaseId        String
+  purchase          Purchase         @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  materialId        String
+  material          Material         @relation(fields: [materialId], references: [id])
+  materialVariantId String?
+  materialVariant   MaterialVariant? @relation(fields: [materialVariantId], references: [id])
+  kgAmount          Float            @default(0)
+  pricePerKg        Float?
+  createdAt         DateTime         @default(now())
 }
 
 model Payment {

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, Pencil, X,
-  Package, Calculator, ChevronDown, ChevronUp,
+  Package, Calculator, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Warehouse,
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
@@ -41,6 +41,28 @@ export default function ProductDetailPage() {
   const [priceWarning, setPriceWarning] = useState<{ totalCost: number; currency: string } | null>(null);
   const [newPrice, setNewPrice] = useState('');
   const [updatingPrice, setUpdatingPrice] = useState(false);
+
+  // Stok yönetimi
+  const [stokAmt, setStokAmt] = useState('');
+  const [stokLoading, setStokLoading] = useState(false);
+
+  const handleStok = async (sign: 1 | -1) => {
+    const amt = parseFloat(stokAmt);
+    if (!amt || amt <= 0) return;
+    setStokLoading(true);
+    try {
+      const res = await fetch(`/api/products/${params.id}/stok`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delta: sign * amt }),
+      });
+      const data = await res.json();
+      if (data.stock !== undefined) {
+        setProduct((p: any) => ({ ...p, stock: data.stock }));
+        setStokAmt('');
+      }
+    } finally { setStokLoading(false); }
+  };
 
   // Edit state
   const [editForm, setEditForm] = useState<any>({});
@@ -370,6 +392,49 @@ export default function ProductDetailPage() {
                       }
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* Stok Yönetimi */}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="bg-teal-600 px-4 py-3 flex items-center gap-2">
+                <Warehouse className="w-4 h-4 text-white" />
+                <h2 className="text-white font-bold text-sm uppercase tracking-wide">Stok Yönetimi</h2>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between bg-teal-50 rounded-xl px-4 py-3">
+                  <span className="text-xs font-semibold text-teal-700">Güncel Stok</span>
+                  <span className="text-2xl font-bold text-teal-800">
+                    {product.stock} <span className="text-sm font-normal text-teal-600">{product.unit}</span>
+                  </span>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={stokAmt}
+                    onChange={e => setStokAmt(e.target.value)}
+                    placeholder="Miktar"
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-teal-400"
+                  />
+                  <button
+                    onClick={() => handleStok(1)}
+                    disabled={stokLoading || !stokAmt}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60"
+                  >
+                    {stokLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
+                    Ekle
+                  </button>
+                  <button
+                    onClick={() => handleStok(-1)}
+                    disabled={stokLoading || !stokAmt}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60"
+                  >
+                    {stokLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingDown className="w-4 h-4" />}
+                    Çıkar
+                  </button>
                 </div>
               </div>
             </div>
