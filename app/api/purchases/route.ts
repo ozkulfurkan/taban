@@ -81,14 +81,24 @@ export async function POST(req: NextRequest) {
         data: {
           purchaseId: purchase.id,
           materialId: i.materialId,
+          materialVariantId: i.materialVariantId || null,
           kgAmount: qty,
           pricePerKg: unitPrice || null,
         },
       }));
-      ops.push(prisma.material.updateMany({
-        where: { id: i.materialId, companyId: user.companyId },
-        data: { stock: { increment: qty } },
-      }));
+      if (i.materialVariantId) {
+        // Varyant seçildi: sadece variant stoğunu artır
+        ops.push(prisma.materialVariant.update({
+          where: { id: i.materialVariantId },
+          data: { stock: { increment: qty } },
+        }));
+      } else {
+        // Varyant yok: ana material stoğunu artır
+        ops.push(prisma.material.updateMany({
+          where: { id: i.materialId, companyId: user.companyId },
+          data: { stock: { increment: qty } },
+        }));
+      }
     }
   }
 
