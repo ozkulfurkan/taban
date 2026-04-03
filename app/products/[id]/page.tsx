@@ -519,7 +519,7 @@ export default function ProductDetailPage() {
                         return (
                           <tr key={idx} className="hover:bg-slate-50/50">
                             <td className="px-3 py-2 text-slate-400 text-xs">{idx + 1}</td>
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-2 space-y-1">
                               <select value={part.materialId} onChange={e => onMaterialSelect(idx, e.target.value)}
                                 className="w-full px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none focus:ring-1 focus:ring-blue-400">
                                 <option value="">— Seç —</option>
@@ -527,6 +527,22 @@ export default function ProductDetailPage() {
                                   <option key={m.id} value={m.id}>{m.name} ({fmt(m.pricePerKg)} {m.currency}/kg)</option>
                                 ))}
                               </select>
+                              {(() => {
+                                const selMat = materials.find((m: any) => m.id === part.materialId);
+                                const variants = selMat?.variants ?? [];
+                                if (variants.length === 0) return null;
+                                return (
+                                  <select value={part.materialVariantId} onChange={e => onVariantSelect(idx, e.target.value)}
+                                    className="w-full px-2 py-1 border border-blue-200 rounded text-xs bg-white outline-none focus:ring-1 focus:ring-blue-400 text-blue-700">
+                                    <option value="">— Renk/Varyant seç —</option>
+                                    {variants.map((v: any) => (
+                                      <option key={v.id} value={v.id}>
+                                        {v.colorName}{v.code ? ` / ${v.code}` : ''}
+                                      </option>
+                                    ))}
+                                  </select>
+                                );
+                              })()}
                             </td>
                             <td className="px-3 py-2">
                               <input value={part.name} onChange={e => setPart(idx, 'name', e.target.value)}
@@ -567,7 +583,15 @@ export default function ProductDetailPage() {
                           <tr key={part.id} className="hover:bg-slate-50/50">
                             <td className="px-3 py-2.5 text-slate-400 text-xs">{idx + 1}</td>
                             <td className="px-3 py-2.5">
-                              <p className="font-medium text-slate-700">{part.material?.name || '—'}</p>
+                              <p className="font-medium text-slate-700">
+                                {part.material?.name || '—'}
+                                {part.materialVariant && (
+                                  <span className="ml-1.5 text-xs font-normal text-blue-600">
+                                    {part.materialVariant.colorName}
+                                    {part.materialVariant.code && ` / ${part.materialVariant.code}`}
+                                  </span>
+                                )}
+                              </p>
                               {part.material && <p className="text-xs text-slate-400">{fmt(part.material.pricePerKg)} {part.material.currency}/kg</p>}
                             </td>
                             <td className="px-3 py-2.5 text-slate-600">{part.name}</td>
