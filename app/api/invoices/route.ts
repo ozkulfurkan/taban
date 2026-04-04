@@ -96,6 +96,9 @@ export async function POST(req: NextRequest) {
             discount: disc,
             total: sign * qty * price * (1 - disc / 100),
             notes: i.notes || null,
+            partVariantsData: Array.isArray(i.partVariants) && i.partVariants.length > 0
+              ? i.partVariants
+              : undefined,
           };
         }),
       },

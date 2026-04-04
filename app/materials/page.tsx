@@ -46,13 +46,17 @@ export default function MaterialsPage() {
   const [ekstreModal, setEkstreModal] = useState<{ name: string; data: any } | null>(null);
   const [ekstreLoading, setEkstreLoading] = useState(false);
 
-  const openEkstre = async (mat: any) => {
+  const openEkstre = async (mat: any, variant?: any) => {
+    const label = variant ? `${mat.name} — ${variant.colorName}${variant.code ? ` (${variant.code})` : ''}` : mat.name;
     setEkstreLoading(true);
-    setEkstreModal({ name: mat.name, data: null });
+    setEkstreModal({ name: label, data: null });
     try {
-      const res = await fetch(`/api/materials/${mat.id}/ekstre`);
+      const url = variant
+        ? `/api/materials/${mat.id}/ekstre?variantId=${variant.id}`
+        : `/api/materials/${mat.id}/ekstre`;
+      const res = await fetch(url);
       const data = await res.json();
-      setEkstreModal({ name: mat.name, data });
+      setEkstreModal({ name: label, data });
     } finally { setEkstreLoading(false); }
   };
 
@@ -316,13 +320,15 @@ export default function MaterialsPage() {
                             <Palette className="w-4 h-4" />
                           </button>
                         )}
-                        <button
-                          onClick={() => openEkstre(mat)}
-                          className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                          title="Stok Ekstresi"
-                        >
-                          <FileText className="w-4 h-4" />
-                        </button>
+                        {!hasVariants && (
+                          <button
+                            onClick={() => openEkstre(mat)}
+                            className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                            title="Stok Ekstresi"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => setHistoryModal(mat)}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -378,6 +384,13 @@ export default function MaterialsPage() {
                                     <span className={`text-sm font-semibold ${(v.stock ?? 0) <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
                                       {(v.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
                                     </span>
+                                    <button
+                                      onClick={() => openEkstre(mat, v)}
+                                      className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded transition-colors"
+                                      title="Stok Ekstresi"
+                                    >
+                                      <FileText className="w-3.5 h-3.5" />
+                                    </button>
                                     {canEdit && (
                                       <>
                                         <button
@@ -672,6 +685,9 @@ export default function MaterialsPage() {
                       <p className={`text-lg font-bold ${(ekstreModal.data.material?.stock ?? 0) < 0 ? 'text-red-700' : 'text-teal-700'}`}>
                         {(ekstreModal.data.material?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
                       </p>
+                      {ekstreModal.data.material?.activeVariant && (
+                        <p className="text-xs text-teal-500 mt-0.5">{ekstreModal.data.material.activeVariant.colorName}</p>
+                      )}
                     </div>
                   </div>
 

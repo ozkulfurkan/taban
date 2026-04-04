@@ -144,7 +144,7 @@ export default function PurchaseDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Bu alış faturası silinecek. Bağlı ödemeler de silinir. Emin misiniz?')) return;
+    if (!confirm('Bu alış faturası silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Uyarı: Bu alışta eklenen tüm hammadde stokları (kg) geri alınacaktır.\n\nEmin misiniz?')) return;
     setDeleting(true);
     await fetch(`/api/purchases/${params.id}`, { method: 'DELETE' });
     router.back();
@@ -179,24 +179,27 @@ export default function PurchaseDetailPage() {
 
   const remaining = purchase.total - purchase.paidAmount;
 
+  const totalKg = purchaseMaterials.reduce((s: number, pm: any) => s + (pm.kgAmount ?? 0), 0);
+  const statusLabel = remaining <= 0 ? 'Faturalaşmış' : remaining < purchase.total ? 'Kısmi Ödeme' : 'Beklemede';
+  const statusColor = remaining <= 0 ? 'bg-green-100 text-green-700' : remaining < purchase.total ? 'bg-yellow-100 text-yellow-700' : 'bg-orange-100 text-orange-700';
+
   return (
     <AppShell>
-      <div className="space-y-4 max-w-6xl">
+      <div className="space-y-3 max-w-6xl">
 
-        {/* Back */}
-        <button onClick={() => router.back()} className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 text-sm">
-          <ChevronLeft className="w-4 h-4" /> Geri Dön
-        </button>
-
-        {/* Action buttons */}
-        <div className="flex flex-wrap gap-2">
+        {/* Action bar */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <button onClick={() => router.back()}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium">
+            <ChevronLeft className="w-4 h-4" /> Geri
+          </button>
           <button onClick={() => handlePdf(purchase)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium">
+            className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium">
             <Printer className="w-4 h-4" /> Yazdır
           </button>
           {!editing ? (
             <button onClick={() => setEditing(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium">
+              className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
               <Pencil className="w-4 h-4" /> Düzenle
             </button>
           ) : (
@@ -213,14 +216,14 @@ export default function PurchaseDetailPage() {
           )}
           <button onClick={handleDelete} disabled={deleting}
             className="flex items-center gap-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60">
-            <X className="w-4 h-4" /> İptal Et
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />} İptal Et
           </button>
           <button onClick={() => setShowPayForm(s => !s)}
             className="flex items-center gap-2 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium">
             <CreditCard className="w-4 h-4" /> Ödeme Kaydet
           </button>
           <Link href={`/suppliers/${purchase.supplierId}`}
-            className="flex items-center gap-2 px-3 py-1.5 bg-orange-400 hover:bg-orange-500 text-white rounded-lg text-sm font-medium">
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
             <Building2 className="w-4 h-4" /> Tedarikçi Sayfası
           </Link>
         </div>
@@ -228,6 +231,7 @@ export default function PurchaseDetailPage() {
         {/* Payment form inline */}
         {showPayForm && (
           <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
+            <p className="text-xs font-semibold text-teal-700 mb-3 uppercase tracking-wide">Ödeme Ekle</p>
             <form onSubmit={handlePayment} className="flex flex-wrap gap-3 items-end">
               <div>
                 <label className="block text-xs font-medium text-teal-700 mb-1">Tutar</label>
@@ -266,52 +270,60 @@ export default function PurchaseDetailPage() {
         )}
 
         {/* Main two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 items-start">
 
-          {/* LEFT: Supplier info + Purchase meta */}
+          {/* LEFT: Supplier info panel */}
           <div className="space-y-3">
             {/* Supplier header */}
-            <div className="bg-teal-700 rounded-xl px-4 py-3 flex items-center justify-between">
-              <div>
-                <p className="text-white font-bold text-sm">{purchase.supplier?.name}</p>
-                {purchase.supplier?.taxId && <p className="text-teal-200 text-xs mt-0.5">VKN: {purchase.supplier.taxId}</p>}
-              </div>
-              <Building2 className="w-5 h-5 text-teal-300" />
+            <div className="bg-blue-700 rounded-xl px-4 py-4">
+              <p className="text-white font-bold text-base">{purchase.supplier?.name}</p>
+              {purchase.supplier?.taxId && <p className="text-blue-200 text-xs mt-0.5">VKN: {purchase.supplier.taxId}</p>}
+              {editing && <p className="text-blue-200 text-xs mt-1 italic">Düzenleme modu — alanları değiştirin</p>}
             </div>
 
-            {/* Purchase meta card */}
+            {/* Meta fields */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              {editing && (
-                <div className="bg-amber-50 px-4 py-2 border-b border-amber-100">
-                  <p className="text-xs text-amber-600 font-medium">Düzenleme modu aktif</p>
-                </div>
-              )}
               <div className="divide-y divide-slate-100">
-                {[
-                  { label: 'Belge No', field: 'invoiceNo', type: 'text', value: purchase.invoiceNo || '—' },
-                  { label: 'Tarihi', field: 'date', type: 'date', value: fmtDate(purchase.date) },
-                  { label: 'Para Birimi', field: 'currency', type: 'select', value: purchase.currency },
-                ].map(row => (
-                  <div key={row.field} className="flex items-center px-4 py-2.5">
-                    <span className="text-xs font-semibold text-slate-500 w-24 flex-shrink-0">{row.label}</span>
-                    {editing ? (
-                      row.type === 'select' ? (
-                        <select value={editForm[row.field] || ''} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
-                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none">
-                          {['TRY', 'USD', 'EUR'].map(c => <option key={c}>{c}</option>)}
-                        </select>
-                      ) : (
-                        <input type={row.type} value={editForm[row.field] || ''} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
-                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
-                      )
-                    ) : (
-                      <span className="text-sm text-slate-700 font-medium">{row.value}</span>
-                    )}
-                  </div>
-                ))}
-                {/* Notes */}
-                <div className="px-4 py-2.5">
-                  <span className="text-xs font-semibold text-slate-500 block mb-1">Notlar</span>
+                {/* Belge No */}
+                <div className="flex items-center px-4 py-3">
+                  <span className="text-xs font-semibold text-slate-400 w-20 flex-shrink-0">Belge No</span>
+                  {editing ? (
+                    <input value={editForm.invoiceNo || ''} onChange={e => setEditForm((p: any) => ({ ...p, invoiceNo: e.target.value }))}
+                      className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
+                  ) : (
+                    <span className="text-sm text-slate-700 font-medium">{purchase.invoiceNo || <span className="text-slate-300 italic">—</span>}</span>
+                  )}
+                </div>
+                {/* Durumu */}
+                <div className="flex items-center px-4 py-3">
+                  <span className="text-xs font-semibold text-slate-400 w-20 flex-shrink-0">Durumu</span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusColor}`}>{statusLabel}</span>
+                </div>
+                {/* Tarihi */}
+                <div className="flex items-center px-4 py-3">
+                  <span className="text-xs font-semibold text-slate-400 w-20 flex-shrink-0">Tarihi</span>
+                  {editing ? (
+                    <input type="date" value={editForm.date || ''} onChange={e => setEditForm((p: any) => ({ ...p, date: e.target.value }))}
+                      className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
+                  ) : (
+                    <span className="text-sm text-slate-700 font-medium">{fmtDate(purchase.date)}</span>
+                  )}
+                </div>
+                {/* Para Birimi */}
+                <div className="flex items-center px-4 py-3">
+                  <span className="text-xs font-semibold text-slate-400 w-20 flex-shrink-0">Para Bir.</span>
+                  {editing ? (
+                    <select value={editForm.currency || ''} onChange={e => setEditForm((p: any) => ({ ...p, currency: e.target.value }))}
+                      className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none">
+                      {['TRY', 'USD', 'EUR'].map(c => <option key={c}>{c}</option>)}
+                    </select>
+                  ) : (
+                    <span className="text-sm text-slate-700 font-medium">{purchase.currency}</span>
+                  )}
+                </div>
+                {/* Açıklama/Notlar */}
+                <div className="px-4 py-3">
+                  <span className="text-xs font-semibold text-slate-400 block mb-1">Açıklama</span>
                   {editing ? (
                     <textarea value={editForm.notes || ''} onChange={e => setEditForm((p: any) => ({ ...p, notes: e.target.value }))} rows={2}
                       className="w-full px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400 resize-none" />
@@ -324,231 +336,187 @@ export default function PurchaseDetailPage() {
 
             {/* Payment history */}
             {purchase.payments?.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Ödeme Geçmişi</p>
-                <div className="space-y-2">
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ödeme Geçmişi</p>
+                </div>
+                <div className="p-4 space-y-2">
                   {purchase.payments.map((p: any) => (
                     <div key={p.id} className="flex justify-between text-sm">
                       <span className="text-slate-500">{fmtDate(p.date)} — {p.method}</span>
                       <span className="font-semibold text-teal-600">{fmt(p.amount)}</span>
                     </div>
                   ))}
-                  {remaining > 0 && (
-                    <div className="flex justify-between text-sm font-bold text-red-500 pt-2 border-t">
-                      <span>Kalan</span>
-                      <span>{fmt(remaining)} {purchase.currency}</span>
-                    </div>
-                  )}
-                  {remaining <= 0 && (
-                    <div className="text-center text-xs text-teal-600 font-semibold pt-1">Tümü Ödendi ✓</div>
-                  )}
+                  <div className={`flex justify-between text-sm font-bold pt-2 border-t ${remaining > 0 ? 'text-red-500' : 'text-teal-600'}`}>
+                    <span>{remaining > 0 ? 'Kalan Borç' : 'Tümü Ödendi ✓'}</span>
+                    {remaining > 0 && <span>{fmt(remaining)} {purchase.currency}</span>}
+                  </div>
                 </div>
+              </div>
+            )}
+
+            {/* Supplier contact */}
+            {(purchase.supplier?.phone || purchase.supplier?.email) && (
+              <div className="bg-white rounded-xl shadow-sm p-4 space-y-1 text-sm">
+                {purchase.supplier?.phone && (
+                  <div className="flex gap-2"><span className="text-slate-400 w-16">Telefon</span><span className="text-slate-700">{purchase.supplier.phone}</span></div>
+                )}
+                {purchase.supplier?.email && (
+                  <div className="flex gap-2"><span className="text-slate-400 w-16">E-posta</span><span className="text-slate-700">{purchase.supplier.email}</span></div>
+                )}
               </div>
             )}
           </div>
 
-          {/* RIGHT: Totals + Hammadde girişleri */}
-          <div className="lg:col-span-2 space-y-3">
-            {/* Hammadde Girişleri */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="bg-emerald-600 px-4 py-3 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-white" />
-                <h2 className="text-white font-bold text-sm uppercase tracking-wide">Hammadde Girişleri</h2>
-              </div>
-              <div className="p-4 space-y-3">
-                {/* Yeni giriş formu */}
-                <div className="space-y-2">
-                  <div className="flex flex-wrap gap-2 items-end">
-                    <div className="flex-1 min-w-[160px]">
-                      <label className="block text-xs font-medium text-slate-500 mb-1">Hammadde</label>
-                      <select value={newMat.materialId}
-                        onChange={e => setNewMat(p => ({ ...p, materialId: e.target.value, materialVariantId: '' }))}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-400 bg-white">
-                        <option value="">Seç...</option>
-                        {matList.map(m => (
-                          <option key={m.id} value={m.id}>{m.name} ({(m.stock ?? 0).toFixed(2)} kg stok)</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="w-28">
-                      <label className="block text-xs font-medium text-slate-500 mb-1">Kg Miktarı</label>
-                      <input type="number" step="0.001" min="0" value={newMat.kgAmount}
-                        onChange={e => setNewMat(p => ({ ...p, kgAmount: e.target.value }))}
-                        placeholder="0.000"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-emerald-400" />
-                    </div>
-                    <div className="w-32">
-                      <label className="block text-xs font-medium text-slate-500 mb-1">Birim Fiyat (opsiyonel)</label>
-                      <input type="number" step="0.01" min="0" value={newMat.pricePerKg}
-                        onChange={e => setNewMat(p => ({ ...p, pricePerKg: e.target.value }))}
-                        placeholder="0.00"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-emerald-400" />
-                    </div>
-                    <button onClick={handleAddMat} disabled={matSaving || !newMat.materialId || !newMat.kgAmount}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
-                      {matSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                      Ekle
-                    </button>
-                  </div>
+          {/* RIGHT: Details */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {/* Header */}
+            <div className="bg-green-600 px-5 py-3">
+              <h2 className="text-white font-bold text-sm uppercase tracking-widest">Detaylar</h2>
+            </div>
 
-                  {/* Varyant seçimi - sadece seçili hammaddenin varyantı varsa göster */}
-                  {newMat.materialId && (() => {
-                    const selMat = matList.find(m => m.id === newMat.materialId);
-                    const variants = selMat?.variants ?? [];
-                    if (variants.length === 0 && !newMat.materialId) return null;
-                    return (
-                      <div className="flex items-center gap-2 pl-1 pt-1 border-t border-dashed border-slate-200">
-                        <Palette className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        <div className="flex-1">
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Renk / Varyant (opsiyonel)</label>
-                          <div className="flex gap-2 items-center">
-                            <select value={newMat.materialVariantId}
-                              onChange={e => setNewMat(p => ({ ...p, materialVariantId: e.target.value }))}
-                              className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-400 bg-white">
-                              <option value="">— Renk seçiniz (yoksa ana stok) —</option>
-                              {variants.map((v: any) => (
-                                <option key={v.id} value={v.id}>
-                                  {v.colorName}{v.code ? ` (${v.code})` : ''} — {(v.stock ?? 0).toFixed(2)} kg stok
-                                </option>
-                              ))}
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => { setNewColorModal(true); setNewColorForm({ colorName: '', code: '' }); }}
-                              className="flex items-center gap-1.5 px-3 py-2 border border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-lg text-xs font-medium whitespace-nowrap"
-                              title="Listede olmayan rengi ekle"
-                            >
-                              <Plus className="w-3.5 h-3.5" /> Yeni Renk
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
+            {/* Add entry form */}
+            <div className="px-5 pt-4 pb-3 border-b border-slate-100 space-y-2 bg-slate-50/60">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Hammadde Girişi Ekle</p>
+              <div className="flex flex-wrap gap-2 items-end">
+                <div className="flex-1 min-w-[150px]">
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Hammadde</label>
+                  <select value={newMat.materialId}
+                    onChange={e => setNewMat(p => ({ ...p, materialId: e.target.value, materialVariantId: '' }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-400 bg-white">
+                    <option value="">Seç...</option>
+                    {matList.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
                 </div>
+                <div className="w-28">
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Kg Miktarı</label>
+                  <input type="number" step="0.001" min="0" value={newMat.kgAmount}
+                    onChange={e => setNewMat(p => ({ ...p, kgAmount: e.target.value }))}
+                    placeholder="0.000"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-green-400" />
+                </div>
+                <div className="w-32">
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Birim Fiyat</label>
+                  <input type="number" step="0.01" min="0" value={newMat.pricePerKg}
+                    onChange={e => setNewMat(p => ({ ...p, pricePerKg: e.target.value }))}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-green-400" />
+                </div>
+                <button onClick={handleAddMat} disabled={matSaving || !newMat.materialId || !newMat.kgAmount}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
+                  {matSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Ekle
+                </button>
+              </div>
 
-                {/* Giriş listesi */}
-                {purchaseMaterials.length === 0 ? (
-                  <div className="text-center py-4 text-slate-400 text-sm italic">Henüz hammadde girişi yok</div>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
-                        <th className="px-3 py-2 text-left">Hammadde</th>
-                        <th className="px-3 py-2 text-left">Renk/Varyant</th>
-                        <th className="px-3 py-2 text-right">Kg Miktarı</th>
-                        <th className="px-3 py-2 text-right">Birim Fiyat</th>
-                        <th className="px-3 py-2 text-right">Mevcut Stok</th>
-                        <th className="px-3 py-2 w-8"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {purchaseMaterials.map((pm: any) => (
+              {/* Varyant seçimi */}
+              {newMat.materialId && (() => {
+                const selMat = matList.find(m => m.id === newMat.materialId);
+                const variants = selMat?.variants ?? [];
+                return (
+                  <div className="flex items-center gap-2 border-t border-dashed border-slate-200 pt-2">
+                    <Palette className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="flex gap-2 items-center">
+                        <select value={newMat.materialVariantId}
+                          onChange={e => setNewMat(p => ({ ...p, materialVariantId: e.target.value }))}
+                          className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-400 bg-white">
+                          <option value="">— Renk seçiniz (yoksa ana stok) —</option>
+                          {variants.map((v: any) => (
+                            <option key={v.id} value={v.id}>{v.colorName}{v.code ? ` (${v.code})` : ''}</option>
+                          ))}
+                        </select>
+                        <button type="button"
+                          onClick={() => { setNewColorModal(true); setNewColorForm({ colorName: '', code: '' }); }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 border border-green-300 text-green-700 hover:bg-green-50 rounded-lg text-xs font-medium whitespace-nowrap">
+                          <Plus className="w-3.5 h-3.5" /> Yeni Renk
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Items table */}
+            {purchaseMaterials.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 text-sm italic">Henüz hammadde girişi yok</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-xs font-semibold text-slate-500 bg-slate-50 border-b">
+                      <th className="px-4 py-3 text-center w-8">#</th>
+                      <th className="px-4 py-3 text-left">Açıklama</th>
+                      <th className="px-4 py-3 text-right">Miktar</th>
+                      <th className="px-4 py-3 text-right">Fiyat</th>
+                      <th className="px-4 py-3 text-right">Tutar</th>
+                      <th className="px-4 py-3 w-8"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {purchaseMaterials.map((pm: any, idx: number) => {
+                      const tutar = (pm.kgAmount ?? 0) * (pm.pricePerKg ?? 0);
+                      return (
                         <tr key={pm.id} className="hover:bg-slate-50/50">
-                          <td className="px-3 py-2.5 font-medium text-slate-700">{pm.material?.name}</td>
-                          <td className="px-3 py-2.5">
-                            {pm.materialVariant ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
-                                <Palette className="w-3 h-3" />
+                          <td className="px-4 py-3 text-center text-xs text-slate-400">{idx + 1}</td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-slate-700">{pm.material?.name}</p>
+                            {pm.materialVariant && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-medium mt-0.5">
+                                <Palette className="w-2.5 h-2.5" />
                                 {pm.materialVariant.colorName}{pm.materialVariant.code ? ` (${pm.materialVariant.code})` : ''}
                               </span>
-                            ) : (
-                              <span className="text-slate-300 text-xs italic">Ana stok</span>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 text-right text-emerald-600 font-semibold">
-                            {pm.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg
+                          <td className="px-4 py-3 text-right">
+                            <p className="font-semibold text-slate-700">{pm.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg</p>
+                            <p className="text-xs text-slate-400">
+                              Stok: {pm.materialVariant
+                                ? (pm.materialVariant.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })
+                                : (pm.material?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                            </p>
                           </td>
-                          <td className="px-3 py-2.5 text-right text-slate-500">
-                            {pm.pricePerKg ? `${pm.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${pm.material?.currency}` : '—'}
+                          <td className="px-4 py-3 text-right text-slate-600">
+                            {pm.pricePerKg ? pm.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : <span className="text-slate-300">—</span>}
                           </td>
-                          <td className="px-3 py-2.5 text-right text-slate-500">
-                            {pm.materialVariant
-                              ? `${(pm.materialVariant.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg`
-                              : `${(pm.material?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg`
-                            }
+                          <td className="px-4 py-3 text-right font-semibold text-slate-700">
+                            {tutar > 0 ? tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : <span className="text-slate-300">—</span>}
                           </td>
-                          <td className="px-2 py-2.5 text-center">
-                            <button onClick={() => handleDeleteMat(pm.id)}
-                              disabled={matDeleting === pm.id}
+                          <td className="px-2 py-3 text-center">
+                            <button onClick={() => handleDeleteMat(pm.id)} disabled={matDeleting === pm.id}
                               className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-all">
                               {matDeleting === pm.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                             </button>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            </div>
+            )}
 
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              {/* Header */}
-              <div className="bg-teal-600 px-4 py-3">
-                <h2 className="text-white font-bold text-sm uppercase tracking-wide">Alış Özeti</h2>
-              </div>
-
-              {/* Amount display */}
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-slate-50 rounded-xl p-4 text-center">
-                    <p className="text-xs text-slate-500 mb-1">Toplam Tutar</p>
-                    <p className="text-xl font-bold text-slate-800">{fmt(purchase.total)}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{purchase.currency}</p>
-                  </div>
-                  <div className="bg-teal-50 rounded-xl p-4 text-center">
-                    <p className="text-xs text-slate-500 mb-1">Ödenen</p>
-                    <p className="text-xl font-bold text-teal-600">{fmt(purchase.paidAmount)}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{purchase.currency}</p>
-                  </div>
-                  <div className={`rounded-xl p-4 text-center ${remaining > 0 ? 'bg-red-50' : 'bg-green-50'}`}>
-                    <p className="text-xs text-slate-500 mb-1">Kalan</p>
-                    <p className={`text-xl font-bold ${remaining > 0 ? 'text-red-500' : 'text-green-600'}`}>{fmt(remaining)}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{purchase.currency}</p>
-                  </div>
+            {/* Totals summary */}
+            <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/60">
+              <div className="max-w-xs ml-auto space-y-2 text-sm">
+                <div className="flex justify-between text-slate-600">
+                  <span>Toplam Miktar</span>
+                  <span className="font-medium">{totalKg.toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg</span>
                 </div>
-
-                {/* Totals breakdown */}
-                <div className="border-t pt-4">
-                  <div className="max-w-xs ml-auto space-y-2 text-sm">
-                    <div className="flex justify-between text-slate-600">
-                      <span>Fatura Tutarı</span>
-                      <span>{fmt(purchase.total)} {purchase.currency}</span>
-                    </div>
-                    {purchase.paidAmount > 0 && (
-                      <div className="flex justify-between text-teal-600">
-                        <span>Ödenen</span>
-                        <span>- {fmt(purchase.paidAmount)} {purchase.currency}</span>
-                      </div>
-                    )}
-                    <div className={`flex justify-between font-bold text-base pt-2 border-t ${remaining > 0 ? 'text-red-500' : 'text-teal-600'}`}>
-                      <span>KALAN BORÇ</span>
-                      <span>{fmt(remaining)} {purchase.currency}</span>
-                    </div>
-                  </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Brüt Toplam</span>
+                  <span className="font-medium">{fmt(purchase.total)} {purchase.currency}</span>
                 </div>
-
-                {/* Supplier contact info */}
-                {(purchase.supplier?.phone || purchase.supplier?.email) && (
-                  <div className="border-t pt-4">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Tedarikçi Bilgileri</p>
-                    <div className="space-y-1 text-sm">
-                      {purchase.supplier?.phone && (
-                        <div className="flex gap-2">
-                          <span className="text-slate-400 w-16 flex-shrink-0">Telefon</span>
-                          <span className="text-slate-700">{purchase.supplier.phone}</span>
-                        </div>
-                      )}
-                      {purchase.supplier?.email && (
-                        <div className="flex gap-2">
-                          <span className="text-slate-400 w-16 flex-shrink-0">E-posta</span>
-                          <span className="text-slate-700">{purchase.supplier.email}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                <div className="flex justify-between text-teal-600">
+                  <span>Ödenen</span>
+                  <span className="font-medium">{fmt(purchase.paidAmount)} {purchase.currency}</span>
+                </div>
+                <div className={`flex justify-between font-bold text-base pt-2 border-t ${remaining > 0 ? 'text-red-500' : 'text-teal-600'}`}>
+                  <span>KALAN BORÇ</span>
+                  <span>{fmt(remaining)} {purchase.currency}</span>
+                </div>
               </div>
             </div>
           </div>

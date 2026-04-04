@@ -58,12 +58,30 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
 
   const purchase = await prisma.purchase.findFirst({
     where: { id: params.id, companyId: user.companyId },
-    include: { payments: true },
+    include: {
+      payments: true,
+      purchaseMaterials: true,
+    },
   });
 
   if (!purchase) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   await prisma.$transaction(async (tx) => {
+    // ── Stok geri al: alışta eklenen kg'ları düş ──
+    for (const pm of (purchase as any).purchaseMaterials) {
+      if (pm.materialVariantId) {
+        await tx.materialVariant.updateMany({
+          where: { id: pm.materialVariantId },
+          data: { stock: { decrement: pm.kgAmount } },
+        });
+      } else if (pm.materialId) {
+        await tx.material.updateMany({
+          where: { id: pm.materialId, companyId: user.companyId },
+          data: { stock: { decrement: pm.kgAmount } },
+        });
+      }
+    }
+
     // Reverse account balances for all payments
     for (const payment of purchase.payments) {
       if (payment.accountId) {
@@ -87,6 +105,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
         });
       }
     }
+    await tx.purchaseMaterial.deleteMany({ where: { purchaseId: params.id } });
     await tx.payment.deleteMany({ where: { purchaseId: params.id } });
     await tx.purchase.delete({ where: { id: params.id } });
   });

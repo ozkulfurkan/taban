@@ -264,17 +264,18 @@ model Invoice {
 }
 
 model InvoiceItem {
-  id          String   @id @default(cuid())
-  invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  productId   String?
-  product     Product? @relation(fields: [productId], references: [id])
-  description String
-  quantity    Float
-  unitPrice   Float
-  discount    Float    @default(0)
-  total       Float
-  notes       String?
+  id               String   @id @default(cuid())
+  invoiceId        String
+  invoice          Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId        String?
+  product          Product? @relation(fields: [productId], references: [id])
+  description      String
+  quantity         Float
+  unitPrice        Float
+  discount         Float    @default(0)
+  total            Float
+  notes            String?
+  partVariantsData Json?    // [{ partId, variantId }] - sale-time variant selections
 }
 
 model Purchase {

@@ -14,7 +14,12 @@ async function getInvoice(id: string, companyId: string) {
             include: {
               parts: {
                 include: {
-                  material: { select: { id: true, name: true } },
+                  material: {
+                    select: {
+                      id: true, name: true,
+                      variants: { select: { id: true, colorName: true, code: true } },
+                    },
+                  },
                   materialVariant: { select: { id: true, colorName: true, code: true } },
                 },
                 orderBy: { sortOrder: 'asc' },
@@ -111,14 +116,63 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const user = session.user as any;
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
-  const existing = await prisma.invoice.findFirst({ where: { id: params.id, companyId: user.companyId } });
+  const existing = await prisma.invoice.findFirst({
+    where: { id: params.id, companyId: user.companyId },
+    include: {
+      items: {
+        include: {
+          product: { include: { parts: true } },
+        },
+      },
+    },
+  });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  await prisma.$transaction([
-    prisma.payment.deleteMany({ where: { invoiceId: params.id } }),
-    prisma.invoiceItem.deleteMany({ where: { invoiceId: params.id } }),
-    prisma.invoice.delete({ where: { id: params.id } }),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    // ── Stok geri al ───────────────────────────────────────────────────────
+    // Normal satış faturası: stok düşüldüyse geri ekle
+    // İade faturası: stok eklenmişti, geri düş
+    const sign = existing.isReturn ? -1 : 1; // sign to reverse
+
+    for (const item of existing.items) {
+      if (!item.productId || !item.product) continue;
+
+      // Ürün stoğunu geri al
+      await tx.product.updateMany({
+        where: { id: item.productId, companyId: user.companyId },
+        data: { stock: { increment: sign * item.quantity } },
+      });
+
+      // Hammadde stoğunu geri al
+      const pvData: { partId: string; variantId: string }[] = Array.isArray(item.partVariantsData)
+        ? (item.partVariantsData as any[])
+        : [];
+      const pvMap: Record<string, string> = {};
+      pvData.forEach((pv) => { pvMap[pv.partId] = pv.variantId; });
+
+      for (const part of item.product.parts) {
+        const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
+        const kgUsed = (grossGrams * item.quantity) / 1000;
+        const selectedVariantId = pvMap[part.id] ?? part.materialVariantId;
+
+        if (selectedVariantId) {
+          await tx.materialVariant.updateMany({
+            where: { id: selectedVariantId },
+            data: { stock: { increment: sign * kgUsed } },
+          });
+        } else if (part.materialId) {
+          await tx.material.updateMany({
+            where: { id: part.materialId, companyId: user.companyId },
+            data: { stock: { increment: sign * kgUsed } },
+          });
+        }
+      }
+    }
+
+    await tx.payment.deleteMany({ where: { invoiceId: params.id } });
+    await tx.invoiceItem.deleteMany({ where: { invoiceId: params.id } });
+    await tx.invoice.delete({ where: { id: params.id } });
+  });
 
   return NextResponse.json({ ok: true });
 }

@@ -5,10 +5,13 @@ import { prisma } from '@/lib/prisma';
 
 // GET: hammadde stok ekstresi
 // Alışlar (PurchaseMaterial) + Satışlar (InvoiceItem → Product → Part)
-export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
+
+  const { searchParams } = new URL(req.url);
+  const filterVariantId = searchParams.get('variantId'); // if set, show only this variant
 
   const material = await prisma.material.findFirst({
     where: { id: params.id, companyId: user.companyId },
@@ -17,16 +20,21 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   if (!material) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   // ── 1. ALIŞLAR ──────────────────────────────────────────────────────────
-  // PurchaseMaterial kayıtları: hem ana material hem de variantları
   const allVariantIds = material.variants.map((v: any) => v.id);
 
+  // If filtering to a specific variant, only show that variant's purchases
+  // Otherwise show all (material-level + all variants)
+  const purchaseWhere = filterVariantId
+    ? { materialVariantId: filterVariantId }
+    : {
+        OR: [
+          { materialId: params.id, materialVariantId: null },
+          ...(allVariantIds.length > 0 ? [{ materialVariantId: { in: allVariantIds } }] : []),
+        ],
+      };
+
   const purchases = await prisma.purchaseMaterial.findMany({
-    where: {
-      OR: [
-        { materialId: params.id },
-        ...(allVariantIds.length > 0 ? [{ materialVariantId: { in: allVariantIds } }] : []),
-      ],
-    },
+    where: purchaseWhere,
     include: {
       purchase: {
         include: {
@@ -39,42 +47,28 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   });
 
   // ── 2. SATIŞLAR ─────────────────────────────────────────────────────────
-  // Bu hammaddeyi kullanan ürünlerin satış kalemleri
+  // Variant filter: if filterVariantId, only match parts with that specific variant
+  const partFilter = filterVariantId
+    ? { materialVariantId: filterVariantId }
+    : {
+        OR: [
+          { materialId: params.id },
+          { materialVariantId: { in: allVariantIds.length > 0 ? allVariantIds : ['__none__'] } },
+        ],
+      };
+
   const invoiceItems = await prisma.invoiceItem.findMany({
     where: {
-      product: {
-        parts: {
-          some: {
-            OR: [
-              { materialId: params.id },
-              { materialVariantId: { in: allVariantIds.length > 0 ? allVariantIds : ['__none__'] } },
-            ],
-          },
-        },
-      },
-      invoice: {
-        companyId: user.companyId,
-        isReturn: false,
-      },
+      product: { parts: { some: partFilter } },
+      invoice: { companyId: user.companyId, isReturn: false },
     },
     include: {
-      invoice: {
-        include: {
-          customer: { select: { id: true, name: true } },
-        },
-      },
+      invoice: { include: { customer: { select: { id: true, name: true } } } },
       product: {
         include: {
           parts: {
-            where: {
-              OR: [
-                { materialId: params.id },
-                { materialVariantId: { in: allVariantIds.length > 0 ? allVariantIds : ['__none__'] } },
-              ],
-            },
-            include: {
-              materialVariant: { select: { colorName: true, code: true } },
-            },
+            where: partFilter,
+            include: { materialVariant: { select: { colorName: true, code: true } } },
           },
         },
       },
@@ -84,39 +78,16 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   // ── 3. İADELER ──────────────────────────────────────────────────────────
   const returnItems = await prisma.invoiceItem.findMany({
     where: {
-      product: {
-        parts: {
-          some: {
-            OR: [
-              { materialId: params.id },
-              { materialVariantId: { in: allVariantIds.length > 0 ? allVariantIds : ['__none__'] } },
-            ],
-          },
-        },
-      },
-      invoice: {
-        companyId: user.companyId,
-        isReturn: true,
-      },
+      product: { parts: { some: partFilter } },
+      invoice: { companyId: user.companyId, isReturn: true },
     },
     include: {
-      invoice: {
-        include: {
-          customer: { select: { id: true, name: true } },
-        },
-      },
+      invoice: { include: { customer: { select: { id: true, name: true } } } },
       product: {
         include: {
           parts: {
-            where: {
-              OR: [
-                { materialId: params.id },
-                { materialVariantId: { in: allVariantIds.length > 0 ? allVariantIds : ['__none__'] } },
-              ],
-            },
-            include: {
-              materialVariant: { select: { colorName: true, code: true } },
-            },
+            where: partFilter,
+            include: { materialVariant: { select: { colorName: true, code: true } } },
           },
         },
       },
@@ -226,13 +197,19 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   // Tarihe göre sırala (en yeni önce)
   entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+  // If filtering by variant, return variant-level stock
+  const activeVariant = filterVariantId
+    ? material.variants.find((v: any) => v.id === filterVariantId)
+    : null;
+
   return NextResponse.json({
     material: {
       id: material.id,
       name: material.name,
-      stock: material.stock,
+      stock: activeVariant ? activeVariant.stock : material.stock,
       currency: material.currency,
       variants: material.variants,
+      activeVariant: activeVariant ?? null,
     },
     entries,
   });
