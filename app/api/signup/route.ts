@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { sendMail } from '@/lib/mail';
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,6 +50,23 @@ export async function POST(req: NextRequest) {
         { companyId: company.id, name: 'Euro Kasa', type: 'Kasa', currency: 'EUR', balance: 0, color: '#8B5CF6' },
       ],
     });
+
+    const baseUrl = req.headers.get('origin') || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    try {
+      await sendMail({
+        to: user.email,
+        subject: 'SoleCost hesabınız oluşturuldu',
+        html: `
+          <p>Merhaba ${user.name ?? user.email},</p>
+          <p>Hesabınız başarılı bir şekilde oluşturuldu.</p>
+          <p>Giriş yapmak için <a href="${baseUrl}/login">buraya tıklayın</a>.</p>
+          <p>Bu e-posta, SoleCost hesabınız için otomatik olarak gönderildi.</p>
+        `,
+        text: `Merhaba ${user.name ?? user.email},\n\nHesabınız başarılı bir şekilde oluşturuldu. Giriş yapmak için: ${baseUrl}/login\n\nBu e-posta, SoleCost hesabınız için otomatik olarak gönderildi.`,
+      });
+    } catch (emailError) {
+      console.error('Signup email failed:', emailError);
+    }
 
     return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
   } catch (error: any) {

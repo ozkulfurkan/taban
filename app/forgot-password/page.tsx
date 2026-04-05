@@ -9,12 +9,15 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [resetUrl, setResetUrl] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [previewUrl, setPreviewUrl] = useState('');
   const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
+    setPreviewUrl('');
     setLoading(true);
     try {
       const res = await fetch('/api/auth/forgot-password', {
@@ -25,10 +28,11 @@ export default function ForgotPasswordPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'Bir hata oluştu');
-      } else if (data.resetUrl) {
-        setResetUrl(data.resetUrl);
       } else {
-        setResetUrl('not-found');
+        setSuccessMessage(data.message || 'Şifre sıfırlama bağlantısı gönderildi.');
+        if (data.previewUrl) {
+          setPreviewUrl(data.previewUrl);
+        }
       }
     } finally {
       setLoading(false);
@@ -36,7 +40,8 @@ export default function ForgotPasswordPage() {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(resetUrl);
+    if (!previewUrl) return;
+    navigator.clipboard.writeText(previewUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -73,7 +78,7 @@ export default function ForgotPasswordPage() {
             </div>
           )}
 
-          {!resetUrl ? (
+          {!successMessage ? (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-blue-200 mb-1.5">E-posta Adresi</label>
@@ -98,40 +103,29 @@ export default function ForgotPasswordPage() {
                 Sıfırlama Bağlantısı Oluştur
               </button>
             </form>
-          ) : resetUrl === 'not-found' ? (
-            <div className="text-center py-4">
-              <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
-              <p className="text-blue-200 text-sm">
-                Bu e-posta sistemde kayıtlı değil ya da bağlantı oluşturulamadı.
-                Yöneticinizle iletişime geçin.
-              </p>
-            </div>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-green-400 mb-2">
                 <CheckCircle className="w-5 h-5" />
-                <span className="text-sm font-medium">Sıfırlama bağlantısı oluşturuldu!</span>
+                <span className="text-sm font-medium">{successMessage}</span>
               </div>
-              <p className="text-blue-300 text-xs">
-                Aşağıdaki bağlantıyı kopyalayarak yeni sekmede açın veya yöneticinizle paylaşın.
-                Bağlantı <strong className="text-white">24 saat</strong> geçerlidir.
+              <p className="text-blue-300 text-sm">
+                E-posta gönderildi. Lütfen gelen kutunuzu ve spam klasörünü kontrol edin.
               </p>
-              <div className="bg-white/5 border border-white/20 rounded-lg p-3 break-all text-xs text-blue-200 font-mono">
-                {resetUrl}
-              </div>
-              <button
-                onClick={handleCopy}
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-              >
-                {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? 'Kopyalandı!' : 'Bağlantıyı Kopyala'}
-              </button>
-              <Link
-                href={resetUrl}
-                className="block text-center text-sm text-blue-300 hover:text-white transition-colors"
-              >
-                Şimdi sıfırla →
-              </Link>
+              {previewUrl ? (
+                <>
+                  <div className="bg-white/5 border border-white/20 rounded-lg p-3 break-all text-xs text-blue-200 font-mono">
+                    {previewUrl}
+                  </div>
+                  <button
+                    onClick={handleCopy}
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                  >
+                    {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied ? 'Kopyalandı!' : 'Önizleme Bağlantısını Kopyala'}
+                  </button>
+                </>
+              ) : null}
             </div>
           )}
         </div>
