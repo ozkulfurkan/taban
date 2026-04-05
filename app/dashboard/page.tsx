@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
+import { formatDate } from '@/lib/time';
 import {
   TrendingUp, TrendingDown, BarChart2, DollarSign,
   ScrollText, ChevronRight, Loader2, AlertCircle
@@ -11,7 +12,7 @@ import {
 import Link from 'next/link';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
+const fmtDate = formatDate;
 
 const ASSET_KEYS = ['kasa', 'pos', 'cek', 'senet', 'stok', 'acikHesap', 'calisanlar'];
 

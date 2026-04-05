@@ -3,10 +3,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
+import { formatDate, toDateInputValue } from '@/lib/time';
 import { ArrowLeft, Loader2, FileSpreadsheet, FileDown, RefreshCw } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
+const fmtDate = formatDate;
 
 function defaultFrom() {
   const d = new Date();
@@ -14,7 +15,7 @@ function defaultFrom() {
   return d.toISOString().split('T')[0];
 }
 function defaultTo() {
-  return new Date().toISOString().split('T')[0];
+  return toDateInputValue();
 }
 
 type Row = {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { parseDateInput, parseDateEndOfDay } from '@/lib/time';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -18,8 +19,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   if (!account) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const dateFilter: any = {};
-  if (fromStr) dateFilter.gte = new Date(fromStr);
-  if (toStr) dateFilter.lte = new Date(toStr + 'T23:59:59');
+  if (fromStr) dateFilter.gte = parseDateInput(fromStr);
+  if (toStr) dateFilter.lte = parseDateEndOfDay(toStr);
 
   const payments = await prisma.payment.findMany({
     where: {

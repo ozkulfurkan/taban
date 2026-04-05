@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { parseDateInputOrNow } from '@/lib/time';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
       companyId: user.companyId,
       supplierId,
       invoiceNo: invoiceNo || null,
-      date: new Date(date || Date.now()),
+      date: parseDateInputOrNow(date),
       currency: currency || 'TRY',
       total: computedTotal,
       notes: notes || null,

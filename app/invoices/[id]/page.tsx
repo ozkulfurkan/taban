@@ -4,14 +4,15 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
+import { formatDate, toDateInputValue } from '@/lib/time';
 import {
   Loader2, Printer, Pencil, X, CreditCard, User,
   Plus, Trash2, Save, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers,
 } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
-const toInput = (d: string | Date | null) => d ? new Date(d).toISOString().split('T')[0] : '';
+const fmtDate = formatDate;
+const toInput = (d: string | Date | null) => toDateInputValue(d);
 
 const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı', 'POS'];
 
@@ -37,7 +38,7 @@ export default function InvoiceDetailPage() {
 
   // Payment form state
   const [payForm, setPayForm] = useState({
-    amount: '', method: 'Nakit', date: new Date().toISOString().split('T')[0], notes: '',
+    amount: '', method: 'Nakit', date: toDateInputValue(), notes: '',
   });
 
   // Expand edilmiş item satırları (ürün bileşenlerini göstermek için)
@@ -183,7 +184,7 @@ export default function InvoiceDetailPage() {
         }),
       });
       setShowPayForm(false);
-      setPayForm({ amount: '', method: 'Nakit', date: new Date().toISOString().split('T')[0], notes: '' });
+      setPayForm({ amount: '', method: 'Nakit', date: toDateInputValue(), notes: '' });
       load();
     } finally { setPayLoading(false); }
   };

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import StatCard from '@/app/components/stat-card';
 import { useLanguage } from '@/lib/i18n/language-context';
+import { formatDate } from '@/lib/time';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Shield, Building2, Clock, Crown, Users, Package, Calculator, Loader2 } from 'lucide-react';
@@ -76,7 +77,7 @@ export default function AdminPage() {
                     <div>
                       <p className="font-medium text-slate-700">{company?.name ?? '-'}</p>
                       <p className="text-xs text-slate-400">
-                        {company?.createdAt ? new Date(company.createdAt).toLocaleDateString() : ''}
+                        {company?.createdAt ? formatDate(company.createdAt) : ''}
                       </p>
                     </div>
                   </div>
@@ -91,7 +92,7 @@ export default function AdminPage() {
                     </span>
                     {company?.trialEndsAt && (
                       <span className="text-xs text-slate-400">
-                        {t('admin', 'trialEnds')}: {new Date(company.trialEndsAt).toLocaleDateString()}
+                        {t('admin', 'trialEnds')}: {formatDate(company.trialEndsAt)}
                       </span>
                     )}
                   </div>

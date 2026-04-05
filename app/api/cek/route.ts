@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { parseDateInputOrNow, parseDateInput } from '@/lib/time';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -49,8 +50,8 @@ export async function POST(req: NextRequest) {
       borclu,
       islem: islem || 'Müşteriden Alınan Çek Kaydı',
       aciklama: aciklama || null,
-      islemTarihi: new Date(islemTarihi || Date.now()),
-      vadesi: new Date(vadesi),
+      islemTarihi: parseDateInputOrNow(islemTarihi),
+      vadesi: parseDateInput(vadesi) ?? new Date(),
       tutar: parseFloat(tutar),
       currency: currency || 'TRY',
       seriNo: seriNo || null,

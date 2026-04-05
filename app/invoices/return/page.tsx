@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
+import { formatDate, toDateInputValue } from '@/lib/time';
 import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle, RotateCcw } from 'lucide-react';
 
 interface LineItem {
@@ -204,10 +205,10 @@ export default function ReturnInvoicePage() {
   const [form, setForm] = useState({
     customerId: lockedCustomerId,
     invoiceNo: '',
-    date: new Date().toISOString().split('T')[0],
+    date: toDateInputValue(),
     dueDate: '',
     irsaliyeNo: '',
-    sevkTarihi: new Date().toISOString().split('T')[0],
+    sevkTarihi: toDateInputValue(),
     currency: 'USD',
     vatRate: '0',
     notes: '',

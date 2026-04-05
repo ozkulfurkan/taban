@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { nowUtc, parseDateInput } from '@/lib/time';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -72,8 +73,8 @@ export async function POST(req: NextRequest) {
       companyId: user.companyId,
       customerId: rest.customerId,
       invoiceNo,
-      date: new Date(rest.date || now),
-      dueDate: rest.dueDate ? new Date(rest.dueDate) : null,
+      date: parseDateInput(rest.date) ?? nowUtc(),
+      dueDate: rest.dueDate ? parseDateInput(rest.dueDate) : null,
       currency: rest.currency || 'USD',
       subtotal,
       vatRate,

@@ -9,6 +9,7 @@ import {
   ChevronDown, PlusCircle, Trash2, CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatDate, toDateInputValue } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -24,7 +25,7 @@ const CURRENCIES = ['TRY', 'USD', 'EUR'];
 function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose: () => void; onSaved: (amount: number) => void }) {
   const { t } = useLanguage();
   const [form, setForm] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: toDateInputValue(),
     accountId: '',
     paymentCurrency: customer.currency || 'TRY',
     amount: '',
@@ -205,7 +206,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
 
 function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () => void; onSaved: () => void }) {
   const { t } = useLanguage();
-  const [form, setForm] = useState({ amount: '', date: new Date().toISOString().split('T')[0], method: 'Nakit', notes: 'İade' });
+  const [form, setForm] = useState({ amount: '', date: toDateInputValue(), method: 'Nakit', notes: 'İade' });
   const [saving, setSaving] = useState(false);
 
   const handle = async (e: React.FormEvent) => {
@@ -277,8 +278,8 @@ function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () 
 function BorcAlacakFisModal({ customer, onClose, onSaved }: { customer: any; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({
     tip: 'Alacak Fişi',
-    date: new Date().toISOString().split('T')[0],
-    dueDate: new Date().toISOString().split('T')[0],
+    date: toDateInputValue(),
+    dueDate: toDateInputValue(),
     amount: '',
     notes: '',
   });
@@ -391,7 +392,7 @@ function BakiyeDuzeltModal({ customer, currentBalance, onClose, onSaved }: {
           customerId: customer.id,
           amount: Math.abs(delta),
           currency: customer.currency || 'TRY',
-          date: new Date().toISOString().split('T')[0],
+          date: toDateInputValue(),
           method: 'Bakiye Düzeltme',
           notes: direction + (notes ? ' | ' + notes : ''),
         }),
@@ -458,7 +459,7 @@ const BANKS = [
   'TEB', 'HSBC', 'ING', 'Şekerbank', 'Kuveyt Türk', 'Albaraka Türk', 'Diğer',
 ];
 
-const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
+const fmtDate = formatDate;
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
 
 function calcAvgVade(checks: any[]) {
@@ -478,7 +479,7 @@ function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: stri
   const { t } = useLanguage();
   const [form, setForm] = useState({
     borclu: defaultBorclu,
-    islemTarihi: new Date().toISOString().split('T')[0],
+    islemTarihi: toDateInputValue(),
     vadesi: '',
     tutar: '',
     currency: 'TRY',

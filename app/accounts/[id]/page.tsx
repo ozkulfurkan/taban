@@ -3,13 +3,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
+import { formatDate, toDateInputValue } from '@/lib/time';
 import {
   ArrowLeft, Loader2, Pencil, TrendingDown, TrendingUp,
   ArrowLeftRight, ChevronDown, Trash2, X, Save, FileText,
 } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
+const fmtDate = formatDate;
 
 const ISLEM_LABEL: Record<string, string> = {
   'Para Girişi': 'Para Girişi',
@@ -35,7 +36,7 @@ function HesapIslemModal({
   accountId, type, onClose, onSaved,
 }: { accountId: string; type: 'GİRİŞ' | 'ÇIKIŞ'; onClose: () => void; onSaved: () => void }) {
   const isGiris = type === 'GİRİŞ';
-  const [form, setForm] = useState({ amount: '', date: new Date().toISOString().split('T')[0], notes: '' });
+  const [form, setForm] = useState({ amount: '', date: toDateInputValue(), notes: '' });
   const [saving, setSaving] = useState(false);
   const set = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
 
@@ -113,7 +114,7 @@ function TransferModal({
     amount: '',
     exchangeRate: '',
     targetAmount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: toDateInputValue(),
     notes: '',
   });
   const [saving, setSaving] = useState(false);

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { formatDate, toDateInputValue } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
@@ -23,6 +24,7 @@ const STATUS_COLOR: Record<string, string> = {
 const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı'];
 const CURRENCIES = ['TRY', 'USD', 'EUR'];
 const RECORD_CURRENCY = 'TRY';
+const fmtDateC = formatDate;
 
 // ── OdemeModal ─────────────────────────────────────────────────────────────
 function OdemeModal({ supplier, onClose, onSaved }: {
@@ -30,7 +32,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
 }) {
   const { t } = useLanguage();
   const [form, setForm] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: toDateInputValue(),
     accountId: '',
     paymentCurrency: 'TRY',
     amount: '',
@@ -212,7 +214,7 @@ function IadeModal({ supplier, onClose, onSaved }: {
 }) {
   const { t } = useLanguage();
   const [form, setForm] = useState({
-    amount: '', date: new Date().toISOString().split('T')[0], method: 'Nakit', notes: 'İade',
+    amount: '', date: toDateInputValue(), method: 'Nakit', notes: 'İade',
   });
   const [saving, setSaving] = useState(false);
 
@@ -289,8 +291,8 @@ function IadeModal({ supplier, onClose, onSaved }: {
 function BorcAlacakFisModal({ supplier, onClose, onSaved }: { supplier: any; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({
     tip: 'Alacak Fişi',
-    date: new Date().toISOString().split('T')[0],
-    dueDate: new Date().toISOString().split('T')[0],
+    date: toDateInputValue(),
+    dueDate: toDateInputValue(),
     amount: '',
     notes: '',
   });
@@ -404,7 +406,7 @@ function BakiyeDuzeltModal({ supplier, currentBalance, onClose, onSaved }: {
           supplierId: supplier.id,
           amount: Math.abs(delta),
           currency: 'TRY',
-          date: new Date().toISOString().split('T')[0],
+          date: toDateInputValue(),
           method: 'Bakiye Düzeltme',
           notes: direction + (notes ? ' | ' + notes : ''),
         }),
@@ -582,13 +584,14 @@ function AlışModal({ supplier, onClose, onSaved }: {
     if (!canSavePurchase) return;
     setSaving(true);
     try {
+      const purchaseDateIso = new Date(`${form.date}T${form.time}`).toISOString();
       await fetch('/api/purchases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           supplierId: supplier.id,
           invoiceNo: form.invoiceNo || null,
-          date: form.date + 'T' + form.time,
+          date: purchaseDateIso,
           currency: form.currency,
           total,
           notes: form.notes || null,
@@ -887,7 +890,6 @@ const BANKS = [
   'TEB', 'HSBC', 'ING', 'Şekerbank', 'Kuveyt Türk', 'Albaraka Türk', 'Diğer',
 ];
 const fmtC = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-const fmtDateC = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
 
 function calcAvgVadeC(checks: any[]) {
   const total = checks.reduce((s, c) => s + Number(c.tutar), 0);
@@ -905,7 +907,7 @@ function KendiCekTanimModal({ supplierName, onClose, onAdd }: {
 }) {
   const [form, setForm] = useState({
     borclu: supplierName,
-    islemTarihi: new Date().toISOString().split('T')[0],
+    islemTarihi: toDateInputValue(),
     vadesi: '',
     tutar: '',
     currency: 'TRY',
@@ -984,7 +986,7 @@ function PortfoySecimModal({ onClose, onConfirm }: {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [dropOpen, setDropOpen] = useState(false);
-  const [verilisTarihi, setVerilisTarihi] = useState(new Date().toISOString().split('T')[0]);
+  const [verilisTarihi, setVerilisTarihi] = useState(toDateInputValue());
 
   useEffect(() => {
     fetch('/api/cek?durum=PORTFOY&all=true')
@@ -1172,7 +1174,7 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
               supplierId: supplier.id,
               amount: parseFloat(c.tutar),
               currency: c.currency || 'TRY',
-              date: c._verilisTarihi || new Date().toISOString().split('T')[0],
+              date: c._verilisTarihi || toDateInputValue(),
               method: 'Çek',
               notes: [
                 c.seriNo ? `Çek No: ${c.seriNo}` : '',

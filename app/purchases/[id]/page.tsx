@@ -4,14 +4,15 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
+import { formatDate, toDateInputValue } from '@/lib/time';
 import {
   Loader2, Printer, Pencil, X, CreditCard, Building2,
   Save, ChevronLeft, CheckCircle2, Layers, Plus, Trash2, Palette,
 } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
-const toInput = (d: string | Date | null) => d ? new Date(d).toISOString().split('T')[0] : '';
+const fmtDate = formatDate;
+const toInput = (d: string | Date | null) => toDateInputValue(d);
 
 const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı', 'POS'];
 
@@ -29,7 +30,7 @@ export default function PurchaseDetailPage() {
 
   const [editForm, setEditForm] = useState<any>({});
   const [payForm, setPayForm] = useState({
-    amount: '', method: 'Nakit', date: new Date().toISOString().split('T')[0], notes: '',
+    amount: '', method: 'Nakit', date: toDateInputValue(), notes: '',
   });
 
   // Hammadde girişleri
@@ -169,7 +170,7 @@ export default function PurchaseDetailPage() {
         }),
       });
       setShowPayForm(false);
-      setPayForm({ amount: '', method: 'Nakit', date: new Date().toISOString().split('T')[0], notes: '' });
+      setPayForm({ amount: '', method: 'Nakit', date: toDateInputValue(), notes: '' });
       load();
     } finally { setPayLoading(false); }
   };

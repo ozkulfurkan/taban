@@ -439,10 +439,11 @@ export default function NewInvoicePage() {
   const performSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch('/api/invoices', {
+      const dateTimeIso = new Date(`${form.date}T${form.time}`).toISOString();
+    const res = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, date: form.date + 'T' + form.time, items }),
+        body: JSON.stringify({ ...form, date: dateTimeIso, items }),
       });
       const data = await res.json();
       if (data.id) {

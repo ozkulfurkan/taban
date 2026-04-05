@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import AppShell from '@/app/components/app-shell';
+import { formatDate } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Loader2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-const fmtDate = (d: string | Date) => new Date(d).toLocaleDateString('tr-TR');
+const fmtDate = formatDate;
 
 const DURUM_COLOR: Record<string, string> = {
   PORTFOY: 'bg-blue-100 text-blue-700',

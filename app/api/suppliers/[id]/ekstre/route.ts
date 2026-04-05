@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { parseDateInput, parseDateEndOfDay } from '@/lib/time';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -12,8 +13,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const fromStr = searchParams.get('from');
   const toStr = searchParams.get('to');
 
-  const from = fromStr ? new Date(fromStr) : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
-  const to = toStr ? new Date(toStr + 'T23:59:59') : new Date();
+  const from = fromStr ? (parseDateInput(fromStr) ?? new Date(new Date().setFullYear(new Date().getFullYear() - 1))) : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+  const to = toStr ? (parseDateEndOfDay(toStr) ?? new Date()) : new Date();
 
   const supplier = await prisma.supplier.findFirst({
     where: { id: params.id, companyId: user.companyId },
