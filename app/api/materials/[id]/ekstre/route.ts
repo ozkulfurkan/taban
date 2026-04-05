@@ -47,15 +47,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }) as any[];
 
   // ── 2. SATIŞLAR ─────────────────────────────────────────────────────────
-  // Variant filter: if filterVariantId, only match parts with that specific variant
-  const partFilter = filterVariantId
-    ? { materialVariantId: filterVariantId }
-    : {
-        OR: [
-          { materialId: params.id },
-          { materialVariantId: { in: allVariantIds.length > 0 ? allVariantIds : ['__none__'] } },
-        ],
-      };
+  // partFilter: tüm bu materyali kullanan parçaları bul.
+  // filterVariantId varsa bile geniş tutuyoruz çünkü satış anındaki varyant
+  // partVariantsData'da saklanıyor; default materialVariantId farklı/null olabilir.
+  const partFilter = {
+    OR: [
+      { materialId: params.id },
+      ...(allVariantIds.length > 0 ? [{ materialVariantId: { in: allVariantIds } }] : []),
+    ],
+  };
 
   const invoiceItems = await prisma.invoiceItem.findMany({
     where: {
@@ -139,12 +139,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     pvData.forEach((pv: any) => { pvMap[pv.partId] = pv.variantId; });
 
     for (const part of ii.product?.parts ?? []) {
+      const resolvedVariantId = pvMap[part.id] ?? part.materialVariantId;
+
+      // filterVariantId varsa: yalnızca bu varyantı kullanan part'ları say
+      if (filterVariantId && resolvedVariantId !== filterVariantId) continue;
+
       const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
       kgUsed += (grossGrams * ii.quantity) / 1000;
 
-      // Resolve variant: sale-time override → part's default materialVariantId
-      // Look up from material.variants (already fetched at top of function)
-      const resolvedVariantId = pvMap[part.id] ?? part.materialVariantId;
       const variant = resolvedVariantId
         ? (material.variants ?? []).find((v: any) => v.id === resolvedVariantId)
         : null;
@@ -183,10 +185,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     pvData.forEach((pv: any) => { pvMap[pv.partId] = pv.variantId; });
 
     for (const part of ii.product?.parts ?? []) {
+      const resolvedVariantId = pvMap[part.id] ?? part.materialVariantId;
+
+      if (filterVariantId && resolvedVariantId !== filterVariantId) continue;
+
       const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
       kgRestored += (grossGrams * ii.quantity) / 1000;
 
-      const resolvedVariantId = pvMap[part.id] ?? part.materialVariantId;
       const variant = resolvedVariantId
         ? (material.variants ?? []).find((v: any) => v.id === resolvedVariantId)
         : null;
