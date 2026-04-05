@@ -7,7 +7,7 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { formatDate } from '@/lib/time';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Shield, Building2, Clock, Crown, Users, Package, Calculator, Loader2 } from 'lucide-react';
+import { Shield, Building2, Clock, Crown, Users, Package, Calculator, Loader2, Mail, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AdminPage() {
@@ -17,6 +17,7 @@ export default function AdminPage() {
   const user = session?.user as any;
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mailTest, setMailTest] = useState({ email: '', loading: false, result: null as any });
 
   useEffect(() => {
     if (user && user?.role !== 'ADMIN') {
@@ -29,6 +30,29 @@ export default function AdminPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user, router]);
+
+  const handleMailTest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mailTest.email) return;
+
+    setMailTest(p => ({ ...p, loading: true, result: null }));
+
+    try {
+      const res = await fetch('/api/test-mail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: mailTest.email }),
+      });
+      const result = await res.json();
+      setMailTest(p => ({ ...p, loading: false, result }));
+    } catch (error) {
+      setMailTest(p => ({
+        ...p,
+        loading: false,
+        result: { error: 'Network error', details: error instanceof Error ? error.message : 'Unknown error' }
+      }));
+    }
+  };
 
   const totalCompanies = companies?.length ?? 0;
   const activeTrials = (companies ?? []).filter((c: any) => c?.subscriptionStatus === 'TRIAL')?.length ?? 0;
@@ -52,6 +76,61 @@ export default function AdminPage() {
           <StatCard title={t('admin', 'totalCompanies')} value={totalCompanies} icon={Building2} color="blue" />
           <StatCard title={t('admin', 'activeTrials')} value={activeTrials} icon={Clock} color="orange" />
           <StatCard title={t('admin', 'proSubscriptions')} value={proSubs} icon={Crown} color="green" />
+        </div>
+
+        {/* Mail Test Section */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Mail className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-semibold text-slate-700">Mail Testi</h2>
+          </div>
+
+          <form onSubmit={handleMailTest} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-2">
+                Test Mail Adresi
+              </label>
+              <input
+                type="email"
+                value={mailTest.email}
+                onChange={(e) => setMailTest(p => ({ ...p, email: e.target.value }))}
+                placeholder="test@example.com"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={mailTest.loading}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
+            >
+              {mailTest.loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              {mailTest.loading ? 'Gönderiliyor...' : 'Test Maili Gönder'}
+            </button>
+          </form>
+
+          {mailTest.result && (
+            <div className={`mt-4 p-4 rounded-lg ${mailTest.result.error ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`}>
+              {mailTest.result.error ? (
+                <div>
+                  <p className="text-red-700 font-medium">❌ Mail gönderim hatası</p>
+                  <p className="text-red-600 text-sm mt-1">{mailTest.result.details}</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-green-700 font-medium">✅ Mail başarıyla gönderildi</p>
+                  <p className="text-green-600 text-sm mt-1">{mailTest.result.message}</p>
+                  <p className="text-green-600 text-sm">Environment: {mailTest.result.environment}</p>
+                  <p className="text-green-600 text-sm">Timestamp: {mailTest.result.timestamp}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {loading ? (
