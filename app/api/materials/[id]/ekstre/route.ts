@@ -16,11 +16,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const material = await prisma.material.findFirst({
     where: { id: params.id, companyId: user.companyId },
     include: { variants: { orderBy: { colorName: 'asc' } } },
-  });
+  }) as any;
   if (!material) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   // ── 1. ALIŞLAR ──────────────────────────────────────────────────────────
-  const allVariantIds = material.variants.map((v: any) => v.id);
+  const allVariantIds = (material.variants ?? []).map((v: any) => v.id);
 
   // If filtering to a specific variant, only show that variant's purchases
   // Otherwise show all (material-level + all variants)
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       materialVariant: { select: { colorName: true, code: true } },
     },
     orderBy: { createdAt: 'desc' },
-  });
+  }) as any[];
 
   // ── 2. SATIŞLAR ─────────────────────────────────────────────────────────
   // Variant filter: if filterVariantId, only match parts with that specific variant
@@ -66,14 +66,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       invoice: { include: { customer: { select: { id: true, name: true } } } },
       product: {
         include: {
-          parts: {
-            where: partFilter,
-            include: { materialVariant: { select: { colorName: true, code: true } } },
-          },
+          parts: { where: partFilter },
         },
       },
     },
-  });
+  }) as any[];
 
   // ── 3. İADELER ──────────────────────────────────────────────────────────
   const returnItems = await prisma.invoiceItem.findMany({
@@ -85,21 +82,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       invoice: { include: { customer: { select: { id: true, name: true } } } },
       product: {
         include: {
-          parts: {
-            where: partFilter,
-            include: { materialVariant: { select: { colorName: true, code: true } } },
-          },
+          parts: { where: partFilter },
         },
       },
     },
-  });
+  }) as any[];
 
   // ── Birleşik timeline oluştur ────────────────────────────────────────────
   type Entry = {
     id: string;
     date: Date;
     type: 'alis' | 'satis' | 'iade';
-    party: string;       // tedarikçi veya müşteri adı
+    party: string;
     partyId: string;
     product: string | null;
     productId: string | null;
@@ -137,11 +131,25 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     let kgUsed = 0;
     let variantLabel: string | null = null;
 
+    // sale-time variant overrides (saved in partVariantsData)
+    const pvData: { partId: string; variantId: string }[] = Array.isArray(ii.partVariantsData)
+      ? ii.partVariantsData
+      : [];
+    const pvMap: Record<string, string> = {};
+    pvData.forEach((pv: any) => { pvMap[pv.partId] = pv.variantId; });
+
     for (const part of ii.product?.parts ?? []) {
       const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
       kgUsed += (grossGrams * ii.quantity) / 1000;
-      if (part.materialVariant) {
-        variantLabel = `${part.materialVariant.colorName}${part.materialVariant.code ? ` (${part.materialVariant.code})` : ''}`;
+
+      // Resolve variant: sale-time override → part's default materialVariantId
+      // Look up from material.variants (already fetched at top of function)
+      const resolvedVariantId = pvMap[part.id] ?? part.materialVariantId;
+      const variant = resolvedVariantId
+        ? (material.variants ?? []).find((v: any) => v.id === resolvedVariantId)
+        : null;
+      if (variant) {
+        variantLabel = `${variant.colorName}${variant.code ? ` (${variant.code})` : ''}`;
       }
     }
 
@@ -168,11 +176,22 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     let kgRestored = 0;
     let variantLabel: string | null = null;
 
+    const pvData: { partId: string; variantId: string }[] = Array.isArray(ii.partVariantsData)
+      ? ii.partVariantsData
+      : [];
+    const pvMap: Record<string, string> = {};
+    pvData.forEach((pv: any) => { pvMap[pv.partId] = pv.variantId; });
+
     for (const part of ii.product?.parts ?? []) {
       const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
       kgRestored += (grossGrams * ii.quantity) / 1000;
-      if (part.materialVariant) {
-        variantLabel = `${part.materialVariant.colorName}${part.materialVariant.code ? ` (${part.materialVariant.code})` : ''}`;
+
+      const resolvedVariantId = pvMap[part.id] ?? part.materialVariantId;
+      const variant = resolvedVariantId
+        ? (material.variants ?? []).find((v: any) => v.id === resolvedVariantId)
+        : null;
+      if (variant) {
+        variantLabel = `${variant.colorName}${variant.code ? ` (${variant.code})` : ''}`;
       }
     }
 
@@ -199,7 +218,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   // If filtering by variant, return variant-level stock
   const activeVariant = filterVariantId
-    ? material.variants.find((v: any) => v.id === filterVariantId)
+    ? (material.variants ?? []).find((v: any) => v.id === filterVariantId)
     : null;
 
   return NextResponse.json({
