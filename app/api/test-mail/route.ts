@@ -81,7 +81,7 @@ Bu mail otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.`
     });
 
     console.log('✅ MAIL GÖNDERİM BAŞARILI');
-    console.log('📧 Message ID:', result?.messageId);
+    console.log('📧 Message ID:', result?.info?.messageId);
     console.log('📧 Response:', result);
 
     return NextResponse.json({
@@ -91,7 +91,7 @@ Bu mail otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.`
       environment: process.env.NODE_ENV || 'development',
       smtpHost: process.env.SMTP_HOST,
       testId: Date.now(),
-      messageId: result?.messageId
+      messageId: result?.info?.messageId
     });
 
   } catch (error) {
