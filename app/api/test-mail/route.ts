@@ -108,11 +108,12 @@ Bu mail otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.`
     });
 
   } catch (error) {
-    console.error('❌ MAIL GÖNDERİM HATASI:', error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('❌ MAIL GÖNDERİM HATASI:', err);
 
     return NextResponse.json({
       error: 'Mail gönderim hatası',
-      details: error instanceof Error ? error.message : 'Unknown error',
+      details: err.message,
       timestamp,
       smtpDebug: {
         host: process.env.SMTP_HOST,

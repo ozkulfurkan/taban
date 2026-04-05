@@ -124,16 +124,17 @@ export async function sendMail({ to, subject, html, text }: SendMailOptions) {
       previewUrl: preview === false ? null : preview,
     };
   } catch (error) {
-    console.error('❌ Mail gönderme hatası:', error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('❌ Mail gönderme hatası:', err);
     console.error('🔍 Hata detayları:', {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      command: error.command,
-      response: error.response,
-      responseCode: error.responseCode
+      name: err.name,
+      message: err.message,
+      code: (err as any).code,
+      command: (err as any).command,
+      response: (err as any).response,
+      responseCode: (err as any).responseCode
     });
-    throw error;
+    throw err;
   }
 }
 

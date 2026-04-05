@@ -24,8 +24,6 @@ async function testMail() {
           <p><strong>Gönderim zamanı:</strong> ${new Date().toLocaleString('tr-TR')}</p>
           <p><strong>Environment:</strong> ${process.env.NODE_ENV || 'development'}</p>
           <p><strong>SMTP Host:</strong> ${process.env.SMTP_HOST || 'Not configured'}</p>
-          <p><strong>Message ID:</strong> ${result?.info?.messageId || 'N/A'}</p>
-          <p><strong>Response:</strong> ${result?.info?.response || 'N/A'}</p>
           <hr style="border: none; border-top: 1px solid #e5e7eb;">
           <p style="color: #6b7280; font-size: 14px;">
             Bu mail otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.
@@ -39,8 +37,6 @@ Bu mail SMTP bağlantısının detaylarını test etmek için gönderilmiştir.
 Gönderim zamanı: ${new Date().toLocaleString('tr-TR')}
 Environment: ${process.env.NODE_ENV || 'development'}
 SMTP Host: ${process.env.SMTP_HOST || 'Not configured'}
-Message ID: ${result?.info?.messageId || 'N/A'}
-Response: ${result?.info?.response || 'N/A'}
 
 Bu mail otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.`
     });
@@ -53,13 +49,14 @@ Bu mail otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.`
     console.log(`📬 Lütfen ${testEmail} adresini kontrol edin.`);
 
   } catch (error) {
-    console.error('\n❌ Mail gönderim hatası:', error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('\n❌ Mail gönderim hatası:', err);
     console.error('🔍 Hata detayları:', {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      response: error.response,
-      responseCode: error.responseCode
+      name: err.name,
+      message: err.message,
+      code: (err as any).code,
+      response: (err as any).response,
+      responseCode: (err as any).responseCode
     });
     process.exit(1);
   }
