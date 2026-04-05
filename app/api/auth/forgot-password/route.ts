@@ -30,12 +30,19 @@ export async function POST(req: NextRequest) {
       to: user.email,
       subject: 'SoleCost Şifre Sıfırlama',
       html: `
-        <p>Merhaba,</p>
-        <p>Şifrenizi sıfırlamak için aşağıdaki bağlantıya tıklayın:</p>
-        <p><a href="${resetUrl}">Şifremi sıfırlamak istiyorum</a></p>
-        <p>Bu bağlantı 24 saat içinde geçerlidir.</p>
+        <div style="font-family: Arial, sans-serif; color: #111; line-height: 1.5;">
+          <p>Merhaba,</p>
+          <p>Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:</p>
+          <p>
+            <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">
+              Şifremi Sıfırlamak İstiyorum
+            </a>
+          </p>
+          <p>Bu bağlantı 24 saat içinde geçerlidir.</p>
+          <p style="margin-top: 24px; color: #555;">SoleCost kullandığınız için teşekkür ederiz.</p>
+        </div>
       `,
-      text: `Şifrenizi sıfırlamak için şu bağlantıyı kullanın: ${resetUrl}`,
+      text: `Merhaba,\n\nŞifrenizi sıfırlamak için aşağıdaki bağlantıyı kullanın:\n${resetUrl}\n\nBu bağlantı 24 saat içinde geçerlidir.\n\nSoleCost kullandığınız için teşekkür ederiz.`,
     });
     previewUrl = result.previewUrl;
   } catch (emailError) {
