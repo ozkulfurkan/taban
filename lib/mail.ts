@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { constants } from 'node:crypto';
 
 interface SendMailOptions {
   to: string;
@@ -10,16 +11,29 @@ interface SendMailOptions {
 let transportPromise: Promise<nodemailer.Transporter> | null = null;
 
 async function getTransport() {
-  if (transportPromise) return transportPromise;
+  // Cache'i temizle eğer env değişti
+  if (transportPromise) {
+    const currentHost = process.env.SMTP_HOST;
+    const currentPort = process.env.SMTP_PORT;
+    console.log("Transport cache'de var, kullanılıyor");
+    return transportPromise;
+  }
 
   const smtpHost = process.env.SMTP_HOST;
-  const smtpPort = parseInt(process.env.SMTP_PORT ?? '587', 10);
+  const smtpPort = parseInt(process.env.SMTP_PORT ?? '465', 10);
   const smtpSecure = process.env.SMTP_SECURE === 'true';
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
 
+  console.log('🔌 SMTP Bağlantısı kuruluyor...');
+  console.log('   HOST:', smtpHost);
+  console.log('   PORT:', smtpPort);
+  console.log('   SECURE:', smtpSecure);
+  console.log('   USER:', smtpUser);
+
   // SendGrid SMTP desteği
   if (process.env.SENDGRID_API_KEY) {
+    console.log('📤 SendGrid kullanılıyor');
     transportPromise = Promise.resolve(
       nodemailer.createTransport({
         host: 'smtp.sendgrid.net',
@@ -29,6 +43,10 @@ async function getTransport() {
           user: 'apikey',
           pass: process.env.SENDGRID_API_KEY,
         },
+        tls: {
+          rejectUnauthorized: false,
+          minVersion: 'TLSv1.2',
+        },
       })
     );
   } else if (!smtpHost) {
@@ -36,6 +54,7 @@ async function getTransport() {
       throw new Error('SMTP yapılandırması eksik. Lütfen SMTP_HOST, SMTP_USER ve SMTP_PASS çevre değişkenlerini ayarlayın.');
     }
 
+    console.log('🧪 Test hesabı (Ethereal) kullanılıyor');
     transportPromise = nodemailer.createTestAccount().then((account) => {
       return nodemailer.createTransport({
         host: account.smtp.host,
@@ -45,15 +64,25 @@ async function getTransport() {
           user: account.user,
           pass: account.pass,
         },
+        tls: {
+          rejectUnauthorized: false,
+          minVersion: 'TLSv1.2',
+        },
       });
     });
   } else {
+    console.log('📧 Kurumsal SMTP kullanılıyor');
     transportPromise = Promise.resolve(
       nodemailer.createTransport({
         host: smtpHost,
         port: smtpPort,
         secure: smtpSecure,
         auth: smtpUser && smtpPass ? { user: smtpUser, pass: smtpPass } : undefined,
+        tls: {
+          rejectUnauthorized: false,
+          minVersion: 'TLSv1.2',
+          secureOptions: constants.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION | constants.SSL_OP_LEGACY_SERVER_CONNECT,
+        },
       })
     );
   }
@@ -62,20 +91,33 @@ async function getTransport() {
 }
 
 export async function sendMail({ to, subject, html, text }: SendMailOptions) {
-  const transport = await getTransport();
-  const from = process.env.SMTP_FROM ?? `SoleCost <no-reply@${process.env.SMTP_HOST ?? 'localhost'}>`;
+  try {
+    const transport = await getTransport();
+    const from = process.env.SMTP_FROM ?? `SoleCost <no-reply@${process.env.SMTP_HOST ?? 'localhost'}>`;
 
-  const info = await transport.sendMail({
-    from,
-    to,
-    subject,
-    text: text ?? html.replace(/<[^>]+>/g, '').slice(0, 1000),
-    html,
-  });
+    console.log('📧 Mail gönderiliyor...');
+    console.log('   TO:', to);
+    console.log('   FROM:', from);
+    console.log('   SUBJECT:', subject);
 
-  const preview = nodemailer.getTestMessageUrl(info);
-  return {
-    info,
-    previewUrl: preview === false ? null : preview,
-  };
+    const info = await transport.sendMail({
+      from,
+      to,
+      subject,
+      text: text ?? html.replace(/<[^>]+>/g, '').slice(0, 1000),
+      html,
+    });
+
+    console.log('✅ Mail başarıyla gönderildi:', info.messageId);
+
+    const preview = nodemailer.getTestMessageUrl(info);
+    return {
+      info,
+      previewUrl: preview === false ? null : preview,
+    };
+  } catch (error) {
+    console.error('❌ Mail gönderme hatası:', error);
+    throw error;
+  }
 }
+
