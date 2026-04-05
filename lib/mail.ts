@@ -109,6 +109,14 @@ export async function sendMail({ to, subject, html, text }: SendMailOptions) {
     });
 
     console.log('✅ Mail başarıyla gönderildi:', info.messageId);
+    console.log('📊 Mail info:', {
+      messageId: info.messageId,
+      envelope: info.envelope,
+      accepted: info.accepted,
+      rejected: info.rejected,
+      pending: info.pending,
+      response: info.response
+    });
 
     const preview = nodemailer.getTestMessageUrl(info);
     return {
@@ -117,6 +125,14 @@ export async function sendMail({ to, subject, html, text }: SendMailOptions) {
     };
   } catch (error) {
     console.error('❌ Mail gönderme hatası:', error);
+    console.error('🔍 Hata detayları:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      responseCode: error.responseCode
+    });
     throw error;
   }
 }

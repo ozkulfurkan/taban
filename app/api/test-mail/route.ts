@@ -85,7 +85,10 @@ Bu mail otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.`
 
     console.log('✅ MAIL GÖNDERİM BAŞARILI');
     console.log('📧 Message ID:', result?.info?.messageId);
-    console.log('📧 Response:', result);
+    console.log('📧 Accepted:', result?.info?.accepted);
+    console.log('📧 Rejected:', result?.info?.rejected);
+    console.log('📧 Response:', result?.info?.response);
+    console.log('📧 Full Info:', result?.info);
 
     return NextResponse.json({
       success: true,
@@ -94,7 +97,14 @@ Bu mail otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.`
       environment: process.env.NODE_ENV || 'development',
       smtpHost: process.env.SMTP_HOST,
       testId: Date.now(),
-      messageId: result?.info?.messageId
+      messageId: result?.info?.messageId,
+      mailInfo: {
+        accepted: result?.info?.accepted,
+        rejected: result?.info?.rejected,
+        pending: result?.info?.pending,
+        response: result?.info?.response,
+        envelope: result?.info?.envelope
+      }
     });
 
   } catch (error) {
