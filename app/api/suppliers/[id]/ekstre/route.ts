@@ -25,11 +25,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const [purchases, payments] = await Promise.all([
     prisma.purchase.findMany({
       where: { supplierId: params.id, date: { gte: from, lte: to } },
-      orderBy: { date: 'asc' },
+      orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
     }),
     prisma.payment.findMany({
       where: { supplierId: params.id, date: { gte: from, lte: to } },
-      orderBy: { date: 'asc' },
+      orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
     }),
   ]);
 

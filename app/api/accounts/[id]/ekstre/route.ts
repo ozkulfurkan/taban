@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       customer: { select: { id: true, name: true } },
       supplier: { select: { id: true, name: true } },
     },
-    orderBy: { date: 'asc' },
+    orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
   });
 
   // Tüm hesaplar (transfer dropdown için)

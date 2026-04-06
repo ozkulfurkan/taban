@@ -59,7 +59,11 @@ export default function CustomerEkstrePage() {
     const events: any[] = [
       ...(data.invoices || []).map((inv: any) => ({ ...inv, _type: 'invoice' })),
       ...(data.payments || []).map((p: any) => ({ ...p, _type: 'payment' })),
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    ].sort((a, b) => {
+      const d = new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (d !== 0) return d;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
 
     events.forEach(ev => {
       if (ev._type === 'invoice') {
