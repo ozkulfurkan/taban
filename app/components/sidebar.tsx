@@ -1,10 +1,10 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Calculator, Settings, Shield, LogOut, Menu, X, ChevronLeft,
+  LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
   FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText, UserCog
 } from 'lucide-react';
 import { useState } from 'react';
@@ -78,12 +78,6 @@ export default function Sidebar() {
       links: [
         { href: '/accounts', label: t('nav', 'accounts'), icon: Landmark },
         { href: '/cek-portfolyo', label: t('nav', 'checkPortfolio'), icon: ScrollText },
-      ],
-    },
-    {
-      title: t('nav', 'tools'),
-      links: [
-        { href: '/calculations/new', label: t('nav', 'soleCalc'), icon: Calculator, special: true },
       ],
     },
     {
@@ -165,22 +159,6 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* User + Logout */}
-      <div className="p-3 border-t border-blue-800/30">
-        {!collapsed && user && (
-          <div className="px-3 py-2 mb-2">
-            <p className="text-white text-sm font-medium truncate">{user?.name ?? 'User'}</p>
-            <p className="text-blue-300 text-xs truncate">{user?.companyName ?? ''}</p>
-          </div>
-        )}
-        <button
-          onClick={() => signOut({ callbackUrl: '/login' })}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-blue-200 hover:bg-red-600/20 hover:text-red-300 transition-all w-full"
-        >
-          <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span>{t('nav', 'logout')}</span>}
-        </button>
-      </div>
     </div>
   );
 
