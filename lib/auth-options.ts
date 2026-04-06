@@ -12,8 +12,35 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        impersonateToken: { label: 'Impersonate Token', type: 'text' },
       },
       async authorize(credentials) {
+        // Impersonation flow
+        if (credentials?.impersonateToken) {
+          const user = await prisma.user.findUnique({
+            where: { impersonateToken: credentials.impersonateToken },
+            include: { company: true },
+          });
+          if (!user || !user.impersonateTokenExpiry || user.impersonateTokenExpiry < new Date()) {
+            return null;
+          }
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { impersonateToken: null, impersonateTokenExpiry: null },
+          });
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            companyId: user.companyId,
+            companyName: user.company?.name ?? null,
+            language: user.language,
+            currency: user.currency,
+            allowedPages: (user as any).allowedPages ?? [],
+          } as any;
+        }
+
         if (!credentials?.email || !credentials?.password) return null;
         try {
           const user = await prisma.user.findUnique({

@@ -7,7 +7,7 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { formatDate } from '@/lib/time';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Shield, Building2, Clock, Crown, Users, Package, Calculator, Loader2, Mail, Send } from 'lucide-react';
+import { Shield, Building2, Clock, Crown, Users, Package, Calculator, Loader2, Mail, Send, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AdminPage() {
@@ -17,6 +17,7 @@ export default function AdminPage() {
   const user = session?.user as any;
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [impersonating, setImpersonating] = useState<string | null>(null);
   const [mailTest, setMailTest] = useState({ email: '', loading: false, result: null as any });
 
   useEffect(() => {
@@ -30,6 +31,24 @@ export default function AdminPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user, router]);
+
+  const handleImpersonate = async (companyId: string) => {
+    setImpersonating(companyId);
+    try {
+      const res = await fetch('/api/admin/impersonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId }),
+      });
+      const data = await res.json();
+      if (data.token) {
+        router.push(`/impersonate?token=${data.token}`);
+      }
+    } catch (e) {
+      console.error(e);
+      setImpersonating(null);
+    }
+  };
 
   const handleMailTest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,6 +193,18 @@ export default function AdminPage() {
                         {t('admin', 'trialEnds')}: {formatDate(company.trialEndsAt)}
                       </span>
                     )}
+                    <button
+                      onClick={() => handleImpersonate(company.id)}
+                      disabled={impersonating === company.id}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                    >
+                      {impersonating === company.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Eye className="w-3.5 h-3.5" />
+                      )}
+                      Kullanıcı Gözünden Gör
+                    </button>
                   </div>
                 </motion.div>
               ))}
