@@ -21,8 +21,10 @@ export async function GET() {
     const [
       materialCount, calcCount, recentCalcs,
       dailyInvoices, monthlyInvoices,
-      totalReceivableRaw, totalPaidRaw,
-      totalPurchaseRaw, totalSupplierPaidRaw,
+      normalInvoices, returnInvoices,
+      customerPayments,
+      totalPurchaseRaw,
+      supplierPayments,
       accounts,
       products,
       cekTotal,
@@ -36,35 +38,40 @@ export async function GET() {
         take: 5,
         include: { user: { select: { name: true } } },
       }),
-      // Günlük ciro — today's non-return invoices
+      // Günlük ciro
       prisma.invoice.aggregate({
         where: { companyId, isReturn: false, date: { gte: todayStart, lt: tomorrowStart } },
         _sum: { total: true },
       }),
-      // Aylık ciro — this month's non-return invoices
+      // Aylık ciro
       prisma.invoice.aggregate({
         where: { companyId, isReturn: false, date: { gte: monthStart } },
         _sum: { total: true },
       }),
-      // Toplam faturalar (positive + negative/returns included in balance)
+      // Normal faturalar (müşteri alacak hesabı için)
       prisma.invoice.aggregate({
-        where: { companyId },
+        where: { companyId, isReturn: false },
         _sum: { total: true },
       }),
-      // Toplam tahsilat
-      prisma.payment.aggregate({
-        where: { companyId, type: 'RECEIVED' },
-        _sum: { amount: true },
+      // İade faturalar
+      prisma.invoice.aggregate({
+        where: { companyId, isReturn: true },
+        _sum: { total: true },
       }),
-      // Toplam alış
+      // Müşterilerden tahsilatlar (bakiye düzeltme dahil)
+      prisma.payment.findMany({
+        where: { companyId, type: 'RECEIVED' },
+        select: { amount: true, method: true, notes: true },
+      }),
+      // Toplam alış (tedarikçi borç hesabı için)
       prisma.purchase.aggregate({
         where: { companyId },
         _sum: { total: true },
       }),
-      // Toplam tedarikçi ödemesi
-      prisma.payment.aggregate({
+      // Tedarikçilere ödemeler (bakiye düzeltme dahil)
+      prisma.payment.findMany({
         where: { companyId, type: 'PAID' },
-        _sum: { amount: true },
+        select: { amount: true, method: true, notes: true },
       }),
       // Hesap bakiyeleri
       prisma.account.findMany({ where: { companyId } }),
@@ -91,8 +98,27 @@ export async function GET() {
     const calcs = await prisma.soleCalculation.findMany({ where, select: { totalCost: true } });
     const avgCost = calcs?.length ? (calcs.reduce((s: number, c: any) => s + (c?.totalCost ?? 0), 0) / calcs.length) : 0;
 
-    const totalReceivables = Math.max(0, (totalReceivableRaw._sum.total ?? 0) - (totalPaidRaw._sum.amount ?? 0));
-    const totalPayables = Math.max(0, (totalPurchaseRaw._sum.total ?? 0) - (totalSupplierPaidRaw._sum.amount ?? 0));
+    // Müşteri bakiyesi: müşteriler sayfasıyla aynı mantık
+    let customerBalanceDelta = 0;
+    for (const p of customerPayments) {
+      if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
+        customerBalanceDelta += p.amount;
+      } else {
+        customerBalanceDelta -= p.amount;
+      }
+    }
+    const totalReceivables = (normalInvoices._sum.total ?? 0) - (returnInvoices._sum.total ?? 0) + customerBalanceDelta;
+
+    // Tedarikçi bakiyesi: tedarikçiler sayfasıyla aynı mantık
+    let supplierBalanceDelta = 0;
+    for (const p of supplierPayments) {
+      if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
+        supplierBalanceDelta += p.amount;
+      } else {
+        supplierBalanceDelta -= p.amount;
+      }
+    }
+    const totalPayables = (totalPurchaseRaw._sum.total ?? 0) + supplierBalanceDelta;
 
     // Assets breakdown
     const kasaTotal = accounts.filter(a => a.type === 'Kasa' || a.name.toLowerCase().includes('kasa')).reduce((s, a) => s + a.balance, 0);
