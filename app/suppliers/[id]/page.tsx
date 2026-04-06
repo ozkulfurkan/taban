@@ -1655,7 +1655,6 @@ export default function SupplierDetailPage() {
                   <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
                     <th className="px-4 py-2 text-left">{t('supplierDetail', 'date')}</th>
                     <th className="px-4 py-2 text-left">{t('supplierDetail', 'invoiceNo')}</th>
-                    <th className="px-4 py-2 text-center">Durum</th>
                     <th className="px-4 py-2 text-right">{t('supplierDetail', 'amount')}</th>
                     <th className="w-8"></th>
                   </tr>
@@ -1669,11 +1668,6 @@ export default function SupplierDetailPage() {
                         <div className="text-xs text-slate-400">{new Date(p.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
                       </td>
                       <td className="px-4 py-2.5 font-medium text-teal-600">{p.invoiceNo || '—'}</td>
-                      <td className="px-4 py-2.5 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[p.status]}`}>
-                          {STATUS_LABEL[p.status]}
-                        </span>
-                      </td>
                       <td className="px-4 py-2.5 text-right font-semibold text-slate-800">
                         {p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                         <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>

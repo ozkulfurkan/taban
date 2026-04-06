@@ -219,56 +219,11 @@ export default function PurchaseDetailPage() {
             className="flex items-center gap-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60">
             {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />} İptal Et
           </button>
-          <button onClick={() => setShowPayForm(s => !s)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium">
-            <CreditCard className="w-4 h-4" /> Ödeme Kaydet
-          </button>
           <Link href={`/suppliers/${purchase.supplierId}`}
             className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
             <Building2 className="w-4 h-4" /> Tedarikçi Sayfası
           </Link>
         </div>
-
-        {/* Payment form inline */}
-        {showPayForm && (
-          <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
-            <p className="text-xs font-semibold text-teal-700 mb-3 uppercase tracking-wide">Ödeme Ekle</p>
-            <form onSubmit={handlePayment} className="flex flex-wrap gap-3 items-end">
-              <div>
-                <label className="block text-xs font-medium text-teal-700 mb-1">Tutar</label>
-                <input required type="number" step="0.01" value={payForm.amount}
-                  onChange={e => setPayForm(p => ({ ...p, amount: e.target.value }))}
-                  placeholder={`Kalan: ${fmt(remaining)}`}
-                  className="w-36 px-3 py-2 border border-teal-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-teal-700 mb-1">Yöntem</label>
-                <select value={payForm.method} onChange={e => setPayForm(p => ({ ...p, method: e.target.value }))}
-                  className="px-3 py-2 border border-teal-300 rounded-lg text-sm outline-none bg-white">
-                  {METHODS.map(m => <option key={m}>{m}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-teal-700 mb-1">Tarih</label>
-                <input type="date" value={payForm.date} onChange={e => setPayForm(p => ({ ...p, date: e.target.value }))}
-                  className="px-3 py-2 border border-teal-300 rounded-lg text-sm outline-none" />
-              </div>
-              <div className="flex-1 min-w-[140px]">
-                <label className="block text-xs font-medium text-teal-700 mb-1">Not</label>
-                <input value={payForm.notes} onChange={e => setPayForm(p => ({ ...p, notes: e.target.value }))}
-                  className="w-full px-3 py-2 border border-teal-300 rounded-lg text-sm outline-none" />
-              </div>
-              <button type="submit" disabled={payLoading}
-                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-60">
-                {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Kaydet
-              </button>
-              <button type="button" onClick={() => setShowPayForm(false)}
-                className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
-                İptal
-              </button>
-            </form>
-          </div>
-        )}
 
         {/* Main two-column layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 items-start">
@@ -294,11 +249,6 @@ export default function PurchaseDetailPage() {
                   ) : (
                     <span className="text-sm text-slate-700 font-medium">{purchase.invoiceNo || <span className="text-slate-300 italic">—</span>}</span>
                   )}
-                </div>
-                {/* Durumu */}
-                <div className="flex items-center px-4 py-3">
-                  <span className="text-xs font-semibold text-slate-400 w-20 flex-shrink-0">Durumu</span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusColor}`}>{statusLabel}</span>
                 </div>
                 {/* Tarihi */}
                 <div className="flex items-center px-4 py-3">
@@ -374,70 +324,6 @@ export default function PurchaseDetailPage() {
             {/* Header */}
             <div className="bg-green-600 px-5 py-3">
               <h2 className="text-white font-bold text-sm uppercase tracking-widest">Detaylar</h2>
-            </div>
-
-            {/* Add entry form */}
-            <div className="px-5 pt-4 pb-3 border-b border-slate-100 space-y-2 bg-slate-50/60">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Hammadde Girişi Ekle</p>
-              <div className="flex flex-wrap gap-2 items-end">
-                <div className="flex-1 min-w-[150px]">
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Hammadde</label>
-                  <select value={newMat.materialId}
-                    onChange={e => setNewMat(p => ({ ...p, materialId: e.target.value, materialVariantId: '' }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-400 bg-white">
-                    <option value="">Seç...</option>
-                    {matList.map(m => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="w-28">
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Kg Miktarı</label>
-                  <input type="number" step="0.001" min="0" value={newMat.kgAmount}
-                    onChange={e => setNewMat(p => ({ ...p, kgAmount: e.target.value }))}
-                    placeholder="0.000"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-green-400" />
-                </div>
-                <div className="w-32">
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Birim Fiyat</label>
-                  <input type="number" step="0.01" min="0" value={newMat.pricePerKg}
-                    onChange={e => setNewMat(p => ({ ...p, pricePerKg: e.target.value }))}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-green-400" />
-                </div>
-                <button onClick={handleAddMat} disabled={matSaving || !newMat.materialId || !newMat.kgAmount}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
-                  {matSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Ekle
-                </button>
-              </div>
-
-              {/* Varyant seçimi */}
-              {newMat.materialId && (() => {
-                const selMat = matList.find(m => m.id === newMat.materialId);
-                const variants = selMat?.variants ?? [];
-                return (
-                  <div className="flex items-center gap-2 border-t border-dashed border-slate-200 pt-2">
-                    <Palette className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="flex gap-2 items-center">
-                        <select value={newMat.materialVariantId}
-                          onChange={e => setNewMat(p => ({ ...p, materialVariantId: e.target.value }))}
-                          className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-400 bg-white">
-                          <option value="">— Renk seçiniz (yoksa ana stok) —</option>
-                          {variants.map((v: any) => (
-                            <option key={v.id} value={v.id}>{v.colorName}{v.code ? ` (${v.code})` : ''}</option>
-                          ))}
-                        </select>
-                        <button type="button"
-                          onClick={() => { setNewColorModal(true); setNewColorForm({ colorName: '', code: '' }); }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 border border-green-300 text-green-700 hover:bg-green-50 rounded-lg text-xs font-medium whitespace-nowrap">
-                          <Plus className="w-3.5 h-3.5" /> Yeni Renk
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
             </div>
 
             {/* Items table */}
