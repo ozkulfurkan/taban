@@ -40,8 +40,14 @@ export default function LoginPage() {
         redirect: false,
       });
       if (result?.error) {
-        if (result.error === 'EMAIL_NOT_VERIFIED') {
-          setError('E-posta adresiniz henüz doğrulanmamış. Lütfen gelen kutunuzu kontrol edin.');
+        const statusRes = await fetch('/api/auth/check-login-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const status = await statusRes.json();
+        if (status.exists && !status.emailVerified) {
+          setError('E-posta adresiniz henüz doğrulanmamış. Doğrulama maili gönderildi, lütfen gelen kutunuzu kontrol edin.');
         } else {
           setError('E-posta veya şifre hatalı.');
         }
