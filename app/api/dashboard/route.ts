@@ -19,17 +19,26 @@ export async function GET() {
     const oneMonthLater = new Date(now); oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
 
     const [
+      company,
       materialCount, calcCount, recentCalcs,
-      dailyInvoices, monthlyInvoices,
-      normalInvoices, returnInvoices,
-      customerPayments,
-      totalPurchaseRaw,
-      supplierPayments,
+      dailyInvoicesByCurrency,
+      monthlyInvoicesByCurrency,
+      customers,
+      allInvoices,
+      allCustomerPayments,
+      suppliers,
+      allPurchases,
+      allSupplierPayments,
       accounts,
       products,
       cekTotal,
       upcomingChecks,
     ] = await Promise.all([
+      // Kur bilgileri
+      prisma.company.findUnique({
+        where: { id: companyId },
+        select: { usdToTry: true, eurToTry: true },
+      }),
       prisma.material.count({ where }),
       prisma.soleCalculation.count({ where }),
       prisma.soleCalculation.findMany({
@@ -38,40 +47,47 @@ export async function GET() {
         take: 5,
         include: { user: { select: { name: true } } },
       }),
-      // Günlük ciro
-      prisma.invoice.aggregate({
+      // Günlük ciro — para birimine göre grupla
+      prisma.invoice.groupBy({
+        by: ['currency'],
         where: { companyId, isReturn: false, date: { gte: todayStart, lt: tomorrowStart } },
         _sum: { total: true },
       }),
-      // Aylık ciro
-      prisma.invoice.aggregate({
+      // Aylık ciro — para birimine göre grupla
+      prisma.invoice.groupBy({
+        by: ['currency'],
         where: { companyId, isReturn: false, date: { gte: monthStart } },
         _sum: { total: true },
       }),
-      // Normal faturalar (müşteri alacak hesabı için)
-      prisma.invoice.aggregate({
-        where: { companyId, isReturn: false },
-        _sum: { total: true },
+      // Müşteriler (id + currency)
+      prisma.customer.findMany({
+        where: { companyId },
+        select: { id: true, currency: true },
       }),
-      // İade faturalar
-      prisma.invoice.aggregate({
-        where: { companyId, isReturn: true },
-        _sum: { total: true },
+      // Tüm faturalar (müşteri bazlı bakiye için)
+      prisma.invoice.findMany({
+        where: { companyId },
+        select: { customerId: true, total: true, isReturn: true },
       }),
-      // Müşterilerden tahsilatlar (bakiye düzeltme dahil)
+      // Tüm müşteri tahsilatları
       prisma.payment.findMany({
         where: { companyId, type: 'RECEIVED' },
-        select: { amount: true, method: true, notes: true },
+        select: { customerId: true, amount: true, method: true, notes: true },
       }),
-      // Toplam alış (tedarikçi borç hesabı için)
-      prisma.purchase.aggregate({
+      // Tedarikçiler (id + currency)
+      prisma.supplier.findMany({
         where: { companyId },
-        _sum: { total: true },
+        select: { id: true, currency: true },
       }),
-      // Tedarikçilere ödemeler (bakiye düzeltme dahil)
+      // Tüm alışlar (tedarikçi bazlı borç için)
+      prisma.purchase.findMany({
+        where: { companyId },
+        select: { supplierId: true, total: true },
+      }),
+      // Tüm tedarikçi ödemeleri
       prisma.payment.findMany({
         where: { companyId, type: 'PAID' },
-        select: { amount: true, method: true, notes: true },
+        select: { supplierId: true, amount: true, method: true, notes: true },
       }),
       // Hesap bakiyeleri
       prisma.account.findMany({ where: { companyId } }),
@@ -95,43 +111,77 @@ export async function GET() {
       }),
     ]);
 
+    const usdToTry = company?.usdToTry ?? 1;
+    const eurToTry = company?.eurToTry ?? 1;
+
+    const toTry = (amount: number, currency: string) => {
+      if (currency === 'USD') return amount * usdToTry;
+      if (currency === 'EUR') return amount * eurToTry;
+      return amount; // TRY
+    };
+
     const calcs = await prisma.soleCalculation.findMany({ where, select: { totalCost: true } });
     const avgCost = calcs?.length ? (calcs.reduce((s: number, c: any) => s + (c?.totalCost ?? 0), 0) / calcs.length) : 0;
 
-    // Müşteri bakiyesi: müşteriler sayfasıyla aynı mantık
-    let customerBalanceDelta = 0;
-    for (const p of customerPayments) {
-      if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
-        customerBalanceDelta += p.amount;
-      } else {
-        customerBalanceDelta -= p.amount;
-      }
-    }
-    const totalReceivables = (normalInvoices._sum.total ?? 0) - (returnInvoices._sum.total ?? 0) + customerBalanceDelta;
+    // Günlük & aylık ciro → TL cinsinden
+    const dailyCiro = dailyInvoicesByCurrency.reduce((s, g) => s + toTry(g._sum.total ?? 0, g.currency), 0);
+    const monthlyCiro = monthlyInvoicesByCurrency.reduce((s, g) => s + toTry(g._sum.total ?? 0, g.currency), 0);
 
-    // Tedarikçi bakiyesi: tedarikçiler sayfasıyla aynı mantık
-    let supplierBalanceDelta = 0;
-    for (const p of supplierPayments) {
-      if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
-        supplierBalanceDelta += p.amount;
-      } else {
-        supplierBalanceDelta -= p.amount;
+    // Toplam alacak: her müşterinin bakiyesi kendi para birimiyle TL'ye çevrilir
+    let totalReceivables = 0;
+    for (const customer of customers) {
+      const invoices = allInvoices.filter(i => i.customerId === customer.id);
+      const payments = allCustomerPayments.filter(p => p.customerId === customer.id);
+
+      const normalTotal = invoices.filter(i => !i.isReturn).reduce((s, i) => s + i.total, 0);
+      const returnTotal = invoices.filter(i => i.isReturn).reduce((s, i) => s + i.total, 0);
+
+      let delta = 0;
+      for (const p of payments) {
+        if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
+          delta += p.amount;
+        } else {
+          delta -= p.amount;
+        }
       }
+
+      const balance = normalTotal - returnTotal + delta;
+      totalReceivables += toTry(balance, customer.currency);
     }
-    const totalPayables = (totalPurchaseRaw._sum.total ?? 0) + supplierBalanceDelta;
+
+    // Toplam borç: her tedarikçinin bakiyesi kendi para birimiyle TL'ye çevrilir
+    let totalPayables = 0;
+    for (const supplier of suppliers) {
+      const purchases = allPurchases.filter(p => p.supplierId === supplier.id);
+      const payments = allSupplierPayments.filter(p => p.supplierId === supplier.id);
+
+      const totalPurchased = purchases.reduce((s, p) => s + p.total, 0);
+
+      let delta = 0;
+      for (const p of payments) {
+        if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
+          delta += p.amount;
+        } else {
+          delta -= p.amount;
+        }
+      }
+
+      const balance = totalPurchased + delta;
+      totalPayables += toTry(balance, supplier.currency);
+    }
 
     // Assets breakdown
     const kasaTotal = accounts.filter(a => a.type === 'Kasa' || a.name.toLowerCase().includes('kasa')).reduce((s, a) => s + a.balance, 0);
     const posTotal = accounts.filter(a => a.name.toLowerCase().includes('pos')).reduce((s, a) => s + a.balance, 0);
-    const stokTotal = products.reduce((s, p) => s + p.stock * p.unitPrice, 0);
+    const stokTotal = products.reduce((s, p) => s + toTry(p.stock * p.unitPrice, p.currency), 0);
 
     return NextResponse.json({
       materialCount,
       calcCount,
       avgCost,
       recentCalcs,
-      dailyCiro: dailyInvoices._sum.total ?? 0,
-      monthlyCiro: monthlyInvoices._sum.total ?? 0,
+      dailyCiro,
+      monthlyCiro,
       totalReceivables,
       totalPayables,
       assets: {
