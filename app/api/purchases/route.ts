@@ -45,9 +45,11 @@ export async function POST(req: NextRequest) {
     currency = supplier.currency;
   }
 
+  const parseNum = (v: any) => parseFloat(String(v ?? '').replace(',', '.')) || 0;
+
   const computedTotal = items.length > 0
-    ? items.reduce((s: number, i: any) => s + (parseFloat(i.qty) || 0) * (parseFloat(i.unitPrice) || 0), 0)
-    : parseFloat(total) || 0;
+    ? items.reduce((s: number, i: any) => s + parseNum(i.qty) * parseNum(i.unitPrice), 0)
+    : parseNum(total);
 
   if (computedTotal <= 0) return NextResponse.json({ error: 'Invalid total' }, { status: 400 });
 
@@ -67,8 +69,8 @@ export async function POST(req: NextRequest) {
   const ops: Promise<any>[] = [];
 
   for (const i of items) {
-    const qty = parseFloat(i.qty) || 0;
-    const unitPrice = parseFloat(i.unitPrice) || 0;
+    const qty = parseNum(i.qty);
+    const unitPrice = parseNum(i.unitPrice);
 
     if (i.productId) {
       ops.push(prisma.product.updateMany({

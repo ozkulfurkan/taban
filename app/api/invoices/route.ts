@@ -52,15 +52,16 @@ export async function POST(req: NextRequest) {
     if (customer?.currency) rest.currency = customer.currency;
   }
 
+  const parseNum = (v: any) => parseFloat(String(v ?? '').replace(',', '.')) || 0;
   const sign = isReturn ? -1 : 1;
 
   const subtotal = sign * items.reduce((s: number, i: any) => {
-    const qty = parseFloat(i.quantity) || 0;
-    const price = parseFloat(i.unitPrice) || 0;
-    const disc = parseFloat(i.discount) || 0;
+    const qty = parseNum(i.quantity);
+    const price = parseNum(i.unitPrice);
+    const disc = parseNum(i.discount);
     return s + qty * price * (1 - disc / 100);
   }, 0);
-  const vatRate = parseFloat(rest.vatRate) || 0;
+  const vatRate = parseNum(rest.vatRate);
   const vatAmount = subtotal * vatRate / 100;
   const total = subtotal + vatAmount;
 
@@ -86,9 +87,9 @@ export async function POST(req: NextRequest) {
       notes: rest.notes || null,
       items: {
         create: items.map((i: any) => {
-          const qty = parseFloat(i.quantity) || 0;
-          const price = parseFloat(i.unitPrice) || 0;
-          const disc = parseFloat(i.discount) || 0;
+          const qty = parseNum(i.quantity);
+          const price = parseNum(i.unitPrice);
+          const disc = parseNum(i.discount);
           return {
             description: i.description,
             productId: i.productId || null,
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
   // Ürün stoğunu güncelle (product.stock)
   const productItems = items.filter((i: any) => i.productId);
   const stockUpdates = productItems.map((i: any) => {
-    const qty = parseFloat(i.quantity) || 0;
+    const qty = parseNum(i.quantity);
     const delta = isReturn ? qty : -qty;
     return prisma.product.updateMany({
       where: { id: i.productId, companyId: user.companyId },
@@ -141,7 +142,7 @@ const uniqueProductIds = ids;
     const variantMap = new Map<string, number>();   // variantId -> kgAmount
 
     for (const item of productItems) {
-      const qty = parseFloat(item.quantity) || 0;
+      const qty = parseNum(item.quantity);
       const product = products.find((p: any) => p.id === item.productId);
       if (!product) continue;
 
