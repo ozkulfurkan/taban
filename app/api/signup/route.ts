@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
 
@@ -32,6 +33,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const emailVerifyToken = crypto.randomBytes(32).toString('hex');
+
     const user = await prisma.user.create({
       data: {
         email,
@@ -39,6 +42,8 @@ export async function POST(req: NextRequest) {
         name: name || email?.split?.('@')?.[0] || 'User',
         role: 'COMPANY_OWNER',
         companyId: company.id,
+        emailVerified: false,
+        emailVerifyToken,
       },
     });
 
@@ -52,17 +57,19 @@ export async function POST(req: NextRequest) {
     });
 
     const baseUrl = req.headers.get('origin') || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${emailVerifyToken}`;
     try {
       await sendMail({
         to: user.email,
-        subject: 'SoleCost hesabınız oluşturuldu',
+        subject: 'SoleCost - E-posta adresinizi doğrulayın',
         html: `
           <p>Merhaba ${user.name ?? user.email},</p>
-          <p>Hesabınız başarılı bir şekilde oluşturuldu.</p>
-          <p>Giriş yapmak için <a href="${baseUrl}/login">buraya tıklayın</a>.</p>
+          <p>Hesabınız oluşturuldu. Giriş yapabilmek için e-posta adresinizi doğrulamanız gerekmektedir.</p>
+          <p><a href="${verifyUrl}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
+          <p>Butona tıklayamıyorsanız şu bağlantıyı kopyalayın: ${verifyUrl}</p>
           <p>Bu e-posta, SoleCost hesabınız için otomatik olarak gönderildi.</p>
         `,
-        text: `Merhaba ${user.name ?? user.email},\n\nHesabınız başarılı bir şekilde oluşturuldu. Giriş yapmak için: ${baseUrl}/login\n\nBu e-posta, SoleCost hesabınız için otomatik olarak gönderildi.`,
+        text: `Merhaba ${user.name ?? user.email},\n\nHesabınızı doğrulamak için şu bağlantıya tıklayın:\n${verifyUrl}`,
       });
     } catch (emailError) {
       console.error('Signup email failed:', emailError);

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { LogIn, Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -11,15 +11,27 @@ import { useLanguage } from '@/lib/i18n/language-context';
 export default function LoginPage() {
   const { t } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('verified') === '1') {
+      setSuccess('E-posta adresiniz doğrulandı. Giriş yapabilirsiniz.');
+    }
+    if (searchParams.get('error') === 'invalid-token') {
+      setError('Geçersiz veya süresi dolmuş doğrulama bağlantısı.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
     try {
       const result = await signIn('credentials', {
@@ -28,13 +40,17 @@ export default function LoginPage() {
         redirect: false,
       });
       if (result?.error) {
-        setError(t('auth', 'login') + ' failed. Check credentials.');
+        if (result.error === 'EMAIL_NOT_VERIFIED') {
+          setError('E-posta adresiniz henüz doğrulanmamış. Lütfen gelen kutunuzu kontrol edin.');
+        } else {
+          setError('E-posta veya şifre hatalı.');
+        }
       } else {
         router.replace('/dashboard');
       }
     } catch (err: any) {
       console.error(err);
-      setError('An error occurred');
+      setError('Bir hata oluştu.');
     } finally {
       setLoading(false);
     }
@@ -59,6 +75,12 @@ export default function LoginPage() {
         <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/10">
           <h2 className="text-xl font-semibold text-white mb-6">{t('auth', 'loginTitle')}</h2>
           
+          {success && (
+            <div className="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-lg text-green-200 text-sm">
+              {success}
+            </div>
+          )}
+
           {error && (
             <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-sm">
               {error}

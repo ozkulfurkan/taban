@@ -1,7 +1,9 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { sendMail } from '@/lib/mail';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -21,6 +23,29 @@ export const authOptions: NextAuthOptions = {
           if (!user) return null;
           const isValid = await bcrypt.compare(credentials.password, user.password);
           if (!isValid) return null;
+          if (!user.emailVerified) {
+            const token = user.emailVerifyToken ?? crypto.randomBytes(32).toString('hex');
+            if (!user.emailVerifyToken) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { emailVerifyToken: token },
+              });
+            }
+            const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
+            const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
+            sendMail({
+              to: user.email,
+              subject: 'SoleCost - E-posta adresinizi doğrulayın',
+              html: `
+                <p>Merhaba ${user.name ?? user.email},</p>
+                <p>Hesabınıza giriş yapmak için e-posta adresinizi doğrulamanız gerekmektedir.</p>
+                <p><a href="${verifyUrl}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
+                <p>Butona tıklayamıyorsanız şu bağlantıyı kopyalayın: ${verifyUrl}</p>
+              `,
+              text: `E-postanızı doğrulamak için: ${verifyUrl}`,
+            }).catch(() => {});
+            throw new Error('EMAIL_NOT_VERIFIED');
+          }
           return {
             id: user.id,
             email: user.email,

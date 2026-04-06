@@ -58,9 +58,11 @@ model User {
   language         String           @default("tr")
   currency         String           @default("USD")
   allowedPages     String[]         @default([])
-  resetToken       String?          @unique
-  resetTokenExpiry DateTime?
-  companyId        String?
+  resetToken         String?          @unique
+  resetTokenExpiry   DateTime?
+  emailVerified      Boolean          @default(false)
+  emailVerifyToken   String?          @unique
+  companyId          String?
   company          Company?         @relation(fields: [companyId], references: [id])
   soleCalculations SoleCalculation[]
   createdAt        DateTime         @default(now())
