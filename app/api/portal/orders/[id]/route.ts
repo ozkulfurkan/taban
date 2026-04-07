@@ -1,0 +1,26 @@
+export const dynamic = 'force-dynamic';
+
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
+import { prisma } from '@/lib/prisma';
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  const user = session?.user as any;
+  if (!user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const order = await prisma.soleOrder.findFirst({
+    where: { id: params.id, companyId: user.companyId },
+    include: {
+      customer: { select: { id: true, name: true } },
+      portalCustomer: { select: { id: true, name: true, email: true } },
+      product: { select: { id: true, name: true, code: true } },
+      statusHistory: { orderBy: { createdAt: 'asc' } },
+      shipment: true,
+    },
+  });
+
+  if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json(order);
+}

@@ -13,5 +13,10 @@ export const config = {
     '/calculations/:path*',
     '/admin/:path*',
     '/settings/:path*',
+    '/portal/dashboard/:path*',
+    '/portal/orders/:path*',
+    '/portal/catalog/:path*',
+    '/portal-admin/:path*',
+    '/portal-admin',
   ],
 };

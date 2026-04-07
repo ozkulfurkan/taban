@@ -47,6 +47,7 @@ model Company {
   products           Product[]
   accounts           Account[]
   cekler             Cek[]
+  soleOrders         SoleOrder[]
 }
 
 model User {
@@ -139,6 +140,16 @@ model SoleCalculation {
   updatedAt           DateTime @updatedAt
 }
 
+enum OrderStatus {
+  ORDER_RECEIVED
+  IN_PRODUCTION
+  MOLDING
+  PAINTING
+  PACKAGING
+  READY_FOR_SHIPMENT
+  SHIPPED
+}
+
 enum InvoiceStatus {
   DRAFT
   PENDING
@@ -170,9 +181,11 @@ model Product {
   ciftPerKoli      Float              @default(0)
   koliFiyati       Float              @default(0)
   koliCurrency     String             @default("USD")
+  portalVisible    Boolean            @default(false)
   parts            ProductPart[]
   extraCosts       ProductExtraCost[]
   invoiceItems     InvoiceItem[]
+  soleOrders       SoleOrder[]
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 }
@@ -219,9 +232,11 @@ model Customer {
   notes      String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  invoices   Invoice[]
-  payments   Payment[]
-  cekler     Cek[]
+  invoices       Invoice[]
+  payments       Payment[]
+  cekler         Cek[]
+  portalCustomer PortalCustomer?
+  soleOrders     SoleOrder[]
 }
 
 model Supplier {
@@ -397,4 +412,68 @@ model Cek {
   durum       CekDurum  @default(PORTFOY)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+// ─── B2B Customer Portal ───────────────────────────────────────────────────
+
+model PortalCustomer {
+  id               String      @id @default(cuid())
+  customerId       String      @unique
+  customer         Customer    @relation(fields: [customerId], references: [id])
+  email            String      @unique
+  password         String
+  name             String?
+  emailVerified    Boolean     @default(false)
+  emailVerifyToken String?     @unique
+  isActive         Boolean     @default(true)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  orders           SoleOrder[]
+}
+
+model SoleOrder {
+  id                    String               @id @default(cuid())
+  companyId             String
+  company               Company              @relation(fields: [companyId], references: [id])
+  customerId            String
+  customer              Customer             @relation(fields: [customerId], references: [id])
+  portalCustomerId      String
+  portalCustomer        PortalCustomer       @relation(fields: [portalCustomerId], references: [id])
+  orderNo               String
+  productId             String?
+  product               Product?             @relation(fields: [productId], references: [id])
+  productCode           String?
+  color                 String?
+  material              String?
+  sizeDistribution      Json
+  totalQuantity         Int
+  requestedDeliveryDate DateTime?
+  notes                 String?
+  status                OrderStatus          @default(ORDER_RECEIVED)
+  statusHistory         OrderStatusHistory[]
+  shipment              OrderShipment?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     SoleOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+}
+
+model OrderShipment {
+  id             String    @id @default(cuid())
+  orderId        String    @unique
+  order          SoleOrder @relation(fields: [orderId], references: [id])
+  shipmentDate   DateTime
+  deliveryNoteNo String?
+  trackingNo     String?
+  carrier        String?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
