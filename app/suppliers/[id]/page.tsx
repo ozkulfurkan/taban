@@ -63,39 +63,42 @@ function OdemeModal({ supplier, onClose, onSaved }: {
     setForm(p => ({ ...p, paymentCurrency: accCurrency, exchangeRate: '', recordedAmount: '' }));
   }, [form.accountId, accounts]);
 
-  // When paymentCurrency changes and differs from record currency → prefill rate
+  // When paymentCurrency changes and differs from supplier.currency → prefill rate from settings
+  // Rate = 1 supplier.currency = X paymentCurrency (e.g. 1 USD = 44.5 TRY)
   useEffect(() => {
-    if (form.paymentCurrency === RECORD_CURRENCY) {
+    if (form.paymentCurrency === (supplier.currency || 'TRY')) {
       setForm(p => ({ ...p, exchangeRate: '', recordedAmount: '' }));
       return;
     }
     fetch('/api/company').then(r => r.json()).then(d => {
       let rate = '';
-      if (form.paymentCurrency === 'USD' && d.usdToTry) rate = String(d.usdToTry);
-      else if (form.paymentCurrency === 'EUR' && d.eurToTry) rate = String(d.eurToTry);
+      if (supplier.currency === 'USD' && d.usdToTry) rate = String(d.usdToTry);
+      else if (supplier.currency === 'EUR' && d.eurToTry) rate = String(d.eurToTry);
       if (rate) {
         const a = parseFloat(form.amount) || 0;
-        setForm(p => ({ ...p, exchangeRate: rate, recordedAmount: a > 0 ? String(a * parseFloat(rate)) : '' }));
+        const r = parseFloat(rate) || 0;
+        setForm(p => ({ ...p, exchangeRate: rate, recordedAmount: (a > 0 && r > 0) ? String(a / r) : '' }));
       }
     }).catch(() => {});
   }, [form.paymentCurrency]);
 
-  const isSameCurrency = form.paymentCurrency === RECORD_CURRENCY;
+  // recordedAmount = amount / rate (paymentCurrency / rate = supplier.currency amount)
+  const isSameCurrency = form.paymentCurrency === (supplier.currency || 'TRY');
   const amt = parseFloat(form.amount) || 0;
   const finalRecorded = isSameCurrency ? amt : (parseFloat(form.recordedAmount) || 0);
 
   const handleAmountChange = (v: string) => {
     const a = parseFloat(v) || 0;
     const r = parseFloat(form.exchangeRate) || 0;
-    setForm(p => ({ ...p, amount: v, recordedAmount: (!isSameCurrency && r > 0 && a > 0) ? String(a * r) : p.recordedAmount }));
+    setForm(p => ({ ...p, amount: v, recordedAmount: (!isSameCurrency && r > 0 && a > 0) ? String(a / r) : p.recordedAmount }));
   };
   const handleRateChange = (v: string) => {
     const r = parseFloat(v) || 0;
-    setForm(p => ({ ...p, exchangeRate: v, recordedAmount: (amt > 0 && r > 0) ? String(amt * r) : p.recordedAmount }));
+    setForm(p => ({ ...p, exchangeRate: v, recordedAmount: (amt > 0 && r > 0) ? String(amt / r) : p.recordedAmount }));
   };
   const handleRecordedChange = (v: string) => {
     const rec = parseFloat(v) || 0;
-    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(rec / amt) : p.exchangeRate }));
+    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(amt / rec) : p.exchangeRate }));
   };
 
   const handle = async (e: React.FormEvent) => {
@@ -106,7 +109,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
       const savedAmt = isSameCurrency ? amt : finalRecorded;
       let notes = form.notes || null;
       if (!isSameCurrency) {
-        const rateNote = `${amt} ${form.paymentCurrency} @ ${form.exchangeRate}`;
+        const rateNote = `${amt} ${form.paymentCurrency} | Kur: 1 ${supplier.currency} = ${form.exchangeRate} ${form.paymentCurrency}`;
         notes = notes ? `${notes} | ${rateNote}` : rateNote;
       }
       await fetch('/api/payments', {
@@ -116,7 +119,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
           supplierId: supplier.id,
           accountId: form.accountId,
           amount: savedAmt,
-          currency: RECORD_CURRENCY,
+          currency: supplier.currency || 'TRY',
           originalAmount: isSameCurrency ? null : amt,
           originalCurrency: isSameCurrency ? null : form.paymentCurrency,
           exchangeRate: isSameCurrency ? null : parseFloat(form.exchangeRate) || null,
@@ -165,7 +168,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-blue-700 mb-1">
-                    {t('modal', 'rate')} (1 {form.paymentCurrency}={RECORD_CURRENCY})
+                    {t('modal', 'rate')} (1 {supplier.currency || 'TRY'}={form.paymentCurrency})
                   </label>
                   <input type="number" step="0.0000000001" min="0.0000000001" value={form.exchangeRate}
                     onChange={e => handleRateChange(e.target.value)} placeholder="0.0000"
@@ -173,7 +176,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-blue-700 mb-1">
-                    {t('modal', 'recordedAmount')} ({RECORD_CURRENCY}) *
+                    {t('modal', 'recordedAmount')} ({supplier.currency || 'TRY'}) *
                   </label>
                   <input type="number" step="0.01" min="0.01" value={form.recordedAmount}
                     onChange={e => handleRecordedChange(e.target.value)} placeholder="0.00"

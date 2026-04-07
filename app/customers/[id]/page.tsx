@@ -56,7 +56,8 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
     setForm(p => ({ ...p, paymentCurrency: accCurrency, exchangeRate: '', recordedAmount: '' }));
   }, [form.accountId, accounts]);
 
-  // When paymentCurrency changes and differs from record currency → prefill rate
+  // When paymentCurrency changes and differs from record currency → prefill rate from settings
+  // Rate = 1 customer.currency = X paymentCurrency (e.g. 1 USD = 44.5 TRY)
   useEffect(() => {
     if (form.paymentCurrency === (customer.currency || 'TRY')) {
       setForm(p => ({ ...p, exchangeRate: '', recordedAmount: '' }));
@@ -64,11 +65,12 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
     }
     fetch('/api/company').then(r => r.json()).then(d => {
       let rate = '';
-      if (form.paymentCurrency === 'USD' && d.usdToTry) rate = String(d.usdToTry);
-      else if (form.paymentCurrency === 'EUR' && d.eurToTry) rate = String(d.eurToTry);
+      if (customer.currency === 'USD' && d.usdToTry) rate = String(d.usdToTry);
+      else if (customer.currency === 'EUR' && d.eurToTry) rate = String(d.eurToTry);
       if (rate) {
         const a = parseFloat(form.amount) || 0;
-        setForm(p => ({ ...p, exchangeRate: rate, recordedAmount: a > 0 ? String(a * parseFloat(rate)) : '' }));
+        const r = parseFloat(rate) || 0;
+        setForm(p => ({ ...p, exchangeRate: rate, recordedAmount: (a > 0 && r > 0) ? String(a / r) : '' }));
       }
     }).catch(() => {});
   }, [form.paymentCurrency]);
@@ -77,23 +79,24 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
   const amt = parseFloat(form.amount) || 0;
   const finalRecorded = isSameCurrency ? amt : (parseFloat(form.recordedAmount) || 0);
 
-  // Tutar changes → recompute Kaydedilecek Tutar
+  // Tutar (account currency, e.g. TRY) changes → recompute Kaydedilecek (customer currency, e.g. USD)
+  // recordedAmount = amount / rate
   const handleAmountChange = (v: string) => {
     const a = parseFloat(v) || 0;
     const r = parseFloat(form.exchangeRate) || 0;
-    setForm(p => ({ ...p, amount: v, recordedAmount: (!isSameCurrency && r > 0 && a > 0) ? String(a * r) : p.recordedAmount }));
+    setForm(p => ({ ...p, amount: v, recordedAmount: (!isSameCurrency && r > 0 && a > 0) ? String(a / r) : p.recordedAmount }));
   };
 
-  // Kur changes → recompute Kaydedilecek Tutar
+  // Kur (1 customer_currency = X account_currency) changes → recompute Kaydedilecek
   const handleRateChange = (v: string) => {
     const r = parseFloat(v) || 0;
-    setForm(p => ({ ...p, exchangeRate: v, recordedAmount: (amt > 0 && r > 0) ? String(amt * r) : p.recordedAmount }));
+    setForm(p => ({ ...p, exchangeRate: v, recordedAmount: (amt > 0 && r > 0) ? String(amt / r) : p.recordedAmount }));
   };
 
   // Kaydedilecek Tutar changes → recompute Kur
   const handleRecordedChange = (v: string) => {
     const rec = parseFloat(v) || 0;
-    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(rec / amt) : p.exchangeRate }));
+    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(amt / rec) : p.exchangeRate }));
   };
 
   const handle = async (e: React.FormEvent) => {
@@ -104,7 +107,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
       const savedAmt = isSameCurrency ? amt : finalRecorded;
       let notes = form.notes || null;
       if (!isSameCurrency) {
-        const rateNote = `${amt} ${form.paymentCurrency} @ ${form.exchangeRate}`;
+        const rateNote = `${amt} ${form.paymentCurrency} | Kur: 1 ${customer.currency} = ${form.exchangeRate} ${form.paymentCurrency}`;
         notes = notes ? `${notes} | ${rateNote}` : rateNote;
       }
       await fetch('/api/payments', {
@@ -162,7 +165,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-blue-700 mb-1">
-                    {t('modal', 'rate')} (1 {form.paymentCurrency}={customer.currency || 'TRY'})
+                    {t('modal', 'rate')} (1 {customer.currency || 'TRY'}={form.paymentCurrency})
                   </label>
                   <input type="number" step="0.0000000001" min="0.0000000001" value={form.exchangeRate}
                     onChange={e => handleRateChange(e.target.value)} placeholder="0.0000"
