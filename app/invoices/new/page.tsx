@@ -357,6 +357,8 @@ export default function NewInvoicePage() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   const lockedCustomerId = searchParams?.get('customerId') ?? '';
+  const prefillProductId = searchParams?.get('productId') ?? '';
+  const prefillQuantity  = searchParams?.get('quantity')  ?? '';
 
   const [form, setForm] = useState(() => {
     const now = new Date();
@@ -380,6 +382,21 @@ export default function NewInvoicePage() {
     fetch('/api/customers').then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : [])).catch(console.error);
     fetch('/api/products').then(r => r.json()).then(d => setProducts(Array.isArray(d) ? d : [])).catch(console.error);
   }, []);
+
+  // Pre-fill line item from URL params (e.g. coming from portal order "Satışa Çevir")
+  useEffect(() => {
+    if (!prefillProductId || products.length === 0 || items.length > 0) return;
+    const product = products.find((p: any) => p.id === prefillProductId);
+    if (!product) return;
+    setItems([{
+      productId: product.id,
+      description: product.name,
+      quantity: prefillQuantity || '1',
+      unitPrice: toPriceInput(product.unitPrice),
+      discount: '0',
+      notes: '',
+    }]);
+  }, [products]);
 
   const setField = (field: string, val: string) => setForm(p => ({ ...p, [field]: val }));
 
