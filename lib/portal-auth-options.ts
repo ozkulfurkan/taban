@@ -22,10 +22,12 @@ export const portalAuthOptions: NextAuthOptions = {
           include: { customer: { select: { id: true, companyId: true, name: true } } },
         });
 
-        if (!portalCustomer || !portalCustomer.isActive) return null;
+        if (!portalCustomer) throw new Error('INVALID_CREDENTIALS');
 
         const isValid = await bcrypt.compare(credentials.password, portalCustomer.password);
-        if (!isValid) return null;
+        if (!isValid) throw new Error('INVALID_CREDENTIALS');
+
+        if (!portalCustomer.isActive) throw new Error('ACCOUNT_INACTIVE');
 
         if (!portalCustomer.emailVerified) {
           // Resend verify email
