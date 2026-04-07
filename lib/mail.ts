@@ -1,10 +1,11 @@
 import nodemailer from 'nodemailer';
 
 interface SendMailOptions {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
   text?: string;
+  cc?: string | string[];
 }
 
 const transporter = nodemailer.createTransport({
@@ -17,12 +18,13 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export async function sendMail({ to, subject, html, text }: SendMailOptions) {
+export async function sendMail({ to, subject, html, text, cc }: SendMailOptions) {
   const from = process.env.SMTP_FROM ?? `SoleCost <${process.env.SMTP_USER}>`;
 
   const info = await transporter.sendMail({
     from,
     to,
+    ...(cc ? { cc } : {}),
     subject,
     text: text ?? html.replace(/<[^>]+>/g, '').slice(0, 1000),
     html,
