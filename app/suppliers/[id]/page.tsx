@@ -14,6 +14,12 @@ import { formatDate, toDateInputValue } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
+function nowIstanbulISO(): string {
+  const now = new Date();
+  const istanbul = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  return istanbul.toISOString().slice(0, 16);
+}
+
 const STATUS_COLOR: Record<string, string> = {
   DRAFT: 'bg-slate-100 text-slate-600',
   PENDING: 'bg-orange-100 text-orange-700',
@@ -32,7 +38,6 @@ function OdemeModal({ supplier, onClose, onSaved }: {
 }) {
   const { t } = useLanguage();
   const [form, setForm] = useState({
-    date: toDateInputValue(),
     accountId: '',
     paymentCurrency: 'TRY',
     amount: '',
@@ -105,7 +110,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
           originalAmount: isSameCurrency ? null : amt,
           originalCurrency: isSameCurrency ? null : form.paymentCurrency,
           exchangeRate: isSameCurrency ? null : parseFloat(form.exchangeRate) || null,
-          date: form.date,
+          date: nowIstanbulISO(),
           method: form.method,
           notes,
         }),
@@ -128,11 +133,6 @@ function OdemeModal({ supplier, onClose, onSaved }: {
         <form onSubmit={handle} className="p-5 space-y-3">
           <div className="bg-teal-50 border border-teal-200 rounded-lg px-3 py-2 text-sm text-teal-800 font-medium truncate">
             {supplier.name}
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'date')}</label>
-            <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'account')}</label>
@@ -214,7 +214,7 @@ function IadeModal({ supplier, onClose, onSaved }: {
 }) {
   const { t } = useLanguage();
   const [form, setForm] = useState({
-    amount: '', date: toDateInputValue(), method: 'Nakit', notes: 'İade',
+    amount: '', method: 'Nakit', notes: 'İade',
   });
   const [saving, setSaving] = useState(false);
 
@@ -230,7 +230,7 @@ function IadeModal({ supplier, onClose, onSaved }: {
           supplierId: supplier.id,
           amount: form.amount,
           currency: 'TRY',
-          date: form.date,
+          date: nowIstanbulISO(),
           method: form.method,
           notes: form.notes,
         }),
@@ -254,11 +254,6 @@ function IadeModal({ supplier, onClose, onSaved }: {
             <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')}</label>
             <input required type="number" step="0.01" min="0.01" value={form.amount}
               onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'date')}</label>
-            <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
           </div>
           <div>
@@ -291,7 +286,6 @@ function IadeModal({ supplier, onClose, onSaved }: {
 function BorcAlacakFisModal({ supplier, onClose, onSaved }: { supplier: any; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({
     tip: 'Alacak Fişi',
-    date: toDateInputValue(),
     dueDate: toDateInputValue(),
     amount: '',
     notes: '',
@@ -312,7 +306,7 @@ function BorcAlacakFisModal({ supplier, onClose, onSaved }: { supplier: any; onC
           supplierId: supplier.id,
           amount: parseFloat(form.amount),
           currency: 'TRY',
-          date: form.date,
+          date: nowIstanbulISO(),
           method: form.tip,
           notes: notesArr.join(' | ') || null,
         }),
@@ -345,11 +339,6 @@ function BorcAlacakFisModal({ supplier, onClose, onSaved }: { supplier: any; onC
             <p className="text-xs mt-1 text-slate-400">
               {form.tip === 'Borç Fişi' ? 'tedarikçiye borcunuz artacak' : 'tedarikçiye borcunuz azalacak'}
             </p>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">İşlem Tarihi</label>
-            <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Vade Tarihi</label>
@@ -406,7 +395,7 @@ function BakiyeDuzeltModal({ supplier, currentBalance, onClose, onSaved }: {
           supplierId: supplier.id,
           amount: Math.abs(delta),
           currency: 'TRY',
-          date: toDateInputValue(),
+          date: nowIstanbulISO(),
           method: 'Bakiye Düzeltme',
           notes: direction + (notes ? ' | ' + notes : ''),
         }),
