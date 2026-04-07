@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Settings, Save, Loader2, Globe, DollarSign, User, Building2, CreditCard, Plus, Trash2, Image } from 'lucide-react';
+import { Settings, Save, Loader2, Globe, DollarSign, User, Building2, CreditCard, Plus, Trash2, Image, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface BankEntry {
@@ -34,6 +34,7 @@ export default function SettingsPage() {
   const [companyPhone, setCompanyPhone] = useState('');
   const [usdToTry, setUsdToTry] = useState('1');
   const [eurToTry, setEurToTry] = useState('1');
+  const [tcmbLoading, setTcmbLoading] = useState(false);
   const [vatRate, setVatRate] = useState('20');
   const [logoUrl, setLogoUrl] = useState('');
   const [banks, setBanks] = useState<BankEntry[]>([]);
@@ -247,9 +248,29 @@ export default function SettingsPage() {
 
             {/* Exchange Rates */}
             <div className="pt-2">
-              <div className="flex items-center gap-2 mb-3">
-                <DollarSign className="w-4 h-4 text-blue-600" />
-                <h3 className="font-medium text-slate-700">{t('settings', 'exchangeRates')}</h3>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-blue-600" />
+                  <h3 className="font-medium text-slate-700">{t('settings', 'exchangeRates')}</h3>
+                </div>
+                {canEditCompany && (
+                  <button
+                    type="button"
+                    disabled={tcmbLoading}
+                    onClick={async () => {
+                      setTcmbLoading(true);
+                      try {
+                        const d = await fetch('/api/exchange-rates').then(r => r.json());
+                        if (d.usd) setUsdToTry(String(d.usd));
+                        if (d.eur) setEurToTry(String(d.eur));
+                      } finally { setTcmbLoading(false); }
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-60"
+                  >
+                    {tcmbLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                    TCMB'den Al
+                  </button>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

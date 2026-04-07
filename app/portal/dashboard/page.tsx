@@ -23,6 +23,7 @@ export default function PortalDashboardPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rates, setRates] = useState<{ usd: number | null; eur: number | null; date: string | null }>({ usd: null, eur: null, date: null });
 
   useEffect(() => {
     if (status === 'unauthenticated') { router.replace('/portal/login'); return; }
@@ -30,6 +31,10 @@ export default function PortalDashboardPage() {
     fetch('/api/portal/me/orders')
       .then(r => r.json()).then(d => setOrders(Array.isArray(d) ? d : []))
       .finally(() => setLoading(false));
+    fetch('/api/exchange-rates')
+      .then(r => r.json())
+      .then(d => { if (!d.error) setRates(d); })
+      .catch(() => {});
   }, [status, router]);
 
   const user = session?.user as any;
@@ -51,6 +56,23 @@ export default function PortalDashboardPage() {
             <Plus className="w-4 h-4" /> Yeni Sipariş
           </Link>
         </div>
+
+        {/* Exchange rates */}
+        {(rates.usd || rates.eur) && (
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs text-slate-400 font-medium">TCMB{rates.date ? ` · ${new Date(rates.date).toLocaleDateString('tr-TR')}` : ''}:</span>
+            {rates.usd && (
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-lg shadow-sm border border-slate-100 text-sm font-semibold text-slate-700">
+                <span className="text-green-500 text-xs font-bold">$</span> 1 USD = {rates.usd.toLocaleString('tr-TR', { minimumFractionDigits: 4 })} TL
+              </span>
+            )}
+            {rates.eur && (
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-lg shadow-sm border border-slate-100 text-sm font-semibold text-slate-700">
+                <span className="text-blue-500 text-xs font-bold">€</span> 1 EUR = {rates.eur.toLocaleString('tr-TR', { minimumFractionDigits: 4 })} TL
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
