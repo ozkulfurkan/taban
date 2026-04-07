@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
@@ -11,6 +12,8 @@ const CURRENCIES = ['USD', 'EUR', 'TRY'];
 
 export default function NewProductPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromMaliyet = searchParams?.get('from') === 'maliyet';
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: '', code: '', description: '', unit: 'çift',
@@ -30,7 +33,7 @@ export default function NewProductPage() {
         body: JSON.stringify({ ...form, unitPrice: fromPriceInput(form.unitPrice) }),
       });
       const data = await res.json();
-      if (data.id) router.push('/products');
+      if (data.id) router.push('/products/' + data.id);
     } catch (e) { console.error(e); }
     finally { setSaving(false); }
   };
@@ -44,6 +47,12 @@ export default function NewProductPage() {
           </button>
           <h1 className="text-2xl font-bold text-slate-800">Yeni Ürün</h1>
         </div>
+
+        {fromMaliyet && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+            💡 Maliyet hesaplamak için önce ürün bilgilerini kayıt edin.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
-  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText, UserCog
+  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText, UserCog, Calculator
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -81,6 +81,12 @@ export default function Sidebar() {
       ],
     },
     {
+      title: 'Araçlar',
+      links: [
+        { href: '/products/new?from=maliyet', label: 'Maliyet Hesaplama', icon: Calculator },
+      ],
+    },
+    {
       title: t('nav', 'system'),
       links: [
         { href: '/settings', label: t('nav', 'settings'), icon: Settings },
@@ -93,6 +99,7 @@ export default function Sidebar() {
   const isActive = (href: string) => {
     if (href === '/calculations/new') return pathname === href;
     if (href === '/quotes/new') return pathname === href || pathname?.startsWith('/quotes');
+    if (href === '/products/new?from=maliyet') return pathname === '/products/new';
     return pathname === href || pathname?.startsWith(href + '/');
   };
 

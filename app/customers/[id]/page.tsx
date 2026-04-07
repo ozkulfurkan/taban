@@ -1036,7 +1036,7 @@ export default function CustomerDetailPage() {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
               <h2 className="font-semibold text-white text-sm uppercase tracking-wide">{t('customerDetail', 'previousSales')}</h2>
-              <Link href="/invoices" className="text-slate-300 hover:text-white text-xs transition-colors">Tümünü gör →</Link>
+              <Link href={`/invoices?customerId=${customer.id}`} className="text-slate-300 hover:text-white text-xs transition-colors">Tümünü gör →</Link>
             </div>
             {!customer.invoices?.length ? (
               <div className="py-8 text-center text-slate-400 text-sm">{t('customerDetail', 'noSales')}</div>

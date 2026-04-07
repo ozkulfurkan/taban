@@ -6,9 +6,12 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { FileText, Plus, Trash2, Search, Loader2, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 
 export default function InvoicesPage() {
   const { t } = useLanguage();
+  const searchParams = useSearchParams();
+  const customerIdParam = searchParams?.get('customerId') ?? null;
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -42,10 +45,13 @@ export default function InvoicesPage() {
     setInvoices(prev => prev.filter(inv => inv.id !== id));
   };
 
-  const filtered = invoices.filter(inv =>
-    inv.invoiceNo?.toLowerCase().includes(search.toLowerCase()) ||
-    inv.customer?.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = invoices.filter(inv => {
+    if (customerIdParam && inv.customerId !== customerIdParam) return false;
+    return (
+      inv.invoiceNo?.toLowerCase().includes(search.toLowerCase()) ||
+      inv.customer?.name?.toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   const totalPending = invoices
     .filter(inv => inv.status === 'PENDING' || inv.status === 'PARTIAL')
@@ -94,6 +100,17 @@ export default function InvoicesPage() {
             </button>
           ))}
         </div>
+
+        {customerIdParam && (
+          <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5">
+            <span className="text-sm text-blue-800 font-medium">
+              Müşteri: {invoices.find(inv => inv.customerId === customerIdParam)?.customer?.name ?? customerIdParam}
+            </span>
+            <Link href="/invoices" className="ml-auto flex items-center gap-1 px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium transition-colors">
+              ✕ Tüm satışlar
+            </Link>
+          </div>
+        )}
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />

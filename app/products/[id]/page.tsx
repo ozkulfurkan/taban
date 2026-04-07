@@ -227,6 +227,12 @@ export default function ProductDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Geri Dön
         </button>
 
+        {!showCost && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+            Ürün bilgilerini girdikten sonra Maliyet Hesapla butonuna tıklayın.
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
           <button onClick={() => {
@@ -237,7 +243,7 @@ export default function ProductDetailPage() {
               setPriceWarning({ totalCost: costs.totalCost, currency: costs.toCurrency });
             }
           }}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md">
             <Calculator className="w-4 h-4" /> Maliyet Hesapla
           </button>
           {!editing ? (
