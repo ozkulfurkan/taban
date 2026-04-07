@@ -47,6 +47,16 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
     fetch('/api/accounts').then(r => r.json()).then(d => setAccounts(Array.isArray(d) ? d : []));
   }, []);
 
+  // When account changes → update paymentCurrency to match account currency
+  useEffect(() => {
+    if (!form.accountId) return;
+    const acc = accounts.find(a => a.id === form.accountId);
+    if (!acc) return;
+    const accCurrency = acc.currency || 'TRY';
+    setForm(p => ({ ...p, paymentCurrency: accCurrency, exchangeRate: '', recordedAmount: '' }));
+  }, [form.accountId, accounts]);
+
+  // When paymentCurrency changes and differs from record currency → prefill rate
   useEffect(() => {
     if (form.paymentCurrency === (customer.currency || 'TRY')) {
       setForm(p => ({ ...p, exchangeRate: '', recordedAmount: '' }));
@@ -142,19 +152,10 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'paymentCurrency')}</label>
-              <select value={form.paymentCurrency} onChange={e => set('paymentCurrency', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
-                {CURRENCIES.map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')}</label>
-              <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => handleAmountChange(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-right" />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')} {form.paymentCurrency ? `(${form.paymentCurrency})` : ''}</label>
+            <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => handleAmountChange(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-right" />
           </div>
           {!isSameCurrency && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
