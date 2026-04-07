@@ -72,7 +72,9 @@ export default function PortalOrderDetailPage() {
               ['Renk', order.color || '—'],
               ['Malzeme', order.material || '—'],
               ['Toplam Adet', order.totalQuantity],
-              ['İstenen Termin', order.requestedDeliveryDate ? new Date(order.requestedDeliveryDate).toLocaleDateString('tr-TR') : '—'],
+              ['Termin Tarihi', order.confirmedDeliveryDate
+                ? new Date(order.confirmedDeliveryDate).toLocaleDateString('tr-TR')
+                : '—'],
             ].map(([k, v]) => (
               <div key={String(k)}>
                 <dt className="text-xs text-slate-400 mb-0.5">{k}</dt>

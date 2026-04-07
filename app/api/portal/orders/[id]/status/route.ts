@@ -21,7 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const user = session?.user as any;
   if (!user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { status, note } = await req.json();
+  const { status, note, confirmedDeliveryDate } = await req.json();
   if (!status) return NextResponse.json({ error: 'status required' }, { status: 400 });
 
   const order = await prisma.soleOrder.findFirst({
@@ -31,12 +31,23 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   await prisma.$transaction([
-    prisma.soleOrder.update({ where: { id: params.id }, data: { status } }),
+    prisma.soleOrder.update({
+      where: { id: params.id },
+      data: {
+        status,
+        ...(confirmedDeliveryDate !== undefined
+          ? { confirmedDeliveryDate: confirmedDeliveryDate ? new Date(confirmedDeliveryDate) : null }
+          : {}),
+      },
+    }),
     prisma.orderStatusHistory.create({ data: { orderId: params.id, status, note: note || null } }),
   ]);
 
   // Notify portal customer
   const label = STATUS_LABELS[status] ?? status;
+  const terminStr = confirmedDeliveryDate
+    ? new Date(confirmedDeliveryDate).toLocaleDateString('tr-TR')
+    : (order.confirmedDeliveryDate ? new Date(order.confirmedDeliveryDate).toLocaleDateString('tr-TR') : null);
   sendMail({
     to: order.portalCustomer.email,
     subject: `Siparişiniz güncellendi: ${label}`,
@@ -44,6 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       <p>Merhaba ${order.portalCustomer.name ?? order.portalCustomer.email},</p>
       <p><strong>${order.orderNo}</strong> numaralı siparişiniz <strong>${label}</strong> aşamasına geçti.</p>
       ${note ? `<p>Not: ${note}</p>` : ''}
+      ${terminStr ? `<p>Termin Tarihi: <strong>${terminStr}</strong></p>` : ''}
     `,
     text: `Sipariş ${order.orderNo} güncellendi: ${label}`,
   }).catch(() => {});
