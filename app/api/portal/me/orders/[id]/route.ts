@@ -2,13 +2,13 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { portalAuthOptions } from '@/lib/portal-auth-options';
+import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(portalAuthOptions);
+  const session = await getServerSession(authOptions);
   const user = session?.user as any;
-  if (!user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user?.id || user?.type !== 'portal') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const order = await prisma.soleOrder.findFirst({
     where: { id: params.id, portalCustomerId: user.id },

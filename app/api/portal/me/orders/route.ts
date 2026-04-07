@@ -2,13 +2,15 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { portalAuthOptions } from '@/lib/portal-auth-options';
+import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
 
 async function getPortalSession() {
-  const session = await getServerSession(portalAuthOptions);
-  return session?.user as any;
+  const session = await getServerSession(authOptions);
+  const user = session?.user as any;
+  if (user?.type !== 'portal') return null;
+  return user;
 }
 
 export async function GET() {
