@@ -186,6 +186,7 @@ model Product {
   extraCosts       ProductExtraCost[]
   invoiceItems     InvoiceItem[]
   soleOrders       SoleOrder[]
+  portalCustomers  ProductPortalCustomer[]
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 }
@@ -429,6 +430,17 @@ model PortalCustomer {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   orders           SoleOrder[]
+  productVisibility ProductPortalCustomer[]
+}
+
+model ProductPortalCustomer {
+  id               String         @id @default(cuid())
+  productId        String
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  portalCustomerId String
+  portalCustomer   PortalCustomer @relation(fields: [portalCustomerId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, portalCustomerId])
 }
 
 model SoleOrder {

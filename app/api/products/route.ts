@@ -25,6 +25,7 @@ export async function GET() {
         },
         orderBy: { sortOrder: 'asc' },
       },
+      _count: { select: { portalCustomers: true } },
     },
     orderBy: { name: 'asc' },
   });

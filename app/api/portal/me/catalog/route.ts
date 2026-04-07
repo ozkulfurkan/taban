@@ -11,7 +11,14 @@ export async function GET() {
   if (!user?.companyId || user?.type !== 'portal') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const products = await prisma.product.findMany({
-    where: { companyId: user.companyId, portalVisible: true },
+    where: {
+      companyId: user.companyId,
+      portalVisible: true,
+      OR: [
+        { portalCustomers: { none: {} } },
+        { portalCustomers: { some: { portalCustomerId: user.id } } },
+      ],
+    },
     select: { id: true, code: true, name: true, description: true, sizes: true },
     orderBy: { name: 'asc' },
   });
