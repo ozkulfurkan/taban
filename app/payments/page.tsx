@@ -38,7 +38,7 @@ export default function PaymentsPage() {
             </div>
             <div>
               <p className="text-xs text-slate-500">{t('payments', 'totalReceived')}</p>
-              <p className="text-lg font-bold text-green-600">{totalReceived.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-lg font-bold text-green-600">{totalReceived.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3">
@@ -47,7 +47,7 @@ export default function PaymentsPage() {
             </div>
             <div>
               <p className="text-xs text-slate-500">{t('payments', 'totalPaid')}</p>
-              <p className="text-lg font-bold text-red-500">{totalPaid.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-lg font-bold text-red-500">{totalPaid.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
           </div>
         </div>
@@ -98,7 +98,7 @@ export default function PaymentsPage() {
                     <td className="px-4 py-3 text-slate-500">{p.method}</td>
                     <td className="px-4 py-3 text-right font-semibold">
                       <span className={p.type === 'RECEIVED' ? 'text-green-600' : 'text-red-500'}>
-                        {p.type === 'RECEIVED' ? '+' : '-'}{p.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        {p.type === 'RECEIVED' ? '+' : '-'}{p.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
                       </span>
                     </td>

@@ -94,14 +94,14 @@ export default function CustomersPage() {
                   {/* Balance */}
                   <div className="text-right pr-4 py-2">
                     <span className={`text-sm font-semibold ${c.balance > 0 ? 'text-orange-600' : 'text-slate-500'}`}>
-                      {(c.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                      {(c.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
 
                   {/* Total invoiced */}
                   <div className="text-right pr-4 py-2">
                     <span className="text-sm text-slate-500">
-                      {(c.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                      {(c.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 </Link>

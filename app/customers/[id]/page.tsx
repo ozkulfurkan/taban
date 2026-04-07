@@ -407,7 +407,7 @@ function BakiyeDuzeltModal({ customer, currentBalance, onClose, onSaved }: {
         <form onSubmit={handle} className="p-5 space-y-4">
           <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600">
             Mevcut Bakiye: <span className="font-semibold text-slate-800">
-              {currentBalance.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {customer.currency || 'TRY'}
+              {currentBalance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {customer.currency || 'TRY'}
             </span>
           </div>
           <div>
@@ -419,7 +419,7 @@ function BakiyeDuzeltModal({ customer, currentBalance, onClose, onSaved }: {
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
             {delta !== null && delta !== 0 && (
               <p className={`text-xs mt-1 ${delta > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                {delta > 0 ? `+${delta.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} borç eklenir` : `${Math.abs(delta).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} borç silinir`}
+                {delta > 0 ? `+${delta.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} borç eklenir` : `${Math.abs(delta).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} borç silinir`}
               </p>
             )}
           </div>
@@ -453,7 +453,7 @@ const BANKS = [
 ];
 
 const fmtDate = formatDate;
-const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function calcAvgVade(checks: any[]) {
   const total = checks.reduce((s, c) => s + Number(c.tutar), 0);
@@ -914,22 +914,22 @@ export default function CustomerDetailPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="rounded-xl p-4 text-white bg-orange-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'balance')}</p>
-                <p className="text-xl font-bold">{(customer.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xl font-bold">{(customer.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p className="text-xs opacity-70 mt-0.5">{customer.currency || 'TRY'}</p>
               </div>
               <div className="rounded-xl p-4 text-white bg-blue-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'totalInvoiced')}</p>
-                <p className="text-xl font-bold">{(customer.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xl font-bold">{(customer.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p className="text-xs opacity-70 mt-0.5">{(customer.invoices || []).length} fatura</p>
               </div>
               <div className="rounded-xl p-4 text-white bg-teal-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'totalPaid')}</p>
-                <p className="text-xl font-bold">{(customer.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xl font-bold">{(customer.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p className="text-xs opacity-70 mt-0.5">{(customer.payments || []).length} ödeme</p>
               </div>
               <div className="rounded-xl p-4 text-white bg-cyan-600 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">Çek Bakiyesi</p>
-                <p className="text-xl font-bold">{cekBakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-xl font-bold">{cekBakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p className="text-xs opacity-70 mt-0.5">{cekler.filter(c => c.durum === 'PORTFOY' || c.durum === 'BANKAYA_VERILDI').length} çek</p>
               </div>
             </div>
@@ -956,7 +956,7 @@ export default function CustomerDetailPage() {
               </div>
               <p className="text-lg font-bold text-slate-800">Ödeme Tamamlandı</p>
               <p className="text-slate-600 text-sm">
-                <span className="font-semibold">{successAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {customer.currency || 'TRY'}</span> tahsil edildi
+                <span className="font-semibold">{successAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {customer.currency || 'TRY'}</span> tahsil edildi
               </p>
 
               <button onClick={() => setSuccessAmount(null)} className="mt-1 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
@@ -1065,7 +1065,7 @@ export default function CustomerDetailPage() {
                       </td>
                       <td className="px-4 py-2.5 font-medium text-blue-600">{inv.invoiceNo}</td>
                       <td className="px-4 py-2.5 text-right font-semibold text-slate-800">
-                        {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
                       </td>
                       <td className="pr-3 text-slate-300">
@@ -1142,7 +1142,7 @@ export default function CustomerDetailPage() {
                             <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
                             <td className="px-4 py-2.5">{getPaymentTipBadge(row)}</td>
                             <td className="px-4 py-2.5 text-right font-semibold text-emerald-600">
-                              {row.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                              {row.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
                             </td>
                             <td className="px-2 py-2.5 text-center">
@@ -1159,7 +1159,7 @@ export default function CustomerDetailPage() {
                               <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-cyan-100 text-cyan-700">Çek</span>
                             </td>
                             <td className="px-4 py-2.5 text-right font-semibold text-cyan-700">
-                              {row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                              {row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
                             </td>
                             <td className="px-2 py-2.5"></td>
@@ -1208,7 +1208,7 @@ export default function CustomerDetailPage() {
                     </td>
                     <td className="px-4 py-2.5 font-medium text-red-700">{inv.invoiceNo}</td>
                     <td className="px-4 py-2.5 text-right font-semibold text-red-600">
-                      {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                      {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
                     </td>
                     <td className="pr-3 text-slate-300">

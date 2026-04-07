@@ -6,7 +6,7 @@ import { formatDate } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Loader2, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
-const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
 
 const DURUM_COLOR: Record<string, string> = {

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
 
 const ASSET_KEYS = ['kasa', 'pos', 'cek', 'senet', 'stok', 'acikHesap', 'calisanlar'];

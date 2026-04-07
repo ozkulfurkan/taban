@@ -180,7 +180,7 @@ export default function ProductsPage() {
                       <td className="px-4 py-3 text-slate-500">{p.code || '—'}</td>
                       <td className="px-4 py-3 text-slate-500">{p.unit}</td>
                       <td className="px-4 py-3 text-right font-semibold text-blue-600">
-                        {p.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        {p.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
                       </td>
                       <td className="px-4 py-3 text-right">

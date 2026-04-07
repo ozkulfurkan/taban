@@ -128,17 +128,17 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
           <div className="bg-red-50 border border-red-200 rounded-xl p-4">
             <div className="flex justify-between items-center mb-1">
               <span className="text-xs text-slate-500">{t('newInvoice', 'gross')}</span>
-              <span className="text-sm text-slate-600">{gross.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {currency}</span>
+              <span className="text-sm text-slate-600">{gross.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
             </div>
             {disc > 0 && (
               <div className="flex justify-between items-center mb-1">
                 <span className="text-xs text-slate-500">{t('newInvoice', 'discountPct')}{disc})</span>
-                <span className="text-sm text-red-500">-{discAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {currency}</span>
+                <span className="text-sm text-red-500">-{discAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
               </div>
             )}
             <div className="flex justify-between items-center border-t border-red-200 pt-2 mt-1">
               <span className="text-sm font-bold text-slate-700">{t('newInvoice', 'total')}</span>
-              <span className="text-lg font-bold text-red-700">-{total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {currency}</span>
+              <span className="text-lg font-bold text-red-700">-{total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
             </div>
           </div>
           <div>
@@ -449,13 +449,13 @@ export default function ReturnInvoicePage() {
                           </td>
                           <td className="py-2 px-2 text-right text-slate-600">{item.quantity}</td>
                           <td className="py-2 px-2 text-right text-slate-600">
-                            {(parseFloat(item.unitPrice) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            {(parseFloat(item.unitPrice) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           <td className="py-2 px-2 text-right text-slate-500">
                             {parseFloat(item.discount) > 0 ? `%${item.discount}` : '—'}
                           </td>
                           <td className="py-2 text-right font-semibold text-red-700">
-                            -{lineTotal(item).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            -{lineTotal(item).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           <td className="py-2 pl-2">
                             <div className="flex items-center gap-1 justify-end">
@@ -485,17 +485,17 @@ export default function ReturnInvoicePage() {
                   </div>
                   <div className="flex justify-between text-sm text-slate-600">
                     <span>{t('newInvoice', 'subtotal')}</span>
-                    <span>{subtotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
+                    <span>{subtotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.currency}</span>
                   </div>
                   {vatRate > 0 && (
                     <div className="flex justify-between text-sm text-slate-600">
                       <span>{t('newInvoice', 'vatAmount')} (%{vatRate})</span>
-                      <span>{vatAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
+                      <span>{vatAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.currency}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-base font-bold text-red-700 border-t pt-2">
                     <span>{t('newInvoice', 'grandTotal')}</span>
-                    <span>-{total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}</span>
+                    <span>-{total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.currency}</span>
                   </div>
                 </div>
               )}

@@ -141,7 +141,7 @@ function AccountCard({ account, onEdit, onDelete, t }: { account: Account; onEdi
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const formatted = account.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+  const formatted = account.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
     <div ref={ref} className="relative bg-white rounded-xl shadow-sm border-l-4 p-4 cursor-pointer hover:shadow-md transition-shadow"
@@ -179,7 +179,7 @@ function groupTotals(accounts: Account[], type: string) {
   const byCurrency: Record<string, number> = {};
   filtered.forEach(a => { byCurrency[a.currency] = (byCurrency[a.currency] || 0) + a.balance; });
   return Object.entries(byCurrency).map(([cur, bal]) =>
-    `${cur} ${bal.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`
+    `${cur} ${bal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   ).join(' · ');
 }
 

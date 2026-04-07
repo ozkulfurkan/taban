@@ -712,7 +712,7 @@ function QuoteForm() {
                             )}
                           </div>
                           <div className="text-right ml-4">
-                            <p className="font-semibold text-blue-600 text-sm">{prod.unitPrice?.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+                            <p className="font-semibold text-blue-600 text-sm">{prod.unitPrice?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                             <p className="text-xs text-slate-400">{prod.currency}</p>
                           </div>
                         </button>

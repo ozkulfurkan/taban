@@ -9,7 +9,7 @@ import {
   ArrowLeftRight, ChevronDown, Trash2, X, Save, FileText,
 } from 'lucide-react';
 
-const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
 
 const ISLEM_LABEL: Record<string, string> = {
@@ -198,7 +198,7 @@ function TransferModal({
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Gönderilecek Hesap</label>
             <div className="w-full px-3 py-2 border border-slate-100 rounded-lg text-sm bg-slate-50 text-slate-700 font-medium">
-              {targetAccount ? `${targetAccount.name} (${targetAccount.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${targetAccount.currency})` : '—'}
+              {targetAccount ? `${targetAccount.name} (${targetAccount.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${targetAccount.currency})` : '—'}
             </div>
           </div>
           <div>

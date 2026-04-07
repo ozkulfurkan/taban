@@ -88,7 +88,7 @@ export default function SuppliersPage() {
                   {/* Balance */}
                   <div className="text-right pr-4 py-2">
                     <span className={`text-sm font-semibold ${s.balance > 0 ? 'text-orange-600' : 'text-slate-500'}`}>
-                      {(s.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL
+                      {(s.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TL
                     </span>
                   </div>
                 </Link>

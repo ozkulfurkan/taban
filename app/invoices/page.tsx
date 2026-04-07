@@ -81,7 +81,7 @@ export default function InvoicesPage() {
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" />
             <p className="text-sm text-yellow-800">
-              {t('common', 'total')} <span className="font-semibold">{totalPending.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</span> {t('invoices', 'pendingAlert')}
+              {t('common', 'total')} <span className="font-semibold">{totalPending.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span> {t('invoices', 'pendingAlert')}
             </p>
           </div>
         )}
@@ -162,12 +162,12 @@ export default function InvoicesPage() {
                         <div className="text-xs text-slate-400">{new Date(inv.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-slate-800">
-                        {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className={remaining > 0 ? 'font-medium text-red-500' : 'text-green-600'}>
-                          {remaining.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                          {remaining.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">

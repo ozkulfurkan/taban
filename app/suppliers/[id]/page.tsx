@@ -421,7 +421,7 @@ function BakiyeDuzeltModal({ supplier, currentBalance, onClose, onSaved }: {
         <form onSubmit={handle} className="p-5 space-y-4">
           <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600">
             Mevcut Bakiye: <span className="font-semibold text-slate-800">
-              {currentBalance.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TRY
+              {currentBalance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TRY
             </span>
           </div>
           <div>
@@ -431,7 +431,7 @@ function BakiyeDuzeltModal({ supplier, currentBalance, onClose, onSaved }: {
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
             {delta !== null && delta !== 0 && (
               <p className={`text-xs mt-1 ${delta > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                {delta > 0 ? `+${delta.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} borç eklenir` : `${Math.abs(delta).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} borç silinir`}
+                {delta > 0 ? `+${delta.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} borç eklenir` : `${Math.abs(delta).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} borç silinir`}
               </p>
             )}
           </div>
@@ -802,7 +802,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
                         <div>
                           <label className="text-slate-400 mb-0.5 block">{t('supplierDetail', 'amount')}</label>
                           <div className="px-2 py-1 bg-slate-50 rounded text-right font-semibold text-slate-700">
-                            {rowTotal > 0 ? rowTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : '—'}
+                            {rowTotal > 0 ? rowTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
                           </div>
                         </div>
                       </div>
@@ -852,7 +852,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
             <div className="bg-slate-50 rounded-lg px-4 py-3 flex items-center justify-between">
               <span className="text-sm font-medium text-slate-600">Genel Toplam</span>
               <span className="text-lg font-bold text-slate-800">
-                {total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} {form.currency}
+                {total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.currency}
               </span>
             </div>
 
@@ -882,7 +882,7 @@ const BANKS = [
   'Halkbank', 'VakıfBank', 'DenizBank', 'QNB Finansbank', 'Fibabanka',
   'TEB', 'HSBC', 'ING', 'Şekerbank', 'Kuveyt Türk', 'Albaraka Türk', 'Diğer',
 ];
-const fmtC = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+const fmtC = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function calcAvgVadeC(checks: any[]) {
   const total = checks.reduce((s, c) => s + Number(c.tutar), 0);
@@ -1439,9 +1439,9 @@ export default function SupplierDetailPage() {
       doc.text(new Date(tx.date).toLocaleDateString('tr-TR'), M + 1, y);
       const label = tr(tx.label).substring(0, 40);
       doc.text(label, M + 25, y);
-      if (tx.debit > 0) doc.text(tx.debit.toLocaleString('tr-TR', { minimumFractionDigits: 2 }), W - M - 50, y, { align: 'right' });
-      if (tx.credit > 0) doc.text(tx.credit.toLocaleString('tr-TR', { minimumFractionDigits: 2 }), W - M - 20, y, { align: 'right' });
-      doc.text(balance.toLocaleString('tr-TR', { minimumFractionDigits: 2 }), W - M, y, { align: 'right' });
+      if (tx.debit > 0) doc.text(tx.debit.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), W - M - 50, y, { align: 'right' });
+      if (tx.credit > 0) doc.text(tx.credit.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), W - M - 20, y, { align: 'right' });
+      doc.text(balance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), W - M, y, { align: 'right' });
       y += 6;
       doc.setDrawColor(230, 230, 230); doc.line(M, y - 1, W - M, y - 1);
       if (y > 270) { doc.addPage(); y = 20; }
@@ -1452,7 +1452,7 @@ export default function SupplierDetailPage() {
     doc.setFillColor(241, 245, 249);
     doc.rect(W - M - 80, y - 4, 80, 8, 'F');
     doc.text('NET BAKIYE:', W - M - 60, y);
-    doc.text(balance.toLocaleString('tr-TR', { minimumFractionDigits: 2 }), W - M, y, { align: 'right' });
+    doc.text(balance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), W - M, y, { align: 'right' });
 
     doc.save(`${tr(supplier.name)}_Hesap_Ekstresi.pdf`);
   };
@@ -1536,19 +1536,19 @@ export default function SupplierDetailPage() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="rounded-xl p-4 text-white bg-red-500 shadow-sm">
             <p className="text-xs font-medium opacity-80 mb-1">{t('supplierDetail', 'balance')}</p>
-            <p className="text-2xl font-bold">{(supplier.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-bold">{(supplier.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             <p className="text-xs opacity-70 mt-0.5">Borç</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
             className="rounded-xl p-4 text-white bg-blue-500 shadow-sm">
             <p className="text-xs font-medium opacity-80 mb-1">{t('supplierDetail', 'totalPurchased')}</p>
-            <p className="text-2xl font-bold">{(supplier.totalPurchased || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-bold">{(supplier.totalPurchased || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             <p className="text-xs opacity-70 mt-0.5">{(supplier.purchases || []).length} alış</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="rounded-xl p-4 text-white bg-teal-500 shadow-sm">
             <p className="text-xs font-medium opacity-80 mb-1">{t('supplierDetail', 'totalPaid')}</p>
-            <p className="text-2xl font-bold">{(supplier.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-bold">{(supplier.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             <p className="text-xs opacity-70 mt-0.5">{(supplier.payments || []).length} ödeme</p>
           </motion.div>
         </div>
@@ -1573,7 +1573,7 @@ export default function SupplierDetailPage() {
               </div>
               <p className="text-lg font-bold text-slate-800">Ödeme Tamamlandı</p>
               <p className="text-slate-600 text-sm">
-                <span className="font-semibold">{successAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TRY</span> ödendi
+                <span className="font-semibold">{successAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TRY</span> ödendi
               </p>
               <button onClick={() => setSuccessAmount(null)}
                 className="mt-1 px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium">
@@ -1662,7 +1662,7 @@ export default function SupplierDetailPage() {
                       </td>
                       <td className="px-4 py-2.5 font-medium text-teal-600">{p.invoiceNo || '—'}</td>
                       <td className="px-4 py-2.5 text-right font-semibold text-slate-800">
-                        {p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        {p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
                       </td>
                       <td className="pr-3 text-slate-300">
@@ -1707,7 +1707,7 @@ export default function SupplierDetailPage() {
                     <tr key={p.id} className="hover:bg-slate-50/50 group">
                       <td className="px-4 py-2.5 text-slate-500">{new Date(p.date).toLocaleDateString('tr-TR')}</td>
                       <td className="px-4 py-2.5 text-right font-semibold text-teal-600">
-                        {p.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                        {p.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
                       </td>
                       <td className="px-4 py-2.5 text-slate-600">

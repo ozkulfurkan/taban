@@ -10,7 +10,7 @@ import {
   Plus, Trash2, Save, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers,
 } from 'lucide-react';
 
-const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
 const toInput = (d: string | Date | null) => toDateInputValue(d);
 
@@ -687,7 +687,7 @@ async function handlePdf(invoice: any) {
   const tr = (s: string) => (s || '').replace(/ğ/g,'g').replace(/Ğ/g,'G').replace(/ü/g,'u').replace(/Ü/g,'U')
     .replace(/ş/g,'s').replace(/Ş/g,'S').replace(/ı/g,'i').replace(/İ/g,'I')
     .replace(/ö/g,'o').replace(/Ö/g,'O').replace(/ç/g,'c').replace(/Ç/g,'C');
-  const fmt2 = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+  const fmt2 = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210; const M = 15; let y = M;
   doc.setFillColor(37,99,235); doc.rect(0,0,W,24,'F');

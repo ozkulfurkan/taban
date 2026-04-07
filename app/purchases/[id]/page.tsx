@@ -10,7 +10,7 @@ import {
   Save, ChevronLeft, CheckCircle2, Layers, Plus, Trash2, Palette,
 } from 'lucide-react';
 
-const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
 const toInput = (d: string | Date | null) => toDateInputValue(d);
 
@@ -361,15 +361,15 @@ export default function PurchaseDetailPage() {
                             <p className="font-semibold text-slate-700">{pm.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg</p>
                             <p className="text-xs text-slate-400">
                               Stok: {pm.materialVariant
-                                ? (pm.materialVariant.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })
-                                : (pm.material?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                                ? (pm.materialVariant.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                : (pm.material?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                             </p>
                           </td>
                           <td className="px-4 py-3 text-right text-slate-600">
-                            {pm.pricePerKg ? pm.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : <span className="text-slate-300">—</span>}
+                            {pm.pricePerKg ? pm.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : <span className="text-slate-300">—</span>}
                           </td>
                           <td className="px-4 py-3 text-right font-semibold text-slate-700">
-                            {tutar > 0 ? tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) : <span className="text-slate-300">—</span>}
+                            {tutar > 0 ? tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : <span className="text-slate-300">—</span>}
                           </td>
                           <td className="px-2 py-3 text-center">
                             <button onClick={() => handleDeleteMat(pm.id)} disabled={matDeleting === pm.id}
@@ -478,7 +478,7 @@ async function handlePdf(purchase: any) {
   const tr = (s: string) => (s || '').replace(/ğ/g, 'g').replace(/Ğ/g, 'G').replace(/ü/g, 'u').replace(/Ü/g, 'U')
     .replace(/ş/g, 's').replace(/Ş/g, 'S').replace(/ı/g, 'i').replace(/İ/g, 'I')
     .replace(/ö/g, 'o').replace(/Ö/g, 'O').replace(/ç/g, 'c').replace(/Ç/g, 'C');
-  const fmt2 = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+  const fmt2 = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210; const M = 15; let y = M;
   doc.setFillColor(13, 148, 136); doc.rect(0, 0, W, 24, 'F');

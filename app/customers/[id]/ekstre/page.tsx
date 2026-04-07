@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { ArrowLeft, Loader2, FileSpreadsheet, FileDown, RefreshCw } from 'lucide-react';
 
-const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
 
 function defaultFrom() {
