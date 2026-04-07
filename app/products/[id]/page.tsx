@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, Pencil, X,
@@ -29,6 +29,7 @@ function emptyExtra() { return { name: '', amount: '', currency: 'USD' }; }
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const costRef = useRef<HTMLDivElement>(null);
 
   const [product, setProduct] = useState<any>(null);
@@ -37,6 +38,12 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+
+  // New material modal
+  const [showMatModal, setShowMatModal] = useState(false);
+  const [matModalRow, setMatModalRow] = useState<number | null>(null);
+  const [newMatForm, setNewMatForm] = useState({ name: '', pricePerKg: '', currency: 'USD' });
+  const [savingMat, setSavingMat] = useState(false);
   const [showCost, setShowCost] = useState(false);
   const [priceWarning, setPriceWarning] = useState<{ totalCost: number; currency: string } | null>(null);
   const [newPrice, setNewPrice] = useState('');
@@ -116,6 +123,10 @@ export default function ProductDetailPage() {
   }, [params?.id]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (searchParams?.get('edit') === 'true') setEditing(true);
+  }, [searchParams]);
 
   const handleSave = async () => {
     // Validate: part name required
@@ -211,6 +222,31 @@ export default function ProductDetailPage() {
   const removeExtra = (i: number) => setEditExtras(p => p.filter((_, idx) => idx !== i));
   const setExtra = (i: number, f: string, v: string) =>
     setEditExtras(p => p.map((row, idx) => idx === i ? { ...row, [f]: v } : row));
+
+  const handleNewMaterial = async () => {
+    if (!newMatForm.name.trim() || !newMatForm.pricePerKg) return;
+    setSavingMat(true);
+    try {
+      const res = await fetch('/api/materials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newMatForm.name,
+          pricePerKg: fromPriceInput(newMatForm.pricePerKg),
+          currency: newMatForm.currency,
+        }),
+      });
+      const newMat = await res.json();
+      if (newMat.id) {
+        const mats = await fetch('/api/materials').then(r => r.json());
+        setMaterials(Array.isArray(mats) ? mats : []);
+        if (matModalRow !== null) onMaterialSelect(matModalRow, newMat.id);
+        setShowMatModal(false);
+        setNewMatForm({ name: '', pricePerKg: '', currency: 'USD' });
+        setMatModalRow(null);
+      }
+    } finally { setSavingMat(false); }
+  };
 
   if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div></AppShell>;
   if (!product) return <AppShell><div className="text-center py-16 text-slate-400">Ürün bulunamadı</div></AppShell>;
@@ -533,6 +569,13 @@ export default function ProductDetailPage() {
                                   <option key={m.id} value={m.id}>{m.name} ({fmt(m.pricePerKg)} {m.currency}/kg)</option>
                                 ))}
                               </select>
+                              <button
+                                type="button"
+                                onClick={() => { setMatModalRow(idx); setShowMatModal(true); }}
+                                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                <Plus className="w-3 h-3" /> Yeni Hammadde
+                              </button>
                               {(() => {
                                 const selMat = materials.find((m: any) => m.id === part.materialId);
                                 const variants = selMat?.variants ?? [];
@@ -847,6 +890,71 @@ export default function ProductDetailPage() {
                 <button onClick={handleUpdatePrice} disabled={updatingPrice || !newPrice}
                   className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
                   {updatingPrice ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Fiyatı Güncelle
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Material Modal */}
+      {showMatModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowMatModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="bg-blue-600 px-5 py-4 flex items-center justify-between">
+              <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                <Package className="w-4 h-4" /> Yeni Hammadde
+              </h3>
+              <button onClick={() => setShowMatModal(false)} className="text-white/80 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Hammadde Adı *</label>
+                <input
+                  value={newMatForm.name}
+                  onChange={e => setNewMatForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="ör. Deri Taban"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Kg Fiyatı *</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={newMatForm.pricePerKg}
+                    onChange={e => setNewMatForm(f => ({ ...f, pricePerKg: normalizePriceInput(e.target.value) }))}
+                    onKeyDown={blockDot}
+                    placeholder="0,00"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Para Birimi</label>
+                  <select
+                    value={newMatForm.currency}
+                    onChange={e => setNewMatForm(f => ({ ...f, currency: e.target.value }))}
+                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none"
+                  >
+                    {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setShowMatModal(false)}
+                  className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                  İptal
+                </button>
+                <button
+                  onClick={handleNewMaterial}
+                  disabled={savingMat || !newMatForm.name.trim() || !newMatForm.pricePerKg}
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {savingMat ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Kaydet
                 </button>
               </div>
             </div>

@@ -86,7 +86,7 @@ export default function ProductsPage() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.03 }}
                     className="hover:bg-blue-50/50 cursor-pointer"
-                    onClick={() => router.push(`/products/${p.id}`)}
+                    onClick={() => router.push(`/products/${p.id}?edit=true`)}
                   >
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-800">{p.name}</p>

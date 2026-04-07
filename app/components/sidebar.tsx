@@ -83,7 +83,7 @@ export default function Sidebar() {
     {
       title: 'Araçlar',
       links: [
-        { href: '/products/new?from=maliyet', label: 'Maliyet Hesaplama', icon: Calculator },
+        { href: '/products/new?from=maliyet', label: 'Maliyet Hesaplama', icon: Calculator, special: true },
       ],
     },
     {

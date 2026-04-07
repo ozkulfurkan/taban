@@ -33,7 +33,7 @@ export default function NewProductPage() {
         body: JSON.stringify({ ...form, unitPrice: fromPriceInput(form.unitPrice) }),
       });
       const data = await res.json();
-      if (data.id) router.push('/products/' + data.id);
+      if (data.id) router.push('/products/' + data.id + '?edit=true');
     } catch (e) { console.error(e); }
     finally { setSaving(false); }
   };
