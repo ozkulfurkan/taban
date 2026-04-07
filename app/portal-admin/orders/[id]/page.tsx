@@ -239,11 +239,22 @@ export default function PortalAdminOrderDetailPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => {
+                  const source = document.getElementById('print-content-wrapper');
+                  if (!source) return;
+                  const portal = document.createElement('div');
+                  portal.id = '__print_portal__';
+                  portal.style.cssText = 'position:fixed;inset:0;background:white;z-index:99999;padding:32px;font-family:sans-serif;font-size:14px;';
+                  portal.innerHTML = source.innerHTML;
+                  document.body.appendChild(portal);
                   const style = document.createElement('style');
-                  style.innerHTML = '@media print { body > * { display: none !important; } #print-content-wrapper { display: block !important; position: fixed; inset: 0; background: white; padding: 32px; overflow: visible; } }';
+                  style.id = '__print_style__';
+                  style.innerHTML = '@media print { body > *:not(#__print_portal__) { display: none !important; } }';
                   document.head.appendChild(style);
                   window.print();
-                  setTimeout(() => document.head.removeChild(style), 1000);
+                  setTimeout(() => {
+                    portal.remove();
+                    style.remove();
+                  }, 1000);
                 }}
                 className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
               >
