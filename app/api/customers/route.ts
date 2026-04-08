@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
   }
   const paymentMap = new Map<string, typeof allPayments>();
   for (const pmt of allPayments) {
+    if (!pmt.customerId) continue;
     const list = paymentMap.get(pmt.customerId) ?? [];
     list.push(pmt);
     paymentMap.set(pmt.customerId, list);
