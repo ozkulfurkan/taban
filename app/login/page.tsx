@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { LogIn, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { LogIn, Eye, EyeOff, Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/language-context';
 
@@ -145,6 +145,16 @@ export default function LoginPage() {
                 {t('auth', 'register')}
               </Link>
             </p>
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <Link
+              href="/portal/login"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-white/20 text-blue-200 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Ayakkabıcı Portalı
+            </Link>
           </div>
         </div>
       </motion.div>
