@@ -634,10 +634,10 @@ export default function InvoiceDetailPage() {
                             <tr key={adj.materialId} className="hover:bg-slate-50/50">
                               <td className="px-3 py-2.5 font-medium text-slate-700">{adj.name}</td>
                               <td className="px-3 py-2.5 text-right text-slate-500">
-                                {adj.currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 3 })}
+                                {adj.currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                               <td className="px-3 py-2.5 text-right text-slate-400 text-xs">
-                                {adj.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 3 })}
+                                {adj.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                               <td className="px-3 py-2.5 text-right">
                                 <input
@@ -648,7 +648,7 @@ export default function InvoiceDetailPage() {
                                 />
                               </td>
                               <td className={`px-3 py-2.5 text-right font-semibold ${sonraki < 0 ? 'text-red-600' : 'text-slate-700'}`}>
-                                {sonraki.toLocaleString('tr-TR', { minimumFractionDigits: 3 })}
+                                {sonraki.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                             </tr>
                           );

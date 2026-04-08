@@ -358,7 +358,7 @@ export default function PurchaseDetailPage() {
                             )}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <p className="font-semibold text-slate-700">{pm.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg</p>
+                            <p className="font-semibold text-slate-700">{pm.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</p>
                             <p className="text-xs text-slate-400">
                               Stok: {pm.materialVariant
                                 ? (pm.materialVariant.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -390,7 +390,7 @@ export default function PurchaseDetailPage() {
               <div className="max-w-xs ml-auto space-y-2 text-sm">
                 <div className="flex justify-between text-slate-600">
                   <span>Toplam Miktar</span>
-                  <span className="font-medium">{totalKg.toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg</span>
+                  <span className="font-medium">{totalKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>Brüt Toplam</span>

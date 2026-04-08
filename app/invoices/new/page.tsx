@@ -212,7 +212,7 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
                           )}
                           {variants.map((v: any) => (
                             <option key={v.id} value={v.id}>
-                              {v.colorName}{v.code ? ` · ${v.code}` : ''} — stok: {(v.stock ?? 0).toFixed(2)} kg
+                              {v.colorName}{v.code ? ` · ${v.code}` : ''} — stok: {(v.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                             </option>
                           ))}
                         </select>
@@ -313,9 +313,9 @@ function StockConfirmModal({ deductions, onConfirm, onCancel, saving }: {
                       <p className="font-medium text-slate-700">{d.name}</p>
                       {d.variantInfo && <p className="text-xs text-purple-600">{d.variantInfo}</p>}
                     </td>
-                    <td className="px-3 py-2 text-right font-semibold text-red-600">−{d.kgAmount.toFixed(3)} kg</td>
+                    <td className="px-3 py-2 text-right font-semibold text-red-600">−{d.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</td>
                     <td className={`px-3 py-2 text-right font-medium ${d.currentStock < d.kgAmount ? 'text-red-600' : 'text-emerald-600'}`}>
-                      {d.currentStock.toFixed(3)} kg
+                      {d.currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                       {d.currentStock < d.kgAmount && <span className="text-xs text-red-500 block">⚠ Yetersiz stok</span>}
                     </td>
                   </tr>

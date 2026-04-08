@@ -288,14 +288,14 @@ export default function MaterialsPage() {
                       {hasVariants ? (
                         <div className="text-right min-w-[90px]">
                           <p className={`font-semibold text-sm ${totalVariantStock <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                            {totalVariantStock.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                            {totalVariantStock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                           </p>
                           <p className="text-xs text-slate-400">{variants.length} renk/kod</p>
                         </div>
                       ) : (
                         <div className="text-right min-w-[80px]">
                           <p className={`font-semibold text-sm ${(mat?.stock ?? 0) <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                            {(mat?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                            {(mat?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                           </p>
                           <p className="text-xs text-slate-400">Stok</p>
                         </div>
@@ -382,7 +382,7 @@ export default function MaterialsPage() {
                                   </div>
                                   <div className="flex items-center gap-2 flex-shrink-0">
                                     <span className={`text-sm font-semibold ${(v.stock ?? 0) <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                                      {(v.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                                      {(v.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                                     </span>
                                     <button
                                       onClick={() => openEkstre(mat, v)}
@@ -582,7 +582,7 @@ export default function MaterialsPage() {
               <div className="text-center">
                 <p className="text-xs text-slate-500">Mevcut Stok</p>
                 <p className="text-2xl font-bold text-slate-700">
-                  {(stokModal.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg
+                  {(stokModal.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                 </p>
               </div>
               <div className="flex gap-2">
@@ -614,7 +614,7 @@ export default function MaterialsPage() {
                 <div className="text-center text-sm">
                   <span className="text-slate-500">Yeni stok: </span>
                   <span className="font-bold text-slate-700">
-                    {((stokModal.stock ?? 0) + stokSign * (parseFloat(stokDelta) || 0)).toLocaleString('tr-TR', { minimumFractionDigits: 3 })} kg
+                    {((stokModal.stock ?? 0) + stokSign * (parseFloat(stokDelta) || 0)).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                   </span>
                 </div>
               )}
@@ -668,7 +668,7 @@ export default function MaterialsPage() {
                         {ekstreModal.data.entries
                           .filter((e: any) => e.type === 'alis' || e.type === 'iade')
                           .reduce((s: number, e: any) => s + e.kgAmount, 0)
-                          .toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                          .toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                       </p>
                     </div>
                     <div className="bg-red-50 rounded-xl p-3 text-center">
@@ -677,13 +677,13 @@ export default function MaterialsPage() {
                         {Math.abs(ekstreModal.data.entries
                           .filter((e: any) => e.type === 'satis')
                           .reduce((s: number, e: any) => s + e.kgAmount, 0))
-                          .toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                          .toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                       </p>
                     </div>
                     <div className={`rounded-xl p-3 text-center ${(ekstreModal.data.material?.stock ?? 0) < 0 ? 'bg-red-50' : 'bg-teal-50'}`}>
                       <p className="text-xs text-teal-600 font-semibold mb-1">Güncel Stok</p>
                       <p className={`text-lg font-bold ${(ekstreModal.data.material?.stock ?? 0) < 0 ? 'text-red-700' : 'text-teal-700'}`}>
-                        {(ekstreModal.data.material?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} kg
+                        {(ekstreModal.data.material?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                       </p>
                       {ekstreModal.data.material?.activeVariant && (
                         <p className="text-xs text-teal-500 mt-0.5">{ekstreModal.data.material.activeVariant.colorName}</p>
@@ -752,11 +752,11 @@ export default function MaterialsPage() {
                                 )}
                               </td>
                               <td className={`px-3 py-2.5 text-right font-semibold ${entry.kgAmount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                {entry.kgAmount > 0 ? '+' : ''}{entry.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 3 })}
+                                {entry.kgAmount > 0 ? '+' : ''}{entry.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                               <td className="px-3 py-2.5 text-right text-slate-500 text-xs">
                                 {entry.pricePerKg
-                                  ? `${entry.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ${entry.currency ?? ''}/kg`
+                                  ? `${entry.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${entry.currency ?? ''}/kg`
                                   : <span className="text-slate-300">—</span>
                                 }
                               </td>

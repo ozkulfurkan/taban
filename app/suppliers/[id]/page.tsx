@@ -731,7 +731,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
                                 <option value="">— Ana stok (renk yok) —</option>
                                 {variants.map((v: any) => (
                                   <option key={v.id} value={v.id}>
-                                    {v.colorName}{v.code ? ` (${v.code})` : ''} — {(v.stock ?? 0).toFixed(2)} kg
+                                    {v.colorName}{v.code ? ` (${v.code})` : ''} — {(v.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                                   </option>
                                 ))}
                               </select>
