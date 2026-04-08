@@ -1,24 +1,146 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Users, Plus, Loader2, Search } from 'lucide-react';
+import { Users, Plus, Loader2, Search, Upload, Download, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+
+function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setLoading(true);
+    setResult(null);
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const res = await fetch('/api/customers/import', { method: 'POST', body: fd });
+      const data = await res.json();
+      setResult(data);
+      if (data.created > 0) onDone();
+    } catch {
+      setResult({ created: 0, skipped: 0, errors: ['Sunucu hatası oluştu.'] });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <h3 className="text-white font-semibold flex items-center gap-2">
+            <Upload className="w-4 h-4" /> Müşteri İçeri Aktar
+          </h3>
+          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Template download */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-slate-700">Şablon dosyası</p>
+              <p className="text-xs text-slate-400 mt-0.5">Doldurup yükleyin. Müşteri Adı ve Para Birimi zorunlu.</p>
+            </div>
+            <a
+              href="/api/customers/import/template"
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <Download className="w-4 h-4 text-blue-500" /> İndir
+            </a>
+          </div>
+
+          {/* File picker */}
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">Excel Dosyası (.xlsx)</label>
+            <div
+              className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+              onClick={() => fileRef.current?.click()}
+            >
+              {file ? (
+                <p className="text-sm font-medium text-blue-600">{file.name}</p>
+              ) : (
+                <>
+                  <Upload className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-sm text-slate-400">Dosya seçmek için tıklayın</p>
+                </>
+              )}
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={e => setFile(e.target.files?.[0] ?? null)}
+            />
+          </div>
+
+          {/* Result */}
+          {result && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                <span className="text-green-700 font-medium">{result.created} müşteri başarıyla eklendi</span>
+              </div>
+              {result.skipped > 0 && (
+                <div className="flex items-start gap-2 text-sm">
+                  <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-amber-700">{result.skipped} satır atlandı</span>
+                </div>
+              )}
+              {result.errors.length > 0 && (
+                <div className="bg-red-50 border border-red-100 rounded-lg p-3 max-h-32 overflow-y-auto">
+                  {result.errors.map((e, i) => (
+                    <p key={i} className="text-xs text-red-600">{e}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-1">
+            <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+              {result ? 'Kapat' : 'Vazgeç'}
+            </button>
+            {!result && (
+              <button
+                onClick={handleUpload}
+                disabled={!file || loading}
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                Yükle
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CustomersPage() {
   const { t } = useLanguage();
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [showImport, setShowImport] = useState(false);
 
-  useEffect(() => {
+  const loadCustomers = () => {
     fetch('/api/customers')
       .then(r => r.json())
       .then(d => setCustomers(Array.isArray(d) ? d : []))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadCustomers(); }, []);
 
   const filtered = customers.filter(c =>
     c.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -35,12 +157,20 @@ export default function CustomersPage() {
             <h1 className="text-2xl font-bold text-slate-800">{t('customers', 'title')}</h1>
             <p className="text-slate-500 text-sm">{customers.length} {t('customers', 'title').toLowerCase()}</p>
           </div>
-          <Link
-            href="/customers/new"
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4" /> {t('customers', 'newCustomer')}
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg font-medium transition-colors shadow-sm text-sm"
+            >
+              <Upload className="w-4 h-4 text-blue-500" /> İçeri Aktar
+            </button>
+            <Link
+              href="/customers/new"
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> {t('customers', 'newCustomer')}
+            </Link>
+          </div>
         </div>
 
         {/* Search */}
@@ -64,14 +194,11 @@ export default function CustomersPage() {
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            {/* Table header */}
             <div className="grid grid-cols-[1fr_160px_140px] items-center px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide">
               <span>{t('customers', 'nameTitle')}</span>
               <span className="text-right">{t('customers', 'openBalance')}</span>
               <span className="text-right pr-1">{t('customers', 'totalInvoiced')}</span>
             </div>
-
-            {/* Rows */}
             <div className="divide-y divide-slate-100">
               {filtered.map(c => (
                 <Link
@@ -79,7 +206,6 @@ export default function CustomersPage() {
                   href={`/customers/${c.id}`}
                   className="grid grid-cols-[1fr_160px_140px] items-center hover:bg-slate-50 transition-colors group"
                 >
-                  {/* Name cell */}
                   <div className="flex items-center gap-2 px-3 py-2">
                     <span className="block w-full bg-cyan-500 group-hover:bg-cyan-600 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors truncate">
                       {c.name}
@@ -90,15 +216,11 @@ export default function CustomersPage() {
                       </span>
                     )}
                   </div>
-
-                  {/* Balance */}
                   <div className="text-right pr-4 py-2">
                     <span className={`text-sm font-semibold ${c.balance > 0 ? 'text-orange-600' : 'text-slate-500'}`}>
                       {(c.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
-
-                  {/* Total invoiced */}
                   <div className="text-right pr-4 py-2">
                     <span className="text-sm text-slate-500">
                       {(c.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -110,6 +232,13 @@ export default function CustomersPage() {
           </div>
         )}
       </div>
+
+      {showImport && (
+        <ImportModal
+          onClose={() => setShowImport(false)}
+          onDone={() => { loadCustomers(); }}
+        />
+      )}
     </AppShell>
   );
 }
