@@ -1,0 +1,9 @@
+{
+  "rootDirectory": "nextjs_space",
+  "crons": [
+    {
+      "path": "/api/cron/update-rates",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}
