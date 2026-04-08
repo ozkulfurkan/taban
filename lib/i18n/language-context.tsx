@@ -10,6 +10,7 @@ interface LanguageContextType {
   currency: string;
   setCurrency: (c: string) => void;
   formatCurrency: (amount: number) => string;
+  formatAmount: (amount: number, currency: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
@@ -43,11 +44,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const formatCurrency = useCallback((amount: number): string => {
     const symbols: Record<string, string> = { USD: '$', EUR: '€', TRY: '₺' };
     const symbol = symbols[currency] ?? currency;
-    return `${symbol}${(amount ?? 0).toFixed(2)}`;
+    return `${symbol}${(amount ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }, [currency]);
 
+  const formatAmount = useCallback((amount: number, cur: string): string => {
+    const symbols: Record<string, string> = { USD: '$', EUR: '€', TRY: '₺' };
+    const symbol = symbols[cur] ?? cur;
+    return `${symbol}${(amount ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }, []);
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t, currency, setCurrency: handleSetCurrency, formatCurrency }}>
+    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t, currency, setCurrency: handleSetCurrency, formatCurrency, formatAmount }}>
       {children}
     </LanguageContext.Provider>
   );

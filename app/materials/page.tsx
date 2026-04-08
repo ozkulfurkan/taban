@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MaterialsPage() {
   const { data: session } = useSession() || {};
-  const { t, formatCurrency, currency } = useLanguage();
+  const { t, formatAmount, currency } = useLanguage();
   const user = session?.user as any;
   const canEdit = user?.role !== 'VIEWER';
   const canDelete = user?.role === 'ADMIN' || user?.role === 'COMPANY_OWNER';
@@ -280,7 +280,7 @@ export default function MaterialsPage() {
 
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <div className="text-right hidden sm:block">
-                        <p className="font-semibold text-slate-800">{formatCurrency(mat?.pricePerKg ?? 0)}/kg</p>
+                        <p className="font-semibold text-slate-800">{formatAmount(mat?.pricePerKg ?? 0, mat?.currency ?? 'USD')}/kg</p>
                         <p className="text-xs text-slate-400">{mat?.currency ?? ''}</p>
                       </div>
 
@@ -493,7 +493,7 @@ export default function MaterialsPage() {
                   {h?.createdAt ? new Date(h.createdAt).toLocaleDateString() : '-'}
                 </span>
                 <span className="font-medium text-slate-800">
-                  {formatCurrency(h?.pricePerKg ?? 0)}/kg
+                  {formatAmount(h?.pricePerKg ?? 0, historyModal?.currency ?? 'USD')}/kg
                 </span>
               </div>
             ))
