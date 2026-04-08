@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Users, Plus, Loader2, Search, Upload, Download, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Users, Plus, Loader2, Search, Upload, Download, X, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
@@ -40,29 +40,21 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
           </h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
-
         <div className="p-5 space-y-4">
-          {/* Template download */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-slate-700">Şablon dosyası</p>
               <p className="text-xs text-slate-400 mt-0.5">Doldurup yükleyin. Müşteri Adı ve Para Birimi zorunlu.</p>
             </div>
-            <a
-              href="/api/customers/import/template"
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
-            >
+            <a href="/api/customers/import/template"
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
               <Download className="w-4 h-4 text-blue-500" /> İndir
             </a>
           </div>
-
-          {/* File picker */}
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1.5">Excel Dosyası (.xlsx)</label>
-            <div
-              className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
-              onClick={() => fileRef.current?.click()}
-            >
+            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+              onClick={() => fileRef.current?.click()}>
               {file ? (
                 <p className="text-sm font-medium text-blue-600">{file.name}</p>
               ) : (
@@ -72,16 +64,9 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
                 </>
               )}
             </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={e => setFile(e.target.files?.[0] ?? null)}
-            />
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden"
+              onChange={e => setFile(e.target.files?.[0] ?? null)} />
           </div>
-
-          {/* Result */}
           {result && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
@@ -103,17 +88,13 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
               )}
             </div>
           )}
-
           <div className="flex gap-2 pt-1">
             <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
               {result ? 'Kapat' : 'Vazgeç'}
             </button>
             {!result && (
-              <button
-                onClick={handleUpload}
-                disabled={!file || loading}
-                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-              >
+              <button onClick={handleUpload} disabled={!file || loading}
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 Yükle
               </button>
@@ -130,23 +111,35 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [showImport, setShowImport] = useState(false);
 
-  const loadCustomers = () => {
-    fetch('/api/customers')
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const loadCustomers = (p = page, s = debouncedSearch) => {
+    setLoading(true);
+    fetch(`/api/customers?page=${p}&search=${encodeURIComponent(s)}`)
       .then(r => r.json())
-      .then(d => setCustomers(Array.isArray(d) ? d : []))
+      .then(d => {
+        setCustomers(Array.isArray(d.customers) ? d.customers : []);
+        setTotal(d.total ?? 0);
+        setTotalPages(d.totalPages ?? 0);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadCustomers(); }, []);
-
-  const filtered = customers.filter(c =>
-    c.name?.toLowerCase().includes(search.toLowerCase()) ||
-    c.email?.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone?.includes(search)
-  );
+  useEffect(() => { loadCustomers(page, debouncedSearch); }, [page, debouncedSearch]);
 
   return (
     <AppShell>
@@ -155,19 +148,15 @@ export default function CustomersPage() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">{t('customers', 'title')}</h1>
-            <p className="text-slate-500 text-sm">{customers.length} {t('customers', 'title').toLowerCase()}</p>
+            <p className="text-slate-500 text-sm">{total} {t('customers', 'title').toLowerCase()}</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowImport(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg font-medium transition-colors shadow-sm text-sm"
-            >
+            <button onClick={() => setShowImport(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg font-medium transition-colors shadow-sm text-sm">
               <Upload className="w-4 h-4 text-blue-500" /> İçeri Aktar
             </button>
-            <Link
-              href="/customers/new"
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm"
-            >
+            <Link href="/customers/new"
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm">
               <Plus className="w-4 h-4" /> {t('customers', 'newCustomer')}
             </Link>
           </div>
@@ -176,18 +165,15 @@ export default function CustomersPage() {
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+          <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder={t('customers', 'searchPlaceholder')}
-            className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm"
-          />
+            className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm" />
         </div>
 
         {/* Table */}
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
-        ) : !filtered.length ? (
+        ) : !customers.length ? (
           <div className="text-center py-16 bg-white rounded-xl shadow-sm">
             <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-400">{search ? t('customers', 'noResults') : t('customers', 'empty')}</p>
@@ -200,12 +186,9 @@ export default function CustomersPage() {
               <span className="text-right pr-1">{t('customers', 'totalInvoiced')}</span>
             </div>
             <div className="divide-y divide-slate-100">
-              {filtered.map(c => (
-                <Link
-                  key={c.id}
-                  href={`/customers/${c.id}`}
-                  className="grid grid-cols-[1fr_160px_140px] items-center hover:bg-slate-50 transition-colors group"
-                >
+              {customers.map(c => (
+                <Link key={c.id} href={`/customers/${c.id}`}
+                  className="grid grid-cols-[1fr_160px_140px] items-center hover:bg-slate-50 transition-colors group">
                   <div className="flex items-center gap-2 px-3 py-2">
                     <span className="block w-full bg-cyan-500 group-hover:bg-cyan-600 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors truncate">
                       {c.name}
@@ -229,6 +212,34 @@ export default function CustomersPage() {
                 </Link>
               ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50">
+                <span className="text-sm text-slate-500">
+                  {(page - 1) * 50 + 1}–{Math.min(page * 50, total)} / {total} müşteri
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    disabled={page === 1}
+                    onClick={() => setPage(p => p - 1)}
+                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="px-3 py-1 text-sm font-medium text-slate-700">
+                    {page} / {totalPages}
+                  </span>
+                  <button
+                    disabled={page === totalPages}
+                    onClick={() => setPage(p => p + 1)}
+                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -236,7 +247,7 @@ export default function CustomersPage() {
       {showImport && (
         <ImportModal
           onClose={() => setShowImport(false)}
-          onDone={() => { loadCustomers(); }}
+          onDone={() => { setPage(1); loadCustomers(1, debouncedSearch); }}
         />
       )}
     </AppShell>
