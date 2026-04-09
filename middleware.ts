@@ -51,7 +51,11 @@ export default withAuth(
       signIn: '/login',
     },
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        const { pathname } = req.nextUrl;
+        if (pathname === '/portal/fason/login') return true;
+        return !!token;
+      },
     },
   }
 );

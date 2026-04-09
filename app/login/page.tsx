@@ -147,13 +147,20 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-white/10">
+          <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-2">
             <Link
               href="/portal/login"
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-white/20 text-blue-200 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium"
             >
               <ExternalLink className="w-4 h-4" />
               Ayakkabıcı Portalı
+            </Link>
+            <Link
+              href="/portal/fason/login"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-orange-500/30 text-orange-300 hover:bg-orange-500/10 hover:text-orange-200 transition-colors text-sm font-medium"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Fasoncu Portalı
             </Link>
           </div>
         </div>
