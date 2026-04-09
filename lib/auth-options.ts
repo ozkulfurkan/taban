@@ -10,7 +10,10 @@ async function authorizePortalCustomer(credentials: Record<string, string> | und
 
   const portalCustomer = await prisma.portalCustomer.findUnique({
     where: { email: credentials.email },
-    include: { customer: { select: { id: true, companyId: true, name: true } } },
+    include: {
+      customer: { select: { id: true, companyId: true, name: true } },
+      subcontractor: { select: { id: true, companyId: true } },
+    },
   });
 
   if (!portalCustomer) throw new Error('INVALID_CREDENTIALS');
@@ -41,10 +44,12 @@ async function authorizePortalCustomer(credentials: Record<string, string> | und
   return {
     id: portalCustomer.id,
     email: portalCustomer.email,
-    name: portalCustomer.name ?? portalCustomer.customer.name,
-    customerId: portalCustomer.customer.id,
-    companyId: portalCustomer.customer.companyId,
+    name: portalCustomer.name ?? portalCustomer.customer?.name ?? portalCustomer.email,
+    customerId: portalCustomer.customer?.id ?? null,
+    subcontractorId: portalCustomer.subcontractor?.id ?? null,
+    companyId: portalCustomer.customer?.companyId ?? portalCustomer.subcontractor?.companyId,
     type: 'portal',
+    portalType: portalCustomer.portalType,
   } as any;
 }
 
@@ -149,7 +154,9 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         if ((user as any).type === 'portal') {
           token.type = 'portal';
-          token.customerId = (user as any).customerId;
+          token.portalType = (user as any).portalType;
+          token.customerId = (user as any).customerId ?? null;
+          token.subcontractorId = (user as any).subcontractorId ?? null;
           token.companyId = user.companyId;
         } else {
           token.role = user.role;
@@ -171,7 +178,9 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub;
         if (token.type === 'portal') {
           (session.user as any).type = 'portal';
-          (session.user as any).customerId = token.customerId;
+          (session.user as any).portalType = token.portalType;
+          (session.user as any).customerId = token.customerId ?? null;
+          (session.user as any).subcontractorId = token.subcontractorId ?? null;
           session.user.companyId = token.companyId;
         } else {
           session.user.role = token.role;

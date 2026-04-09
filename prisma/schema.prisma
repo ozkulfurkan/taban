@@ -15,6 +15,26 @@ enum Role {
   VIEWER
 }
 
+enum PortalCustomerType {
+  CUSTOMER
+  SUBCONTRACTOR
+}
+
+enum SubcontractorOrderStatus {
+  PENDING
+  MATERIAL_SENT
+  IN_PRODUCTION
+  IN_PROGRESS
+  COMPLETED
+  RECEIVED
+  CANCELLED
+}
+
+enum TransferDirection {
+  OUTGOING
+  INCOMING
+}
+
 enum SubscriptionStatus {
   FREE
   TRIAL
@@ -47,7 +67,11 @@ model Company {
   products           Product[]
   accounts           Account[]
   cekler             Cek[]
-  soleOrders         SoleOrder[]
+  soleOrders            SoleOrder[]
+  subcontractors        Subcontractor[]
+  subcontractorOrders   SubcontractorOrder[]
+  materialTransfers     MaterialTransfer[]
+  subcontractorScraps   SubcontractorScrap[]
 }
 
 model User {
@@ -85,23 +109,29 @@ model Material {
   soleParts         SolePart[]
   productParts      ProductPart[]
   priceHistory      PriceHistory[]
-  purchaseMaterials PurchaseMaterial[]
-  variants          MaterialVariant[]
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  purchaseMaterials   PurchaseMaterial[]
+  variants            MaterialVariant[]
+  subcontractorStocks SubcontractorStock[]
+  materialTransfers   MaterialTransfer[]
+  subcontractorScraps SubcontractorScrap[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 }
 
 model MaterialVariant {
-  id                String             @id @default(cuid())
-  materialId        String
-  material          Material           @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  colorName         String
-  code              String?
-  stock             Float              @default(0)
-  productParts      ProductPart[]
-  purchaseMaterials PurchaseMaterial[]
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  id                  String               @id @default(cuid())
+  materialId          String
+  material            Material             @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  colorName           String
+  code                String?
+  stock               Float                @default(0)
+  productParts        ProductPart[]
+  purchaseMaterials   PurchaseMaterial[]
+  subcontractorStocks SubcontractorStock[]
+  materialTransfers   MaterialTransfer[]
+  subcontractorScraps SubcontractorScrap[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 }
 
 model PriceHistory {
@@ -182,13 +212,14 @@ model Product {
   koliFiyati       Float              @default(0)
   koliCurrency     String             @default("USD")
   portalVisible    Boolean            @default(false)
-  parts            ProductPart[]
-  extraCosts       ProductExtraCost[]
-  invoiceItems     InvoiceItem[]
-  soleOrders       SoleOrder[]
-  portalCustomers  ProductPortalCustomer[]
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  parts               ProductPart[]
+  extraCosts          ProductExtraCost[]
+  invoiceItems        InvoiceItem[]
+  soleOrders          SoleOrder[]
+  portalCustomers     ProductPortalCustomer[]
+  subcontractorOrders SubcontractorOrder[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 }
 
 model ProductPart {
@@ -327,6 +358,9 @@ model PurchaseMaterial {
   materialVariant   MaterialVariant? @relation(fields: [materialVariantId], references: [id])
   kgAmount          Float            @default(0)
   pricePerKg        Float?
+  // Hedef: null = ana depo, dolu = doğrudan fasoncuya
+  subcontractorId   String?
+  subcontractor     Subcontractor?   @relation(fields: [subcontractorId], references: [id])
   createdAt         DateTime         @default(now())
 }
 
@@ -418,19 +452,21 @@ model Cek {
 // ─── B2B Customer Portal ───────────────────────────────────────────────────
 
 model PortalCustomer {
-  id               String      @id @default(cuid())
-  customerId       String      @unique
-  customer         Customer    @relation(fields: [customerId], references: [id])
-  email            String      @unique
+  id               String             @id @default(cuid())
+  customerId       String?            @unique
+  customer         Customer?          @relation(fields: [customerId], references: [id])
+  portalType       PortalCustomerType @default(CUSTOMER)
+  email            String             @unique
   password         String
   name             String?
-  emailVerified    Boolean     @default(false)
-  emailVerifyToken String?     @unique
-  isActive         Boolean     @default(true)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  emailVerified    Boolean            @default(false)
+  emailVerifyToken String?            @unique
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
   orders           SoleOrder[]
   productVisibility ProductPortalCustomer[]
+  subcontractor    Subcontractor?     @relation("PortalCustomerSubcontractor")
 }
 
 model ProductPortalCustomer {
@@ -489,4 +525,126 @@ model OrderShipment {
   notes          String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+}
+
+// ─── Fason Modülleri ───────────────────────────────────────────────────────────
+
+model Subcontractor {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id])
+  name            String
+  contactPerson   String?
+  phone           String?
+  address         String?
+  email           String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  materialStocks      SubcontractorStock[]
+  purchaseMaterials   PurchaseMaterial[]
+  subcontractorOrders SubcontractorOrder[]
+  materialTransfers   MaterialTransfer[]
+  portalCustomer      PortalCustomer?      @relation("PortalCustomerSubcontractor", fields: [portalCustomerId], references: [id])
+  portalCustomerId    String?              @unique
+
+  @@index([companyId])
+}
+
+model SubcontractorOrder {
+  id                String                   @id @default(cuid())
+  companyId         String
+  company           Company                  @relation(fields: [companyId], references: [id])
+  orderNo           String
+  subcontractorId   String
+  subcontractor     Subcontractor            @relation(fields: [subcontractorId], references: [id])
+  productId         String?
+  product           Product?                 @relation(fields: [productId], references: [id])
+  sizeDistribution  Json
+  totalPairs        Int                      @default(0)
+  dueDate           DateTime?
+  status            SubcontractorOrderStatus @default(PENDING)
+  notes             String?
+  emailSentAt       DateTime?
+  materialTransfers MaterialTransfer[]
+  productionUpdates ProductionUpdate[]
+  scraps            SubcontractorScrap[]
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@unique([companyId, orderNo])
+  @@index([companyId])
+  @@index([subcontractorId])
+}
+
+model MaterialTransfer {
+  id                String              @id @default(cuid())
+  companyId         String
+  company           Company             @relation(fields: [companyId], references: [id])
+  subcontractorId   String
+  subcontractor     Subcontractor       @relation(fields: [subcontractorId], references: [id])
+  orderId           String?
+  order             SubcontractorOrder? @relation(fields: [orderId], references: [id])
+  materialId        String
+  material          Material            @relation(fields: [materialId], references: [id])
+  materialVariantId String?
+  materialVariant   MaterialVariant?    @relation(fields: [materialVariantId], references: [id])
+  quantity          Float
+  direction         TransferDirection
+  transferDate      DateTime            @default(now())
+  notes             String?
+  createdAt         DateTime            @default(now())
+
+  @@index([companyId])
+  @@index([subcontractorId])
+  @@index([orderId])
+}
+
+model ProductionUpdate {
+  id             String                   @id @default(cuid())
+  orderId        String
+  order          SubcontractorOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status         SubcontractorOrderStatus
+  completedPairs Int?
+  notes          String?
+  updatedBy      String?
+  createdAt      DateTime                 @default(now())
+
+  @@index([orderId])
+}
+
+model SubcontractorScrap {
+  id                String           @id @default(cuid())
+  companyId         String
+  company           Company          @relation(fields: [companyId], references: [id])
+  orderId           String
+  order             SubcontractorOrder @relation(fields: [orderId], references: [id])
+  materialId        String
+  material          Material         @relation(fields: [materialId], references: [id])
+  materialVariantId String?
+  materialVariant   MaterialVariant? @relation(fields: [materialVariantId], references: [id])
+  quantity          Float
+  reason            String?
+  reportedBy        String?
+  createdAt         DateTime         @default(now())
+
+  @@index([orderId])
+  @@index([companyId])
+}
+
+// Fasoncu deposundaki anlık hammadde zimmet durumu
+model SubcontractorStock {
+  id                String           @id @default(cuid())
+  subcontractorId   String
+  subcontractor     Subcontractor    @relation(fields: [subcontractorId], references: [id])
+  materialId        String
+  material          Material         @relation(fields: [materialId], references: [id])
+  materialVariantId String?
+  materialVariant   MaterialVariant? @relation(fields: [materialVariantId], references: [id])
+  quantity          Float            @default(0)
+  updatedAt         DateTime         @updatedAt
+
+  @@unique([subcontractorId, materialId, materialVariantId])
+  @@index([subcontractorId])
 }
