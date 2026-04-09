@@ -288,7 +288,7 @@ export default function FasonOrderDetailPage() {
                 <div key={part.id} className="px-4 py-3 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-700">{part.name}</p>
-                    <p className="text-xs text-slate-400">{part.material?.name}{part.materialVariant ? ` · ${part.materialVariant.color}` : ''}</p>
+                    <p className="text-xs text-slate-400">{part.material?.name}{part.materialVariant ? ` · ${part.materialVariant.colorName}` : ''}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium text-slate-800">{kgRequired.toFixed(2)} kg gerekli</p>
@@ -313,7 +313,7 @@ export default function FasonOrderDetailPage() {
             {order.materialTransfers.map((t: any) => (
               <div key={t.id} className="px-4 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-700">{t.material?.name}{t.materialVariant ? ` · ${t.materialVariant.color}` : ''}</p>
+                  <p className="text-sm text-slate-700">{t.material?.name}{t.materialVariant ? ` · ${t.materialVariant.colorName}` : ''}</p>
                   <p className="text-xs text-slate-400">{new Date(t.transferDate).toLocaleDateString('tr-TR')}</p>
                 </div>
                 <p className="text-sm font-medium text-blue-700">{t.quantity} kg</p>
@@ -354,7 +354,7 @@ export default function FasonOrderDetailPage() {
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none">
                     <option value="">Tümü</option>
                     {stocks.filter(s => s.materialId === scrapMaterialId && s.materialVariantId).map(s => (
-                      <option key={s.materialVariantId} value={s.materialVariantId}>{s.materialVariant?.color}</option>
+                      <option key={s.materialVariantId} value={s.materialVariantId}>{s.materialVariant?.colorName}</option>
                     ))}
                   </select>
                 </div>

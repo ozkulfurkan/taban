@@ -55,11 +55,10 @@ export default function FasonStockPage() {
                     <td className="px-4 py-3 text-slate-500">
                       {s.materialVariant ? (
                         <span className="inline-flex items-center gap-1.5">
-                          {s.materialVariant.code && (
-                            <span className="w-3.5 h-3.5 rounded-full border border-slate-200 flex-shrink-0"
-                              style={{ backgroundColor: s.materialVariant.code }} />
-                          )}
                           {s.materialVariant.colorName}
+                          {s.materialVariant.code && (
+                            <span className="text-slate-400 text-xs">({s.materialVariant.code})</span>
+                          )}
                         </span>
                       ) : (
                         <span className="text-slate-400">—</span>
