@@ -46,7 +46,7 @@ export default function PortalAdminPage() {
     ]).then(([pc, ord, cust]) => {
       setPortalCustomers(Array.isArray(pc) ? pc : []);
       setOrders(Array.isArray(ord) ? ord : []);
-      setCustomers(Array.isArray(cust) ? cust : []);
+      setCustomers(Array.isArray(cust?.customers) ? cust.customers : []);
     }).finally(() => setLoading(false));
   }, [status, router]);
 

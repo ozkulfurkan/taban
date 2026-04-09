@@ -43,12 +43,17 @@ export default function NewSubcontractorOrderPage() {
   const totalPairs = Object.values(form.sizeDistribution).reduce((s, v) => s + (Number(v) || 0), 0);
 
   // BOM hesabı (client-side)
-  const bomReqs = selectedProduct?.parts?.map((part: any) => ({
-    name: part.name,
-    material: part.material?.name ?? '—',
-    variant: part.materialVariant ? `${part.materialVariant.colorName}${part.materialVariant.code ? ` (${part.materialVariant.code})` : ''}` : null,
-    kgRequired: Math.round((part.gramsPerPiece * (1 + part.wasteRate / 100) * totalPairs) / 1000 * 1000) / 1000,
-  })) ?? [];
+  const bomReqs = selectedProduct?.parts?.map((part: any) => {
+    const variantObj = part.materialVariantId
+      ? part.material?.variants?.find((v: any) => v.id === part.materialVariantId)
+      : null;
+    return {
+      name: part.name,
+      material: part.material?.name ?? '—',
+      variant: variantObj ? `${variantObj.colorName}${variantObj.code ? ` (${variantObj.code})` : ''}` : null,
+      kgRequired: Math.round((part.gramsPerPiece * (1 + part.wasteRate / 100) * totalPairs) / 1000 * 1000) / 1000,
+    };
+  }) ?? [];
 
   const handleSubmit = async () => {
     setSaving(true);
