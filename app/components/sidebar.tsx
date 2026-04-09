@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
-  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText, UserCog, Calculator, Globe
+  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText, UserCog, Calculator, Globe, Factory
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,6 +41,8 @@ export default function Sidebar() {
     '/cek-portfolyo': 'cek-portfolyo',
     '/calculations': 'calculations',
     '/settings': 'settings',
+    '/subcontractors': 'fason',
+    '/subcontractor-orders': 'fason',
   };
 
   const canSee = (href: string) => {
@@ -78,6 +80,13 @@ export default function Sidebar() {
       links: [
         { href: '/accounts', label: t('nav', 'accounts'), icon: Landmark },
         { href: '/cek-portfolyo', label: t('nav', 'checkPortfolio'), icon: ScrollText },
+      ],
+    },
+    {
+      title: 'Fason',
+      links: [
+        { href: '/subcontractors', label: 'Fasoncular', icon: Factory },
+        { href: '/subcontractor-orders', label: 'Fason Siparişleri', icon: Factory },
       ],
     },
     {
