@@ -85,11 +85,39 @@ export async function POST(req: NextRequest) {
           purchaseId: purchase.id,
           materialId: i.materialId,
           materialVariantId: i.materialVariantId || null,
+          subcontractorId: i.subcontractorId || null,
           kgAmount: qty,
           pricePerKg: unitPrice || null,
         },
       }));
-      if (i.materialVariantId) {
+
+      if (i.subcontractorId) {
+        // Fasoncu deposuna yönlendir: SubcontractorStock upsert
+        ops.push(
+          prisma.subcontractorStock.findFirst({
+            where: {
+              subcontractorId: i.subcontractorId,
+              materialId: i.materialId,
+              materialVariantId: i.materialVariantId || null,
+            },
+          }).then(existing => {
+            if (existing) {
+              return prisma.subcontractorStock.update({
+                where: { id: existing.id },
+                data: { quantity: { increment: qty } },
+              });
+            }
+            return prisma.subcontractorStock.create({
+              data: {
+                subcontractorId: i.subcontractorId,
+                materialId: i.materialId,
+                materialVariantId: i.materialVariantId || null,
+                quantity: qty,
+              },
+            });
+          })
+        );
+      } else if (i.materialVariantId) {
         // Varyant seçildi: sadece variant stoğunu artır
         ops.push(prisma.materialVariant.update({
           where: { id: i.materialVariantId },

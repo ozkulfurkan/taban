@@ -480,6 +480,8 @@ function AlışModal({ supplier, onClose, onSaved }: {
   const [newItemForm, setNewItemForm] = useState({ name: '', unitPrice: '', currency: 'TRY', pricePerKg: '' });
   const [saving, setSaving] = useState(false);
   const [creatingItem, setCreatingItem] = useState(false);
+  const [subcontractorList, setSubcontractorList] = useState<any[]>([]);
+  const [subcontractorId, setSubcontractorId] = useState('');
 
   // Yeni renk ekleme (per item)
   const [showNewColor, setShowNewColor] = useState<number | null>(null);
@@ -489,6 +491,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
   useEffect(() => {
     fetch('/api/products').then(r => r.json()).then(d => setProductList(Array.isArray(d) ? d : []));
     fetch('/api/materials').then(r => r.json()).then(d => setMaterialList(Array.isArray(d) ? d : []));
+    fetch('/api/subcontractors').then(r => r.json()).then(d => setSubcontractorList(Array.isArray(d) ? d : []));
   }, []);
 
   const closeDropdown = () => setOpenDropdown(null);
@@ -592,6 +595,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
             productId: i.itemType === 'product' ? (i.refId || null) : null,
             materialId: i.itemType === 'material' ? (i.refId || null) : null,
             materialVariantId: i.itemType === 'material' ? (i.variantId || null) : null,
+            subcontractorId: i.itemType === 'material' && subcontractorId ? subcontractorId : null,
             description: i.itemName,
             qty: i.qty,
             unitPrice: fromPriceInput(i.unitPrice),
@@ -641,6 +645,19 @@ function AlışModal({ supplier, onClose, onSaved }: {
                 <span className="text-xs text-slate-400">(tedarikçi para birimi)</span>
               </div>
             </div>
+
+            {subcontractorList.length > 0 && (
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Hedef Depo</label>
+                <select value={subcontractorId} onChange={e => setSubcontractorId(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                  <option value="">Ana Depo</option>
+                  {subcontractorList.map((s: any) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Line items */}
             <div>

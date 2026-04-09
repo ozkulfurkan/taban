@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, ArrowLeft, ChevronRight, AlertTriangle, CheckCircle2, Clock, Package, Flame } from 'lucide-react';
+import { Loader2, ArrowLeft, ChevronRight, AlertTriangle, CheckCircle2, Clock, Package, Flame, Truck, MapPin } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Bekliyor', MATERIAL_SENT: 'Hammadde Gönderildi',
@@ -32,6 +32,10 @@ export default function FasonOrderDetailPage() {
   const [stocks, setStocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Sevk Et
+  const [shipLoading, setShipLoading] = useState(false);
+  const [shipDone, setShipDone] = useState(false);
+
   // Status update
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
@@ -57,6 +61,13 @@ export default function FasonOrderDetailPage() {
   };
 
   useEffect(() => { if (id) loadOrder(); }, [id]);
+
+  const handleShip = async () => {
+    setShipLoading(true);
+    const res = await fetch(`/api/portal/fason/orders/${id}/ship`, { method: 'POST' });
+    setShipLoading(false);
+    if (res.ok) { setShipDone(true); loadOrder(); }
+  };
 
   const handleStatusUpdate = async (newStatus: string) => {
     setStatusLoading(true);
@@ -131,6 +142,37 @@ export default function FasonOrderDetailPage() {
         </div>
       </div>
 
+      {/* Sevk Et Banner */}
+      {order.status === 'COMPLETED' && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <Truck className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-green-800">Üretim Tamamlandı — Sevk Edilmeyi Bekliyor</p>
+              {order.shippingAddress ? (
+                <p className="text-sm text-green-700 mt-0.5 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                  {order.shippingAddress}
+                </p>
+              ) : (
+                <p className="text-sm text-green-600 mt-0.5">Sevk adresi belirtilmemiş. Yetkilinizle iletişime geçin.</p>
+              )}
+            </div>
+          </div>
+          {shipDone ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm font-medium flex-shrink-0">
+              <CheckCircle2 className="w-4 h-4" /> Sevk Bildirildi
+            </span>
+          ) : (
+            <button onClick={handleShip} disabled={shipLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white rounded-lg text-sm font-semibold transition-colors flex-shrink-0">
+              {shipLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
+              Sevk Edildi Olarak İşaretle
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Status stepper */}
       <div className="bg-white rounded-xl shadow-sm p-4">
         <h2 className="text-sm font-semibold text-slate-700 mb-3">Sipariş Durumu</h2>
@@ -192,6 +234,12 @@ export default function FasonOrderDetailPage() {
                 <span className={`font-medium ${new Date(order.dueDate) < new Date() && !['RECEIVED', 'CANCELLED'].includes(order.status) ? 'text-red-600' : 'text-slate-800'}`}>
                   {new Date(order.dueDate).toLocaleDateString('tr-TR')}
                 </span>
+              </div>
+            )}
+            {order.shippingAddress && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Sevk Adresi</span>
+                <span className="font-medium text-slate-800 text-right max-w-[60%]">{order.shippingAddress}</span>
               </div>
             )}
             {order.notes && (

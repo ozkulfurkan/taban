@@ -566,6 +566,7 @@ model SubcontractorOrder {
   dueDate           DateTime?
   status            SubcontractorOrderStatus @default(PENDING)
   notes             String?
+  shippingAddress   String?
   emailSentAt       DateTime?
   materialTransfers MaterialTransfer[]
   productionUpdates ProductionUpdate[]

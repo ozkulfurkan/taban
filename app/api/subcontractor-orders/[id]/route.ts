@@ -51,7 +51,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const user = session.user as any;
   if (user.role === 'VIEWER') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { status, dueDate, notes } = await req.json();
+  const { status, dueDate, notes, shippingAddress } = await req.json();
 
   const updated = await prisma.subcontractorOrder.updateMany({
     where: { id: params.id, companyId: user.companyId },
@@ -59,6 +59,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ...(status ? { status } : {}),
       ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
       ...(notes !== undefined ? { notes } : {}),
+      ...(shippingAddress !== undefined ? { shippingAddress: shippingAddress || null } : {}),
     },
   });
 

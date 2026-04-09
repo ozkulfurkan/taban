@@ -125,6 +125,7 @@ export default function SubcontractorOrderDetailPage() {
             <span className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${STATUS_COLORS[order.status]}`}>{STATUS_LABELS[order.status]}</span>
             <span className="text-orange-200 text-sm">{order.totalPairs} çift</span>
             {order.dueDate && <span className="text-orange-200 text-xs">Termin: {new Date(order.dueDate).toLocaleDateString('tr-TR')}</span>}
+            {order.shippingAddress && <span className="text-orange-200 text-xs">Sevk: {order.shippingAddress}</span>}
           </div>
         </div>
 

@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const user = session.user as any;
   if (user.role === 'VIEWER') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { subcontractorId, productId, sizeDistribution, dueDate, notes } = await req.json();
+  const { subcontractorId, productId, sizeDistribution, dueDate, notes, shippingAddress } = await req.json();
 
   if (!subcontractorId) return NextResponse.json({ error: 'Fasoncu seçilmedi' }, { status: 400 });
   if (!sizeDistribution || typeof sizeDistribution !== 'object') {
@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
       totalPairs,
       dueDate: dueDate ? new Date(dueDate) : null,
       notes: notes || null,
+      shippingAddress: shippingAddress || null,
     },
     include: {
       subcontractor: { select: { id: true, name: true } },

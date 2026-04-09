@@ -22,6 +22,7 @@ export default function NewSubcontractorOrderPage() {
     sizeDistribution: {} as Record<string, number>,
     dueDate: '',
     notes: '',
+    shippingAddress: '',
   });
 
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -67,6 +68,7 @@ export default function NewSubcontractorOrderPage() {
           sizeDistribution: form.sizeDistribution,
           dueDate: form.dueDate || null,
           notes: form.notes || null,
+          shippingAddress: form.shippingAddress || null,
         }),
       });
       const data = await res.json();
@@ -181,6 +183,12 @@ export default function NewSubcontractorOrderPage() {
                 <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={3}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-400 resize-none"
                   placeholder="Özel talimatlar..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Sevk Adresi</label>
+                <textarea value={form.shippingAddress} onChange={e => setForm(p => ({ ...p, shippingAddress: e.target.value }))} rows={2}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                  placeholder="Ürünlerin gönderileceği adres..." />
               </div>
 
               {/* Özet */}
