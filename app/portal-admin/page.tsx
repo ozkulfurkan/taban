@@ -26,7 +26,6 @@ export default function PortalAdminPage() {
   const [tab, setTab] = useState<'customers' | 'orders'>('orders');
   const [portalCustomers, setPortalCustomers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('');
 
@@ -36,21 +35,48 @@ export default function PortalAdminPage() {
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
 
+  // Customer search combobox
+  const [customerQuery, setCustomerQuery] = useState('');
+  const [customerResults, setCustomerResults] = useState<any[]>([]);
+  const [customerSearching, setCustomerSearching] = useState(false);
+  const [showCustomerList, setShowCustomerList] = useState(false);
+  const [selectedCustomerName, setSelectedCustomerName] = useState('');
+
   useEffect(() => {
     if (status === 'unauthenticated') { router.replace('/login'); return; }
     if (status !== 'authenticated') return;
     Promise.all([
       fetch('/api/portal/customers').then(r => r.json()),
       fetch('/api/portal/orders').then(r => r.json()),
-      fetch('/api/customers').then(r => r.json()),
-    ]).then(([pc, ord, cust]) => {
+    ]).then(([pc, ord]) => {
       setPortalCustomers(Array.isArray(pc) ? pc : []);
       setOrders(Array.isArray(ord) ? ord : []);
-      setCustomers(Array.isArray(cust?.customers) ? cust.customers : []);
     }).finally(() => setLoading(false));
   }, [status, router]);
 
   const filteredOrders = filterStatus ? orders.filter(o => o.status === filterStatus) : orders;
+
+  const searchCustomers = async (q: string) => {
+    setCustomerQuery(q);
+    setFormData(f => ({ ...f, customerId: '' }));
+    setSelectedCustomerName('');
+    if (!q.trim()) { setCustomerResults([]); setShowCustomerList(false); return; }
+    setCustomerSearching(true);
+    setShowCustomerList(true);
+    try {
+      const res = await fetch(`/api/customers?search=${encodeURIComponent(q)}&page=1`);
+      const data = await res.json();
+      setCustomerResults(Array.isArray(data.customers) ? data.customers : []);
+    } finally { setCustomerSearching(false); }
+  };
+
+  const selectCustomer = (c: any) => {
+    setFormData(f => ({ ...f, customerId: c.id }));
+    setSelectedCustomerName(c.name);
+    setCustomerQuery(c.name);
+    setShowCustomerList(false);
+    setCustomerResults([]);
+  };
 
   const handleCreatePortalCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +93,7 @@ export default function PortalAdminPage() {
       setPortalCustomers(prev => [...prev, data]);
       setShowForm(false);
       setFormData({ customerId: '', email: '', name: '', password: '' });
+      setCustomerQuery(''); setSelectedCustomerName(''); setCustomerResults([]);
     } finally { setFormLoading(false); }
   };
 
@@ -171,13 +198,42 @@ export default function PortalAdminPage() {
                 <h3 className="font-semibold text-slate-700 mb-4">Yeni Portal Kullanıcısı</h3>
                 {formError && <p className="text-red-600 text-sm mb-3">{formError}</p>}
                 <form onSubmit={handleCreatePortalCustomer} className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="relative">
                     <label className="block text-xs font-medium text-slate-500 mb-1">Müşteri</label>
-                    <select value={formData.customerId} onChange={e => setFormData(f => ({ ...f, customerId: e.target.value }))} required
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                      <option value="">— Seçiniz —</option>
-                      {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                    <input
+                      type="text"
+                      value={customerQuery}
+                      onChange={e => searchCustomers(e.target.value)}
+                      onFocus={() => { if (customerResults.length > 0) setShowCustomerList(true); }}
+                      onBlur={() => setTimeout(() => setShowCustomerList(false), 150)}
+                      placeholder="Müşteri adı ile arayın..."
+                      autoComplete="off"
+                      className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none ${formData.customerId ? 'border-blue-400 bg-blue-50' : 'border-slate-200'}`}
+                    />
+                    {/* Hidden required validation */}
+                    <input type="text" required value={formData.customerId} onChange={() => {}} className="sr-only" tabIndex={-1} />
+                    {customerSearching && (
+                      <Loader2 className="absolute right-3 top-8 w-4 h-4 animate-spin text-slate-400" />
+                    )}
+                    {showCustomerList && customerResults.length > 0 && (
+                      <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                        {customerResults.map(c => (
+                          <button key={c.id} type="button" onMouseDown={() => selectCustomer(c)}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 text-slate-700 flex flex-col">
+                            <span className="font-medium">{c.name}</span>
+                            {(c.phone || c.email) && <span className="text-xs text-slate-400">{c.phone || c.email}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {showCustomerList && !customerSearching && customerResults.length === 0 && customerQuery.trim() && (
+                      <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2 text-sm text-slate-400">
+                        Sonuç bulunamadı
+                      </div>
+                    )}
+                    {formData.customerId && selectedCustomerName && (
+                      <p className="text-xs text-blue-600 mt-0.5">✓ {selectedCustomerName} seçildi</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-slate-500 mb-1">Ad Soyad</label>
