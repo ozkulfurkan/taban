@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import SizeTable from '@/app/portal/components/size-table';
-import { ChevronLeft, ChevronRight, Loader2, Factory, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Factory, CheckCircle2, Package } from 'lucide-react';
 
 const STEPS = ['Fasoncu & Ürün', 'Numara Dağılımı', 'Hammadde Gereksinimi', 'Termin & Notlar'];
 
@@ -26,6 +26,8 @@ export default function NewSubcontractorOrderPage() {
   });
 
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [partMaterialOverrides, setPartMaterialOverrides] = useState<Record<string, string>>({});
 
   // Subcontractor stocks keyed by materialId → quantity
   const [subStock, setSubStock] = useState<Record<string, number>>({});
@@ -33,6 +35,7 @@ export default function NewSubcontractorOrderPage() {
   useEffect(() => {
     fetch('/api/subcontractors').then(r => r.json()).then(d => { if (Array.isArray(d)) setSubcontractors(d); });
     fetch('/api/products').then(r => r.json()).then(d => { if (Array.isArray(d)) setProducts(d); });
+    fetch('/api/materials').then(r => r.json()).then(d => { if (Array.isArray(d)) setMaterials(d); });
   }, []);
 
   useEffect(() => {
@@ -42,6 +45,7 @@ export default function NewSubcontractorOrderPage() {
     } else {
       setSelectedProduct(null);
     }
+    setPartMaterialOverrides({});
   }, [form.productId, products]);
 
   const totalPairs = Object.values(form.sizeDistribution).reduce((s, v) => s + (Number(v) || 0), 0);
@@ -62,15 +66,19 @@ export default function NewSubcontractorOrderPage() {
     }
   }, [step, form.subcontractorId]);
 
-  // BOM hesabı (client-side)
+  // BOM hesabı (client-side) — parça başına seçilen hammadde kullanılır
   const bomReqs = selectedProduct?.parts?.map((part: any) => {
-    const materialId = part.material?.id ?? part.materialId;
+    const defaultMatId = part.material?.id ?? part.materialId;
+    const materialId = partMaterialOverrides[part.id] ?? defaultMatId;
+    const matName = materialId
+      ? (materials.find((m: any) => m.id === materialId)?.name ?? part.material?.name ?? '—')
+      : '—';
     const kgRequired = Math.round((part.gramsPerPiece * (1 + part.wasteRate / 100) * totalPairs) / 1000 * 1000) / 1000;
     return {
       partId: part.id,
       name: part.name,
       materialId,
-      material: part.material?.name ?? '—',
+      material: matName,
       kgRequired,
       subcontractorStock: materialId ? (subStock[materialId] ?? null) : null,
     };
@@ -159,6 +167,47 @@ export default function NewSubcontractorOrderPage() {
               <h3 className="font-medium text-slate-700">Numara Dağılımı</h3>
               <SizeTable value={form.sizeDistribution} onChange={v => setForm(p => ({ ...p, sizeDistribution: v }))} />
               <p className="text-sm text-slate-500">Toplam: <span className="font-bold text-slate-700">{totalPairs} çift</span></p>
+
+              {/* Hammadde Seçimi */}
+              {selectedProduct?.parts?.length > 0 && (
+                <div className="border-t border-slate-100 pt-4 space-y-3">
+                  <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <Package className="w-4 h-4 text-orange-500" />
+                    Kullanılacak Hammaddeler
+                  </h4>
+                  <div className="space-y-2">
+                    {selectedProduct.parts.map((part: any) => {
+                      const defaultMatId = part.material?.id ?? part.materialId ?? '';
+                      const selectedMatId = partMaterialOverrides[part.id] ?? defaultMatId;
+                      const sameCategory = part.material?.category;
+                      const grouped = sameCategory
+                        ? [
+                            ...materials.filter((m: any) => m.category === sameCategory),
+                            ...materials.filter((m: any) => m.category !== sameCategory),
+                          ]
+                        : materials;
+                      return (
+                        <div key={part.id} className="flex items-center gap-3">
+                          <span className="text-sm text-slate-500 w-28 flex-shrink-0 truncate" title={part.name}>{part.name}</span>
+                          <select
+                            value={selectedMatId}
+                            onChange={e => setPartMaterialOverrides(p => ({ ...p, [part.id]: e.target.value }))}
+                            className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400"
+                          >
+                            <option value="">— Hammadde Seçin —</option>
+                            {grouped.map((m: any) => (
+                              <option key={m.id} value={m.id}>
+                                {m.name}{m.category ? ` — ${m.category}` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-slate-400">Aynı kategorideki hammaddeler listede üstte gösterilir</p>
+                </div>
+              )}
             </div>
           )}
 
