@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import SizeTable from '@/app/portal/components/size-table';
 import { ChevronLeft, ChevronRight, Loader2, Factory, CheckCircle2 } from 'lucide-react';
 
-const STEPS = ['Fasoncu & Ürün', 'Numara Dağılımı', 'BOM Önizleme', 'Termin & Notlar'];
+const STEPS = ['Fasoncu & Ürün', 'Numara Dağılımı', 'Hammadde Gereksinimi', 'Termin & Notlar'];
 
 export default function NewSubcontractorOrderPage() {
   const router = useRouter();
@@ -27,6 +27,11 @@ export default function NewSubcontractorOrderPage() {
 
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
+  // BOM step: per-part variant selections (partId → variantId)
+  const [partVariants, setPartVariants] = useState<Record<string, string>>({});
+  // Subcontractor stocks keyed by `${materialId}|${variantId|''}` → quantity
+  const [subStock, setSubStock] = useState<Record<string, number>>({});
+
   useEffect(() => {
     fetch('/api/subcontractors').then(r => r.json()).then(d => { if (Array.isArray(d)) setSubcontractors(d); });
     fetch('/api/products').then(r => r.json()).then(d => { if (Array.isArray(d)) setProducts(d); });
@@ -43,16 +48,41 @@ export default function NewSubcontractorOrderPage() {
 
   const totalPairs = Object.values(form.sizeDistribution).reduce((s, v) => s + (Number(v) || 0), 0);
 
-  // BOM hesabı (client-side)
+  // Step 2'ye geçince fasoncu stokunu çek
+  useEffect(() => {
+    if (step === 2 && form.subcontractorId) {
+      fetch(`/api/subcontractors/${form.subcontractorId}/stock`)
+        .then(r => r.json())
+        .then((stocks: any[]) => {
+          if (!Array.isArray(stocks)) return;
+          const map: Record<string, number> = {};
+          for (const s of stocks) {
+            const key = `${s.materialId}|${s.materialVariantId ?? ''}`;
+            map[key] = s.quantity;
+          }
+          setSubStock(map);
+        });
+    }
+  }, [step, form.subcontractorId]);
+
+  // BOM hesabı (client-side) — seçilen varyant dikkate alınır
   const bomReqs = selectedProduct?.parts?.map((part: any) => {
-    const variantObj = part.materialVariantId
-      ? part.material?.variants?.find((v: any) => v.id === part.materialVariantId)
+    const selectedVariantId = partVariants[part.id] ?? part.materialVariantId ?? '';
+    const variantObj = selectedVariantId
+      ? part.material?.variants?.find((v: any) => v.id === selectedVariantId)
       : null;
+    const kgRequired = Math.round((part.gramsPerPiece * (1 + part.wasteRate / 100) * totalPairs) / 1000 * 1000) / 1000;
+    const stockKey = `${part.material?.id ?? part.materialId}|${selectedVariantId}`;
     return {
+      partId: part.id,
       name: part.name,
+      materialId: part.material?.id ?? part.materialId,
       material: part.material?.name ?? '—',
-      variant: variantObj ? `${variantObj.colorName}${variantObj.code ? ` (${variantObj.code})` : ''}` : null,
-      kgRequired: Math.round((part.gramsPerPiece * (1 + part.wasteRate / 100) * totalPairs) / 1000 * 1000) / 1000,
+      variants: part.material?.variants ?? [],
+      selectedVariantId,
+      variantObj,
+      kgRequired,
+      subcontractorStock: subStock[stockKey] ?? null,
     };
   }) ?? [];
 
@@ -142,31 +172,63 @@ export default function NewSubcontractorOrderPage() {
             </div>
           )}
 
-          {/* Step 2: BOM Önizleme */}
+          {/* Step 2: Hammadde Gereksinimi */}
           {step === 2 && (
             <div className="space-y-4">
-              <h3 className="font-medium text-slate-700">Hammadde Gereksinimleri (BOM Önizleme)</h3>
+              <h3 className="font-medium text-slate-700">Hammadde Gereksinimleri</h3>
               {bomReqs.length === 0 ? (
                 <p className="text-slate-400 text-sm">Ürün seçilmedi veya BOM tanımlı değil</p>
               ) : (
                 <table className="w-full text-sm">
-                  <thead><tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500">
-                    <th className="px-3 py-2 text-left">Parça</th>
-                    <th className="px-3 py-2 text-left">Hammadde</th>
-                    <th className="px-3 py-2 text-right">Gereken (kg)</th>
-                  </tr></thead>
+                  <thead>
+                    <tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500">
+                      <th className="px-3 py-2 text-left">Parça</th>
+                      <th className="px-3 py-2 text-left">Hammadde / Varyant</th>
+                      <th className="px-3 py-2 text-right">Gereken (kg)</th>
+                      <th className="px-3 py-2 text-right">Fasoncu Stoğu (kg)</th>
+                    </tr>
+                  </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {bomReqs.map((r: any, i: number) => (
-                      <tr key={i}>
-                        <td className="px-3 py-2 text-slate-700">{r.name}</td>
-                        <td className="px-3 py-2 text-slate-600">{r.material}{r.variant ? <span className="text-slate-400 ml-1">({r.variant})</span> : ''}</td>
-                        <td className="px-3 py-2 text-right font-semibold text-orange-600">{r.kgRequired.toFixed(3)}</td>
-                      </tr>
-                    ))}
+                    {bomReqs.map((r: any, i: number) => {
+                      const stockOk = r.subcontractorStock !== null && r.subcontractorStock >= r.kgRequired;
+                      const stockLow = r.subcontractorStock !== null && r.subcontractorStock > 0 && r.subcontractorStock < r.kgRequired;
+                      return (
+                        <tr key={i} className="align-top">
+                          <td className="px-3 py-2.5 text-slate-700 font-medium">{r.name}</td>
+                          <td className="px-3 py-2.5 text-slate-600">
+                            <div className="text-slate-700 font-medium">{r.material}</div>
+                            {r.variants.length > 0 && (
+                              <select
+                                value={r.selectedVariantId}
+                                onChange={e => setPartVariants(p => ({ ...p, [r.partId]: e.target.value }))}
+                                className="mt-1 w-full px-2 py-1 border border-slate-200 rounded text-xs bg-white outline-none focus:ring-2 focus:ring-orange-400"
+                              >
+                                <option value="">— Varyant Yok —</option>
+                                {r.variants.map((v: any) => (
+                                  <option key={v.id} value={v.id}>
+                                    {v.colorName}{v.code ? ` (${v.code})` : ''}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-orange-600">{r.kgRequired.toFixed(3)}</td>
+                          <td className="px-3 py-2.5 text-right">
+                            {r.subcontractorStock === null ? (
+                              <span className="text-slate-300 text-xs">—</span>
+                            ) : (
+                              <span className={`font-semibold ${stockOk ? 'text-emerald-600' : stockLow ? 'text-yellow-600' : 'text-red-500'}`}>
+                                {r.subcontractorStock.toFixed(3)}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
-              <p className="text-xs text-slate-400">* Fire payı dahil hesaplanmıştır</p>
+              <p className="text-xs text-slate-400">* Gereken: fire payı dahil · Fasoncu stoğu yeşil = yeterli, sarı = kısmen yeterli, kırmızı = yetersiz</p>
             </div>
           )}
 
