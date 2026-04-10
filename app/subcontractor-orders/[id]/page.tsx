@@ -141,34 +141,54 @@ export default function SubcontractorOrderDetailPage() {
             {/* BOM Gereksinimleri */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="px-4 py-2.5 border-b bg-slate-50">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Hammadde Gereksinimleri (BOM)</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Hammadde Gereksinimleri</p>
               </div>
               {requirements.length === 0 ? (
                 <p className="px-4 py-4 text-slate-400 text-sm">BOM verisi yok</p>
               ) : (
-                <table className="w-full text-sm">
-                  <thead><tr className="bg-slate-50 border-b text-xs text-slate-500">
-                    <th className="px-3 py-2 text-left">Hammadde</th>
-                    <th className="px-3 py-2 text-right">Gereken</th>
-                    <th className="px-3 py-2 text-right">Fasonda</th>
-                    <th className="px-3 py-2 text-right">Eksik</th>
-                  </tr></thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {requirements.map((r: any) => (
-                      <tr key={r.partId} className={r.deficit > 0 ? 'bg-red-50/30' : ''}>
-                        <td className="px-3 py-2">
-                          <p className="font-medium text-slate-700">{r.materialName}</p>
-                          {r.variantName && <span className="text-xs text-slate-400">{r.variantName}</span>}
-                        </td>
-                        <td className="px-3 py-2 text-right text-slate-600 font-medium">{r.kgRequired.toFixed(3)} kg</td>
-                        <td className="px-3 py-2 text-right text-slate-600">{r.currentSubcontractorStock.toFixed(3)} kg</td>
-                        <td className={`px-3 py-2 text-right font-semibold ${r.deficit > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {r.deficit > 0 ? `−${r.deficit.toFixed(3)} kg` : '✓'}
-                        </td>
+                <>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500">
+                        <th className="px-3 py-2 text-left">Parça</th>
+                        <th className="px-3 py-2 text-left">Hammadde / Varyant</th>
+                        <th className="px-3 py-2 text-right">Gereken (kg)</th>
+                        <th className="px-3 py-2 text-right">Fasoncu Stoğu (kg)</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {requirements.map((r: any) => {
+                        const stockOk  = r.currentSubcontractorStock >= r.kgRequired;
+                        const stockLow = r.currentSubcontractorStock > 0 && r.currentSubcontractorStock < r.kgRequired;
+                        return (
+                          <tr key={r.partId} className={r.deficit > 0 ? 'bg-red-50/20' : ''}>
+                            <td className="px-3 py-2.5 font-medium text-slate-700">{r.partName}</td>
+                            <td className="px-3 py-2.5">
+                              <p className="font-medium text-slate-700">{r.materialName}</p>
+                              {r.variantName && (
+                                <span className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded text-xs font-medium">
+                                  {r.variantName}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 text-right font-semibold text-orange-600">
+                              {r.kgRequired.toFixed(3)}
+                            </td>
+                            <td className="px-3 py-2.5 text-right">
+                              <span className={`font-semibold ${stockOk ? 'text-emerald-600' : stockLow ? 'text-yellow-600' : 'text-red-500'}`}>
+                                {r.currentSubcontractorStock.toFixed(3)}
+                              </span>
+                              {r.deficit > 0 && (
+                                <p className="text-xs text-red-400 mt-0.5">−{r.deficit.toFixed(3)} eksik</p>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  <p className="px-4 py-2 text-xs text-slate-400 border-t">* Gereken: fire payı dahil · Stok: yeşil=yeterli, sarı=kısmen, kırmızı=yetersiz</p>
+                </>
               )}
             </div>
 
