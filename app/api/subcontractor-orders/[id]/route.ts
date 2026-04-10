@@ -50,24 +50,55 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const { status, dueDate, notes, shippingAddress } = await req.json();
 
-  const updated = await prisma.subcontractorOrder.updateMany({
-    where: { id: params.id, companyId: user.companyId },
-    data: {
-      ...(status ? { status } : {}),
-      ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
-      ...(notes !== undefined ? { notes } : {}),
-      ...(shippingAddress !== undefined ? { shippingAddress: shippingAddress || null } : {}),
-    },
-  });
-
-  if (updated.count === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-  const order = await prisma.subcontractorOrder.findFirst({
+  // Mevcut sipariş durumunu ve BOM'u al
+  const existing = await prisma.subcontractorOrder.findFirst({
     where: { id: params.id, companyId: user.companyId },
     include: {
-      subcontractor: { select: { id: true, name: true } },
-      product: { select: { id: true, name: true, code: true } },
+      product: {
+        include: { parts: true },
+      },
     },
   });
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  const order = await prisma.$transaction(async (tx) => {
+    const updated = await tx.subcontractorOrder.update({
+      where: { id: params.id },
+      data: {
+        ...(status ? { status } : {}),
+        ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
+        ...(notes !== undefined ? { notes } : {}),
+        ...(shippingAddress !== undefined ? { shippingAddress: shippingAddress || null } : {}),
+      },
+      include: {
+        subcontractor: { select: { id: true, name: true } },
+        product: { select: { id: true, name: true, code: true } },
+      },
+    });
+
+    // Sipariş tamamlandığında fasoncu zimmetinden hammadde düş
+    if (status === 'RECEIVED' && existing.status !== 'RECEIVED' && existing.product) {
+      const sizeMap = (existing.sizeDistribution as Record<string, number>) ?? {};
+      const totalPairs = Object.values(sizeMap).reduce((s, v) => s + (Number(v) || 0), 0);
+
+      for (const part of existing.product.parts) {
+        if (!part.materialId || totalPairs === 0) continue;
+        const kgUsed = (part.gramsPerPiece * (1 + part.wasteRate / 100) * totalPairs) / 1000;
+
+        const ss = await tx.subcontractorStock.findFirst({
+          where: { subcontractorId: existing.subcontractorId, materialId: part.materialId },
+        });
+        if (ss) {
+          await tx.subcontractorStock.update({
+            where: { id: ss.id },
+            data: { quantity: { decrement: kgUsed } },
+          });
+        }
+      }
+    }
+
+    return updated;
+  });
+
   return NextResponse.json(order);
 }
