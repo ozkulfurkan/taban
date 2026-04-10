@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import Link from 'next/link';
-import { Plus, Loader2, AlertTriangle, Factory } from 'lucide-react';
+import { Plus, Loader2, AlertTriangle, Factory, ArrowUpDown } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Bekliyor', MATERIAL_SENT: 'Hammadde Gönderildi',
@@ -17,17 +17,19 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: 'bg-slate-100 text-slate-500',
 };
 
+const DONE_STATUSES = ['COMPLETED', 'RECEIVED', 'CANCELLED'];
+
 export default function SubcontractorOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [subcontractors, setSubcontractors] = useState<any[]>([]);
   const [filterSub, setFilterSub] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterTab, setFilterTab] = useState<'active' | 'done' | 'all'>('active');
+  const [sort, setSort] = useState<'dueDate' | 'createdAt'>('dueDate');
 
   const load = () => {
     const params = new URLSearchParams();
     if (filterSub) params.set('subcontractorId', filterSub);
-    if (filterStatus) params.set('status', filterStatus);
     setLoading(true);
     fetch(`/api/subcontractor-orders?${params}`)
       .then(r => r.json())
@@ -39,7 +41,13 @@ export default function SubcontractorOrdersPage() {
     fetch('/api/subcontractors').then(r => r.json()).then(d => { if (Array.isArray(d)) setSubcontractors(d); });
   }, []);
 
-  useEffect(() => { load(); }, [filterSub, filterStatus]);
+  useEffect(() => { load(); }, [filterSub]);
+
+  const filtered = orders.filter(o => {
+    if (filterTab === 'active') return !DONE_STATUSES.includes(o.status);
+    if (filterTab === 'done') return DONE_STATUSES.includes(o.status);
+    return true;
+  });
 
   const isOverdue = (o: any) => o.dueDate && new Date(o.dueDate) < new Date() && !['RECEIVED', 'CANCELLED'].includes(o.status);
 
@@ -56,24 +64,41 @@ export default function SubcontractorOrdersPage() {
           </Link>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2">
+        {/* Tabs + Filters */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Tabs */}
+          <div className="flex gap-1 bg-white rounded-xl shadow-sm p-1 border border-slate-100">
+            {([
+              { key: 'active', label: 'Aktif' },
+              { key: 'done', label: 'Tamamlanan' },
+              { key: 'all', label: 'Tümü' },
+            ] as const).map(({ key, label }) => (
+              <button key={key} onClick={() => setFilterTab(key)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterTab === key ? 'bg-orange-100 text-orange-700' : 'text-slate-600 hover:text-slate-900'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+
           <select value={filterSub} onChange={e => setFilterSub(e.target.value)}
             className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400">
             <option value="">Tüm Fasoncular</option>
             {subcontractors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400">
-            <option value="">Tüm Durumlar</option>
-            {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg bg-white">
+            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+            <select value={sort} onChange={e => setSort(e.target.value as 'dueDate' | 'createdAt')}
+              className="text-sm text-slate-600 outline-none bg-transparent cursor-pointer">
+              <option value="dueDate">Termina Göre</option>
+              <option value="createdAt">Sipariş Tarihine Göre</option>
+            </select>
+          </div>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-orange-500" /></div>
-        ) : orders.length === 0 ? (
-          <div className="text-center py-16 text-slate-400">Sipariş bulunamadı</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-slate-400">Bu kategoride sipariş bulunamadı</div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
@@ -86,7 +111,15 @@ export default function SubcontractorOrdersPage() {
                 <th className="px-4 py-3 text-right">Termin</th>
               </tr></thead>
               <tbody className="divide-y divide-slate-100">
-                {orders.map((o: any) => (
+                {[...filtered].sort((a, b) => {
+                  if (sort === 'dueDate') {
+                    if (!a.dueDate && !b.dueDate) return 0;
+                    if (!a.dueDate) return 1;
+                    if (!b.dueDate) return -1;
+                    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                  }
+                  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                }).map((o: any) => (
                   <tr key={o.id} className={`hover:bg-slate-50/60 ${isOverdue(o) ? 'bg-red-50/20' : ''}`}>
                     <td className="px-4 py-3">
                       <Link href={`/subcontractor-orders/${o.id}`} className="text-blue-600 hover:underline font-medium flex items-center gap-1">

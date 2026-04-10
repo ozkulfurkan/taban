@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Loader2, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronRight, ArrowUpDown } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Bekliyor', MATERIAL_SENT: 'Hammadde Gönderildi',
@@ -16,10 +16,13 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: 'bg-slate-100 text-slate-500',
 };
 
+type SortKey = 'dueDate' | 'createdAt';
+
 export default function FasonOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('active');
+  const [sort, setSort] = useState<SortKey>('dueDate');
 
   useEffect(() => {
     fetch('/api/portal/fason/orders')
@@ -28,10 +31,20 @@ export default function FasonOrdersPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const displayed = orders.filter(o => {
-    if (filter === 'active') return !['RECEIVED', 'CANCELLED'].includes(o.status);
-    if (filter === 'done') return ['RECEIVED', 'CANCELLED'].includes(o.status);
+  const filtered = orders.filter(o => {
+    if (filter === 'active') return !['COMPLETED', 'RECEIVED', 'CANCELLED'].includes(o.status);
+    if (filter === 'done') return ['COMPLETED', 'RECEIVED', 'CANCELLED'].includes(o.status);
     return true;
+  });
+
+  const displayed = [...filtered].sort((a, b) => {
+    if (sort === 'dueDate') {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    }
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   return (
@@ -41,18 +54,30 @@ export default function FasonOrdersPage() {
         <p className="text-slate-500 text-sm mt-0.5">Size atanan tüm fason siparişleri</p>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 bg-white rounded-xl shadow-sm p-1 w-fit">
-        {[
-          { key: 'active', label: 'Aktif' },
-          { key: 'done', label: 'Tamamlanan' },
-          { key: 'all', label: 'Tümü' },
-        ].map(({ key, label }) => (
-          <button key={key} onClick={() => setFilter(key)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === key ? 'bg-orange-100 text-orange-700' : 'text-slate-600 hover:text-slate-900'}`}>
-            {label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Filter tabs */}
+        <div className="flex gap-1 bg-white rounded-xl shadow-sm p-1">
+          {[
+            { key: 'active', label: 'Aktif' },
+            { key: 'done', label: 'Tamamlanan' },
+            { key: 'all', label: 'Tümü' },
+          ].map(({ key, label }) => (
+            <button key={key} onClick={() => setFilter(key)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === key ? 'bg-orange-100 text-orange-700' : 'text-slate-600 hover:text-slate-900'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Sort */}
+        <div className="flex items-center gap-1.5 bg-white rounded-xl shadow-sm px-3 py-1.5">
+          <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+          <select value={sort} onChange={e => setSort(e.target.value as SortKey)}
+            className="text-sm text-slate-600 outline-none bg-transparent cursor-pointer">
+            <option value="dueDate">Termina Göre</option>
+            <option value="createdAt">Sipariş Tarihine Göre</option>
+          </select>
+        </div>
       </div>
 
       {loading ? (
@@ -64,15 +89,13 @@ export default function FasonOrdersPage() {
       ) : (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden divide-y divide-slate-100">
           {displayed.map((o: any) => {
-            const isOverdue = o.dueDate && new Date(o.dueDate) < new Date() && !['RECEIVED', 'CANCELLED'].includes(o.status);
+            const isOverdue = o.dueDate && new Date(o.dueDate) < new Date() && !['COMPLETED', 'RECEIVED', 'CANCELLED'].includes(o.status);
             return (
               <Link key={o.id} href={`/portal/fason/orders/${o.id}`}
                 className="flex items-center justify-between px-4 py-4 hover:bg-slate-50 group">
-                <div className="flex items-center gap-4">
-                  <div>
-                    <p className="font-semibold text-slate-800 text-sm">{o.orderNo}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{o.product?.name || '—'} · {o.totalPairs} çift</p>
-                  </div>
+                <div>
+                  <p className="font-semibold text-slate-800 text-sm">{o.orderNo}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{o.product?.name || '—'} · {o.totalPairs} çift</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
