@@ -61,10 +61,23 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Bağlı kayıt var mı kontrol et
+    const [partCount, purchaseCount, transferCount] = await Promise.all([
+      prisma.productPart.count({ where: { materialId: params.id } }),
+      prisma.purchaseMaterial.count({ where: { materialId: params.id } }),
+      prisma.materialTransfer.count({ where: { materialId: params.id } }),
+    ]);
+    if (partCount + purchaseCount + transferCount > 0) {
+      return NextResponse.json(
+        { error: 'Bu hammadde ürün BOM\'unda veya alış/transfer kayıtlarında kullanılıyor, silinemez.' },
+        { status: 409 }
+      );
+    }
+
     await prisma.material.delete({ where: { id: params.id } });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('DELETE material error:', error);
-    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+    return NextResponse.json({ error: 'Silme işlemi başarısız.' }, { status: 500 });
   }
 }

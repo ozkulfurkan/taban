@@ -160,9 +160,14 @@ export default function MaterialsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('common', 'confirm') + '?')) return;
+    if (!confirm('Bu hammaddeyi silmek istediğinize emin misiniz?')) return;
     try {
-      await fetch(`/api/materials/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/materials/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || 'Silme işlemi başarısız.');
+        return;
+      }
       fetchMaterials();
     } catch (e) {
       console.error(e);
