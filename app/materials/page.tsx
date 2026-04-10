@@ -123,7 +123,7 @@ export default function MaterialsPage() {
     if (!sendToSubModal || !sendToSubId || !sendToSubQty || parseFloat(sendToSubQty) <= 0) return;
     setSendToSubSaving(true);
     try {
-      await fetch(`/api/materials/${sendToSubModal.materialId}/send-to-subcontractor`, {
+      const res = await fetch(`/api/materials/${sendToSubModal.materialId}/send-to-subcontractor`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -132,6 +132,11 @@ export default function MaterialsPage() {
           quantity: parseFloat(sendToSubQty),
         }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'İşlem başarısız oldu.');
+        return;
+      }
       setSendToSubModal(null);
       fetchMaterials();
     } finally { setSendToSubSaving(false); }
