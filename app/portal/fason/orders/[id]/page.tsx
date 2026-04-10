@@ -280,21 +280,34 @@ export default function FasonOrderDetailPage() {
           <div className="divide-y divide-slate-100">
             {order.product.parts.map((part: any) => {
               const kgRequired = (part.gramsPerPiece * (1 + part.wasteRate / 100) * order.totalPairs) / 1000;
-              const stock = stocks.find(s => s.materialId === part.materialId && !s.materialVariantId);
               const variantStock = part.materialVariantId ? stocks.find(s => s.materialVariantId === part.materialVariantId) : null;
-              const available = (variantStock ?? stock)?.quantity ?? 0;
+              const matStock = stocks.find(s => s.materialId === part.materialId && !s.materialVariantId);
+              const available = (variantStock ?? matStock)?.quantity ?? 0;
               const deficit = kgRequired - available;
+              const stockOk  = available >= kgRequired;
+              const stockLow = available > 0 && available < kgRequired;
+              const variantLabel = part.materialVariant
+                ? `${part.materialVariant.colorName}${part.materialVariant.code ? ` (${part.materialVariant.code})` : ''}`
+                : null;
               return (
-                <div key={part.id} className="px-4 py-3 flex items-center justify-between">
+                <div key={part.id} className="px-4 py-3 flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-slate-700">{part.name}</p>
-                    <p className="text-xs text-slate-400">{part.material?.name}{part.materialVariant ? ` · ${part.materialVariant.colorName}` : ''}</p>
+                    <p className="text-xs text-slate-500">{part.material?.name}</p>
+                    {variantLabel && (
+                      <span className="inline-flex items-center mt-0.5 px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded text-xs font-medium">
+                        {variantLabel}
+                      </span>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-slate-800">{kgRequired.toFixed(2)} kg gerekli</p>
-                    <p className={`text-xs ${deficit > 0 ? 'text-red-500' : 'text-green-600'}`}>
-                      {deficit > 0 ? `${deficit.toFixed(2)} kg eksik` : `${available.toFixed(2)} kg mevcut`}
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-semibold text-orange-600">{kgRequired.toFixed(3)} kg gerekli</p>
+                    <p className={`text-xs font-medium ${stockOk ? 'text-emerald-600' : stockLow ? 'text-yellow-600' : 'text-red-500'}`}>
+                      {available.toFixed(3)} kg mevcut
                     </p>
+                    {deficit > 0 && (
+                      <p className="text-xs text-red-400">−{deficit.toFixed(3)} eksik</p>
+                    )}
                   </div>
                 </div>
               );
