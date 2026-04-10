@@ -7,7 +7,7 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { useSession } from 'next-auth/react';
 import {
   Package, Plus, Search, Edit2, Trash2, History, Loader2, Layers,
-  ChevronDown, ChevronRight, Palette, X, FileText, TrendingUp, TrendingDown, RotateCcw,
+  ChevronDown, ChevronRight, Palette, X, FileText, TrendingUp, TrendingDown, RotateCcw, Factory,
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,6 +45,13 @@ export default function MaterialsPage() {
   // Stok Ekstresi modal
   const [ekstreModal, setEkstreModal] = useState<{ name: string; data: any } | null>(null);
   const [ekstreLoading, setEkstreLoading] = useState(false);
+
+  // Fasoncuya Gönder modal
+  const [sendToSubModal, setSendToSubModal] = useState<{ materialId: string; materialVariantId?: string; name: string } | null>(null);
+  const [subcontractors, setSubcontractors] = useState<any[]>([]);
+  const [sendToSubId, setSendToSubId] = useState('');
+  const [sendToSubQty, setSendToSubQty] = useState('');
+  const [sendToSubSaving, setSendToSubSaving] = useState(false);
 
   const openEkstre = async (mat: any, variant?: any) => {
     const label = variant ? `${mat.name} — ${variant.colorName}${variant.code ? ` (${variant.code})` : ''}` : mat.name;
@@ -101,6 +108,34 @@ export default function MaterialsPage() {
   useEffect(() => {
     fetchMaterials();
   }, [fetchMaterials]);
+
+  useEffect(() => {
+    fetch('/api/subcontractors').then(r => r.json()).then(d => { if (Array.isArray(d)) setSubcontractors(d); });
+  }, []);
+
+  const openSendToSub = (materialId: string, name: string, materialVariantId?: string) => {
+    setSendToSubModal({ materialId, materialVariantId, name });
+    setSendToSubId('');
+    setSendToSubQty('');
+  };
+
+  const handleSendToSub = async () => {
+    if (!sendToSubModal || !sendToSubId || !sendToSubQty || parseFloat(sendToSubQty) <= 0) return;
+    setSendToSubSaving(true);
+    try {
+      await fetch(`/api/materials/${sendToSubModal.materialId}/send-to-subcontractor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subcontractorId: sendToSubId,
+          materialVariantId: sendToSubModal.materialVariantId || null,
+          quantity: parseFloat(sendToSubQty),
+        }),
+      });
+      setSendToSubModal(null);
+      fetchMaterials();
+    } finally { setSendToSubSaving(false); }
+  };
 
   const openNew = () => {
     setEditItem(null);
@@ -303,13 +338,24 @@ export default function MaterialsPage() {
 
                       <div className="flex items-center gap-1">
                         {canEdit && !hasVariants && (
-                          <button
-                            onClick={() => setStokModal({ type: 'material', id: mat.id, name: mat.name, stock: mat.stock ?? 0 })}
-                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                            title="Stok Güncelle"
-                          >
-                            <Layers className="w-4 h-4" />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => setStokModal({ type: 'material', id: mat.id, name: mat.name, stock: mat.stock ?? 0 })}
+                              className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                              title="Stok Güncelle"
+                            >
+                              <Layers className="w-4 h-4" />
+                            </button>
+                            {subcontractors.length > 0 && (
+                              <button
+                                onClick={() => openSendToSub(mat.id, mat.name)}
+                                className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                title="Fasoncuya Gönder"
+                              >
+                                <Factory className="w-4 h-4" />
+                              </button>
+                            )}
+                          </>
                         )}
                         {canEdit && (
                           <button
@@ -400,6 +446,15 @@ export default function MaterialsPage() {
                                         >
                                           <Layers className="w-3.5 h-3.5" />
                                         </button>
+                                        {subcontractors.length > 0 && (
+                                          <button
+                                            onClick={() => openSendToSub(mat.id, `${mat.name} — ${v.colorName}`, v.id)}
+                                            className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                                            title="Fasoncuya Gönder"
+                                          >
+                                            <Factory className="w-3.5 h-3.5" />
+                                          </button>
+                                        )}
                                         <button
                                           onClick={() => openVariantEdit(mat.id, v)}
                                           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -713,6 +768,7 @@ export default function MaterialsPage() {
                             <tr key={entry.id} className={`hover:bg-slate-50/50 ${
                               entry.type === 'alis' ? 'hover:bg-emerald-50/30' :
                               entry.type === 'iade' ? 'hover:bg-blue-50/30' :
+                              entry.type === 'fason_transfer' ? 'hover:bg-orange-50/30' :
                               'hover:bg-red-50/30'
                             }`}>
                               <td className="px-3 py-2.5 text-slate-500 text-xs whitespace-nowrap">
@@ -726,6 +782,10 @@ export default function MaterialsPage() {
                                 ) : entry.type === 'iade' ? (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
                                     <RotateCcw className="w-3 h-3" /> İade
+                                  </span>
+                                ) : entry.type === 'fason_transfer' ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold">
+                                    <Factory className="w-3 h-3" /> {entry.kgAmount < 0 ? 'Fason Gönderim' : 'Fason İade'}
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
@@ -768,6 +828,64 @@ export default function MaterialsPage() {
                   )}
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Fasoncuya Gönder Modalı */}
+      {sendToSubModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setSendToSubModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="bg-orange-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+              <h3 className="text-white font-semibold text-base flex items-center gap-2">
+                <Factory className="w-4 h-4" /> Fasoncuya Gönder
+              </h3>
+              <button onClick={() => setSendToSubModal(null)} className="text-white/80 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm font-medium text-slate-700">{sendToSubModal.name}</p>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Fasoncu *</label>
+                <select
+                  value={sendToSubId}
+                  onChange={e => setSendToSubId(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none"
+                >
+                  <option value="">Fasoncu seçin...</option>
+                  {subcontractors.map((s: any) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Miktar (kg) *</label>
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0.001"
+                  value={sendToSubQty}
+                  onChange={e => setSendToSubQty(e.target.value)}
+                  placeholder="0.000"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-orange-500 outline-none"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setSendToSubModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm">
+                  Vazgeç
+                </button>
+                <button
+                  onClick={handleSendToSub}
+                  disabled={sendToSubSaving || !sendToSubId || !sendToSubQty || parseFloat(sendToSubQty) <= 0}
+                  className="flex-1 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {sendToSubSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Gönder
+                </button>
+              </div>
             </div>
           </div>
         </div>
