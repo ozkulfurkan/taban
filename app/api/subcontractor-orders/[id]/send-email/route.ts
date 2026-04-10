@@ -19,7 +19,6 @@ export async function POST(_: NextRequest, { params }: { params: { id: string } 
           parts: {
             include: {
               material: { select: { name: true } },
-              materialVariant: { select: { colorName: true, code: true } },
             },
             orderBy: { sortOrder: 'asc' },
           },
@@ -40,10 +39,9 @@ export async function POST(_: NextRequest, { params }: { params: { id: string } 
 
   const bomRows = order.product?.parts.map(part => {
     const kgRequired = (part.gramsPerPiece * (1 + part.wasteRate / 100) * order.totalPairs) / 1000;
-    const variantStr = part.materialVariant ? ` — ${part.materialVariant.colorName}${part.materialVariant.code ? ` (${part.materialVariant.code})` : ''}` : '';
     return `<tr>
       <td style="padding:4px 12px;border:1px solid #e2e8f0;">${part.name}</td>
-      <td style="padding:4px 12px;border:1px solid #e2e8f0;">${part.material?.name ?? '—'}${variantStr}</td>
+      <td style="padding:4px 12px;border:1px solid #e2e8f0;">${part.material?.name ?? '—'}</td>
       <td style="padding:4px 12px;border:1px solid #e2e8f0;text-align:right;">${kgRequired.toFixed(3)} kg</td>
     </tr>`;
   }).join('') ?? '';

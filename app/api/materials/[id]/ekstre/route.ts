@@ -4,58 +4,31 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 
 // GET: hammadde stok ekstresi
-// Alışlar (PurchaseMaterial) + Satışlar (InvoiceItem → Product → Part)
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
 
-  const { searchParams } = new URL(req.url);
-  const filterVariantId = searchParams.get('variantId'); // if set, show only this variant
-
   const material = await prisma.material.findFirst({
     where: { id: params.id, companyId: user.companyId },
-    include: { variants: { orderBy: { colorName: 'asc' } } },
-  }) as any;
+  });
   if (!material) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   // ── 1. ALIŞLAR ──────────────────────────────────────────────────────────
-  const allVariantIds = (material.variants ?? []).map((v: any) => v.id);
-
-  // If filtering to a specific variant, only show that variant's purchases
-  // Otherwise show all (material-level + all variants)
-  const purchaseWhere = filterVariantId
-    ? { materialVariantId: filterVariantId }
-    : {
-        OR: [
-          { materialId: params.id, materialVariantId: null },
-          ...(allVariantIds.length > 0 ? [{ materialVariantId: { in: allVariantIds } }] : []),
-        ],
-      };
-
   const purchases = await prisma.purchaseMaterial.findMany({
-    where: purchaseWhere,
+    where: { materialId: params.id },
     include: {
       purchase: {
         include: {
           supplier: { select: { id: true, name: true } },
         },
       },
-      materialVariant: { select: { colorName: true, code: true } },
     },
     orderBy: { createdAt: 'desc' },
-  }) as any[];
+  });
 
-  // ── 2. SATIŞLAR ─────────────────────────────────────────────────────────
-  // partFilter: tüm bu materyali kullanan parçaları bul.
-  // filterVariantId varsa bile geniş tutuyoruz çünkü satış anındaki varyant
-  // partVariantsData'da saklanıyor; default materialVariantId farklı/null olabilir.
-  const partFilter = {
-    OR: [
-      { materialId: params.id },
-      ...(allVariantIds.length > 0 ? [{ materialVariantId: { in: allVariantIds } }] : []),
-    ],
-  };
+  // ── 2 & 3. SATIŞLAR / İADELER ────────────────────────────────────────────
+  const partFilter = { materialId: params.id };
 
   const invoiceItems = await prisma.invoiceItem.findMany({
     where: {
@@ -70,9 +43,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         },
       },
     },
-  }) as any[];
+  });
 
-  // ── 3. İADELER ──────────────────────────────────────────────────────────
   const returnItems = await prisma.invoiceItem.findMany({
     where: {
       product: { parts: { some: partFilter } },
@@ -86,19 +58,27 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         },
       },
     },
-  }) as any[];
+  });
 
-  // ── Birleşik timeline oluştur ────────────────────────────────────────────
+  // ── 4. FASONCU TRANSFERLERİ ─────────────────────────────────────────────
+  const transfers = await prisma.materialTransfer.findMany({
+    where: { materialId: params.id, companyId: user.companyId },
+    include: {
+      subcontractor: { select: { id: true, name: true } },
+    },
+    orderBy: { transferDate: 'desc' },
+  });
+
+  // ── Birleşik timeline ────────────────────────────────────────────────────
   type Entry = {
     id: string;
     date: Date;
-    type: 'alis' | 'satis' | 'iade';
+    type: 'alis' | 'satis' | 'iade' | 'fason_transfer';
     party: string;
     partyId: string;
     product: string | null;
     productId: string | null;
-    variant: string | null;
-    kgAmount: number;    // pozitif = stok artışı, negatif = stok azalışı
+    kgAmount: number;
     pricePerKg: number | null;
     currency: string | null;
     invoiceNo: string | null;
@@ -106,7 +86,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const entries: Entry[] = [];
 
-  // Alışları ekle
   for (const pm of purchases) {
     entries.push({
       id: pm.id,
@@ -116,9 +95,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       partyId: pm.purchase.supplierId,
       product: null,
       productId: null,
-      variant: pm.materialVariant
-        ? `${pm.materialVariant.colorName}${pm.materialVariant.code ? ` (${pm.materialVariant.code})` : ''}`
-        : null,
       kgAmount: pm.kgAmount,
       pricePerKg: pm.pricePerKg,
       currency: pm.purchase.currency,
@@ -126,114 +102,77 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     });
   }
 
-  // Satışları ekle (kg tüketimi hesapla)
   for (const ii of invoiceItems) {
     let kgUsed = 0;
-    let variantLabel: string | null = null;
-
-    // sale-time variant overrides (saved in partVariantsData)
-    const pvData: { partId: string; variantId: string }[] = Array.isArray(ii.partVariantsData)
-      ? ii.partVariantsData
-      : [];
-    const pvMap: Record<string, string> = {};
-    pvData.forEach((pv: any) => { pvMap[pv.partId] = pv.variantId; });
-
-    for (const part of ii.product?.parts ?? []) {
-      const resolvedVariantId = pvMap[part.id] ?? part.materialVariantId;
-
-      // filterVariantId varsa: yalnızca bu varyantı kullanan part'ları say
-      if (filterVariantId && resolvedVariantId !== filterVariantId) continue;
-
+    for (const part of (ii.product as any)?.parts ?? []) {
       const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
       kgUsed += (grossGrams * ii.quantity) / 1000;
-
-      const variant = resolvedVariantId
-        ? (material.variants ?? []).find((v: any) => v.id === resolvedVariantId)
-        : null;
-      if (variant) {
-        variantLabel = `${variant.colorName}${variant.code ? ` (${variant.code})` : ''}`;
-      }
     }
-
     if (kgUsed > 0) {
       entries.push({
         id: ii.id,
-        date: ii.invoice.date,
+        date: (ii as any).invoice.date,
         type: 'satis',
-        party: ii.invoice.customer?.name ?? '—',
-        partyId: ii.invoice.customerId,
+        party: (ii as any).invoice.customer?.name ?? '—',
+        partyId: (ii as any).invoice.customerId,
         product: ii.description,
         productId: ii.productId,
-        variant: variantLabel,
         kgAmount: -Math.round(kgUsed * 1000) / 1000,
         pricePerKg: null,
-        currency: ii.invoice.currency,
-        invoiceNo: ii.invoice.invoiceNo,
+        currency: (ii as any).invoice.currency,
+        invoiceNo: (ii as any).invoice.invoiceNo,
       });
     }
   }
 
-  // İadeleri ekle
   for (const ii of returnItems) {
     let kgRestored = 0;
-    let variantLabel: string | null = null;
-
-    const pvData: { partId: string; variantId: string }[] = Array.isArray(ii.partVariantsData)
-      ? ii.partVariantsData
-      : [];
-    const pvMap: Record<string, string> = {};
-    pvData.forEach((pv: any) => { pvMap[pv.partId] = pv.variantId; });
-
-    for (const part of ii.product?.parts ?? []) {
-      const resolvedVariantId = pvMap[part.id] ?? part.materialVariantId;
-
-      if (filterVariantId && resolvedVariantId !== filterVariantId) continue;
-
+    for (const part of (ii.product as any)?.parts ?? []) {
       const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
       kgRestored += (grossGrams * ii.quantity) / 1000;
-
-      const variant = resolvedVariantId
-        ? (material.variants ?? []).find((v: any) => v.id === resolvedVariantId)
-        : null;
-      if (variant) {
-        variantLabel = `${variant.colorName}${variant.code ? ` (${variant.code})` : ''}`;
-      }
     }
-
     if (kgRestored > 0) {
       entries.push({
         id: `ret-${ii.id}`,
-        date: ii.invoice.date,
+        date: (ii as any).invoice.date,
         type: 'iade',
-        party: ii.invoice.customer?.name ?? '—',
-        partyId: ii.invoice.customerId,
+        party: (ii as any).invoice.customer?.name ?? '—',
+        partyId: (ii as any).invoice.customerId,
         product: ii.description,
         productId: ii.productId,
-        variant: variantLabel,
         kgAmount: Math.round(kgRestored * 1000) / 1000,
         pricePerKg: null,
-        currency: ii.invoice.currency,
-        invoiceNo: ii.invoice.invoiceNo,
+        currency: (ii as any).invoice.currency,
+        invoiceNo: (ii as any).invoice.invoiceNo,
       });
     }
   }
 
-  // Tarihe göre sırala (en yeni önce)
-  entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  for (const t of transfers) {
+    entries.push({
+      id: `tr-${t.id}`,
+      date: t.transferDate,
+      type: 'fason_transfer',
+      party: `${(t as any).subcontractor?.name ?? '—'} (Fasoncu)`,
+      partyId: t.subcontractorId,
+      product: null,
+      productId: null,
+      kgAmount: t.direction === 'OUTGOING' ? -t.quantity : t.quantity,
+      pricePerKg: null,
+      currency: null,
+      invoiceNo: null,
+    });
+  }
 
-  // If filtering by variant, return variant-level stock
-  const activeVariant = filterVariantId
-    ? (material.variants ?? []).find((v: any) => v.id === filterVariantId)
-    : null;
+  entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return NextResponse.json({
     material: {
       id: material.id,
       name: material.name,
-      stock: activeVariant ? activeVariant.stock : material.stock,
+      category: material.category,
+      stock: material.stock,
       currency: material.currency,
-      variants: material.variants,
-      activeVariant: activeVariant ?? null,
     },
     entries,
   });

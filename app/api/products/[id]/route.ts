@@ -14,7 +14,6 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       parts: {
         include: {
           material: { select: { id: true, name: true, pricePerKg: true, currency: true } },
-          materialVariant: { select: { id: true, colorName: true, code: true, stock: true } },
         },
         orderBy: { sortOrder: 'asc' },
       },
@@ -61,7 +60,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           data: parts.map((p: any, idx: number) => ({
             productId: params.id,
             materialId: p.materialId || null,
-            materialVariantId: p.materialVariantId || null,
             name: p.name || '',
             gramsPerPiece: parseFloat(p.gramsPerPiece) || 0,
             wasteRate: parseFloat(p.wasteRate) || 0,
@@ -93,7 +91,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       parts: {
         include: {
           material: { select: { id: true, name: true, pricePerKg: true, currency: true } },
-          materialVariant: { select: { id: true, colorName: true, code: true, stock: true } },
         },
         orderBy: { sortOrder: 'asc' },
       },

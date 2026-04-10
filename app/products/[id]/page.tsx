@@ -23,7 +23,7 @@ function convertCurrency(amount: number, from: string, to: string, usdToTry: num
   return inTry / eurToTry;
 }
 
-function emptyPart() { return { materialId: '', materialVariantId: '', name: '', gramsPerPiece: '', wasteRate: '0' }; }
+function emptyPart() { return { materialId: '', name: '', gramsPerPiece: '', wasteRate: '0' }; }
 function emptyExtra() { return { name: '', amount: '', currency: 'USD' }; }
 
 export default function ProductDetailPage() {
@@ -105,7 +105,6 @@ export default function ProductDetailPage() {
         });
         setEditParts((prod.parts || []).map((p: any) => ({
           materialId: p.materialId || '',
-          materialVariantId: p.materialVariantId || '',
           name: p.name,
           gramsPerPiece: String(p.gramsPerPiece),
           wasteRate: String(p.wasteRate),
@@ -211,11 +210,7 @@ export default function ProductDetailPage() {
     setEditParts(p => p.map((row, idx) => idx === i ? { ...row, [f]: v } : row));
 
   const onMaterialSelect = (i: number, matId: string) => {
-    setEditParts(p => p.map((row, idx) => idx === i ? { ...row, materialId: matId, materialVariantId: '' } : row));
-  };
-
-  const onVariantSelect = (i: number, variantId: string) => {
-    setEditParts(p => p.map((row, idx) => idx === i ? { ...row, materialVariantId: variantId } : row));
+    setEditParts(p => p.map((row, idx) => idx === i ? { ...row, materialId: matId } : row));
   };
 
   const addExtra = () => setEditExtras(p => [...p, emptyExtra()]);
@@ -576,22 +571,6 @@ export default function ProductDetailPage() {
                               >
                                 <Plus className="w-3 h-3" /> Yeni Hammadde
                               </button>
-                              {(() => {
-                                const selMat = materials.find((m: any) => m.id === part.materialId);
-                                const variants = selMat?.variants ?? [];
-                                if (variants.length === 0) return null;
-                                return (
-                                  <select value={part.materialVariantId} onChange={e => onVariantSelect(idx, e.target.value)}
-                                    className="w-full px-2 py-1 border border-blue-200 rounded text-xs bg-white outline-none focus:ring-1 focus:ring-blue-400 text-blue-700">
-                                    <option value="">— Renk/Varyant seç —</option>
-                                    {variants.map((v: any) => (
-                                      <option key={v.id} value={v.id}>
-                                        {v.colorName}{v.code ? ` / ${v.code}` : ''}
-                                      </option>
-                                    ))}
-                                  </select>
-                                );
-                              })()}
                             </td>
                             <td className="px-3 py-2">
                               <input value={part.name} onChange={e => setPart(idx, 'name', e.target.value)}
@@ -634,12 +613,6 @@ export default function ProductDetailPage() {
                             <td className="px-3 py-2.5">
                               <p className="font-medium text-slate-700">
                                 {part.material?.name || '—'}
-                                {part.materialVariant && (
-                                  <span className="ml-1.5 text-xs font-normal text-blue-600">
-                                    {part.materialVariant.colorName}
-                                    {part.materialVariant.code && ` / ${part.materialVariant.code}`}
-                                  </span>
-                                )}
                               </p>
                               {part.material && <p className="text-xs text-slate-400">{fmt(part.material.pricePerKg)} {part.material.currency}/kg</p>}
                             </td>

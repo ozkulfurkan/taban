@@ -15,7 +15,6 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     },
     select: {
       materialId: true,
-      materialVariantId: true,
       quantity: true,
     },
   });

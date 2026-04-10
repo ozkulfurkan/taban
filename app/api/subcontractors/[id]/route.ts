@@ -14,7 +14,6 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       materialStocks: {
         include: {
           material: { select: { id: true, name: true } },
-          materialVariant: { select: { id: true, colorName: true, code: true } },
         },
         orderBy: { updatedAt: 'desc' },
       },
@@ -26,7 +25,6 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       materialTransfers: {
         include: {
           material: { select: { id: true, name: true } },
-          materialVariant: { select: { id: true, colorName: true, code: true } },
         },
         orderBy: { createdAt: 'desc' },
         take: 20,

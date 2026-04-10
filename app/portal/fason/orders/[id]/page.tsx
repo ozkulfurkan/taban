@@ -43,7 +43,6 @@ export default function FasonOrderDetailPage() {
   // Scrap form
   const [scrapOpen, setScrapOpen] = useState(false);
   const [scrapMaterialId, setScrapMaterialId] = useState('');
-  const [scrapVariantId, setScrapVariantId] = useState('');
   const [scrapQty, setScrapQty] = useState('');
   const [scrapReason, setScrapReason] = useState('');
   const [scrapLoading, setScrapLoading] = useState(false);
@@ -96,7 +95,6 @@ export default function FasonOrderDetailPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         materialId: scrapMaterialId,
-        materialVariantId: scrapVariantId || undefined,
         quantity: parseFloat(scrapQty),
         reason: scrapReason || undefined,
       }),
@@ -104,7 +102,7 @@ export default function FasonOrderDetailPage() {
     setScrapLoading(false);
     if (res.ok) {
       setScrapMsg('Fire kaydedildi.');
-      setScrapQty(''); setScrapReason(''); setScrapVariantId('');
+      setScrapQty(''); setScrapReason('');
       loadOrder();
     } else {
       const d = await res.json();
@@ -122,13 +120,9 @@ export default function FasonOrderDetailPage() {
   // Map stocks by materialId for scrap form
   const stockByMaterial: Record<string, any> = {};
   for (const s of stocks) {
-    const key = s.materialVariantId ? `${s.materialId}_${s.materialVariantId}` : s.materialId;
-    stockByMaterial[key] = s;
+    stockByMaterial[s.materialId] = s;
   }
-  const uniqueMaterials = stocks.reduce((acc: any[], s) => {
-    if (!acc.find(a => a.materialId === s.materialId)) acc.push(s);
-    return acc;
-  }, []);
+  const uniqueMaterials = stocks;
 
   return (
     <div className="space-y-5">
@@ -280,25 +274,16 @@ export default function FasonOrderDetailPage() {
           <div className="divide-y divide-slate-100">
             {order.product.parts.map((part: any) => {
               const kgRequired = (part.gramsPerPiece * (1 + part.wasteRate / 100) * order.totalPairs) / 1000;
-              const variantStock = part.materialVariantId ? stocks.find(s => s.materialVariantId === part.materialVariantId) : null;
-              const matStock = stocks.find(s => s.materialId === part.materialId && !s.materialVariantId);
-              const available = (variantStock ?? matStock)?.quantity ?? 0;
+              const matStock = stocks.find((s: any) => s.materialId === part.materialId);
+              const available = matStock?.quantity ?? 0;
               const deficit = kgRequired - available;
               const stockOk  = available >= kgRequired;
               const stockLow = available > 0 && available < kgRequired;
-              const variantLabel = part.materialVariant
-                ? `${part.materialVariant.colorName}${part.materialVariant.code ? ` (${part.materialVariant.code})` : ''}`
-                : null;
               return (
                 <div key={part.id} className="px-4 py-3 flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-slate-700">{part.name}</p>
                     <p className="text-xs text-slate-500">{part.material?.name}</p>
-                    {variantLabel && (
-                      <span className="inline-flex items-center mt-0.5 px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded text-xs font-medium">
-                        {variantLabel}
-                      </span>
-                    )}
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-sm font-semibold text-orange-600">{kgRequired.toFixed(3)} kg gerekli</p>
@@ -326,7 +311,7 @@ export default function FasonOrderDetailPage() {
             {order.materialTransfers.map((t: any) => (
               <div key={t.id} className="px-4 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-700">{t.material?.name}{t.materialVariant ? ` · ${t.materialVariant.colorName}` : ''}</p>
+                  <p className="text-sm text-slate-700">{t.material?.name}</p>
                   <p className="text-xs text-slate-400">{new Date(t.transferDate).toLocaleDateString('tr-TR')}</p>
                 </div>
                 <p className="text-sm font-medium text-blue-700">{t.quantity} kg</p>
@@ -360,18 +345,6 @@ export default function FasonOrderDetailPage() {
                   ))}
                 </select>
               </div>
-              {scrapMaterialId && stocks.filter(s => s.materialId === scrapMaterialId && s.materialVariantId).length > 0 && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Renk/Varyant</label>
-                  <select value={scrapVariantId} onChange={e => setScrapVariantId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none">
-                    <option value="">Tümü</option>
-                    {stocks.filter(s => s.materialId === scrapMaterialId && s.materialVariantId).map(s => (
-                      <option key={s.materialVariantId} value={s.materialVariantId}>{s.materialVariant?.colorName}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Miktar (kg)</label>
                 <input type="number" step="0.01" min="0.01" value={scrapQty} onChange={e => setScrapQty(e.target.value)} required

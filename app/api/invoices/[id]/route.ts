@@ -14,13 +14,7 @@ async function getInvoice(id: string, companyId: string) {
             include: {
               parts: {
                 include: {
-                  material: {
-                    select: {
-                      id: true, name: true,
-                      variants: { select: { id: true, colorName: true, code: true } },
-                    },
-                  },
-                  materialVariant: { select: { id: true, colorName: true, code: true } },
+                  material: { select: { id: true, name: true } },
                 },
                 orderBy: { sortOrder: 'asc' },
               },
@@ -144,28 +138,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       });
 
       // Hammadde stoğunu geri al
-      const pvData: { partId: string; variantId: string }[] = Array.isArray(item.partVariantsData)
-        ? (item.partVariantsData as any[])
-        : [];
-      const pvMap: Record<string, string> = {};
-      pvData.forEach((pv) => { pvMap[pv.partId] = pv.variantId; });
-
       for (const part of item.product.parts) {
+        if (!part.materialId) continue;
         const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
         const kgUsed = (grossGrams * item.quantity) / 1000;
-        const selectedVariantId = pvMap[part.id] ?? part.materialVariantId;
-
-        if (selectedVariantId) {
-          await tx.materialVariant.updateMany({
-            where: { id: selectedVariantId },
-            data: { stock: { increment: sign * kgUsed } },
-          });
-        } else if (part.materialId) {
-          await tx.material.updateMany({
-            where: { id: part.materialId, companyId: user.companyId },
-            data: { stock: { increment: sign * kgUsed } },
-          });
-        }
+        await tx.material.updateMany({
+          where: { id: part.materialId, companyId: user.companyId },
+          data: { stock: { increment: sign * kgUsed } },
+        });
       }
     }
 

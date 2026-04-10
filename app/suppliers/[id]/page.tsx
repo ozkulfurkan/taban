@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Pencil, Save, X, Phone, Mail, MapPin, Hash,
   Download, RotateCcw, Banknote, CheckCircle2, ShoppingBag, Plus, Trash2, Search, ChevronRight,
-  ChevronDown, FileText, PlusCircle, Palette,
+  ChevronDown, FileText, PlusCircle,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -454,7 +454,7 @@ function BakiyeDuzeltModal({ supplier, currentBalance, onClose, onSaved }: {
 
 // ── AlışModal ──────────────────────────────────────────────────────────────
 type ItemType = 'product' | 'material';
-type LineItem = { id: number; itemType: ItemType; refId: string; itemName: string; qty: string; unitPrice: string; variantId: string };
+type LineItem = { id: number; itemType: ItemType; refId: string; itemName: string; qty: string; unitPrice: string };
 
 function AlışModal({ supplier, onClose, onSaved }: {
   supplier: any; onClose: () => void; onSaved: () => void;
@@ -471,7 +471,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
     };
   });
   const [items, setItems] = useState<LineItem[]>([
-    { id: 1, itemType: 'material', refId: '', itemName: '', qty: '1', unitPrice: '', variantId: '' },
+    { id: 1, itemType: 'material', refId: '', itemName: '', qty: '1', unitPrice: '' },
   ]);
   const [productList, setProductList] = useState<any[]>([]);
   const [materialList, setMaterialList] = useState<any[]>([]);
@@ -483,10 +483,6 @@ function AlışModal({ supplier, onClose, onSaved }: {
   const [subcontractorList, setSubcontractorList] = useState<any[]>([]);
   const [subcontractorId, setSubcontractorId] = useState('');
 
-  // Yeni renk ekleme (per item)
-  const [showNewColor, setShowNewColor] = useState<number | null>(null);
-  const [newColorForm, setNewColorForm] = useState({ colorName: '', code: '' });
-  const [addingColor, setAddingColor] = useState(false);
 
   useEffect(() => {
     fetch('/api/products').then(r => r.json()).then(d => setProductList(Array.isArray(d) ? d : []));
@@ -498,40 +494,21 @@ function AlışModal({ supplier, onClose, onSaved }: {
 
   const total = items.reduce((sum, it) => sum + (parseFloat(it.qty) || 0) * fromPriceInput(it.unitPrice), 0);
 
-  const addRow = () => setItems(p => [...p, { id: Date.now(), itemType: 'material', refId: '', itemName: '', qty: '1', unitPrice: '', variantId: '' }]);
+  const addRow = () => setItems(p => [...p, { id: Date.now(), itemType: 'material', refId: '', itemName: '', qty: '1', unitPrice: '' }]);
   const removeRow = (id: number) => setItems(p => p.filter(r => r.id !== id));
   const updateItem = (id: number, field: keyof LineItem, value: string) =>
     setItems(p => p.map(r => r.id === id ? { ...r, [field]: value } : r));
   const setItemType = (id: number, type: ItemType) =>
-    setItems(p => p.map(r => r.id === id ? { ...r, itemType: type, refId: '', itemName: '', variantId: '' } : r));
+    setItems(p => p.map(r => r.id === id ? { ...r, itemType: type, refId: '', itemName: '' } : r));
 
   const selectRef = (itemId: number, ref: any, type: ItemType) => {
     const price = type === 'material' ? toPriceInput(ref.pricePerKg || '') : toPriceInput(ref.unitPrice || '');
     setItems(p => p.map(r => r.id === itemId
-      ? { ...r, refId: ref.id, itemName: ref.name, unitPrice: price, variantId: '' }
+      ? { ...r, refId: ref.id, itemName: ref.name, unitPrice: price }
       : r));
     setOpenDropdown(null);
   };
 
-  const handleCreateVariant = async (itemId: number, materialId: string) => {
-    if (!newColorForm.colorName.trim()) return;
-    setAddingColor(true);
-    try {
-      const res = await fetch(`/api/materials/${materialId}/variants`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ colorName: newColorForm.colorName.trim(), code: newColorForm.code.trim(), stock: 0 }),
-      });
-      const variant = await res.json();
-      setMaterialList(prev => prev.map(m => m.id === materialId
-        ? { ...m, variants: [...(m.variants || []), variant] }
-        : m
-      ));
-      setItems(p => p.map(r => r.id === itemId ? { ...r, variantId: variant.id } : r));
-      setShowNewColor(null);
-      setNewColorForm({ colorName: '', code: '' });
-    } finally { setAddingColor(false); }
-  };
 
   const filteredList = (item: LineItem) => {
     const list = item.itemType === 'material' ? materialList : productList;
@@ -594,7 +571,6 @@ function AlışModal({ supplier, onClose, onSaved }: {
           items: validItems.map(i => ({
             productId: i.itemType === 'product' ? (i.refId || null) : null,
             materialId: i.itemType === 'material' ? (i.refId || null) : null,
-            materialVariantId: i.itemType === 'material' ? (i.variantId || null) : null,
             subcontractorId: i.itemType === 'material' && subcontractorId ? subcontractorId : null,
             description: i.itemName,
             qty: i.qty,
@@ -729,74 +705,6 @@ function AlışModal({ supplier, onClose, onSaved }: {
                           </div>
                         )}
                       </div>
-                      {/* Varyant seçimi - hammadde seçildiyse ve varyantı varsa */}
-                      {isMaterial && item.refId && (() => {
-                        const selMat = materialList.find(m => m.id === item.refId);
-                        const variants: any[] = selMat?.variants ?? [];
-                        return (
-                          <div className="border-t border-dashed border-slate-200 pt-2 space-y-1.5">
-                            <div className="flex items-center gap-1.5">
-                              <Palette className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                              <label className="text-xs text-slate-500 font-medium">Renk / Varyant</label>
-                            </div>
-                            <div className="flex gap-1.5">
-                              <select
-                                value={item.variantId}
-                                onChange={e => updateItem(item.id, 'variantId', e.target.value)}
-                                className="flex-1 px-2 py-1.5 border border-slate-200 rounded text-xs outline-none focus:ring-1 focus:ring-indigo-400 bg-white"
-                              >
-                                <option value="">— Ana stok (renk yok) —</option>
-                                {variants.map((v: any) => (
-                                  <option key={v.id} value={v.id}>
-                                    {v.colorName}{v.code ? ` (${v.code})` : ''} — {(v.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                type="button"
-                                onClick={() => { setShowNewColor(item.id); setNewColorForm({ colorName: '', code: '' }); }}
-                                className="flex items-center gap-1 px-2 py-1.5 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded text-xs font-medium whitespace-nowrap"
-                              >
-                                <Plus className="w-3 h-3" /> Yeni Renk
-                              </button>
-                            </div>
-                            {/* Yeni renk inline formu */}
-                            {showNewColor === item.id && (
-                              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-2.5 space-y-2">
-                                <p className="text-xs font-medium text-indigo-700">Yeni Renk / Varyant Ekle</p>
-                                <div className="flex gap-2">
-                                  <input
-                                    value={newColorForm.colorName}
-                                    onChange={e => setNewColorForm(p => ({ ...p, colorName: e.target.value }))}
-                                    placeholder="Renk adı *"
-                                    className="flex-1 px-2 py-1 border border-indigo-200 rounded text-xs outline-none"
-                                    autoFocus
-                                  />
-                                  <input
-                                    value={newColorForm.code}
-                                    onChange={e => setNewColorForm(p => ({ ...p, code: e.target.value }))}
-                                    placeholder="Kod"
-                                    className="w-24 px-2 py-1 border border-indigo-200 rounded text-xs outline-none"
-                                  />
-                                </div>
-                                <div className="flex gap-2">
-                                  <button type="button"
-                                    onClick={() => setShowNewColor(null)}
-                                    className="flex-1 py-1 border border-slate-200 rounded text-xs text-slate-500 hover:bg-slate-50">
-                                    İptal
-                                  </button>
-                                  <button type="button"
-                                    onClick={() => handleCreateVariant(item.id, item.refId)}
-                                    disabled={addingColor || !newColorForm.colorName.trim()}
-                                    className="flex-1 py-1 bg-indigo-600 text-white rounded text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1">
-                                    {addingColor ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />} Ekle ve Seç
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
 
                       <div className="grid grid-cols-3 gap-2 text-xs">
                         <div>

@@ -508,26 +508,14 @@ export default function InvoiceDetailPage() {
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                   {parts.map((part: any) => {
-                                    // Check for sale-time variant override saved in partVariantsData
-                                    const pvData: {partId: string; variantId: string}[] = Array.isArray(item.partVariantsData) ? item.partVariantsData : [];
-                                    const saleVariantId = pvData.find(pv => pv.partId === part.id)?.variantId;
-                                    // Try to resolve from sale-time override → part's material.variants, else fall back to part's default materialVariant
-                                    const saleVariant = saleVariantId
-                                      ? (part.material?.variants ?? []).find((v: any) => v.id === saleVariantId)
-                                      : null;
-                                    const variant = saleVariant ?? part.materialVariant;
-                                    const rightLabel = variant
-                                      ? `${variant.colorName}${variant.code ? ` (${variant.code})` : ''}`
-                                      : (part.material?.name ?? null);
+                                    const matName = part.material?.name ?? null;
                                     return (
                                       <div key={part.id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-xs shadow-sm">
                                         <span className="font-semibold text-slate-700">{part.name}</span>
-                                        {rightLabel && (
+                                        {matName && (
                                           <>
                                             <span className="text-slate-400">-</span>
-                                            <span className={variant ? 'text-blue-600 font-medium' : 'text-slate-500'}>
-                                              {rightLabel}
-                                            </span>
+                                            <span className="text-slate-500">{matName}</span>
                                           </>
                                         )}
                                       </div>

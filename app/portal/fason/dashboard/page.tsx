@@ -33,7 +33,7 @@ export default function FasonDashboardPage() {
 
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-orange-500" /></div>;
 
-  const activeOrders = orders.filter(o => !['RECEIVED', 'CANCELLED'].includes(o.status));
+  const activeOrders = orders.filter(o => !['COMPLETED', 'RECEIVED', 'CANCELLED'].includes(o.status));
   const overdue = activeOrders.filter(o => o.dueDate && new Date(o.dueDate) < new Date());
   const upcoming = activeOrders.filter(o => {
     if (!o.dueDate) return false;
@@ -96,11 +96,16 @@ export default function FasonDashboardPage() {
           <p className="font-semibold text-slate-700 text-sm">Son Siparişler</p>
           <Link href="/portal/fason/orders" className="text-orange-600 hover:underline text-xs font-medium">Tümünü gör</Link>
         </div>
-        {orders.slice(0, 5).length === 0 ? (
+        {orders.length === 0 ? (
           <p className="text-center py-8 text-slate-400 text-sm">Henüz sipariş yok</p>
         ) : (
           <div className="divide-y divide-slate-100">
-            {orders.slice(0, 5).map((o: any) => (
+            {[...orders].sort((a, b) => {
+              if (!a.dueDate && !b.dueDate) return 0;
+              if (!a.dueDate) return 1;
+              if (!b.dueDate) return -1;
+              return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+            }).slice(0, 5).map((o: any) => (
               <Link key={o.id} href={`/portal/fason/orders/${o.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
                 <div>
                   <p className="font-medium text-slate-700 text-sm">{o.orderNo}</p>

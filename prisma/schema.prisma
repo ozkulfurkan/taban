@@ -101,6 +101,7 @@ model Material {
   companyId         String
   company           Company            @relation(fields: [companyId], references: [id])
   name              String
+  category          String?
   supplier          String?
   pricePerKg        Float
   currency          String             @default("USD")
@@ -110,28 +111,11 @@ model Material {
   productParts      ProductPart[]
   priceHistory      PriceHistory[]
   purchaseMaterials   PurchaseMaterial[]
-  variants            MaterialVariant[]
   subcontractorStocks SubcontractorStock[]
   materialTransfers   MaterialTransfer[]
   subcontractorScraps SubcontractorScrap[]
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
-}
-
-model MaterialVariant {
-  id                  String               @id @default(cuid())
-  materialId          String
-  material            Material             @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  colorName           String
-  code                String?
-  stock               Float                @default(0)
-  productParts        ProductPart[]
-  purchaseMaterials   PurchaseMaterial[]
-  subcontractorStocks SubcontractorStock[]
-  materialTransfers   MaterialTransfer[]
-  subcontractorScraps SubcontractorScrap[]
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
 }
 
 model PriceHistory {
@@ -223,19 +207,17 @@ model Product {
 }
 
 model ProductPart {
-  id                String           @id @default(cuid())
-  productId         String
-  product           Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
-  materialId        String?
-  material          Material?        @relation(fields: [materialId], references: [id])
-  materialVariantId String?
-  materialVariant   MaterialVariant? @relation(fields: [materialVariantId], references: [id])
-  name              String
-  gramsPerPiece     Float            @default(0)
-  wasteRate         Float            @default(0)
-  sortOrder         Int              @default(0)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  id            String    @id @default(cuid())
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  materialId    String?
+  material      Material? @relation(fields: [materialId], references: [id])
+  name          String
+  gramsPerPiece Float     @default(0)
+  wasteRate     Float     @default(0)
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model ProductExtraCost {
@@ -349,19 +331,16 @@ model Purchase {
 }
 
 model PurchaseMaterial {
-  id                String           @id @default(cuid())
-  purchaseId        String
-  purchase          Purchase         @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  materialId        String
-  material          Material         @relation(fields: [materialId], references: [id])
-  materialVariantId String?
-  materialVariant   MaterialVariant? @relation(fields: [materialVariantId], references: [id])
-  kgAmount          Float            @default(0)
-  pricePerKg        Float?
-  // Hedef: null = ana depo, dolu = doğrudan fasoncuya
-  subcontractorId   String?
-  subcontractor     Subcontractor?   @relation(fields: [subcontractorId], references: [id])
-  createdAt         DateTime         @default(now())
+  id            String         @id @default(cuid())
+  purchaseId    String
+  purchase      Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  materialId    String
+  material      Material       @relation(fields: [materialId], references: [id])
+  kgAmount      Float          @default(0)
+  pricePerKg    Float?
+  subcontractorId String?
+  subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id])
+  createdAt     DateTime       @default(now())
 }
 
 model Payment {
@@ -580,22 +559,20 @@ model SubcontractorOrder {
 }
 
 model MaterialTransfer {
-  id                String              @id @default(cuid())
-  companyId         String
-  company           Company             @relation(fields: [companyId], references: [id])
-  subcontractorId   String
-  subcontractor     Subcontractor       @relation(fields: [subcontractorId], references: [id])
-  orderId           String?
-  order             SubcontractorOrder? @relation(fields: [orderId], references: [id])
-  materialId        String
-  material          Material            @relation(fields: [materialId], references: [id])
-  materialVariantId String?
-  materialVariant   MaterialVariant?    @relation(fields: [materialVariantId], references: [id])
-  quantity          Float
-  direction         TransferDirection
-  transferDate      DateTime            @default(now())
-  notes             String?
-  createdAt         DateTime            @default(now())
+  id              String              @id @default(cuid())
+  companyId       String
+  company         Company             @relation(fields: [companyId], references: [id])
+  subcontractorId String
+  subcontractor   Subcontractor       @relation(fields: [subcontractorId], references: [id])
+  orderId         String?
+  order           SubcontractorOrder? @relation(fields: [orderId], references: [id])
+  materialId      String
+  material        Material            @relation(fields: [materialId], references: [id])
+  quantity        Float
+  direction       TransferDirection
+  transferDate    DateTime            @default(now())
+  notes           String?
+  createdAt       DateTime            @default(now())
 
   @@index([companyId])
   @@index([subcontractorId])
@@ -616,19 +593,17 @@ model ProductionUpdate {
 }
 
 model SubcontractorScrap {
-  id                String           @id @default(cuid())
-  companyId         String
-  company           Company          @relation(fields: [companyId], references: [id])
-  orderId           String
-  order             SubcontractorOrder @relation(fields: [orderId], references: [id])
-  materialId        String
-  material          Material         @relation(fields: [materialId], references: [id])
-  materialVariantId String?
-  materialVariant   MaterialVariant? @relation(fields: [materialVariantId], references: [id])
-  quantity          Float
-  reason            String?
-  reportedBy        String?
-  createdAt         DateTime         @default(now())
+  id          String             @id @default(cuid())
+  companyId   String
+  company     Company            @relation(fields: [companyId], references: [id])
+  orderId     String
+  order       SubcontractorOrder @relation(fields: [orderId], references: [id])
+  materialId  String
+  material    Material           @relation(fields: [materialId], references: [id])
+  quantity    Float
+  reason      String?
+  reportedBy  String?
+  createdAt   DateTime           @default(now())
 
   @@index([orderId])
   @@index([companyId])
@@ -636,16 +611,14 @@ model SubcontractorScrap {
 
 // Fasoncu deposundaki anlık hammadde zimmet durumu
 model SubcontractorStock {
-  id                String           @id @default(cuid())
-  subcontractorId   String
-  subcontractor     Subcontractor    @relation(fields: [subcontractorId], references: [id])
-  materialId        String
-  material          Material         @relation(fields: [materialId], references: [id])
-  materialVariantId String?
-  materialVariant   MaterialVariant? @relation(fields: [materialVariantId], references: [id])
-  quantity          Float            @default(0)
-  updatedAt         DateTime         @updatedAt
+  id              String        @id @default(cuid())
+  subcontractorId String
+  subcontractor   Subcontractor @relation(fields: [subcontractorId], references: [id])
+  materialId      String
+  material        Material      @relation(fields: [materialId], references: [id])
+  quantity        Float         @default(0)
+  updatedAt       DateTime      @updatedAt
 
-  @@unique([subcontractorId, materialId, materialVariantId])
+  @@unique([subcontractorId, materialId])
   @@index([subcontractorId])
 }

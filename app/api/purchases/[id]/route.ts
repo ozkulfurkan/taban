@@ -69,11 +69,17 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   await prisma.$transaction(async (tx) => {
     // ── Stok geri al: alışta eklenen kg'ları düş ──
     for (const pm of (purchase as any).purchaseMaterials) {
-      if (pm.materialVariantId) {
-        await tx.materialVariant.updateMany({
-          where: { id: pm.materialVariantId },
-          data: { stock: { decrement: pm.kgAmount } },
+      if (pm.subcontractorId) {
+        // Fasoncu stoğundan düş
+        const ss = await tx.subcontractorStock.findFirst({
+          where: { subcontractorId: pm.subcontractorId, materialId: pm.materialId },
         });
+        if (ss) {
+          await tx.subcontractorStock.update({
+            where: { id: ss.id },
+            data: { quantity: { decrement: pm.kgAmount } },
+          });
+        }
       } else if (pm.materialId) {
         await tx.material.updateMany({
           where: { id: pm.materialId, companyId: user.companyId },

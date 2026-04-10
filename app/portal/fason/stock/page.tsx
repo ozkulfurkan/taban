@@ -42,7 +42,6 @@ export default function FasonStockPage() {
               <thead>
                 <tr className="border-b bg-slate-50">
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Hammadde</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Renk / Varyant</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Miktar</th>
                 </tr>
               </thead>
@@ -51,18 +50,6 @@ export default function FasonStockPage() {
                   <tr key={s.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium text-slate-800">
                       {s.material?.name || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {s.materialVariant ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          {s.materialVariant.colorName}
-                          {s.materialVariant.code && (
-                            <span className="text-slate-400 text-xs">({s.materialVariant.code})</span>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span className={`font-semibold ${s.quantity <= 0 ? 'text-slate-400' : 'text-slate-800'}`}>

@@ -16,7 +16,6 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
           parts: {
             include: {
               material: { select: { id: true, name: true, stock: true } },
-              materialVariant: { select: { id: true, colorName: true, code: true, stock: true } },
             },
             orderBy: { sortOrder: 'asc' },
           },
@@ -33,21 +32,18 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     where: { subcontractorId: order.subcontractorId },
   });
   const stockMap = new Map(
-    subcontractorStocks.map(s => [`${s.materialId}:${s.materialVariantId ?? ''}`, s.quantity])
+    subcontractorStocks.map(s => [s.materialId, s.quantity])
   );
 
   const requirements = order.product.parts.map(part => {
     // BOM kg hesabı: totalPairs × gramsPerPiece × (1 + wasteRate/100) / 1000
     const kgRequired = (part.gramsPerPiece * (1 + part.wasteRate / 100) * order.totalPairs) / 1000;
-    const stockKey = `${part.materialId}:${part.materialVariantId ?? ''}`;
-    const currentStock = stockMap.get(stockKey) ?? 0;
+    const currentStock = stockMap.get(part.materialId ?? '') ?? 0;
     return {
       partId: part.id,
       partName: part.name,
       materialId: part.materialId,
-      materialVariantId: part.materialVariantId,
       materialName: part.material?.name ?? '—',
-      variantName: part.materialVariant ? `${part.materialVariant.colorName}${part.materialVariant.code ? ` (${part.materialVariant.code})` : ''}` : null,
       gramsPerPiece: part.gramsPerPiece,
       wasteRate: part.wasteRate,
       kgRequired: Math.round(kgRequired * 1000) / 1000,

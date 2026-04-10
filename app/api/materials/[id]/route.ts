@@ -11,7 +11,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (session.user.role === 'VIEWER') return NextResponse.json({ error: 'No permission' }, { status: 403 });
 
     const body = await req.json();
-    const { name, supplier, pricePerKg, currency, description } = body ?? {};
+    const { name, category, supplier, pricePerKg, currency, description } = body ?? {};
 
     const existing = await prisma.material.findUnique({ where: { id: params.id } });
     if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -32,6 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       where: { id: params.id },
       data: {
         name: name ?? existing.name,
+        category: category !== undefined ? (category || null) : existing.category,
         supplier: supplier ?? existing.supplier,
         pricePerKg: newPrice,
         currency: newCurrency,

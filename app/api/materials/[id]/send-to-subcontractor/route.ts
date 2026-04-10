@@ -10,7 +10,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const user = session.user as any;
     if (user.role === 'VIEWER') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-    const { subcontractorId, materialVariantId, quantity, notes } = await req.json();
+    const { subcontractorId, quantity, notes } = await req.json();
 
     if (!subcontractorId || !quantity || quantity <= 0) {
       return NextResponse.json({ error: 'Fasoncu ve miktar gerekli' }, { status: 400 });
@@ -26,29 +26,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     });
     if (!subcontractor) return NextResponse.json({ error: 'Fasoncu bulunamadı' }, { status: 404 });
 
-    const variantId: string | null = materialVariantId || null;
-
     await prisma.$transaction(async (tx) => {
       // Ana stoktan düş
-      if (variantId) {
-        await tx.materialVariant.update({
-          where: { id: variantId },
-          data: { stock: { decrement: quantity } },
-        });
-      } else {
-        await tx.material.update({
-          where: { id: params.id },
-          data: { stock: { decrement: quantity } },
-        });
-      }
+      await tx.material.update({
+        where: { id: params.id },
+        data: { stock: { decrement: quantity } },
+      });
 
-      // Fasoncu stokuna ekle (upsert — materialVariantId nullable olduğu için findFirst pattern)
+      // Fasoncu stokuna ekle (upsert)
       const existing = await tx.subcontractorStock.findFirst({
-        where: {
-          subcontractorId,
-          materialId: params.id,
-          materialVariantId: variantId,
-        },
+        where: { subcontractorId, materialId: params.id },
       });
       if (existing) {
         await tx.subcontractorStock.update({
@@ -57,12 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         });
       } else {
         await tx.subcontractorStock.create({
-          data: {
-            subcontractorId,
-            materialId: params.id,
-            materialVariantId: variantId,
-            quantity,
-          },
+          data: { subcontractorId, materialId: params.id, quantity },
         });
       }
 
@@ -72,7 +54,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           companyId: user.companyId,
           subcontractorId,
           materialId: params.id,
-          materialVariantId: variantId,
           quantity,
           direction: 'OUTGOING',
           notes: notes || null,

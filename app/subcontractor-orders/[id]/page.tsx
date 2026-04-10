@@ -7,7 +7,7 @@ import SizeTable from '@/app/portal/components/size-table';
 import Link from 'next/link';
 import {
   Loader2, ChevronLeft, Factory, Send, Package, ArrowRight,
-  AlertTriangle, CheckCircle2, Palette, Mail,
+  AlertTriangle, CheckCircle2, Mail,
 } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -30,7 +30,7 @@ export default function SubcontractorOrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [matList, setMatList] = useState<any[]>([]);
 
-  const [transferForm, setTransferForm] = useState({ materialId: '', materialVariantId: '', quantity: '', notes: '' });
+  const [transferForm, setTransferForm] = useState({ materialId: '', quantity: '', notes: '' });
   const [transferSaving, setTransferSaving] = useState(false);
   const [receiveForm, setReceiveForm] = useState({ receivedPairs: '', notes: '' });
   const [receiveSaving, setReceiveSaving] = useState(false);
@@ -60,12 +60,11 @@ export default function SubcontractorOrderDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           materialId: transferForm.materialId,
-          materialVariantId: transferForm.materialVariantId || null,
           quantity: parseFloat(transferForm.quantity),
           notes: transferForm.notes || null,
         }),
       });
-      setTransferForm({ materialId: '', materialVariantId: '', quantity: '', notes: '' });
+      setTransferForm({ materialId: '', quantity: '', notes: '' });
       load();
     } finally { setTransferSaving(false); }
   };
@@ -165,11 +164,6 @@ export default function SubcontractorOrderDetailPage() {
                             <td className="px-3 py-2.5 font-medium text-slate-700">{r.partName}</td>
                             <td className="px-3 py-2.5">
                               <p className="font-medium text-slate-700">{r.materialName}</p>
-                              {r.variantName && (
-                                <span className="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded text-xs font-medium">
-                                  {r.variantName}
-                                </span>
-                              )}
                             </td>
                             <td className="px-3 py-2.5 text-right font-semibold text-orange-600">
                               {r.kgRequired.toFixed(3)}
@@ -222,20 +216,11 @@ export default function SubcontractorOrderDetailPage() {
                   <Send className="w-3.5 h-3.5" /> Hammadde Gönder
                 </p>
                 <div className="space-y-2">
-                  <select value={transferForm.materialId} onChange={e => setTransferForm(p => ({ ...p, materialId: e.target.value, materialVariantId: '' }))}
+                  <select value={transferForm.materialId} onChange={e => setTransferForm(p => ({ ...p, materialId: e.target.value }))}
                     className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400">
                     <option value="">— Hammadde Seçin —</option>
                     {matList.map((m: any) => <option key={m.id} value={m.id}>{m.name} ({m.stock?.toFixed(2) ?? 0} kg)</option>)}
                   </select>
-                  {transferForm.materialId && (
-                    <select value={transferForm.materialVariantId} onChange={e => setTransferForm(p => ({ ...p, materialVariantId: e.target.value }))}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400">
-                      <option value="">Ana Stok</option>
-                      {(matList.find(m => m.id === transferForm.materialId)?.variants ?? []).map((v: any) => (
-                        <option key={v.id} value={v.id}>{v.colorName}{v.code ? ` (${v.code})` : ''}</option>
-                      ))}
-                    </select>
-                  )}
                   <div className="flex gap-2">
                     <input type="number" min="0" step="0.001" value={transferForm.quantity} onChange={e => setTransferForm(p => ({ ...p, quantity: e.target.value }))}
                       placeholder="Miktar (kg)" className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-400" />
@@ -280,7 +265,6 @@ export default function SubcontractorOrderDetailPage() {
                     <div key={t.id} className="flex items-center justify-between text-xs">
                       <div>
                         <span className="font-medium text-slate-700">{t.material?.name}</span>
-                        {t.materialVariant && <span className="text-slate-400 ml-1"><Palette className="w-2.5 h-2.5 inline" /> {t.materialVariant.colorName}</span>}
                         <span className="text-slate-400 ml-2">{new Date(t.createdAt).toLocaleDateString('tr-TR')}</span>
                       </div>
                       <span className="font-semibold text-orange-600">{t.quantity.toFixed(3)} kg</span>

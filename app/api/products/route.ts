@@ -19,7 +19,6 @@ export async function GET() {
               id: true,
               name: true,
               stock: true,
-              variants: { select: { id: true, colorName: true, code: true, stock: true }, orderBy: { createdAt: 'asc' as const } },
             },
           },
         },

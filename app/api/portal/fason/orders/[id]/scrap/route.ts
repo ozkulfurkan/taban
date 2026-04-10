@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const { materialId, materialVariantId, quantity, reason } = await req.json();
+  const { materialId, quantity, reason } = await req.json();
   const qty = parseFloat(quantity) || 0;
   if (!materialId || qty <= 0) {
     return NextResponse.json({ error: 'materialId ve quantity gerekli' }, { status: 400 });
@@ -24,11 +24,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   await prisma.$transaction(async (tx) => {
     // Fasoncu stoğundan düş
     const stock = await tx.subcontractorStock.findFirst({
-      where: {
-        subcontractorId: user.subcontractorId,
-        materialId,
-        materialVariantId: materialVariantId || null,
-      },
+      where: { subcontractorId: user.subcontractorId, materialId },
     });
     if (stock) {
       await tx.subcontractorStock.update({
@@ -43,7 +39,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         companyId: user.companyId,
         orderId: params.id,
         materialId,
-        materialVariantId: materialVariantId || null,
         quantity: qty,
         reason: reason || null,
         reportedBy: user.email,

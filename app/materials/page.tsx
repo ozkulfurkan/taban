@@ -7,10 +7,10 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { useSession } from 'next-auth/react';
 import {
   Package, Plus, Search, Edit2, Trash2, History, Loader2, Layers,
-  ChevronDown, ChevronRight, Palette, X, FileText, TrendingUp, TrendingDown, RotateCcw, Factory,
+  X, FileText, TrendingUp, TrendingDown, RotateCcw, Factory, Tag,
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export default function MaterialsPage() {
   const { data: session } = useSession() || {};
@@ -22,22 +22,15 @@ export default function MaterialsPage() {
   const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [historyModal, setHistoryModal] = useState<any>(null);
   const [editItem, setEditItem] = useState<any>(null);
-  const [form, setForm] = useState({ name: '', supplier: '', pricePerKg: '', currency: 'USD', description: '' });
+  const [form, setForm] = useState({ name: '', category: '', supplier: '', pricePerKg: '', currency: 'USD', description: '' });
   const [saving, setSaving] = useState(false);
 
-  // Expanded material IDs
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-
-  // Variant add/edit modal
-  const [variantModal, setVariantModal] = useState<{ materialId: string; variant?: any } | null>(null);
-  const [variantForm, setVariantForm] = useState({ colorName: '', code: '', stock: '' });
-  const [variantSaving, setVariantSaving] = useState(false);
-
-  // Stok güncelleme (for variants and standalone materials)
-  const [stokModal, setStokModal] = useState<{ type: 'material' | 'variant'; id: string; materialId?: string; name: string; stock: number } | null>(null);
+  // Stok güncelleme
+  const [stokModal, setStokModal] = useState<{ id: string; name: string; stock: number } | null>(null);
   const [stokDelta, setStokDelta] = useState('');
   const [stokSign, setStokSign] = useState<1 | -1>(1);
   const [stokSaving, setStokSaving] = useState(false);
@@ -47,23 +40,19 @@ export default function MaterialsPage() {
   const [ekstreLoading, setEkstreLoading] = useState(false);
 
   // Fasoncuya Gönder modal
-  const [sendToSubModal, setSendToSubModal] = useState<{ materialId: string; materialVariantId?: string; name: string } | null>(null);
+  const [sendToSubModal, setSendToSubModal] = useState<{ materialId: string; name: string } | null>(null);
   const [subcontractors, setSubcontractors] = useState<any[]>([]);
   const [sendToSubId, setSendToSubId] = useState('');
   const [sendToSubQty, setSendToSubQty] = useState('');
   const [sendToSubSaving, setSendToSubSaving] = useState(false);
 
-  const openEkstre = async (mat: any, variant?: any) => {
-    const label = variant ? `${mat.name} — ${variant.colorName}${variant.code ? ` (${variant.code})` : ''}` : mat.name;
+  const openEkstre = async (mat: any) => {
     setEkstreLoading(true);
-    setEkstreModal({ name: label, data: null });
+    setEkstreModal({ name: mat.name, data: null });
     try {
-      const url = variant
-        ? `/api/materials/${mat.id}/ekstre?variantId=${variant.id}`
-        : `/api/materials/${mat.id}/ekstre`;
-      const res = await fetch(url);
+      const res = await fetch(`/api/materials/${mat.id}/ekstre`);
       const data = await res.json();
-      setEkstreModal({ name: label, data });
+      setEkstreModal({ name: mat.name, data });
     } finally { setEkstreLoading(false); }
   };
 
@@ -71,22 +60,11 @@ export default function MaterialsPage() {
     if (!stokModal || !stokDelta) return;
     setStokSaving(true);
     try {
-      if (stokModal.type === 'material') {
-        await fetch(`/api/materials/${stokModal.id}/stok`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ delta: stokSign * (parseFloat(stokDelta) || 0) }),
-        });
-      } else {
-        // variant stok update via PUT
-        const current = stokModal.stock;
-        const newStock = current + stokSign * (parseFloat(stokDelta) || 0);
-        await fetch(`/api/materials/${stokModal.materialId}/variants/${stokModal.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ stock: newStock }),
-        });
-      }
+      await fetch(`/api/materials/${stokModal.id}/stok`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delta: stokSign * (parseFloat(stokDelta) || 0) }),
+      });
       setStokModal(null);
       setStokDelta('');
       fetchMaterials();
@@ -113,8 +91,8 @@ export default function MaterialsPage() {
     fetch('/api/subcontractors').then(r => r.json()).then(d => { if (Array.isArray(d)) setSubcontractors(d); });
   }, []);
 
-  const openSendToSub = (materialId: string, name: string, materialVariantId?: string) => {
-    setSendToSubModal({ materialId, materialVariantId, name });
+  const openSendToSub = (materialId: string, name: string) => {
+    setSendToSubModal({ materialId, name });
     setSendToSubId('');
     setSendToSubQty('');
   };
@@ -128,7 +106,6 @@ export default function MaterialsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           subcontractorId: sendToSubId,
-          materialVariantId: sendToSubModal.materialVariantId || null,
           quantity: parseFloat(sendToSubQty),
         }),
       });
@@ -144,7 +121,7 @@ export default function MaterialsPage() {
 
   const openNew = () => {
     setEditItem(null);
-    setForm({ name: '', supplier: '', pricePerKg: '', currency, description: '' });
+    setForm({ name: '', category: '', supplier: '', pricePerKg: '', currency, description: '' });
     setModalOpen(true);
   };
 
@@ -152,6 +129,7 @@ export default function MaterialsPage() {
     setEditItem(mat);
     setForm({
       name: mat?.name ?? '',
+      category: mat?.category ?? '',
       supplier: mat?.supplier ?? '',
       pricePerKg: toPriceInput(mat?.pricePerKg ?? ''),
       currency: mat?.currency ?? 'USD',
@@ -191,61 +169,6 @@ export default function MaterialsPage() {
     }
   };
 
-  const toggleExpand = (id: string) => {
-    setExpanded(prev => {
-      const next = new Set(Array.from(prev));
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const openVariantAdd = (materialId: string) => {
-    setVariantForm({ colorName: '', code: '', stock: '0' });
-    setVariantModal({ materialId });
-  };
-
-  const openVariantEdit = (materialId: string, variant: any) => {
-    setVariantForm({
-      colorName: variant.colorName,
-      code: variant.code ?? '',
-      stock: String(variant.stock ?? 0),
-    });
-    setVariantModal({ materialId, variant });
-  };
-
-  const handleVariantSave = async () => {
-    if (!variantModal || !variantForm.colorName.trim()) return;
-    setVariantSaving(true);
-    try {
-      const { materialId, variant } = variantModal;
-      if (variant) {
-        await fetch(`/api/materials/${materialId}/variants/${variant.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(variantForm),
-        });
-      } else {
-        await fetch(`/api/materials/${materialId}/variants`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(variantForm),
-        });
-      }
-      setVariantModal(null);
-      fetchMaterials();
-      // keep expanded
-      setExpanded(prev => new Set([...Array.from(prev), materialId]));
-    } finally {
-      setVariantSaving(false);
-    }
-  };
-
-  const handleVariantDelete = async (materialId: string, variantId: string) => {
-    if (!confirm('Renk/kod varyantı silinecek. Emin misiniz?')) return;
-    await fetch(`/api/materials/${materialId}/variants/${variantId}`, { method: 'DELETE' });
-    fetchMaterials();
-  };
-
   return (
     <AppShell>
       <div className="space-y-6">
@@ -262,15 +185,29 @@ export default function MaterialsPage() {
           )}
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('common', 'search') + '...'}
-            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-          />
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('common', 'search') + '...'}
+              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
+          </div>
+          {Array.from(new Set(materials.map((m: any) => m.category).filter(Boolean))).length > 0 && (
+            <select
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+              className="px-3 py-3 bg-white border border-slate-200 rounded-xl text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            >
+              <option value="">Tüm Kategoriler</option>
+              {Array.from(new Set(materials.map((m: any) => m.category).filter(Boolean))).sort().map((cat: any) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         {loading ? (
@@ -284,218 +221,102 @@ export default function MaterialsPage() {
           </div>
         ) : (
           <div className="grid gap-3">
-            {(materials ?? []).map((mat: any, i: number) => {
-              const isExpanded = expanded.has(mat.id);
-              const variants: any[] = mat.variants ?? [];
-              const hasVariants = variants.length > 0;
-              const totalVariantStock = variants.reduce((s: number, v: any) => s + (v.stock ?? 0), 0);
-
-              return (
-                <motion.div
-                  key={mat?.id ?? i}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
-                >
-                  {/* Material header row */}
-                  <div className="p-4 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Expand button */}
-                      <button
-                        onClick={() => toggleExpand(mat.id)}
-                        className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0"
-                        title={isExpanded ? 'Kapat' : 'Varyantları Göster'}
-                      >
-                        {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      </button>
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Package className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-slate-800 truncate">{mat?.name ?? ''}</p>
-                        <p className="text-xs text-slate-400">{mat?.supplier ?? '-'}</p>
-                      </div>
+            {(materials ?? [])
+              .filter((mat: any) => !categoryFilter || mat.category === categoryFilter)
+              .map((mat: any, i: number) => (
+              <motion.div
+                key={mat?.id ?? i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="p-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Package className="w-5 h-5 text-blue-600" />
                     </div>
-
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="text-right hidden sm:block">
-                        <p className="font-semibold text-slate-800">{formatAmount(mat?.pricePerKg ?? 0, mat?.currency ?? 'USD')}/kg</p>
-                        <p className="text-xs text-slate-400">{mat?.currency ?? ''}</p>
-                      </div>
-
-                      {/* Stock display */}
-                      {hasVariants ? (
-                        <div className="text-right min-w-[90px]">
-                          <p className={`font-semibold text-sm ${totalVariantStock <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                            {totalVariantStock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                          </p>
-                          <p className="text-xs text-slate-400">{variants.length} renk/kod</p>
-                        </div>
-                      ) : (
-                        <div className="text-right min-w-[80px]">
-                          <p className={`font-semibold text-sm ${(mat?.stock ?? 0) <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                            {(mat?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                          </p>
-                          <p className="text-xs text-slate-400">Stok</p>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-1">
-                        {canEdit && !hasVariants && (
-                          <>
-                            <button
-                              onClick={() => setStokModal({ type: 'material', id: mat.id, name: mat.name, stock: mat.stock ?? 0 })}
-                              className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                              title="Stok Güncelle"
-                            >
-                              <Layers className="w-4 h-4" />
-                            </button>
-                            {subcontractors.length > 0 && (
-                              <button
-                                onClick={() => openSendToSub(mat.id, mat.name)}
-                                className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                                title="Fasoncuya Gönder"
-                              >
-                                <Factory className="w-4 h-4" />
-                              </button>
-                            )}
-                          </>
-                        )}
-                        {canEdit && (
-                          <button
-                            onClick={() => { openVariantAdd(mat.id); setExpanded(prev => new Set([...Array.from(prev), mat.id])); }}
-                            className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                            title="Renk/Kod Ekle"
-                          >
-                            <Palette className="w-4 h-4" />
-                          </button>
-                        )}
-                        {!hasVariants && (
-                          <button
-                            onClick={() => openEkstre(mat)}
-                            className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                            title="Stok Ekstresi"
-                          >
-                            <FileText className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => setHistoryModal(mat)}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title={t('materials', 'priceHistory')}
-                        >
-                          <History className="w-4 h-4" />
-                        </button>
-                        {canEdit && (
-                          <button
-                            onClick={() => openEdit(mat)}
-                            className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            onClick={() => handleDelete(mat?.id)}
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-slate-800 truncate">{mat?.name ?? ''}</p>
+                        {mat?.category && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded text-xs font-medium flex-shrink-0">
+                            <Tag className="w-3 h-3" />{mat.category}
+                          </span>
                         )}
                       </div>
+                      <p className="text-xs text-slate-400">{mat?.supplier ?? '-'}</p>
                     </div>
                   </div>
 
-                  {/* Variants section */}
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden border-t border-slate-100"
-                      >
-                        <div className="px-4 pb-4 pt-3">
-                          {variants.length === 0 ? (
-                            <p className="text-sm text-slate-400 italic py-1">Henüz renk/kod eklenmemiş</p>
-                          ) : (
-                            <div className="space-y-1.5">
-                              {variants.map((v: any) => (
-                                <div key={v.id} className="flex items-center justify-between gap-3 bg-slate-50 rounded-lg px-3 py-2">
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <div className="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0" />
-                                    <span className="text-sm font-medium text-slate-700 truncate">{v.colorName}</span>
-                                    {v.code && (
-                                      <span className="text-xs text-slate-400 bg-slate-200 px-1.5 py-0.5 rounded font-mono">{v.code}</span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 flex-shrink-0">
-                                    <span className={`text-sm font-semibold ${(v.stock ?? 0) <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                                      {(v.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                                    </span>
-                                    <button
-                                      onClick={() => openEkstre(mat, v)}
-                                      className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded transition-colors"
-                                      title="Stok Ekstresi"
-                                    >
-                                      <FileText className="w-3.5 h-3.5" />
-                                    </button>
-                                    {canEdit && (
-                                      <>
-                                        <button
-                                          onClick={() => setStokModal({ type: 'variant', id: v.id, materialId: mat.id, name: `${mat.name} — ${v.colorName}`, stock: v.stock ?? 0 })}
-                                          className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
-                                          title="Stok Güncelle"
-                                        >
-                                          <Layers className="w-3.5 h-3.5" />
-                                        </button>
-                                        {subcontractors.length > 0 && (
-                                          <button
-                                            onClick={() => openSendToSub(mat.id, `${mat.name} — ${v.colorName}`, v.id)}
-                                            className="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
-                                            title="Fasoncuya Gönder"
-                                          >
-                                            <Factory className="w-3.5 h-3.5" />
-                                          </button>
-                                        )}
-                                        <button
-                                          onClick={() => openVariantEdit(mat.id, v)}
-                                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                          title="Düzenle"
-                                        >
-                                          <Edit2 className="w-3.5 h-3.5" />
-                                        </button>
-                                        <button
-                                          onClick={() => handleVariantDelete(mat.id, v.id)}
-                                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                                          title="Sil"
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {canEdit && (
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="text-right hidden sm:block">
+                      <p className="font-semibold text-slate-800">{formatAmount(mat?.pricePerKg ?? 0, mat?.currency ?? 'USD')}/kg</p>
+                      <p className="text-xs text-slate-400">{mat?.currency ?? ''}</p>
+                    </div>
+                    <div className="text-right min-w-[80px]">
+                      <p className={`font-semibold text-sm ${(mat?.stock ?? 0) <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                        {(mat?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
+                      </p>
+                      <p className="text-xs text-slate-400">Stok</p>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      {canEdit && (
+                        <>
+                          <button
+                            onClick={() => setStokModal({ id: mat.id, name: mat.name, stock: mat.stock ?? 0 })}
+                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Stok Güncelle"
+                          >
+                            <Layers className="w-4 h-4" />
+                          </button>
+                          {subcontractors.length > 0 && (
                             <button
-                              onClick={() => openVariantAdd(mat.id)}
-                              className="mt-2 flex items-center gap-1.5 text-xs text-purple-600 hover:text-purple-700 font-medium"
+                              onClick={() => openSendToSub(mat.id, mat.name)}
+                              className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                              title="Fasoncuya Gönder"
                             >
-                              <Plus className="w-3.5 h-3.5" /> Renk / Kod Ekle
+                              <Factory className="w-4 h-4" />
                             </button>
                           )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              );
-            })}
+                        </>
+                      )}
+                      <button
+                        onClick={() => openEkstre(mat)}
+                        className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                        title="Stok Ekstresi"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setHistoryModal(mat)}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title={t('materials', 'priceHistory')}
+                      >
+                        <History className="w-4 h-4" />
+                      </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => openEdit(mat)}
+                          className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDelete(mat?.id)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         )}
       </div>
@@ -506,6 +327,10 @@ export default function MaterialsPage() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'materialName')}</label>
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Kategori (opsiyonel)</label>
+            <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Ör: Taban, Astar, Bağcık" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'supplier')}</label>
@@ -563,68 +388,6 @@ export default function MaterialsPage() {
           </button>
         </div>
       </Modal>
-
-      {/* Variant Add/Edit Modal */}
-      {variantModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setVariantModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-            <div className="bg-purple-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
-              <h3 className="text-white font-semibold text-base">
-                {variantModal.variant ? 'Renk/Kod Düzenle' : 'Renk / Kod Ekle'}
-              </h3>
-              <button onClick={() => setVariantModal(null)} className="text-white/80 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Renk Adı *</label>
-                <input
-                  value={variantForm.colorName}
-                  onChange={e => setVariantForm(p => ({ ...p, colorName: e.target.value }))}
-                  placeholder="Ör: Siyah, Beyaz, Krem"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Kod (opsiyonel)</label>
-                <input
-                  value={variantForm.code}
-                  onChange={e => setVariantForm(p => ({ ...p, code: e.target.value }))}
-                  placeholder="Ör: KOD-001"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Başlangıç Stok (kg)</label>
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  value={variantForm.stock}
-                  onChange={e => setVariantForm(p => ({ ...p, stock: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none text-right"
-                />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => setVariantModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm">
-                  Vazgeç
-                </button>
-                <button
-                  onClick={handleVariantSave}
-                  disabled={variantSaving || !variantForm.colorName.trim()}
-                  className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2"
-                >
-                  {variantSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Kaydet
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Stok Güncelleme Modalı */}
       {stokModal && (
@@ -745,9 +508,6 @@ export default function MaterialsPage() {
                       <p className={`text-lg font-bold ${(ekstreModal.data.material?.stock ?? 0) < 0 ? 'text-red-700' : 'text-teal-700'}`}>
                         {(ekstreModal.data.material?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                       </p>
-                      {ekstreModal.data.material?.activeVariant && (
-                        <p className="text-xs text-teal-500 mt-0.5">{ekstreModal.data.material.activeVariant.colorName}</p>
-                      )}
                     </div>
                   </div>
 
@@ -763,7 +523,6 @@ export default function MaterialsPage() {
                             <th className="px-3 py-2.5 text-left">İşlem</th>
                             <th className="px-3 py-2.5 text-left">Müşteri / Tedarikçi</th>
                             <th className="px-3 py-2.5 text-left">Ürün</th>
-                            <th className="px-3 py-2.5 text-left">Renk</th>
                             <th className="px-3 py-2.5 text-right">Miktar (kg)</th>
                             <th className="px-3 py-2.5 text-right">Fiyat</th>
                           </tr>
@@ -806,15 +565,6 @@ export default function MaterialsPage() {
                               </td>
                               <td className="px-3 py-2.5 text-slate-600 truncate max-w-[120px]">
                                 {entry.product ?? <span className="text-slate-300 italic">—</span>}
-                              </td>
-                              <td className="px-3 py-2.5">
-                                {entry.variant ? (
-                                  <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-                                    {entry.variant}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300 text-xs">—</span>
-                                )}
                               </td>
                               <td className={`px-3 py-2.5 text-right font-semibold ${entry.kgAmount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                                 {entry.kgAmount > 0 ? '+' : ''}{entry.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

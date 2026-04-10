@@ -14,7 +14,6 @@ export async function GET(_: NextRequest) {
     where: { subcontractorId: user.subcontractorId },
     include: {
       material: { select: { id: true, name: true } },
-      materialVariant: { select: { id: true, colorName: true, code: true } },
     },
     orderBy: { updatedAt: 'desc' },
   });

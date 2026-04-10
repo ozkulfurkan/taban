@@ -179,14 +179,12 @@ export default function SubcontractorDetailPage() {
               <table className="w-full text-sm">
                 <thead><tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500">
                   <th className="px-4 py-3 text-left">Hammadde</th>
-                  <th className="px-4 py-3 text-left">Renk/Varyant</th>
                   <th className="px-4 py-3 text-right">Miktar</th>
                 </tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {data.materialStocks?.map((s: any) => (
                     <tr key={s.id} className={s.quantity <= 0 ? 'bg-red-50/30' : ''}>
                       <td className="px-4 py-3 font-medium text-slate-700">{s.material?.name}</td>
-                      <td className="px-4 py-3 text-slate-500">{s.materialVariant ? `${s.materialVariant.colorName}${s.materialVariant.code ? ` (${s.materialVariant.code})` : ''}` : <span className="text-slate-300">—</span>}</td>
                       <td className="px-4 py-3 text-right font-semibold text-slate-700">
                         {s.quantity.toLocaleString('tr-TR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kg
                       </td>
@@ -253,7 +251,6 @@ export default function SubcontractorDetailPage() {
                       <td className="px-4 py-3 text-slate-500 text-xs">{new Date(t.createdAt).toLocaleDateString('tr-TR')}</td>
                       <td className="px-4 py-3 font-medium text-slate-700">
                         {t.material?.name}
-                        {t.materialVariant && <span className="text-slate-400 ml-1 text-xs">({t.materialVariant.colorName})</span>}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${t.direction === 'OUTGOING' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>

@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
   if (!order) return NextResponse.json({ error: 'Sipariş bulunamadı' }, { status: 404 });
 
-  const { materialId, materialVariantId, quantity, notes } = await req.json();
+  const { materialId, quantity, notes } = await req.json();
   const qty = parseFloat(quantity) || 0;
   if (!materialId || qty <= 0) {
     return NextResponse.json({ error: 'materialId ve quantity gerekli' }, { status: 400 });
@@ -27,25 +27,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   await prisma.$transaction(async (tx) => {
     // 1. Ana depo stoğunu düş
-    if (materialVariantId) {
-      await tx.materialVariant.update({
-        where: { id: materialVariantId },
-        data: { stock: { decrement: qty } },
-      });
-    } else {
-      await tx.material.update({
-        where: { id: materialId },
-        data: { stock: { decrement: qty } },
-      });
-    }
+    await tx.material.update({
+      where: { id: materialId },
+      data: { stock: { decrement: qty } },
+    });
 
     // 2. Fasoncu stoğunu artır (upsert)
     const existing = await tx.subcontractorStock.findFirst({
-      where: {
-        subcontractorId: order.subcontractorId,
-        materialId,
-        materialVariantId: materialVariantId || null,
-      },
+      where: { subcontractorId: order.subcontractorId, materialId },
     });
     if (existing) {
       await tx.subcontractorStock.update({
@@ -54,12 +43,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       });
     } else {
       await tx.subcontractorStock.create({
-        data: {
-          subcontractorId: order.subcontractorId,
-          materialId,
-          materialVariantId: materialVariantId || null,
-          quantity: qty,
-        },
+        data: { subcontractorId: order.subcontractorId, materialId, quantity: qty },
       });
     }
 
@@ -70,7 +54,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         subcontractorId: order.subcontractorId,
         orderId: params.id,
         materialId,
-        materialVariantId: materialVariantId || null,
         quantity: qty,
         direction: 'OUTGOING',
         notes: notes || null,

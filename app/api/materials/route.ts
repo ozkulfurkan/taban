@@ -24,7 +24,6 @@ export async function GET(req: NextRequest) {
       where,
       include: {
         priceHistory: { orderBy: { createdAt: 'desc' }, take: 10 },
-        variants: { orderBy: { createdAt: 'asc' } },
       },
       orderBy: { updatedAt: 'desc' },
     });
@@ -43,7 +42,7 @@ export async function POST(req: NextRequest) {
     if (session.user.role === 'VIEWER') return NextResponse.json({ error: 'No permission' }, { status: 403 });
 
     const body = await req.json();
-    const { name, supplier, pricePerKg, currency, description } = body ?? {};
+    const { name, category, supplier, pricePerKg, currency, description } = body ?? {};
 
     if (!name || pricePerKg == null) return badRequest('Name and price required');
 
@@ -54,6 +53,7 @@ export async function POST(req: NextRequest) {
       data: {
         companyId,
         name,
+        category: category || null,
         supplier: supplier ?? '',
         pricePerKg: parseFloat(pricePerKg),
         currency: currency ?? 'USD',

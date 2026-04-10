@@ -27,9 +27,7 @@ export default function NewSubcontractorOrderPage() {
 
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-  // BOM step: per-part variant selections (partId → variantId)
-  const [partVariants, setPartVariants] = useState<Record<string, string>>({});
-  // Subcontractor stocks keyed by `${materialId}|${variantId|''}` → quantity
+  // Subcontractor stocks keyed by materialId → quantity
   const [subStock, setSubStock] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -57,32 +55,24 @@ export default function NewSubcontractorOrderPage() {
           if (!Array.isArray(stocks)) return;
           const map: Record<string, number> = {};
           for (const s of stocks) {
-            const key = `${s.materialId}|${s.materialVariantId ?? ''}`;
-            map[key] = s.quantity;
+            map[s.materialId] = s.quantity;
           }
           setSubStock(map);
         });
     }
   }, [step, form.subcontractorId]);
 
-  // BOM hesabı (client-side) — seçilen varyant dikkate alınır
+  // BOM hesabı (client-side)
   const bomReqs = selectedProduct?.parts?.map((part: any) => {
-    const selectedVariantId = partVariants[part.id] ?? part.materialVariantId ?? '';
-    const variantObj = selectedVariantId
-      ? part.material?.variants?.find((v: any) => v.id === selectedVariantId)
-      : null;
+    const materialId = part.material?.id ?? part.materialId;
     const kgRequired = Math.round((part.gramsPerPiece * (1 + part.wasteRate / 100) * totalPairs) / 1000 * 1000) / 1000;
-    const stockKey = `${part.material?.id ?? part.materialId}|${selectedVariantId}`;
     return {
       partId: part.id,
       name: part.name,
-      materialId: part.material?.id ?? part.materialId,
+      materialId,
       material: part.material?.name ?? '—',
-      variants: part.material?.variants ?? [],
-      selectedVariantId,
-      variantObj,
       kgRequired,
-      subcontractorStock: subStock[stockKey] ?? null,
+      subcontractorStock: materialId ? (subStock[materialId] ?? null) : null,
     };
   }) ?? [];
 
@@ -183,7 +173,7 @@ export default function NewSubcontractorOrderPage() {
                   <thead>
                     <tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500">
                       <th className="px-3 py-2 text-left">Parça</th>
-                      <th className="px-3 py-2 text-left">Hammadde / Varyant</th>
+                      <th className="px-3 py-2 text-left">Hammadde</th>
                       <th className="px-3 py-2 text-right">Gereken (kg)</th>
                       <th className="px-3 py-2 text-right">Fasoncu Stoğu (kg)</th>
                     </tr>
@@ -195,23 +185,7 @@ export default function NewSubcontractorOrderPage() {
                       return (
                         <tr key={i} className="align-top">
                           <td className="px-3 py-2.5 text-slate-700 font-medium">{r.name}</td>
-                          <td className="px-3 py-2.5 text-slate-600">
-                            <div className="text-slate-700 font-medium">{r.material}</div>
-                            {r.variants.length > 0 && (
-                              <select
-                                value={r.selectedVariantId}
-                                onChange={e => setPartVariants(p => ({ ...p, [r.partId]: e.target.value }))}
-                                className="mt-1 w-full px-2 py-1 border border-slate-200 rounded text-xs bg-white outline-none focus:ring-2 focus:ring-orange-400"
-                              >
-                                <option value="">— Varyant Yok —</option>
-                                {r.variants.map((v: any) => (
-                                  <option key={v.id} value={v.id}>
-                                    {v.colorName}{v.code ? ` (${v.code})` : ''}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                          </td>
+                          <td className="px-3 py-2.5 text-slate-700 font-medium">{r.material}</td>
                           <td className="px-3 py-2.5 text-right font-semibold text-orange-600">{r.kgRequired.toFixed(3)}</td>
                           <td className="px-3 py-2.5 text-right">
                             {r.subcontractorStock === null ? (

@@ -137,53 +137,28 @@ const uniqueProductIds = ids;
       include: { parts: true },
     });
 
-    // Hammadde ve varyant bazında kg kullanımını topla
+    // Hammadde bazında kg kullanımını topla
     const materialMap = new Map<string, number>();  // materialId -> kgAmount
-    const variantMap = new Map<string, number>();   // variantId -> kgAmount
 
     for (const item of productItems) {
       const qty = parseNum(item.quantity);
       const product = products.find((p: any) => p.id === item.productId);
       if (!product) continue;
 
-      // Build partId -> variantId map from sale-time selections
-      const pvMap: Record<string, string> = {};
-      if (Array.isArray(item.partVariants)) {
-        item.partVariants.forEach((pv: any) => { pvMap[pv.partId] = pv.variantId; });
-      }
-
       for (const part of product.parts) {
+        if (!part.materialId) continue;
         const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
         const kgUsed = (grossGrams * qty) / 1000;
-
-        const selectedVariantId = pvMap[part.id];
-        if (selectedVariantId) {
-          variantMap.set(selectedVariantId, (variantMap.get(selectedVariantId) || 0) + kgUsed);
-        } else if (part.materialVariantId) {
-          variantMap.set(part.materialVariantId, (variantMap.get(part.materialVariantId) || 0) + kgUsed);
-        } else if (part.materialId) {
-          materialMap.set(part.materialId, (materialMap.get(part.materialId) || 0) + kgUsed);
-        }
+        materialMap.set(part.materialId, (materialMap.get(part.materialId) || 0) + kgUsed);
       }
     }
 
     const totalUpdates: Promise<any>[] = [];
 
-    // Deduct from Material.stock (parts without variant)
     Array.from(materialMap.entries()).forEach(([materialId, kgAmount]) => {
       totalUpdates.push(
         prisma.material.updateMany({
           where: { id: materialId, companyId: user.companyId },
-          data: { stock: { decrement: kgAmount } },
-        })
-      );
-    });
-
-    // Deduct from MaterialVariant.stock (parts with variant)
-    Array.from(variantMap.entries()).forEach(([variantId, kgAmount]) => {
-      totalUpdates.push(
-        prisma.materialVariant.updateMany({
-          where: { id: variantId },
           data: { stock: { decrement: kgAmount } },
         })
       );
