@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PortalShell from '../../components/portal-shell';
 import SizeTable from '../../components/size-table';
-import { Loader2, ArrowLeft, Send, Plus, Trash2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Send } from 'lucide-react';
 
 type ColorPartial = { name: string; color: string };
 
@@ -22,7 +22,7 @@ export default function NewOrderPage() {
     requestedDeliveryDate: '',
     notes: '',
   });
-  const [colorPartials, setColorPartials] = useState<ColorPartial[]>([{ name: 'Parti 1', color: '' }]);
+  const [colorPartials, setColorPartials] = useState<ColorPartial[]>([{ name: 'Renk', color: '' }]);
   const [sizes, setSizes] = useState<Record<string, number>>(() => {
     try { return JSON.parse(searchParams.get('sizeDistribution') || '{}'); } catch { return {}; }
   });
@@ -32,24 +32,32 @@ export default function NewOrderPage() {
   useEffect(() => {
     if (status === 'unauthenticated') { router.replace('/portal/login'); return; }
     if (status !== 'authenticated') return;
-    fetch('/api/portal/me/catalog').then(r => r.json()).then(d => setCatalog(Array.isArray(d) ? d : []));
+    fetch('/api/portal/me/catalog').then(r => r.json()).then(d => {
+      const data = Array.isArray(d) ? d : [];
+      setCatalog(data);
+      // If a productId was pre-selected via URL param, init color partials from its parts
+      const preId = searchParams.get('productId');
+      if (preId) {
+        const p = data.find((x: any) => x.id === preId);
+        const parts = p?.parts ?? [];
+        setColorPartials(parts.length > 0
+          ? parts.map((pt: any) => ({ name: pt.name, color: '' }))
+          : [{ name: 'Renk', color: '' }]);
+      }
+    });
   }, [status, router]);
 
   const handleProductSelect = (id: string) => {
     const p = catalog.find(c => c.id === id);
     setForm(f => ({ ...f, productId: id, productCode: p?.code || '' }));
+    const parts = p?.parts ?? [];
+    setColorPartials(parts.length > 0
+      ? parts.map((pt: any) => ({ name: pt.name, color: '' }))
+      : [{ name: 'Renk', color: '' }]);
   };
 
-  const addPartial = () => {
-    setColorPartials(prev => [...prev, { name: `Parti ${prev.length + 1}`, color: '' }]);
-  };
-
-  const removePartial = (idx: number) => {
-    setColorPartials(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  const updatePartial = (idx: number, field: keyof ColorPartial, value: string) => {
-    setColorPartials(prev => prev.map((p, i) => i === idx ? { ...p, [field]: value } : p));
+  const updatePartial = (idx: number, value: string) => {
+    setColorPartials(prev => prev.map((p, i) => i === idx ? { ...p, color: value } : p));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,36 +130,21 @@ export default function NewOrderPage() {
               </div>
             </div>
 
-            {/* Renk Partileri */}
+            {/* Renk Bilgileri */}
             <div className="border-t border-slate-100 pt-4">
-              <div className="flex items-center justify-between mb-3">
-                <label className="text-sm font-medium text-slate-600">Renk Partileri</label>
-                <button type="button" onClick={addPartial}
-                  className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-medium">
-                  <Plus className="w-3.5 h-3.5" /> Parti Ekle
-                </button>
-              </div>
+              <label className="text-sm font-medium text-slate-600 mb-3 block">Renk Bilgileri</label>
               <div className="space-y-2">
                 {colorPartials.map((partial, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <input
-                      value={partial.name}
-                      onChange={e => updatePartial(idx, 'name', e.target.value)}
-                      placeholder="Parti adı"
-                      className="w-28 flex-shrink-0 px-2.5 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
+                    <span className="w-32 flex-shrink-0 px-2.5 py-2 bg-slate-100 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 truncate">
+                      {partial.name}
+                    </span>
                     <input
                       value={partial.color}
-                      onChange={e => updatePartial(idx, 'color', e.target.value)}
+                      onChange={e => updatePartial(idx, e.target.value)}
                       placeholder="örn: Siyah, Kahve..."
                       className="flex-1 px-2.5 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     />
-                    {colorPartials.length > 1 && (
-                      <button type="button" onClick={() => removePartial(idx)}
-                        className="p-1.5 text-slate-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>

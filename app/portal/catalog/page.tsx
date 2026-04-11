@@ -94,24 +94,27 @@ export default function PortalCatalogPage() {
     setSubmitting(true);
     setSubmitError('');
     try {
-      for (const item of cart) {
-        const res = await fetch('/api/portal/me/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            productId: item.productId || undefined,
-            productCode: item.productCode || undefined,
-            color: item.color,
-            sizeDistribution: item.sizeDistribution,
-            requestedDeliveryDate: deliveryDate || undefined,
-            notes: notes || undefined,
-          }),
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          setSubmitError(data.error || 'Bir hata oluştu.');
-          return;
-        }
+      const orderItems = cart.map(item => ({
+        productId: item.productId || null,
+        productCode: item.productCode || '',
+        productName: item.productName || '',
+        color: item.color,
+        sizeDistribution: item.sizeDistribution,
+        totalQuantity: item.totalQuantity,
+      }));
+      const res = await fetch('/api/portal/me/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderItems,
+          requestedDeliveryDate: deliveryDate || undefined,
+          notes: notes || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setSubmitError(data.error || 'Bir hata oluştu.');
+        return;
       }
       router.push('/portal/orders');
     } finally {

@@ -89,7 +89,13 @@ export default function PortalOrdersPage() {
                       <td className="px-4 py-3 font-medium text-slate-800">
                         <Link href={`/portal/orders/${order.id}`} className="hover:text-blue-600">{order.orderNo}</Link>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{order.productCode || order.product?.name || '—'}</td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {Array.isArray(order.orderItems) && order.orderItems.length > 0
+                          ? <span className="text-xs font-semibold text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded">
+                              {order.orderItems.length} Ürün
+                            </span>
+                          : order.productCode || order.product?.name || '—'}
+                      </td>
                       <td className="px-4 py-3 text-slate-600">{order.color || '—'}</td>
                       <td className="px-4 py-3 text-slate-600">{order.totalQuantity}</td>
                       <td className="px-4 py-3 text-slate-500 text-xs">
@@ -101,10 +107,12 @@ export default function PortalOrdersPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <button onClick={() => handleRepeat(order)}
-                          className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-medium transition-colors">
-                          <RefreshCw className="w-3 h-3" /> Tekrarla
-                        </button>
+                        {!(Array.isArray(order.orderItems) && order.orderItems.length > 0) && (
+                          <button onClick={() => handleRepeat(order)}
+                            className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-medium transition-colors">
+                            <RefreshCw className="w-3 h-3" /> Tekrarla
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

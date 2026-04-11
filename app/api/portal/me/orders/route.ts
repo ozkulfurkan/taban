@@ -34,14 +34,40 @@ export async function POST(req: NextRequest) {
   if (!user?.customerId || !user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { productId, productCode, color, material, sizeDistribution, requestedDeliveryDate, notes, colorPartials } = body;
+  const { productId, productCode, color, material, sizeDistribution, requestedDeliveryDate, notes, colorPartials, orderItems } = body;
 
-  if (!sizeDistribution || typeof sizeDistribution !== 'object') {
-    return NextResponse.json({ error: 'sizeDistribution required' }, { status: 400 });
+  // --- Package order (multi-item) ---
+  const isPackage = Array.isArray(orderItems) && orderItems.length > 0;
+
+  let finalSizeDist: Record<string, number>;
+  let finalTotalQty: number;
+  let finalProductId: string | null;
+  let finalProductCode: string | null;
+
+  if (isPackage) {
+    // Aggregate size distribution across all items
+    finalSizeDist = {};
+    finalTotalQty = 0;
+    for (const item of orderItems as any[]) {
+      finalTotalQty += Number(item.totalQuantity) || 0;
+      const sd = item.sizeDistribution as Record<string, number> || {};
+      for (const [sz, qty] of Object.entries(sd)) {
+        finalSizeDist[sz] = (finalSizeDist[sz] || 0) + (Number(qty) || 0);
+      }
+    }
+    if (finalTotalQty === 0) return NextResponse.json({ error: 'En az 1 adet girmelisiniz' }, { status: 400 });
+    finalProductId = orderItems[0]?.productId || null;
+    finalProductCode = orderItems[0]?.productCode || null;
+  } else {
+    if (!sizeDistribution || typeof sizeDistribution !== 'object') {
+      return NextResponse.json({ error: 'sizeDistribution required' }, { status: 400 });
+    }
+    finalSizeDist = sizeDistribution as Record<string, number>;
+    finalTotalQty = Object.values(finalSizeDist).reduce((s, v) => s + (Number(v) || 0), 0);
+    if (finalTotalQty === 0) return NextResponse.json({ error: 'En az 1 adet girmelisiniz' }, { status: 400 });
+    finalProductId = productId || null;
+    finalProductCode = productCode || null;
   }
-
-  const totalQuantity = Object.values(sizeDistribution as Record<string, number>).reduce((s, v) => s + (Number(v) || 0), 0);
-  if (totalQuantity === 0) return NextResponse.json({ error: 'En az 1 adet girmelisiniz' }, { status: 400 });
 
   const now = new Date();
   const orderNo = `ORD-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 9000) + 1000}`;
@@ -52,15 +78,16 @@ export async function POST(req: NextRequest) {
       customerId: user.customerId,
       portalCustomerId: user.id,
       orderNo,
-      productId: productId || null,
-      productCode: productCode || null,
-      color: color || null,
-      material: material || null,
-      sizeDistribution,
-      totalQuantity,
+      productId: finalProductId,
+      productCode: finalProductCode,
+      color: isPackage ? null : (color || null),
+      material: isPackage ? null : (material || null),
+      sizeDistribution: finalSizeDist,
+      totalQuantity: finalTotalQty,
       requestedDeliveryDate: requestedDeliveryDate ? new Date(requestedDeliveryDate) : null,
       notes: notes || null,
-      colorPartials: colorPartials || null,
+      colorPartials: isPackage ? null : (colorPartials || null),
+      orderItems: isPackage ? orderItems : undefined,
       status: 'ORDER_RECEIVED',
       statusHistory: {
         create: { status: 'ORDER_RECEIVED', note: 'Sipariş oluşturuldu' },
@@ -82,7 +109,7 @@ export async function POST(req: NextRequest) {
   const adminEmails = adminUsers.map(u => u.email).filter(Boolean);
 
   // Build size distribution table rows
-  const sizeEntries = Object.entries(sizeDistribution as Record<string, number>).filter(([, qty]) => qty > 0);
+  const sizeEntries = Object.entries(finalSizeDist).filter(([, qty]) => qty > 0);
   const sizeHeaderCells = sizeEntries.map(([sz]) => `<th style="padding:6px 12px;border:1px solid #e2e8f0;background:#f8fafc;font-weight:600;color:#475569;">${sz}</th>`).join('');
   const sizeValueCells = sizeEntries.map(([, qty]) => `<td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:500;">${qty}</td>`).join('');
 
@@ -136,7 +163,7 @@ export async function POST(req: NextRequest) {
       </tr></thead>
       <tbody><tr>
         ${sizeValueCells}
-        <td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#1d4ed8;background:#dbeafe;">${totalQuantity}</td>
+        <td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#1d4ed8;background:#dbeafe;">${finalTotalQty}</td>
       </tr></tbody>
     </table>
   </div>
@@ -163,15 +190,15 @@ export async function POST(req: NextRequest) {
       cc: portalCustomer?.email,
       subject: `Yeni Sipariş: ${orderNo} — ${customer?.name ?? ''}`,
       html: productionHtml,
-      text: `Yeni sipariş alındı: ${orderNo}\nMüşteri: ${customer?.name}\nModel: ${productCode || product?.code || '—'}\nRenk: ${color || '—'}\nToplam: ${totalQuantity} çift`,
+      text: `Yeni sipariş alındı: ${orderNo}\nMüşteri: ${customer?.name}\nModel: ${productCode || product?.code || '—'}\nRenk: ${color || '—'}\nToplam: ${finalTotalQty} çift`,
     }).catch(() => {});
   } else if (portalCustomer) {
     // Fallback: confirmation only to portal customer
     sendMail({
       to: portalCustomer.email,
       subject: `Siparişiniz alındı: ${orderNo}`,
-      html: `<p>Merhaba ${portalCustomer.name ?? portalCustomer.email},</p><p><strong>${orderNo}</strong> numaralı siparişiniz alındı. Toplam: <strong>${totalQuantity}</strong> çift</p>`,
-      text: `Siparişiniz alındı: ${orderNo}, Toplam: ${totalQuantity} çift`,
+      html: `<p>Merhaba ${portalCustomer.name ?? portalCustomer.email},</p><p><strong>${orderNo}</strong> numaralı siparişiniz alındı. Toplam: <strong>${finalTotalQty}</strong> çift</p>`,
+      text: `Siparişiniz alındı: ${orderNo}, Toplam: ${finalTotalQty} çift`,
     }).catch(() => {});
   }
 

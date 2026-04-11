@@ -32,6 +32,7 @@ export default function PortalAdminOrderDetailPage() {
   const [showSubModal, setShowSubModal] = useState(false);
   const [subcontractors, setSubcontractors] = useState<any[]>([]);
   const [selectedSubId, setSelectedSubId] = useState('');
+  const [subModalItem, setSubModalItem] = useState<any>(null);
 
   const loadOrder = () => {
     if (!params?.id) return;
@@ -57,13 +58,15 @@ export default function PortalAdminOrderDetailPage() {
 
   const handleSendToSubcontractor = () => {
     if (!selectedSubId) return;
-    const sizeDistribution = JSON.stringify(order.sizeDistribution || {});
+    const source = subModalItem ?? order;
+    const sizeDistribution = JSON.stringify(source.sizeDistribution ?? order.sizeDistribution ?? {});
     const params2 = new URLSearchParams({
       subcontractorId: selectedSubId,
       step: '1',
       sizeDistribution,
     });
-    if (order.productId) params2.set('productId', order.productId);
+    const productId = subModalItem?.productId ?? order.productId;
+    if (productId) params2.set('productId', productId);
     router.push(`/subcontractor-orders/new?${params2.toString()}`);
   };
 
@@ -96,6 +99,8 @@ export default function PortalAdminOrderDetailPage() {
   if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-blue-600" /></div></AppShell>;
   if (!order || order.error) return <AppShell><p className="text-slate-500">Sipariş bulunamadı.</p></AppShell>;
 
+  const isPackage = Array.isArray(order.orderItems) && order.orderItems.length > 0;
+
   return (
     <>
     <AppShell>
@@ -115,12 +120,14 @@ export default function PortalAdminOrderDetailPage() {
             >
               <Printer className="w-4 h-4" /> Üretim Çıktısı
             </button>
-            <button
-              onClick={() => setShowSubModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              <Factory className="w-4 h-4" /> Fasoncuya Gönder
-            </button>
+            {!isPackage && (
+              <button
+                onClick={() => { setSubModalItem(null); setShowSubModal(true); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <Factory className="w-4 h-4" /> Fasoncuya Gönder
+              </button>
+            )}
             <Link
               href={`/invoices/new?customerId=${order.customerId}${order.productId ? `&productId=${order.productId}` : ''}&quantity=${order.totalQuantity}`}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
@@ -230,8 +237,54 @@ export default function PortalAdminOrderDetailPage() {
               </div>
             ))}
           </dl>
+          {/* Paket İçeriği */}
+          {isPackage && (
+            <div className="mb-4 overflow-x-auto">
+              <p className="text-xs text-slate-400 mb-2 uppercase tracking-wide font-semibold">Paket İçeriği</p>
+              <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
+                <thead className="bg-slate-50">
+                  <tr>
+                    {['Model', 'Renk', 'Beden Dağılımı', 'Adet', ''].map(h => (
+                      <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b border-slate-200">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(order.orderItems as any[]).map((item: any, i: number) => (
+                    <tr key={i} className="hover:bg-slate-50">
+                      <td className="px-3 py-2.5">
+                        {item.productCode && <span className="text-xs font-semibold text-blue-600 mr-1">{item.productCode}</span>}
+                        {item.productName && <span className="text-slate-700 text-xs">{item.productName}</span>}
+                      </td>
+                      <td className="px-3 py-2.5 text-slate-600 text-xs">{item.color || '—'}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(item.sizeDistribution || {})
+                            .filter(([, qty]) => (qty as number) > 0)
+                            .map(([sz, qty]) => (
+                              <span key={sz} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50 text-blue-700 text-xs rounded font-medium">
+                                <span className="text-blue-400">{sz}</span>×<span>{qty as number}</span>
+                              </span>
+                            ))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 font-semibold text-slate-800 whitespace-nowrap text-xs">{item.totalQuantity}</td>
+                      <td className="px-3 py-2.5">
+                        <button
+                          onClick={() => { setSubModalItem(item); setShowSubModal(true); }}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg text-xs font-medium whitespace-nowrap"
+                        >
+                          <Factory className="w-3.5 h-3.5" /> Fasoncuya
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           {/* Renk Partileri */}
-          {Array.isArray(order.colorPartials) && order.colorPartials.length > 0 ? (
+          {!isPackage && Array.isArray(order.colorPartials) && order.colorPartials.length > 0 ? (
             <div className="mb-4">
               <p className="text-xs text-slate-400 mb-2">Renk Partileri</p>
               <div className="flex flex-wrap gap-2">
@@ -280,7 +333,10 @@ export default function PortalAdminOrderDetailPage() {
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-              <Factory className="w-5 h-5 text-orange-500" /> Fasoncuya Gönder
+              <Factory className="w-5 h-5 text-orange-500" />
+              {subModalItem
+                ? `${subModalItem.productCode || subModalItem.productName || 'Ürün'} / ${subModalItem.color || '—'} — Fasoncuya Gönder`
+                : 'Fasoncuya Gönder'}
             </h3>
             <button onClick={() => setShowSubModal(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded">
               <X className="w-4 h-4" />
@@ -369,26 +425,64 @@ export default function PortalAdminOrderDetailPage() {
                 <p className="font-semibold text-slate-800">{order.customer?.name}</p>
                 {order.portalCustomer?.email && <p className="text-xs text-slate-500">{order.portalCustomer.email}</p>}
               </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Ürün</p>
-                <p className="font-semibold text-slate-800">{order.productCode || order.product?.code || '—'}</p>
-                {order.product?.name && order.product.name !== order.productCode && (
-                  <p className="text-xs text-slate-500">{order.product.name}</p>
-                )}
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Renk</p>
-                <p className="font-semibold text-slate-800">{order.color || '—'}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Malzeme</p>
-                <p className="font-semibold text-slate-800">{order.material || '—'}</p>
-              </div>
+              {!isPackage && (
+                <>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Ürün</p>
+                    <p className="font-semibold text-slate-800">{order.productCode || order.product?.code || '—'}</p>
+                    {order.product?.name && order.product.name !== order.productCode && (
+                      <p className="text-xs text-slate-500">{order.product.name}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Renk</p>
+                    <p className="font-semibold text-slate-800">{order.color || '—'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Malzeme</p>
+                    <p className="font-semibold text-slate-800">{order.material || '—'}</p>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Size distribution */}
+            {/* Package items table (print) */}
+            {isPackage && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Paket İçeriği</p>
+                <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      {['Model', 'Renk', 'Beden Dağılımı', 'Adet'].map(h => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b border-slate-200">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(order.orderItems as any[]).map((item: any, i: number) => (
+                      <tr key={i}>
+                        <td className="px-3 py-2 text-xs font-semibold text-slate-700">{item.productCode || item.productName || '—'}</td>
+                        <td className="px-3 py-2 text-xs text-slate-600">{item.color || '—'}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex flex-wrap gap-1">
+                            {Object.entries(item.sizeDistribution || {})
+                              .filter(([, qty]) => (qty as number) > 0)
+                              .map(([sz, qty]) => (
+                                <span key={sz} className="text-xs text-slate-700">{sz}×{qty as number}</span>
+                              ))}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-xs font-bold text-slate-800">{item.totalQuantity}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Size distribution (aggregate) */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Beden Dağılımı</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{isPackage ? 'Toplam Beden Dağılımı' : 'Beden Dağılımı'}</p>
               <div className="border border-slate-200 rounded-lg overflow-hidden">
                 <table className="w-full text-center text-sm">
                   <thead className="bg-slate-50">

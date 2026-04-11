@@ -19,7 +19,10 @@ export async function GET() {
         { portalCustomers: { some: { portalCustomerId: user.id } } },
       ],
     },
-    select: { id: true, code: true, name: true, description: true, sizes: true },
+    select: {
+      id: true, code: true, name: true, description: true, sizes: true,
+      parts: { select: { id: true, name: true }, orderBy: { sortOrder: 'asc' } },
+    },
     orderBy: { name: 'asc' },
   });
 

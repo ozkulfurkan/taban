@@ -38,6 +38,8 @@ export default function PortalOrderDetailPage() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
   if (!order) return <PortalShell><p className="text-slate-500">Sipariş bulunamadı.</p></PortalShell>;
 
+  const isPackage = Array.isArray(order.orderItems) && order.orderItems.length > 0;
+
   return (
     <PortalShell>
       <div className="max-w-2xl mx-auto space-y-5">
@@ -51,10 +53,12 @@ export default function PortalOrderDetailPage() {
               <p className="text-xs text-slate-400">{new Date(order.createdAt).toLocaleDateString('tr-TR')}</p>
             </div>
           </div>
-          <button onClick={handleRepeat}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-medium transition-colors">
-            <RefreshCw className="w-4 h-4" /> Tekrarla
-          </button>
+          {!isPackage && (
+            <button onClick={handleRepeat}
+              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-medium transition-colors">
+              <RefreshCw className="w-4 h-4" /> Tekrarla
+            </button>
+          )}
         </div>
 
         {/* Stepper */}
@@ -66,28 +70,65 @@ export default function PortalOrderDetailPage() {
         {/* Details */}
         <div className="bg-white rounded-xl p-5 shadow-sm">
           <h2 className="font-semibold text-slate-700 mb-4">Sipariş Detayları</h2>
-          <dl className="grid grid-cols-2 gap-3 text-sm">
-            {[
-              ['Model Kodu', order.productCode || order.product?.name || '—'],
-              ['Renk', order.color || '—'],
-              ['Malzeme', order.material || '—'],
-              ['Toplam Adet', order.totalQuantity],
-              ['Termin Tarihi', order.confirmedDeliveryDate
-                ? new Date(order.confirmedDeliveryDate).toLocaleDateString('tr-TR')
-                : '—'],
-            ].map(([k, v]) => (
-              <div key={String(k)}>
-                <dt className="text-xs text-slate-400 mb-0.5">{k}</dt>
-                <dd className="font-medium text-slate-700">{v}</dd>
-              </div>
-            ))}
-          </dl>
+          {isPackage ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
+                <thead className="bg-slate-50">
+                  <tr>
+                    {['Model', 'Renk', 'Beden Dağılımı', 'Adet'].map(h => (
+                      <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b border-slate-200">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(order.orderItems as any[]).map((item: any, i: number) => (
+                    <tr key={i}>
+                      <td className="px-3 py-2.5 text-xs font-semibold text-slate-700">
+                        {item.productCode && <span className="text-blue-600 mr-1">{item.productCode}</span>}
+                        {item.productName}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-slate-600">{item.color || '—'}</td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(item.sizeDistribution || {})
+                            .filter(([, qty]) => (qty as number) > 0)
+                            .map(([sz, qty]) => (
+                              <span key={sz} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50 text-blue-700 text-xs rounded font-medium">
+                                <span className="text-blue-400">{sz}</span>×<span>{qty as number}</span>
+                              </span>
+                            ))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2.5 text-xs font-bold text-slate-800">{item.totalQuantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              {[
+                ['Model Kodu', order.productCode || order.product?.name || '—'],
+                ['Renk', order.color || '—'],
+                ['Malzeme', order.material || '—'],
+                ['Toplam Adet', order.totalQuantity],
+                ['Termin Tarihi', order.confirmedDeliveryDate
+                  ? new Date(order.confirmedDeliveryDate).toLocaleDateString('tr-TR')
+                  : '—'],
+              ].map(([k, v]) => (
+                <div key={String(k)}>
+                  <dt className="text-xs text-slate-400 mb-0.5">{k}</dt>
+                  <dd className="font-medium text-slate-700">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
           {order.notes && <p className="mt-4 text-sm text-slate-600 bg-slate-50 rounded-lg p-3">{order.notes}</p>}
         </div>
 
         {/* Size table */}
         <div className="bg-white rounded-xl p-5 shadow-sm">
-          <h2 className="font-semibold text-slate-700 mb-3">Beden Dağılımı</h2>
+          <h2 className="font-semibold text-slate-700 mb-3">{isPackage ? 'Toplam Beden Dağılımı' : 'Beden Dağılımı'}</h2>
           <SizeTable value={order.sizeDistribution || {}} readOnly />
         </div>
 
