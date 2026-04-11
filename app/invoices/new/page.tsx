@@ -14,6 +14,7 @@ interface LineItem {
   unitPrice: string;
   discount: string;
   notes: string;
+  partVariantsData?: Array<{ partId: string; materialId: string }>;
 }
 
 interface ModalState {
@@ -33,28 +34,49 @@ function lineTotal(item: LineItem) {
 }
 
 // ── Line Item Modal ───────────────────────────────────────────────────────────
-function ItemModal({ initial, currency, products, onConfirm, onClose }: {
-  initial: LineItem; currency: string; products: any[];
+function ItemModal({ initial, currency, products, materials, onConfirm, onClose }: {
+  initial: LineItem; currency: string; products: any[]; materials: any[];
   onConfirm: (item: LineItem) => void; onClose: () => void;
 }) {
   const { t } = useLanguage();
   const [item, setItem] = useState<LineItem>({ ...initial });
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [partMaterials, setPartMaterials] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    if (initial.partVariantsData) {
+      for (const pv of initial.partVariantsData) map[pv.partId] = pv.materialId;
+    }
+    return map;
+  });
   const set = (field: keyof LineItem, val: string) => setItem(p => ({ ...p, [field]: val }));
 
   const handleProductSelect = (productId: string) => {
-    if (!productId) { setSelectedProduct(null); return; }
+    if (!productId) { setSelectedProduct(null); setPartMaterials({}); return; }
     const p = products.find((p: any) => p.id === productId);
     if (!p) return;
     setSelectedProduct(p);
     const unitPrice = p.currency === currency ? toPriceInput(p.unitPrice) : '';
     setItem(prev => ({ ...prev, productId: p.id, description: p.name, unitPrice }));
+    const defaults: Record<string, string> = {};
+    for (const part of (p.parts ?? [])) {
+      if (part.materialId) defaults[part.id] = part.materialId;
+    }
+    setPartMaterials(defaults);
   };
 
   useEffect(() => {
     if (initial.productId && !selectedProduct) {
       const p = products.find((p: any) => p.id === initial.productId);
-      if (p) setSelectedProduct(p);
+      if (p) {
+        setSelectedProduct(p);
+        if (!initial.partVariantsData || initial.partVariantsData.length === 0) {
+          const defaults: Record<string, string> = {};
+          for (const part of (p.parts ?? [])) {
+            if (part.materialId) defaults[part.id] = part.materialId;
+          }
+          setPartMaterials(defaults);
+        }
+      }
     }
   }, []);
 
@@ -84,11 +106,13 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
               </select>
             </div>
           )}
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'productName')}</label>
-            <input value={item.description} onChange={e => set('description', e.target.value)} placeholder={t('newInvoice', 'enterDescription')}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
-          </div>
+          {!item.productId && (
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'productName')}</label>
+              <input value={item.description} onChange={e => set('description', e.target.value)} placeholder={t('newInvoice', 'enterDescription')}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'qty')}</label>
@@ -100,19 +124,52 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'stockLabel')}</label>
-              <div className={`px-3 py-2 border rounded-lg text-sm ${
-                selectedProduct
-                  ? selectedProduct.stock <= 0
-                    ? 'bg-red-50 border-red-200 text-red-600 font-medium'
-                    : 'bg-green-50 border-green-200 text-green-700 font-medium'
-                  : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}>
-                {selectedProduct ? `${selectedProduct.stock} ${selectedProduct.unit}` : '—'}
+            {!(selectedProduct && (selectedProduct.parts ?? []).length > 0) && (
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'stockLabel')}</label>
+                <div className={`px-3 py-2 border rounded-lg text-sm ${
+                  selectedProduct
+                    ? selectedProduct.stock <= 0
+                      ? 'bg-red-50 border-red-200 text-red-600 font-medium'
+                      : 'bg-green-50 border-green-200 text-green-700 font-medium'
+                    : 'bg-slate-50 border-slate-200 text-slate-400'
+                }`}>
+                  {selectedProduct ? `${selectedProduct.stock} ${selectedProduct.unit}` : '—'}
+                </div>
               </div>
-            </div>
+            )}
           </div>
+          {/* Per-part material selection */}
+          {selectedProduct && (selectedProduct.parts ?? []).length > 0 && (
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-600">Hammadde Seçimi</label>
+              {(selectedProduct.parts as any[]).map((part: any) => {
+                const selectedMatId = partMaterials[part.id] ?? '';
+                const selectedMat = materials.find(m => m.id === selectedMatId);
+                const stock = selectedMat?.stock ?? part.material?.stock ?? null;
+                return (
+                  <div key={part.id} className="flex items-center gap-2">
+                    <span className="w-24 flex-shrink-0 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1.5 rounded-lg text-center truncate">{part.name}</span>
+                    <select
+                      value={selectedMatId}
+                      onChange={e => setPartMaterials(prev => ({ ...prev, [part.id]: e.target.value }))}
+                      className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                    >
+                      <option value="">— Seç —</option>
+                      {materials.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </select>
+                    <div className={`w-24 flex-shrink-0 px-2 py-1.5 border rounded-lg text-xs text-right ${
+                      stock === null ? 'bg-slate-50 border-slate-200 text-slate-400' :
+                      stock <= 0 ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
+                      'bg-green-50 border-green-200 text-green-700 font-medium'
+                    }`}>
+                      {stock !== null ? `${stock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : '—'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'unitPrice')}</label>
@@ -181,7 +238,10 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
         <div className="px-5 pb-4 pt-3 border-t border-slate-100 flex-shrink-0">
           <button type="button" onClick={() => {
             if (item.description || item.unitPrice) {
-              onConfirm({ ...item });
+              const pvd = Object.entries(partMaterials)
+                .filter(([, matId]) => matId)
+                .map(([partId, materialId]) => ({ partId, materialId }));
+              onConfirm({ ...item, partVariantsData: pvd.length > 0 ? pvd : undefined });
             }
           }}
             disabled={!item.description && !item.unitPrice}
@@ -292,6 +352,7 @@ export default function NewInvoicePage() {
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<any[]>([]);
   const [modal, setModal] = useState<ModalState>({ open: false, editIndex: null });
   const [draftItem, setDraftItem] = useState<LineItem>(EMPTY_ITEM);
   const [productSearch, setProductSearch] = useState('');
@@ -326,6 +387,7 @@ export default function NewInvoicePage() {
   useEffect(() => {
     fetch('/api/customers').then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : [])).catch(console.error);
     fetch('/api/products').then(r => r.json()).then(d => setProducts(Array.isArray(d) ? d : [])).catch(console.error);
+    fetch('/api/materials').then(r => r.json()).then(d => setMaterials(Array.isArray(d) ? d : [])).catch(console.error);
   }, []);
 
   // Pre-fill line item from URL params (e.g. coming from portal order "Satışa Çevir")
@@ -432,18 +494,21 @@ export default function NewInvoicePage() {
       const qty = fromPriceInput(item.quantity);
 
       for (const part of product.parts) {
-        if (!part.materialId) continue;
+        // Use user-selected material if available, otherwise fall back to part default
+        const selectedMatId = item.partVariantsData?.find(pv => pv.partId === part.id)?.materialId ?? part.materialId;
+        if (!selectedMatId) continue;
         const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
         const kgUsed = (grossGrams * qty) / 1000;
-        const key = part.materialId;
-        const matName = part.material?.name ?? '—';
-        const currentStock = part.material?.stock ?? 0;
+        const key = selectedMatId;
+        const mat = materials.find(m => m.id === selectedMatId);
+        const matName = mat?.name ?? part.material?.name ?? '—';
+        const currentStock = mat?.stock ?? part.material?.stock ?? 0;
 
         const existing = deductionMap.get(key);
         if (existing) {
           existing.kgAmount += kgUsed;
         } else {
-          deductionMap.set(key, { name: matName, variantInfo: '', kgAmount: kgUsed, currentStock });
+          deductionMap.set(key, { name: matName, variantInfo: part.name, kgAmount: kgUsed, currentStock });
         }
       }
     }
@@ -696,6 +761,7 @@ export default function NewInvoicePage() {
           initial={draftItem}
           currency={form.currency}
           products={products}
+          materials={materials}
           onConfirm={handleModalConfirm}
           onClose={() => setModal({ open: false, editIndex: null })}
         />
