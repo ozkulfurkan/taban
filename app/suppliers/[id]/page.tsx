@@ -1575,7 +1575,6 @@ export default function SupplierDetailPage() {
                     <th className="w-8 px-2 py-2"></th>
                     <th className="px-4 py-2 text-left">{t('supplierDetail', 'date')}</th>
                     <th className="px-4 py-2 text-left">{t('supplierDetail', 'invoiceNo')}</th>
-                    <th className="px-4 py-2 text-left">Durum</th>
                     <th className="px-4 py-2 text-right">{t('supplierDetail', 'amount')}</th>
                   </tr>
                 </thead>
@@ -1599,7 +1598,6 @@ export default function SupplierDetailPage() {
                             {new Date(p.date).toLocaleDateString('tr-TR')}
                           </td>
                           <td className="px-4 py-2.5 font-medium text-teal-600">{p.invoiceNo || '—'}</td>
-                          <td className={`px-4 py-2.5 text-sm font-medium ${statusColor}`}>{statusLabel}</td>
                           <td className="px-4 py-2.5 text-right font-semibold text-slate-800 whitespace-nowrap">
                             {p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
@@ -1607,7 +1605,7 @@ export default function SupplierDetailPage() {
                         </tr>
                         {isOpen && (
                           <tr key={`${p.id}-exp`} className="border-b border-slate-200">
-                            <td colSpan={5} className="px-4 py-3 bg-slate-50">
+                            <td colSpan={4} className="px-4 py-3 bg-slate-50">
                               {p.purchaseMaterials && p.purchaseMaterials.length > 0 && (
                                 <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden mb-3">
                                   <thead>
