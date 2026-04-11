@@ -64,6 +64,7 @@ export default function Sidebar() {
         { href: '/customers', label: t('nav', 'customers'), icon: Users },
         { href: '/suppliers', label: t('nav', 'suppliers'), icon: Truck },
         { href: '/invoices', label: t('nav', 'sales'), icon: Receipt },
+        { href: '/purchases', label: 'Alışlar', icon: Package },
         { href: '/quotes/new', label: t('nav', 'quotes'), icon: FileText },
         { href: '/payments', label: t('nav', 'payments'), icon: CreditCard },
       ],

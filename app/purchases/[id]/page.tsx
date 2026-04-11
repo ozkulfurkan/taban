@@ -365,6 +365,65 @@ export default function PurchaseDetailPage() {
               </div>
             )}
 
+            {/* Add new material row — visible in edit mode */}
+            {editing && (
+              <div className="px-5 py-4 border-t border-slate-100 bg-blue-50/40">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Yeni Hammadde Ekle</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-xs text-slate-500 mb-1">Hammadde *</label>
+                    <select
+                      value={newMat.materialId}
+                      onChange={e => setNewMat(p => ({ ...p, materialId: e.target.value }))}
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400 bg-white"
+                    >
+                      <option value="">— Seçin —</option>
+                      {matList.map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">Miktar (kg) *</label>
+                    <input
+                      type="number" min="0" step="0.01"
+                      value={newMat.kgAmount}
+                      onChange={e => setNewMat(p => ({ ...p, kgAmount: e.target.value }))}
+                      placeholder="0.00"
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">Birim Fiyat</label>
+                    <input
+                      type="number" min="0" step="0.01"
+                      value={newMat.pricePerKg}
+                      onChange={e => setNewMat(p => ({ ...p, pricePerKg: e.target.value }))}
+                      placeholder="0.00"
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">Fasoncu (isteğe bağlı)</label>
+                    <select
+                      value={newMat.subcontractorId}
+                      onChange={e => setNewMat(p => ({ ...p, subcontractorId: e.target.value }))}
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400 bg-white"
+                    >
+                      <option value="">— Ana Depo —</option>
+                      {subcontractorList.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <button
+                  onClick={handleAddMat}
+                  disabled={matSaving || !newMat.materialId || !newMat.kgAmount}
+                  className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  {matSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Hammadde Ekle
+                </button>
+              </div>
+            )}
+
             {/* Totals summary */}
             <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/60">
               <div className="max-w-xs ml-auto space-y-2 text-sm">

@@ -131,13 +131,11 @@ export default function InvoicesPage() {
                   <th className="px-4 py-3 text-left">Belge No</th>
                   <th className="px-4 py-3 text-left">Sipariş No</th>
                   <th className="px-4 py-3 text-right">Tutar</th>
-                  <th className="px-4 py-3 text-center w-24">Durum</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(inv => {
                   const isOpen = expandedId === inv.id;
-                  const st = STATUS_LABELS[inv.status] ?? STATUS_LABELS.PENDING;
                   return (
                     <>
                       {/* Main row */}
@@ -164,15 +162,12 @@ export default function InvoicesPage() {
                           {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${st.color}`}>{st.label}</span>
-                        </td>
                       </tr>
 
                       {/* Expanded row */}
                       {isOpen && (
                         <tr key={`${inv.id}-expanded`} className="border-b border-slate-200 bg-slate-50">
-                          <td colSpan={7} className="px-6 py-4">
+                          <td colSpan={6} className="px-6 py-4">
                             {/* Action buttons */}
                             <div className="flex flex-wrap gap-2 mb-4">
                               <Link
