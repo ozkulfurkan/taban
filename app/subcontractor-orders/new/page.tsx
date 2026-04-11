@@ -13,6 +13,7 @@ export default function NewSubcontractorOrderPage() {
   const searchParams = useSearchParams();
 
   const prefillSubId = searchParams.get('subcontractorId') || '';
+  const prefillSoleOrderId = searchParams.get('soleOrderId') || '';
   const prefillProductId = searchParams.get('productId') || '';
   const prefillSizeDist = (() => {
     try { return JSON.parse(searchParams.get('sizeDistribution') || '{}'); } catch { return {}; }
@@ -102,15 +103,16 @@ export default function NewSubcontractorOrderPage() {
         body: JSON.stringify({
           subcontractorId: form.subcontractorId,
           productId: form.productId || null,
+          soleOrderId: prefillSoleOrderId || null,
           sizeDistribution: form.sizeDistribution,
           dueDate: form.dueDate || null,
           notes: form.notes || null,
           shippingAddress: form.shippingAddress || null,
         }),
       });
-      const data = await res.json();
+      await res.json();
       if (res.ok) {
-        router.push(`/subcontractor-orders/${data.id}`);
+        router.push(`/subcontractors/${form.subcontractorId}`);
       }
     } finally { setSaving(false); }
   };

@@ -483,6 +483,7 @@ model SoleOrder {
   status                OrderStatus          @default(ORDER_RECEIVED)
   statusHistory         OrderStatusHistory[]
   shipment              OrderShipment?
+  subcontractorOrders   SubcontractorOrder[]
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
 }
@@ -543,6 +544,8 @@ model SubcontractorOrder {
   subcontractor     Subcontractor            @relation(fields: [subcontractorId], references: [id])
   productId         String?
   product           Product?                 @relation(fields: [productId], references: [id])
+  soleOrderId       String?
+  soleOrder         SoleOrder?               @relation(fields: [soleOrderId], references: [id])
   sizeDistribution  Json
   totalPairs        Int                      @default(0)
   dueDate           DateTime?

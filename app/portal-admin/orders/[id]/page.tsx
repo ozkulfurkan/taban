@@ -64,6 +64,7 @@ export default function PortalAdminOrderDetailPage() {
       subcontractorId: selectedSubId,
       step: '1',
       sizeDistribution,
+      soleOrderId: order.id,
     });
     const productId = subModalItem?.productId ?? order.productId;
     if (productId) params2.set('productId', productId);
@@ -121,12 +122,21 @@ export default function PortalAdminOrderDetailPage() {
               <Printer className="w-4 h-4" /> Üretim Çıktısı
             </button>
             {!isPackage && (
-              <button
-                onClick={() => { setSubModalItem(null); setShowSubModal(true); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                <Factory className="w-4 h-4" /> Fasoncuya Gönder
-              </button>
+              Array.isArray(order.subcontractorOrders) && order.subcontractorOrders.length > 0
+                ? order.subcontractorOrders.map((so: any) => (
+                    <Link key={so.id} href={`/subcontractors/${so.subcontractor.id}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 text-orange-700 border border-orange-200 rounded-lg text-sm font-medium transition-colors hover:bg-orange-200">
+                      <Factory className="w-4 h-4" /> {so.subcontractor.name}
+                    </Link>
+                  ))
+                : (
+                    <button
+                      onClick={() => { setSubModalItem(null); setShowSubModal(true); }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Factory className="w-4 h-4" /> Fasoncuya Gönder
+                    </button>
+                  )
             )}
             <Link
               href={`/invoices/new?customerId=${order.customerId}${order.productId ? `&productId=${order.productId}` : ''}&quantity=${order.totalQuantity}`}

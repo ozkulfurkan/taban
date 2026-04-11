@@ -41,6 +41,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       product: { select: { id: true, name: true, code: true } },
       statusHistory: { orderBy: { createdAt: 'asc' } },
       shipment: true,
+      subcontractorOrders: {
+        select: { id: true, orderNo: true, subcontractor: { select: { id: true, name: true } } },
+      },
     },
   });
 
