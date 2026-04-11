@@ -385,7 +385,17 @@ export default function NewInvoicePage() {
   const [items, setItems] = useState<LineItem[]>([]);
 
   useEffect(() => {
-    fetch('/api/customers').then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : [])).catch(console.error);
+    fetch('/api/customers').then(r => r.json()).then(d => {
+      const list: any[] = Array.isArray(d) ? d : (d.customers ?? []);
+      setCustomers(list);
+      // If lockedCustomerId not in loaded page, fetch it individually
+      if (lockedCustomerId && !list.find((c: any) => c.id === lockedCustomerId)) {
+        fetch(`/api/customers/${lockedCustomerId}`)
+          .then(r => r.json())
+          .then(c => { if (c?.id) setCustomers(prev => [{ id: c.id, name: c.name, currency: c.currency }, ...prev]); })
+          .catch(console.error);
+      }
+    }).catch(console.error);
     fetch('/api/products').then(r => r.json()).then(d => setProducts(Array.isArray(d) ? d : [])).catch(console.error);
     fetch('/api/materials').then(r => r.json()).then(d => setMaterials(Array.isArray(d) ? d : [])).catch(console.error);
   }, []);
