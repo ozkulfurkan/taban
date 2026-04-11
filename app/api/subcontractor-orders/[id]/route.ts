@@ -3,6 +3,30 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 
+export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = session.user as any;
+  if (!['ADMIN', 'COMPANY_OWNER'].includes(user.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const existing = await prisma.subcontractorOrder.findFirst({ where: { id: params.id, companyId: user.companyId } });
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (existing.status !== 'CANCELLED') {
+    return NextResponse.json({ error: 'Sadece iptal edilmiş siparişler silinebilir.' }, { status: 400 });
+  }
+
+  await prisma.$transaction([
+    prisma.productionUpdate.deleteMany({ where: { orderId: params.id } }),
+    prisma.materialTransfer.deleteMany({ where: { orderId: params.id } }),
+    prisma.subcontractorScrap.deleteMany({ where: { orderId: params.id } }),
+    prisma.subcontractorOrder.delete({ where: { id: params.id } }),
+  ]);
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

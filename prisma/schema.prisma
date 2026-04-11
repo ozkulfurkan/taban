@@ -162,6 +162,7 @@ enum OrderStatus {
   PACKAGING
   READY_FOR_SHIPMENT
   SHIPPED
+  CANCELLED
 }
 
 enum InvoiceStatus {

@@ -7,7 +7,7 @@ import SizeTable from '@/app/portal/components/size-table';
 import Link from 'next/link';
 import {
   Loader2, ChevronLeft, Factory, Send, Package, ArrowRight,
-  AlertTriangle, CheckCircle2, Mail,
+  AlertTriangle, CheckCircle2, Mail, X, RotateCcw, Trash2,
 } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -91,6 +91,32 @@ export default function SubcontractorOrderDetailPage() {
     } finally { setEmailSending(false); }
   };
 
+  const handleCancel = async () => {
+    if (!confirm('Bu siparişi iptal etmek istediğinize emin misiniz?')) return;
+    await fetch(`/api/subcontractor-orders/${params.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'CANCELLED' }),
+    });
+    load();
+  };
+
+  const handleRestore = async () => {
+    await fetch(`/api/subcontractor-orders/${params.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'PENDING' }),
+    });
+    load();
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Bu sipariş kalıcı olarak silinecek. Emin misiniz?')) return;
+    const res = await fetch(`/api/subcontractor-orders/${params.id}`, { method: 'DELETE' });
+    if (res.ok) router.replace('/subcontractor-orders');
+    else { const d = await res.json(); alert(d.error); }
+  };
+
   if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-orange-500" /></div></AppShell>;
   if (!order) return <AppShell><div className="text-center py-16 text-slate-400">Sipariş bulunamadı</div></AppShell>;
 
@@ -111,6 +137,23 @@ export default function SubcontractorOrderDetailPage() {
           <Link href={`/subcontractors/${order.subcontractorId}`} className="flex items-center gap-2 px-3 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg text-sm font-medium">
             <Factory className="w-4 h-4" /> {order.subcontractor?.name}
           </Link>
+          {order.status !== 'CANCELLED' ? (
+            <button onClick={handleCancel}
+              className="flex items-center gap-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium ml-auto">
+              <X className="w-4 h-4" /> İptal Et
+            </button>
+          ) : (
+            <>
+              <button onClick={handleRestore}
+                className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium ml-auto">
+                <RotateCcw className="w-4 h-4" /> Geri Al
+              </button>
+              <button onClick={handleDelete}
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium">
+                <Trash2 className="w-4 h-4" /> Kalıcı Sil
+              </button>
+            </>
+          )}
         </div>
 
         {/* Header */}
