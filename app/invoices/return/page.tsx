@@ -217,7 +217,7 @@ export default function ReturnInvoicePage() {
   const [items, setItems] = useState<LineItem[]>([]);
 
   useEffect(() => {
-    fetch('/api/customers').then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : [])).catch(console.error);
+    fetch('/api/customers').then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : (d.customers ?? []))).catch(console.error);
     fetch('/api/products').then(r => r.json()).then(d => setProducts(Array.isArray(d) ? d : [])).catch(console.error);
   }, []);
 

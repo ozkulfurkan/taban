@@ -70,7 +70,7 @@ function QuoteForm() {
       }
     }).catch(() => {});
     fetch('/api/customers').then(r => r.json()).then(d => {
-      if (Array.isArray(d)) setCustomers(d);
+      setCustomers(Array.isArray(d) ? d : (d.customers ?? []));
     }).catch(() => {});
     if (calcId) {
       fetch(`/api/calculations/${calcId}`).then(r => r.json()).then(d => {
