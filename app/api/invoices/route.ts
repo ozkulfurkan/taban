@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
     include: {
       customer: { select: { id: true, name: true } },
       items: true,
+      createdBy: { select: { name: true } },
     },
     orderBy: { date: 'desc' },
   });
@@ -85,6 +86,7 @@ export async function POST(req: NextRequest) {
       status: 'PENDING',
       isReturn,
       notes: rest.notes || null,
+      createdById: user.id || null,
       items: {
         create: items.map((i: any) => {
           const qty = parseNum(i.quantity);

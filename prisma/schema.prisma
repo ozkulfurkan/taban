@@ -92,6 +92,7 @@ model User {
   companyId              String?
   company          Company?         @relation(fields: [companyId], references: [id])
   soleCalculations SoleCalculation[]
+  invoices         Invoice[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 }
@@ -291,6 +292,8 @@ model Invoice {
   isReturn       Boolean       @default(false)
   stockDeducted  Boolean       @default(false)
   notes          String?
+  createdById    String?
+  createdBy      User?         @relation(fields: [createdById], references: [id])
   items          InvoiceItem[]
   payments       Payment[]
   createdAt      DateTime      @default(now())
