@@ -708,6 +708,7 @@ export default function CustomerDetailPage() {
   const [successAmount, setSuccessAmount] = useState<number | null>(null);
   const [cekPortfoyToast, setCekPortfoyToast] = useState(false);
   const [invoicesShown, setInvoicesShown] = useState(10);
+  const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null);
   const [paymentsShown, setPaymentsShown] = useState(10);
   const [cekler, setCekler] = useState<any[]>([]);
 
@@ -1049,38 +1050,96 @@ export default function CustomerDetailPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+                    <th className="w-8 px-2 py-2"></th>
                     <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
-                    <th className="px-4 py-2 text-left">{t('customerDetail', 'invoiceNo')}</th>
+                    <th className="px-4 py-2 text-left">No</th>
+                    <th className="px-4 py-2 text-left">Durum</th>
                     <th className="px-4 py-2 text-right">{t('customerDetail', 'amount')}</th>
-                    <th className="w-8"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {customer.invoices.slice(0, invoicesShown).map((inv: any) => (
-                    <tr key={inv.id} className="hover:bg-blue-50/50 cursor-pointer transition-colors"
-                      onClick={() => router.push(`/invoices/${inv.id}`)}>
-                      <td className="px-4 py-2.5 text-slate-500">
-                        <div>{new Date(inv.date).toLocaleDateString('tr-TR')}</div>
-                        <div className="text-xs text-slate-400">{new Date(inv.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
-                      </td>
-                      <td className="px-4 py-2.5 font-medium text-blue-600">{inv.invoiceNo}</td>
-                      <td className="px-4 py-2.5 text-right font-semibold text-slate-800">
-                        {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
-                      </td>
-                      <td className="pr-3 text-slate-300">
-                        <ChevronRight className="w-4 h-4" />
-                      </td>
-                    </tr>
-                  ))}
+                <tbody>
+                  {customer.invoices.slice(0, invoicesShown).map((inv: any) => {
+                    const isOpen = expandedInvoiceId === inv.id;
+                    const remaining = inv.total - inv.paidAmount;
+                    const statusLabel = remaining <= 0 ? 'Faturalaşmış' : remaining < inv.total ? 'Kısmi' : 'Bekliyor';
+                    const statusColor = remaining <= 0 ? 'text-emerald-600' : remaining < inv.total ? 'text-blue-600' : 'text-orange-500';
+                    return (
+                      <>
+                        <tr key={inv.id}
+                          onClick={() => setExpandedInvoiceId(isOpen ? null : inv.id)}
+                          className={`border-b border-slate-100 cursor-pointer transition-colors ${isOpen ? 'bg-slate-50' : 'hover:bg-blue-50/30'}`}>
+                          <td className="px-2 py-2.5 text-center">
+                            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full border-2 text-xs font-bold ${isOpen ? 'border-slate-500 text-slate-600 bg-slate-100' : 'border-slate-400 text-slate-500'}`}>
+                              {isOpen ? '−' : '+'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap">
+                            {new Date(inv.date).toLocaleDateString('tr-TR')}
+                          </td>
+                          <td className="px-4 py-2.5 font-medium text-blue-600">{inv.invoiceNo}</td>
+                          <td className={`px-4 py-2.5 text-sm font-medium ${statusColor}`}>{statusLabel}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-slate-800 whitespace-nowrap">
+                            {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
+                          </td>
+                        </tr>
+                        {isOpen && (
+                          <tr key={`${inv.id}-exp`} className="border-b border-slate-200">
+                            <td colSpan={5} className="px-4 py-3 bg-slate-50">
+                              {inv.items && inv.items.length > 0 && (
+                                <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden mb-3">
+                                  <thead>
+                                    <tr className="bg-white border-b border-slate-200">
+                                      <th className="px-3 py-2 text-left font-semibold text-slate-600">Ürün/Hizmet</th>
+                                      <th className="px-3 py-2 text-right font-semibold text-slate-600">Fiyat</th>
+                                      <th className="px-3 py-2 text-right font-semibold text-slate-600">Tutar (KDV Dahil)</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 bg-white">
+                                    {inv.items.map((item: any) => (
+                                      <tr key={item.id}>
+                                        <td className="px-3 py-2 text-slate-700">
+                                          {item.quantity > 0 && <span className="text-slate-400 mr-1">{item.quantity} x</span>}
+                                          {item.description}
+                                        </td>
+                                        <td className="px-3 py-2 text-right text-slate-600">
+                                          {item.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                        <td className="px-3 py-2 text-right font-medium text-slate-800">
+                                          {item.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              )}
+                              {inv.createdBy?.name && (
+                                <p className="text-xs text-slate-500 bg-white border border-slate-100 rounded px-3 py-1.5 inline-block mb-3">
+                                  Kullanıcı : {inv.createdBy.name}
+                                </p>
+                              )}
+                              <div className="flex gap-2 flex-wrap">
+                                <Link href={`/invoices/${inv.id}`} onClick={e => e.stopPropagation()}
+                                  className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors">
+                                  Satış ekranına git ↗
+                                </Link>
+                                <Link href={`/invoices/${inv.id}`} onClick={e => e.stopPropagation()}
+                                  className="flex items-center gap-1 px-3 py-1.5 bg-sky-400 hover:bg-sky-500 text-white rounded-lg text-xs font-medium transition-colors">
+                                  Yazdır
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
               {customer.invoices.length > invoicesShown && (
                 <div className="px-4 py-3 border-t text-center">
-                  <button
-                    onClick={() => setInvoicesShown(p => p + 10)}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
+                  <button onClick={() => setInvoicesShown(p => p + 10)}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                     Daha Fazla Göster ({customer.invoices.length - invoicesShown} adet daha)
                   </button>
                 </div>

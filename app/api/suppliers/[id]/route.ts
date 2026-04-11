@@ -11,7 +11,14 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   const supplier = await prisma.supplier.findFirst({
     where: { id: params.id, companyId: user.companyId },
     include: {
-      purchases: { orderBy: { date: 'desc' } },
+      purchases: {
+        orderBy: { date: 'desc' },
+        include: {
+          purchaseMaterials: {
+            include: { material: { select: { id: true, name: true } } },
+          },
+        },
+      },
       payments: { orderBy: { date: 'desc' }, select: { amount: true, method: true, notes: true, id: true, date: true, currency: true } },
     },
   });

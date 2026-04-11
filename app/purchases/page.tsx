@@ -188,6 +188,41 @@ export default function PurchasesListPage() {
                               </button>
                             </div>
 
+                            {/* Materials table */}
+                            {p.purchaseMaterials && p.purchaseMaterials.length > 0 && (
+                              <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden mb-3">
+                                <thead>
+                                  <tr className="bg-white border-b border-slate-200">
+                                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Ürün/Hizmet</th>
+                                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Fiyat</th>
+                                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Tutar (KDV Dahil)</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 bg-white">
+                                  {p.purchaseMaterials.map((pm: any) => {
+                                    const tutar = (pm.kgAmount ?? 0) * (pm.pricePerKg ?? 0);
+                                    return (
+                                      <tr key={pm.id}>
+                                        <td className="px-4 py-2.5 text-slate-700">
+                                          <span className="text-slate-400 mr-1">{pm.kgAmount} kg</span>
+                                          {pm.material?.name}
+                                          {pm.subcontractor && (
+                                            <span className="ml-2 text-xs text-orange-600">→ {pm.subcontractor.name}</span>
+                                          )}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right text-slate-600">
+                                          {pm.pricePerKg ? pm.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right font-medium text-slate-800">
+                                          {tutar > 0 ? tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            )}
+
                             {/* Ödeme özeti */}
                             <div className="flex gap-4 text-xs text-slate-500 bg-white border border-slate-100 rounded-lg px-4 py-2.5 inline-flex w-full max-w-xs">
                               <div>

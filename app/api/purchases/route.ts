@@ -12,7 +12,15 @@ export async function GET(req: NextRequest) {
 
   const purchases = await prisma.purchase.findMany({
     where: { companyId: user.companyId },
-    include: { supplier: { select: { id: true, name: true } } },
+    include: {
+      supplier: { select: { id: true, name: true } },
+      purchaseMaterials: {
+        include: {
+          material: { select: { id: true, name: true } },
+          subcontractor: { select: { id: true, name: true } },
+        },
+      },
+    },
     orderBy: { date: 'desc' },
   });
   return NextResponse.json(purchases);

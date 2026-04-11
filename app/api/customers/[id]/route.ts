@@ -11,7 +11,13 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   const customer = await prisma.customer.findFirst({
     where: { id: params.id, companyId: user.companyId },
     include: {
-      invoices: { orderBy: { date: 'desc' } },
+      invoices: {
+        orderBy: { date: 'desc' },
+        include: {
+          items: true,
+          createdBy: { select: { name: true } },
+        },
+      },
       payments: { orderBy: { date: 'desc' }, select: { amount: true, method: true, notes: true, id: true, date: true, currency: true } },
     },
   });

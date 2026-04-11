@@ -1260,6 +1260,7 @@ export default function SupplierDetailPage() {
   const [successAmount, setSuccessAmount] = useState<number | null>(null);
   const [cekPortfoyToast, setCekPortfoyToast] = useState(false);
   const [purchasesShown, setPurchasesShown] = useState(10);
+  const [expandedPurchaseId, setExpandedPurchaseId] = useState<string | null>(null);
   const [paymentsShown, setPaymentsShown] = useState(10);
 
   const STATUS_LABEL: Record<string, string> = {
@@ -1571,30 +1572,88 @@ export default function SupplierDetailPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+                    <th className="w-8 px-2 py-2"></th>
                     <th className="px-4 py-2 text-left">{t('supplierDetail', 'date')}</th>
                     <th className="px-4 py-2 text-left">{t('supplierDetail', 'invoiceNo')}</th>
+                    <th className="px-4 py-2 text-left">Durum</th>
                     <th className="px-4 py-2 text-right">{t('supplierDetail', 'amount')}</th>
-                    <th className="w-8"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {supplier.purchases.slice(0, purchasesShown).map((p: any) => (
-                    <tr key={p.id} className="hover:bg-teal-50/50 cursor-pointer transition-colors"
-                      onClick={() => router.push(`/purchases/${p.id}`)}>
-                      <td className="px-4 py-2.5 text-slate-500">
-                        <div>{new Date(p.date).toLocaleDateString('tr-TR')}</div>
-                        <div className="text-xs text-slate-400">{new Date(p.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
-                      </td>
-                      <td className="px-4 py-2.5 font-medium text-teal-600">{p.invoiceNo || '—'}</td>
-                      <td className="px-4 py-2.5 text-right font-semibold text-slate-800">
-                        {p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
-                      </td>
-                      <td className="pr-3 text-slate-300">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
-                      </td>
-                    </tr>
-                  ))}
+                <tbody>
+                  {supplier.purchases.slice(0, purchasesShown).map((p: any) => {
+                    const isOpen = expandedPurchaseId === p.id;
+                    const remaining = p.total - p.paidAmount;
+                    const statusLabel = remaining <= 0 ? 'Faturalaşmış' : remaining < p.total ? 'Kısmi' : 'Bekliyor';
+                    const statusColor = remaining <= 0 ? 'text-emerald-600' : remaining < p.total ? 'text-blue-600' : 'text-orange-500';
+                    return (
+                      <>
+                        <tr key={p.id}
+                          onClick={() => setExpandedPurchaseId(isOpen ? null : p.id)}
+                          className={`border-b border-slate-100 cursor-pointer transition-colors ${isOpen ? 'bg-slate-50' : 'hover:bg-teal-50/30'}`}>
+                          <td className="px-2 py-2.5 text-center">
+                            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full border-2 text-xs font-bold ${isOpen ? 'border-slate-500 text-slate-600 bg-slate-100' : 'border-slate-400 text-slate-500'}`}>
+                              {isOpen ? '−' : '+'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap">
+                            {new Date(p.date).toLocaleDateString('tr-TR')}
+                          </td>
+                          <td className="px-4 py-2.5 font-medium text-teal-600">{p.invoiceNo || '—'}</td>
+                          <td className={`px-4 py-2.5 text-sm font-medium ${statusColor}`}>{statusLabel}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-slate-800 whitespace-nowrap">
+                            {p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
+                          </td>
+                        </tr>
+                        {isOpen && (
+                          <tr key={`${p.id}-exp`} className="border-b border-slate-200">
+                            <td colSpan={5} className="px-4 py-3 bg-slate-50">
+                              {p.purchaseMaterials && p.purchaseMaterials.length > 0 && (
+                                <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden mb-3">
+                                  <thead>
+                                    <tr className="bg-white border-b border-slate-200">
+                                      <th className="px-3 py-2 text-left font-semibold text-slate-600">Ürün/Hizmet</th>
+                                      <th className="px-3 py-2 text-right font-semibold text-slate-600">Fiyat</th>
+                                      <th className="px-3 py-2 text-right font-semibold text-slate-600">Tutar (KDV Dahil)</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 bg-white">
+                                    {p.purchaseMaterials.map((pm: any) => {
+                                      const tutar = (pm.kgAmount ?? 0) * (pm.pricePerKg ?? 0);
+                                      return (
+                                        <tr key={pm.id}>
+                                          <td className="px-3 py-2 text-slate-700">
+                                            <span className="text-slate-400 mr-1">{pm.kgAmount} kg</span>
+                                            {pm.material?.name}
+                                          </td>
+                                          <td className="px-3 py-2 text-right text-slate-600">
+                                            {pm.pricePerKg ? pm.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
+                                          </td>
+                                          <td className="px-3 py-2 text-right font-medium text-slate-800">
+                                            {tutar > 0 ? tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              )}
+                              <div className="flex gap-2 flex-wrap">
+                                <Link href={`/purchases/${p.id}`} onClick={e => e.stopPropagation()}
+                                  className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors">
+                                  Alış ekranına git ↗
+                                </Link>
+                                <Link href={`/purchases/${p.id}`} onClick={e => e.stopPropagation()}
+                                  className="flex items-center gap-1 px-3 py-1.5 bg-sky-400 hover:bg-sky-500 text-white rounded-lg text-xs font-medium transition-colors">
+                                  Yazdır
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
               {supplier.purchases.length > purchasesShown && (
