@@ -5,7 +5,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PortalShell from '../../components/portal-shell';
 import SizeTable from '../../components/size-table';
-import { Loader2, ArrowLeft, Send } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, Plus, Trash2 } from 'lucide-react';
+
+type ColorPartial = { name: string; color: string };
 
 export default function NewOrderPage() {
   const { status } = useSession() || {};
@@ -16,11 +18,11 @@ export default function NewOrderPage() {
   const [form, setForm] = useState({
     productId: searchParams.get('productId') || '',
     productCode: searchParams.get('productCode') || '',
-    color: searchParams.get('color') || '',
     material: searchParams.get('material') || '',
     requestedDeliveryDate: '',
     notes: '',
   });
+  const [colorPartials, setColorPartials] = useState<ColorPartial[]>([{ name: 'Parti 1', color: '' }]);
   const [sizes, setSizes] = useState<Record<string, number>>(() => {
     try { return JSON.parse(searchParams.get('sizeDistribution') || '{}'); } catch { return {}; }
   });
@@ -38,6 +40,18 @@ export default function NewOrderPage() {
     setForm(f => ({ ...f, productId: id, productCode: p?.code || '' }));
   };
 
+  const addPartial = () => {
+    setColorPartials(prev => [...prev, { name: `Parti ${prev.length + 1}`, color: '' }]);
+  };
+
+  const removePartial = (idx: number) => {
+    setColorPartials(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const updatePartial = (idx: number, field: keyof ColorPartial, value: string) => {
+    setColorPartials(prev => prev.map((p, i) => i === idx ? { ...p, [field]: value } : p));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -45,10 +59,16 @@ export default function NewOrderPage() {
     if (total === 0) { setError('En az 1 adet girmelisiniz.'); return; }
     setLoading(true);
     try {
+      const filledPartials = colorPartials.filter(p => p.color.trim());
       const res = await fetch('/api/portal/me/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, sizeDistribution: sizes }),
+        body: JSON.stringify({
+          ...form,
+          color: filledPartials[0]?.color || '',
+          sizeDistribution: sizes,
+          colorPartials: filledPartials.length > 0 ? filledPartials : null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Hata oluştu'); return; }
@@ -91,19 +111,49 @@ export default function NewOrderPage() {
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="örn: SC-100" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-600 mb-1.5">Renk</label>
-                <input value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="örn: Siyah" />
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">Malzeme</label>
                 <input value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value }))}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="örn: Termo" />
               </div>
-              <div>
+              <div className="col-span-2">
                 <label className="block text-sm font-medium text-slate-600 mb-1.5">İstenen Termin</label>
                 <input type="date" value={form.requestedDeliveryDate} onChange={e => setForm(f => ({ ...f, requestedDeliveryDate: e.target.value }))}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+            </div>
+
+            {/* Renk Partileri */}
+            <div className="border-t border-slate-100 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-sm font-medium text-slate-600">Renk Partileri</label>
+                <button type="button" onClick={addPartial}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-medium">
+                  <Plus className="w-3.5 h-3.5" /> Parti Ekle
+                </button>
+              </div>
+              <div className="space-y-2">
+                {colorPartials.map((partial, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      value={partial.name}
+                      onChange={e => updatePartial(idx, 'name', e.target.value)}
+                      placeholder="Parti adı"
+                      className="w-28 flex-shrink-0 px-2.5 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                    <input
+                      value={partial.color}
+                      onChange={e => updatePartial(idx, 'color', e.target.value)}
+                      placeholder="örn: Siyah, Kahve..."
+                      className="flex-1 px-2.5 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                    {colorPartials.length > 1 && (
+                      <button type="button" onClick={() => removePartial(idx)}
+                        className="p-1.5 text-slate-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>

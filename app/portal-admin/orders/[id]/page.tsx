@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import OrderStepper from '@/app/portal/components/order-stepper';
 import SizeTable from '@/app/portal/components/size-table';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Save, Truck, ShoppingCart, Printer, X } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Truck, ShoppingCart, Printer, X, Factory } from 'lucide-react';
 
 const ALL_STATUSES = [
   { key: 'ORDER_RECEIVED', label: 'Sipariş Alındı' },
@@ -29,6 +29,9 @@ export default function PortalAdminOrderDetailPage() {
   const [shipping, setShipping] = useState(false);
   const [showShipForm, setShowShipForm] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [showSubModal, setShowSubModal] = useState(false);
+  const [subcontractors, setSubcontractors] = useState<any[]>([]);
+  const [selectedSubId, setSelectedSubId] = useState('');
 
   const loadOrder = () => {
     if (!params?.id) return;
@@ -47,6 +50,22 @@ export default function PortalAdminOrderDetailPage() {
   };
 
   useEffect(() => { loadOrder(); }, [params?.id]);
+
+  useEffect(() => {
+    fetch('/api/subcontractors').then(r => r.json()).then(d => { if (Array.isArray(d)) setSubcontractors(d); });
+  }, []);
+
+  const handleSendToSubcontractor = () => {
+    if (!selectedSubId) return;
+    const sizeDistribution = JSON.stringify(order.sizeDistribution || {});
+    const params2 = new URLSearchParams({
+      subcontractorId: selectedSubId,
+      step: '1',
+      sizeDistribution,
+    });
+    if (order.productId) params2.set('productId', order.productId);
+    router.push(`/subcontractor-orders/new?${params2.toString()}`);
+  };
 
   const handleStatusUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,12 +108,18 @@ export default function PortalAdminOrderDetailPage() {
             <h1 className="text-xl font-bold text-slate-800">{order.orderNo}</h1>
             <p className="text-xs text-slate-400">{order.customer?.name} · {new Date(order.createdAt).toLocaleDateString('tr-TR')}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setShowPrintModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
             >
               <Printer className="w-4 h-4" /> Üretim Çıktısı
+            </button>
+            <button
+              onClick={() => setShowSubModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <Factory className="w-4 h-4" /> Fasoncuya Gönder
             </button>
             <Link
               href={`/invoices/new?customerId=${order.customerId}${order.productId ? `&productId=${order.productId}` : ''}&quantity=${order.totalQuantity}`}
@@ -195,7 +220,6 @@ export default function PortalAdminOrderDetailPage() {
           <h2 className="font-semibold text-slate-700 mb-4">Sipariş Detayları</h2>
           <dl className="grid grid-cols-2 gap-3 text-sm mb-4">
             {[['Model', order.productCode || order.product?.name || '—'],
-              ['Renk', order.color || '—'],
               ['Malzeme', order.material || '—'],
               ['Toplam Adet', order.totalQuantity],
               ['Portal Kullanıcı', order.portalCustomer?.email || '—'],
@@ -206,6 +230,26 @@ export default function PortalAdminOrderDetailPage() {
               </div>
             ))}
           </dl>
+          {/* Renk Partileri */}
+          {Array.isArray(order.colorPartials) && order.colorPartials.length > 0 ? (
+            <div className="mb-4">
+              <p className="text-xs text-slate-400 mb-2">Renk Partileri</p>
+              <div className="flex flex-wrap gap-2">
+                {(order.colorPartials as any[]).map((p: any, i: number) => (
+                  <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                    <span className="text-blue-400">{p.name}</span>
+                    <span className="w-px h-3 bg-blue-200" />
+                    {p.color}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : order.color ? (
+            <div className="mb-4">
+              <p className="text-xs text-slate-400 mb-1">Renk</p>
+              <p className="font-medium text-slate-700">{order.color}</p>
+            </div>
+          ) : null}
           <SizeTable value={order.sizeDistribution || {}} readOnly />
         </div>
 
@@ -229,6 +273,43 @@ export default function PortalAdminOrderDetailPage() {
         )}
       </div>
     </AppShell>
+
+    {/* Fasoncuya Gönder Modal */}
+    {showSubModal && (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowSubModal(false)}>
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+              <Factory className="w-5 h-5 text-orange-500" /> Fasoncuya Gönder
+            </h3>
+            <button onClick={() => setShowSubModal(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-sm text-slate-500">
+            Fason siparişi oluşturmak için bir fasoncu seçin. Numara dağılımı otomatik aktarılacak.
+          </p>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">Fasoncu *</label>
+            <select value={selectedSubId} onChange={e => setSelectedSubId(e.target.value)}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 outline-none bg-white">
+              <option value="">— Fasoncu Seçin —</option>
+              {subcontractors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button onClick={() => setShowSubModal(false)}
+              className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+              İptal
+            </button>
+            <button onClick={handleSendToSubcontractor} disabled={!selectedSubId}
+              className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2">
+              <Factory className="w-4 h-4" /> Devam Et
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* Print Modal */}
     {showPrintModal && (

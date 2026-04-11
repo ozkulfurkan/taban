@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   if (!user?.customerId || !user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { productId, productCode, color, material, sizeDistribution, requestedDeliveryDate, notes } = body;
+  const { productId, productCode, color, material, sizeDistribution, requestedDeliveryDate, notes, colorPartials } = body;
 
   if (!sizeDistribution || typeof sizeDistribution !== 'object') {
     return NextResponse.json({ error: 'sizeDistribution required' }, { status: 400 });
@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
       totalQuantity,
       requestedDeliveryDate: requestedDeliveryDate ? new Date(requestedDeliveryDate) : null,
       notes: notes || null,
+      colorPartials: colorPartials || null,
       status: 'ORDER_RECEIVED',
       statusHistory: {
         create: { status: 'ORDER_RECEIVED', note: 'Sipariş oluşturuldu' },

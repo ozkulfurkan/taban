@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import SizeTable from '@/app/portal/components/size-table';
 import { ChevronLeft, ChevronRight, Loader2, Factory, CheckCircle2, Package } from 'lucide-react';
@@ -10,16 +10,25 @@ const STEPS = ['Fasoncu & Ürün', 'Numara Dağılımı', 'Hammadde Gereksinimi'
 
 export default function NewSubcontractorOrderPage() {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const searchParams = useSearchParams();
+
+  const prefillSubId = searchParams.get('subcontractorId') || '';
+  const prefillProductId = searchParams.get('productId') || '';
+  const prefillSizeDist = (() => {
+    try { return JSON.parse(searchParams.get('sizeDistribution') || '{}'); } catch { return {}; }
+  })();
+  const startStep = searchParams.get('step') === '1' ? 1 : 0;
+
+  const [step, setStep] = useState(startStep);
   const [saving, setSaving] = useState(false);
 
   const [subcontractors, setSubcontractors] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
 
   const [form, setForm] = useState({
-    subcontractorId: '',
-    productId: '',
-    sizeDistribution: {} as Record<string, number>,
+    subcontractorId: prefillSubId,
+    productId: prefillProductId,
+    sizeDistribution: prefillSizeDist as Record<string, number>,
     dueDate: '',
     notes: '',
     shippingAddress: '',

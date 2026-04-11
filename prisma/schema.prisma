@@ -478,6 +478,7 @@ model SoleOrder {
   requestedDeliveryDate DateTime?
   confirmedDeliveryDate DateTime?
   notes                 String?
+  colorPartials         Json?
   status                OrderStatus          @default(ORDER_RECEIVED)
   statusHistory         OrderStatusHistory[]
   shipment              OrderShipment?
