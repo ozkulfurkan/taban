@@ -1239,16 +1239,38 @@ export default function CustomerDetailPage() {
                             </td>
                           </tr>
                         ) : (
-                          <tr key={row.id} className="bg-cyan-50/40">
+                          <tr key={row.id} className="bg-cyan-50/40 group">
                             <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
                             <td className="px-4 py-2.5">
                               <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-cyan-100 text-cyan-700">Çek</span>
                             </td>
                             <td className="px-4 py-2.5 text-right font-semibold text-cyan-700">
-                              {row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
+                              {row.customerAmount != null ? (
+                                <>
+                                  {row.customerAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  <span className="text-xs font-normal text-slate-400 ml-1">{customer.currency}</span>
+                                  <span className="text-xs text-slate-400 ml-1">
+                                    ({row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {row.currency})
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  {row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
+                                </>
+                              )}
                             </td>
-                            <td className="px-2 py-2.5"></td>
+                            <td className="px-2 py-2.5 text-center">
+                              <button
+                                onClick={async () => {
+                                  if (!confirm('Bu çek kaydı silinecek ve portföyden çıkarılacak. Emin misiniz?')) return;
+                                  await fetch(`/api/cek/${row.id}`, { method: 'DELETE' });
+                                  load();
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

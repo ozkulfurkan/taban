@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { customerId, supplierId, borclu, islem, aciklama, islemTarihi, vadesi, tutar, currency, seriNo, bankasi, customerAmount, customerCurrency } = body;
 
-  const cek = await prisma.cek.create({
+  const cek = await (prisma.cek.create as any)({
     data: {
       companyId: user.companyId,
       customerId: customerId || null,

@@ -31,6 +31,7 @@ type Row = {
   isSubRow?: boolean;
   miktar?: string;
   fiyat?: number;
+  extraInfo?: string; // çapraz döviz için
 };
 
 export default function CustomerEkstrePage() {
@@ -57,10 +58,11 @@ export default function CustomerEkstrePage() {
   if (data && !data.error) {
     let balance = 0;
     const events: any[] = [
-      ...(data.invoices || []).map((inv: any) => ({ ...inv, _type: 'invoice' })),
-      ...(data.payments || []).map((p: any) => ({ ...p, _type: 'payment' })),
+      ...(data.invoices || []).map((inv: any) => ({ ...inv, _type: 'invoice', _sortDate: inv.date })),
+      ...(data.payments || []).map((p: any) => ({ ...p, _type: 'payment', _sortDate: p.date })),
+      ...(data.cekler || []).map((c: any) => ({ ...c, _type: 'cek', _sortDate: c.islemTarihi })),
     ].sort((a, b) => {
-      const d = new Date(a.date).getTime() - new Date(b.date).getTime();
+      const d = new Date(a._sortDate).getTime() - new Date(b._sortDate).getTime();
       if (d !== 0) return d;
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
@@ -109,7 +111,7 @@ export default function CustomerEkstrePage() {
             });
           });
         }
-      } else {
+      } else if (ev._type === 'payment') {
         // Ödeme / Tahsilat
         const method = ev.method || '';
         const notesStr = ev.notes || '';
@@ -175,6 +177,31 @@ export default function CustomerEkstrePage() {
             bakiye: balance,
           });
         }
+      } else if (ev._type === 'cek') {
+        // Çek: customerAmount varsa müşteri dövizinde o kadar, yoksa tutar
+        const amt = ev.customerAmount ?? ev.tutar;
+        balance -= amt;
+        const extraInfo = ev.customerAmount
+          ? `${fmt(ev.tutar)} ${ev.currency}`
+          : undefined;
+        const aciklama = [
+          ev.islem,
+          ev.borclu,
+          ev.bankasi,
+          ev.seriNo,
+        ].filter(Boolean).join(' — ');
+        rows.push({
+          id: `cek-${ev.id}`,
+          date: ev.islemTarihi,
+          dueDate: ev.vadesi,
+          hareket: 'Çek',
+          belgeNo: ev.seriNo || undefined,
+          aciklama,
+          borc: 0,
+          alacak: amt,
+          bakiye: balance,
+          extraInfo,
+        });
       }
     });
   }
@@ -371,12 +398,16 @@ export default function CustomerEkstrePage() {
                                 r.hareket === 'Borç Fişi' ? 'bg-orange-100 text-orange-700' :
                                 r.hareket === 'Alacak Fişi' ? 'bg-purple-100 text-purple-700' :
                                 r.hareket === 'Bakiye Düzeltme' ? 'bg-slate-100 text-slate-600' :
+                                r.hareket === 'Çek' ? 'bg-cyan-100 text-cyan-700' :
                                 'bg-amber-100 text-amber-700'
                               }`}>{r.hareket}</span>
                             )}
                           </td>
                           <td className="px-3 py-2 font-medium text-slate-700">{r.belgeNo}</td>
-                          <td className="px-3 py-2 text-slate-600 max-w-[180px] truncate">{r.aciklama}</td>
+                          <td className="px-3 py-2 text-slate-600 max-w-[180px]">
+                            <span className="truncate block">{r.aciklama}</span>
+                            {r.extraInfo && <span className="text-xs text-blue-500 font-medium">({r.extraInfo})</span>}
+                          </td>
                           <td className="px-3 py-2 text-right text-slate-500">{r.miktar}</td>
                           <td className="px-3 py-2 text-right text-slate-500">
                             {r.fiyat != null ? fmt(r.fiyat) : ''}

@@ -49,7 +49,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   // Çekler bakiyeye dahil: customerAmount (çapraz döviz) veya tutar (aynı döviz)
   let totalCek = 0;
   for (const c of cekler) {
-    const amt = c.customerAmount ?? c.tutar;
+    const amt = (c as any).customerAmount ?? c.tutar;
     totalCek += amt;
     balanceDelta -= amt;
     totalPaid += amt;
