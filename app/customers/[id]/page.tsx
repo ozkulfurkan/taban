@@ -472,7 +472,7 @@ function CekTanimModal({ borclu: defaultBorclu, customerCurrency, onClose, onAdd
   const { t } = useLanguage();
   const [form, setForm] = useState({
     borclu: defaultBorclu,
-    islemTarihi: toDateInputValue(),
+    islemTarihi: nowIstanbulISO(),
     vadesi: '',
     tutar: '',
     currency: 'TRY',
@@ -506,8 +506,8 @@ function CekTanimModal({ borclu: defaultBorclu, customerCurrency, onClose, onAdd
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">İşlem Tarihi</label>
-              <input type="date" value={form.islemTarihi} onChange={e => set('islemTarihi', e.target.value)}
+              <label className="text-xs font-medium text-slate-500 mb-1 block">İşlem Tarihi & Saati</label>
+              <input type="datetime-local" value={form.islemTarihi} onChange={e => set('islemTarihi', e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
             </div>
             <div>
