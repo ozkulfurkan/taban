@@ -3,6 +3,33 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthSession, unauthorized } from '@/lib/helpers';
+import { logAction, getIp } from '@/lib/audit-logger';
+
+export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await getAuthSession() as any;
+    if (!session?.user) return unauthorized();
+
+    const material = await prisma.material.findFirst({
+      where: { id: params.id, companyId: session.user.companyId },
+      include: {
+        priceHistory: { orderBy: { createdAt: 'desc' }, take: 10 },
+        subcontractorStocks: {
+          include: { subcontractor: { select: { id: true, name: true } } },
+        },
+        materialTransfers: {
+          orderBy: { transferDate: 'desc' },
+          take: 30,
+          include: { subcontractor: { select: { id: true, name: true } } },
+        },
+      },
+    });
+    if (!material) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json(material);
+  } catch (error: any) {
+    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+  }
+}
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -40,6 +67,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       },
     });
 
+    await logAction({
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      userName: session.user.name,
+      action: 'UPDATE',
+      entity: 'Material',
+      entityId: params.id,
+      detail: `Hammadde güncellendi — ${updated.name}`,
+      meta: { pricePerKg: updated.pricePerKg, currency: updated.currency },
+      ip: getIp(req),
+    });
     return NextResponse.json(updated);
   } catch (error: any) {
     console.error('PUT material error:', error);
@@ -75,6 +113,16 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     await prisma.material.delete({ where: { id: params.id } });
+    await logAction({
+      companyId: session.user.companyId,
+      userId: session.user.id,
+      userName: session.user.name,
+      action: 'DELETE',
+      entity: 'Material',
+      entityId: params.id,
+      detail: `Hammadde silindi — ${existing.name}`,
+      ip: getIp(req),
+    });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('DELETE material error:', error);

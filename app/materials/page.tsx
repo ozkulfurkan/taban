@@ -1,75 +1,29 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import Modal from '@/app/components/modal';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { useSession } from 'next-auth/react';
-import {
-  Package, Plus, Search, Edit2, Trash2, History, Loader2, Layers,
-  X, FileText, TrendingUp, TrendingDown, RotateCcw, Factory, Tag,
-} from 'lucide-react';
+import { Package, Plus, Search, Loader2, Tag } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { motion } from 'framer-motion';
 
 export default function MaterialsPage() {
+  const router = useRouter();
   const { data: session } = useSession() || {};
   const { t, formatAmount, currency } = useLanguage();
   const user = session?.user as any;
   const canEdit = user?.role !== 'VIEWER';
-  const canDelete = user?.role === 'ADMIN' || user?.role === 'COMPANY_OWNER';
 
   const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [historyModal, setHistoryModal] = useState<any>(null);
-  const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState({ name: '', category: '', supplier: '', pricePerKg: '', currency: 'USD', description: '' });
   const [saving, setSaving] = useState(false);
-
-  // Stok güncelleme
-  const [stokModal, setStokModal] = useState<{ id: string; name: string; stock: number } | null>(null);
-  const [stokDelta, setStokDelta] = useState('');
-  const [stokSign, setStokSign] = useState<1 | -1>(1);
-  const [stokSaving, setStokSaving] = useState(false);
-
-  // Stok Ekstresi modal
-  const [ekstreModal, setEkstreModal] = useState<{ name: string; data: any } | null>(null);
-  const [ekstreLoading, setEkstreLoading] = useState(false);
-
-  // Fasoncuya Gönder modal
-  const [sendToSubModal, setSendToSubModal] = useState<{ materialId: string; name: string } | null>(null);
-  const [subcontractors, setSubcontractors] = useState<any[]>([]);
-  const [sendToSubId, setSendToSubId] = useState('');
-  const [sendToSubQty, setSendToSubQty] = useState('');
-  const [sendToSubSaving, setSendToSubSaving] = useState(false);
-
-  const openEkstre = async (mat: any) => {
-    setEkstreLoading(true);
-    setEkstreModal({ name: mat.name, data: null });
-    try {
-      const res = await fetch(`/api/materials/${mat.id}/ekstre`);
-      const data = await res.json();
-      setEkstreModal({ name: mat.name, data });
-    } finally { setEkstreLoading(false); }
-  };
-
-  const handleStokSave = async () => {
-    if (!stokModal || !stokDelta) return;
-    setStokSaving(true);
-    try {
-      await fetch(`/api/materials/${stokModal.id}/stok`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ delta: stokSign * (parseFloat(stokDelta) || 0) }),
-      });
-      setStokModal(null);
-      setStokDelta('');
-      fetchMaterials();
-    } finally { setStokSaving(false); }
-  };
 
   const fetchMaterials = useCallback(async () => {
     try {
@@ -83,68 +37,18 @@ export default function MaterialsPage() {
     }
   }, [search]);
 
-  useEffect(() => {
-    fetchMaterials();
-  }, [fetchMaterials]);
-
-  useEffect(() => {
-    fetch('/api/subcontractors').then(r => r.json()).then(d => { if (Array.isArray(d)) setSubcontractors(d); });
-  }, []);
-
-  const openSendToSub = (materialId: string, name: string) => {
-    setSendToSubModal({ materialId, name });
-    setSendToSubId('');
-    setSendToSubQty('');
-  };
-
-  const handleSendToSub = async () => {
-    if (!sendToSubModal || !sendToSubId || !sendToSubQty || parseFloat(sendToSubQty) <= 0) return;
-    setSendToSubSaving(true);
-    try {
-      const res = await fetch(`/api/materials/${sendToSubModal.materialId}/send-to-subcontractor`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subcontractorId: sendToSubId,
-          quantity: parseFloat(sendToSubQty),
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(err.error || 'İşlem başarısız oldu.');
-        return;
-      }
-      setSendToSubModal(null);
-      fetchMaterials();
-    } finally { setSendToSubSaving(false); }
-  };
+  useEffect(() => { fetchMaterials(); }, [fetchMaterials]);
 
   const openNew = () => {
-    setEditItem(null);
     setForm({ name: '', category: '', supplier: '', pricePerKg: '', currency, description: '' });
-    setModalOpen(true);
-  };
-
-  const openEdit = (mat: any) => {
-    setEditItem(mat);
-    setForm({
-      name: mat?.name ?? '',
-      category: mat?.category ?? '',
-      supplier: mat?.supplier ?? '',
-      pricePerKg: toPriceInput(mat?.pricePerKg ?? ''),
-      currency: mat?.currency ?? 'USD',
-      description: mat?.description ?? '',
-    });
     setModalOpen(true);
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const url = editItem ? `/api/materials/${editItem.id}` : '/api/materials';
-      const method = editItem ? 'PUT' : 'POST';
-      const res = await fetch(url, {
-        method,
+      const res = await fetch('/api/materials', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, pricePerKg: fromPriceInput(form.pricePerKg) }),
       });
@@ -156,21 +60,6 @@ export default function MaterialsPage() {
       console.error(e);
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bu hammaddeyi silmek istediğinize emin misiniz?')) return;
-    try {
-      const res = await fetch(`/api/materials/${id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || 'Silme işlemi başarısız.');
-        return;
-      }
-      fetchMaterials();
-    } catch (e) {
-      console.error(e);
     }
   };
 
@@ -234,7 +123,8 @@ export default function MaterialsPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
+                onClick={() => router.push(`/materials/${mat.id}`)}
+                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               >
                 <div className="p-4 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
@@ -254,7 +144,7 @@ export default function MaterialsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="flex items-center gap-4 flex-shrink-0">
                     <div className="text-right hidden sm:block">
                       <p className="font-semibold text-slate-800">{formatAmount(mat?.pricePerKg ?? 0, mat?.currency ?? 'USD')}/kg</p>
                       <p className="text-xs text-slate-400">{mat?.currency ?? ''}</p>
@@ -265,59 +155,6 @@ export default function MaterialsPage() {
                       </p>
                       <p className="text-xs text-slate-400">Stok</p>
                     </div>
-
-                    <div className="flex items-center gap-1">
-                      {canEdit && (
-                        <>
-                          <button
-                            onClick={() => setStokModal({ id: mat.id, name: mat.name, stock: mat.stock ?? 0 })}
-                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                            title="Stok Güncelle"
-                          >
-                            <Layers className="w-4 h-4" />
-                          </button>
-                          {subcontractors.length > 0 && (
-                            <button
-                              onClick={() => openSendToSub(mat.id, mat.name)}
-                              className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                              title="Fasoncuya Gönder"
-                            >
-                              <Factory className="w-4 h-4" />
-                            </button>
-                          )}
-                        </>
-                      )}
-                      <button
-                        onClick={() => openEkstre(mat)}
-                        className="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                        title="Stok Ekstresi"
-                      >
-                        <FileText className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setHistoryModal(mat)}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title={t('materials', 'priceHistory')}
-                      >
-                        <History className="w-4 h-4" />
-                      </button>
-                      {canEdit && (
-                        <button
-                          onClick={() => openEdit(mat)}
-                          className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                      )}
-                      {canDelete && (
-                        <button
-                          onClick={() => handleDelete(mat?.id)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -326,8 +163,8 @@ export default function MaterialsPage() {
         )}
       </div>
 
-      {/* Add/Edit Material Modal */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editItem ? t('materials', 'editMaterial') : t('materials', 'addMaterial')}>
+      {/* Yeni Hammadde Ekle Modal */}
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={t('materials', 'addMaterial')}>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'materialName')}</label>
@@ -370,286 +207,6 @@ export default function MaterialsPage() {
           </div>
         </div>
       </Modal>
-
-      {/* Price History Modal */}
-      <Modal isOpen={!!historyModal} onClose={() => setHistoryModal(null)} title={`${historyModal?.name ?? ''} - ${t('materials', 'priceHistory')}`}>
-        <div className="space-y-2">
-          {!(historyModal?.priceHistory ?? [])?.length ? (
-            <p className="text-slate-400 text-center py-4">{t('common', 'noData')}</p>
-          ) : (
-            (historyModal?.priceHistory ?? []).map((h: any, i: number) => (
-              <div key={h?.id ?? i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                <span className="text-sm text-slate-600">
-                  {h?.createdAt ? new Date(h.createdAt).toLocaleDateString() : '-'}
-                </span>
-                <span className="font-medium text-slate-800">
-                  {formatAmount(h?.pricePerKg ?? 0, historyModal?.currency ?? 'USD')}/kg
-                </span>
-              </div>
-            ))
-          )}
-          <button onClick={() => setHistoryModal(null)} className="w-full mt-2 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm">
-            {t('common', 'close')}
-          </button>
-        </div>
-      </Modal>
-
-      {/* Stok Güncelleme Modalı */}
-      {stokModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setStokModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-            <div className="bg-emerald-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
-              <h3 className="text-white font-semibold text-base">Stok Güncelle</h3>
-              <button onClick={() => setStokModal(null)} className="text-white/80 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-5 space-y-4">
-              <p className="text-sm font-medium text-slate-700">{stokModal.name}</p>
-              <div className="text-center">
-                <p className="text-xs text-slate-500">Mevcut Stok</p>
-                <p className="text-2xl font-bold text-slate-700">
-                  {(stokModal.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setStokSign(1)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${stokSign === 1 ? 'bg-emerald-600 text-white border-emerald-600' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                >
-                  + Stok Ekle
-                </button>
-                <button
-                  onClick={() => setStokSign(-1)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${stokSign === -1 ? 'bg-red-500 text-white border-red-500' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                >
-                  − Stok Azalt
-                </button>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Miktar (kg)</label>
-                <input
-                  type="number" step="0.001" min="0"
-                  value={stokDelta}
-                  onChange={e => setStokDelta(e.target.value)}
-                  placeholder="0.000"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-emerald-400"
-                  autoFocus
-                />
-              </div>
-              {stokDelta && (
-                <div className="text-center text-sm">
-                  <span className="text-slate-500">Yeni stok: </span>
-                  <span className="font-bold text-slate-700">
-                    {((stokModal.stock ?? 0) + stokSign * (parseFloat(stokDelta) || 0)).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                  </span>
-                </div>
-              )}
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => setStokModal(null)}
-                  className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm">
-                  Vazgeç
-                </button>
-                <button onClick={handleStokSave} disabled={stokSaving || !stokDelta}
-                  className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
-                  {stokSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Kaydet
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Stok Ekstresi Modal ─────────────────────────────────────────── */}
-      {ekstreModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEkstreModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="bg-teal-700 px-5 py-4 flex items-center justify-between flex-shrink-0">
-              <div>
-                <h3 className="text-white font-bold text-base flex items-center gap-2">
-                  <FileText className="w-4 h-4" /> Stok Ekstresi
-                </h3>
-                <p className="text-teal-200 text-sm mt-0.5">{ekstreModal.name}</p>
-              </div>
-              <button onClick={() => setEkstreModal(null)} className="text-white/80 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto">
-              {ekstreLoading || !ekstreModal.data ? (
-                <div className="flex justify-center items-center py-20">
-                  <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
-                </div>
-              ) : (
-                <>
-                  {/* Özet kartları */}
-                  <div className="grid grid-cols-3 gap-3 p-5 pb-3">
-                    <div className="bg-emerald-50 rounded-xl p-3 text-center">
-                      <p className="text-xs text-emerald-600 font-semibold mb-1">Toplam Alış</p>
-                      <p className="text-lg font-bold text-emerald-700">
-                        {ekstreModal.data.entries
-                          .filter((e: any) => e.type === 'alis' || e.type === 'iade')
-                          .reduce((s: number, e: any) => s + e.kgAmount, 0)
-                          .toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                      </p>
-                    </div>
-                    <div className="bg-red-50 rounded-xl p-3 text-center">
-                      <p className="text-xs text-red-600 font-semibold mb-1">Toplam Satış Tüketimi</p>
-                      <p className="text-lg font-bold text-red-700">
-                        {Math.abs(ekstreModal.data.entries
-                          .filter((e: any) => e.type === 'satis')
-                          .reduce((s: number, e: any) => s + e.kgAmount, 0))
-                          .toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                      </p>
-                    </div>
-                    <div className={`rounded-xl p-3 text-center ${(ekstreModal.data.material?.stock ?? 0) < 0 ? 'bg-red-50' : 'bg-teal-50'}`}>
-                      <p className="text-xs text-teal-600 font-semibold mb-1">Güncel Stok</p>
-                      <p className={`text-lg font-bold ${(ekstreModal.data.material?.stock ?? 0) < 0 ? 'text-red-700' : 'text-teal-700'}`}>
-                        {(ekstreModal.data.material?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Hareketler tablosu */}
-                  {ekstreModal.data.entries.length === 0 ? (
-                    <div className="text-center py-12 text-slate-400 text-sm">Kayıtlı hareket bulunamadı</div>
-                  ) : (
-                    <div className="px-5 pb-5">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
-                            <th className="px-3 py-2.5 text-left">Tarih</th>
-                            <th className="px-3 py-2.5 text-left">İşlem</th>
-                            <th className="px-3 py-2.5 text-left">Müşteri / Tedarikçi</th>
-                            <th className="px-3 py-2.5 text-left">Ürün</th>
-                            <th className="px-3 py-2.5 text-right">Miktar (kg)</th>
-                            <th className="px-3 py-2.5 text-right">Fiyat</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {ekstreModal.data.entries.map((entry: any) => (
-                            <tr key={entry.id} className={`hover:bg-slate-50/50 ${
-                              entry.type === 'alis' ? 'hover:bg-emerald-50/30' :
-                              entry.type === 'iade' ? 'hover:bg-blue-50/30' :
-                              entry.type === 'fason_transfer' ? 'hover:bg-orange-50/30' :
-                              'hover:bg-red-50/30'
-                            }`}>
-                              <td className="px-3 py-2.5 text-slate-500 text-xs whitespace-nowrap">
-                                {new Date(entry.date).toLocaleDateString('tr-TR')}
-                              </td>
-                              <td className="px-3 py-2.5">
-                                {entry.type === 'alis' ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
-                                    <TrendingUp className="w-3 h-3" /> Alış
-                                  </span>
-                                ) : entry.type === 'iade' ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-                                    <RotateCcw className="w-3 h-3" /> İade
-                                  </span>
-                                ) : entry.type === 'fason_transfer' ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold">
-                                    <Factory className="w-3 h-3" /> {entry.kgAmount < 0 ? 'Fason Gönderim' : 'Fason İade'}
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
-                                    <TrendingDown className="w-3 h-3" /> Satış
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2.5 font-medium text-slate-700 truncate max-w-[140px]">
-                                {entry.party}
-                                {entry.invoiceNo && (
-                                  <div className="text-xs text-slate-400 font-normal">{entry.invoiceNo}</div>
-                                )}
-                              </td>
-                              <td className="px-3 py-2.5 text-slate-600 truncate max-w-[120px]">
-                                {entry.product ?? <span className="text-slate-300 italic">—</span>}
-                              </td>
-                              <td className={`px-3 py-2.5 text-right font-semibold ${entry.kgAmount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                {entry.kgAmount > 0 ? '+' : ''}{entry.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </td>
-                              <td className="px-3 py-2.5 text-right text-slate-500 text-xs">
-                                {entry.pricePerKg
-                                  ? `${entry.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${entry.currency ?? ''}/kg`
-                                  : <span className="text-slate-300">—</span>
-                                }
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Fasoncuya Gönder Modalı */}
-      {sendToSubModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setSendToSubModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-            <div className="bg-orange-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
-              <h3 className="text-white font-semibold text-base flex items-center gap-2">
-                <Factory className="w-4 h-4" /> Fasoncuya Gönder
-              </h3>
-              <button onClick={() => setSendToSubModal(null)} className="text-white/80 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-5 space-y-4">
-              <p className="text-sm font-medium text-slate-700">{sendToSubModal.name}</p>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Fasoncu *</label>
-                <select
-                  value={sendToSubId}
-                  onChange={e => setSendToSubId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none"
-                >
-                  <option value="">Fasoncu seçin...</option>
-                  {subcontractors.map((s: any) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Miktar (kg) *</label>
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0.001"
-                  value={sendToSubQty}
-                  onChange={e => setSendToSubQty(e.target.value)}
-                  placeholder="0.000"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-orange-500 outline-none"
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button onClick={() => setSendToSubModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm">
-                  Vazgeç
-                </button>
-                <button
-                  onClick={handleSendToSub}
-                  disabled={sendToSubSaving || !sendToSubId || !sendToSubQty || parseFloat(sendToSubQty) <= 0}
-                  className="flex-1 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2"
-                >
-                  {sendToSubSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Gönder
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </AppShell>
   );
 }

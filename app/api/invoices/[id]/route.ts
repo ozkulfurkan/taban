@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { logAction, getIp } from '@/lib/audit-logger';
 
 async function getInvoice(id: string, companyId: string) {
   return prisma.invoice.findFirst({
@@ -101,6 +102,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     });
   });
 
+  await logAction({
+    companyId: user.companyId,
+    userId: user.id,
+    userName: user.name,
+    action: 'UPDATE',
+    entity: 'Invoice',
+    entityId: params.id,
+    detail: `Fatura güncellendi — ${invoice.invoiceNo}`,
+    ip: getIp(req),
+  });
   return NextResponse.json(invoice);
 }
 
@@ -122,6 +133,17 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+  await logAction({
+    companyId: user.companyId,
+    userId: user.id,
+    userName: user.name,
+    action: 'DELETE',
+    entity: existing.isReturn ? 'ReturnInvoice' : 'Invoice',
+    entityId: params.id,
+    detail: `Fatura silindi — ${existing.invoiceNo}`,
+    meta: { total: existing.total, currency: existing.currency },
+    ip: getIp(req),
+  });
   await prisma.$transaction(async (tx) => {
     // ── Stok geri al ───────────────────────────────────────────────────────
     // Normal satış faturası: stok düşüldüyse geri ekle

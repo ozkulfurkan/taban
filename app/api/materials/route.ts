@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthSession, unauthorized, badRequest } from '@/lib/helpers';
+import { logAction, getIp } from '@/lib/audit-logger';
 
 export async function GET(req: NextRequest) {
   try {
@@ -69,6 +70,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await logAction({
+      companyId,
+      userId: session.user.id,
+      userName: session.user.name,
+      action: 'CREATE',
+      entity: 'Material',
+      entityId: material.id,
+      detail: `Hammadde oluşturuldu — ${material.name}`,
+      meta: { pricePerKg: material.pricePerKg, currency: material.currency },
+      ip: getIp(req),
+    });
     return NextResponse.json(material, { status: 201 });
   } catch (error: any) {
     console.error('POST materials error:', error);

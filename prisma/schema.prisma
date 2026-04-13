@@ -57,6 +57,7 @@ model Company {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   users              User[]
+  auditLogs          AuditLog[]
   materials          Material[]
   soleCalculations   SoleCalculation[]
   customers          Customer[]
@@ -72,6 +73,7 @@ model Company {
   subcontractorOrders   SubcontractorOrder[]
   materialTransfers     MaterialTransfer[]
   subcontractorScraps   SubcontractorScrap[]
+  stockAdjustments      StockAdjustment[]
 }
 
 model User {
@@ -93,6 +95,7 @@ model User {
   company          Company?         @relation(fields: [companyId], references: [id])
   soleCalculations SoleCalculation[]
   invoices         Invoice[]
+  auditLogs        AuditLog[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 }
@@ -115,6 +118,7 @@ model Material {
   subcontractorStocks SubcontractorStock[]
   materialTransfers   MaterialTransfer[]
   subcontractorScraps SubcontractorScrap[]
+  stockAdjustments    StockAdjustment[]
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 }
@@ -423,8 +427,10 @@ model Cek {
   aciklama    String?
   islemTarihi DateTime  @default(now())
   vadesi      DateTime
-  tutar       Float
-  currency    String    @default("TRY")
+  tutar           Float
+  currency        String    @default("TRY")
+  customerAmount  Float?    // Müşteri para birimindeki karşılık (çapraz dövizde doldurulur)
+  customerCurrency String?  // Müşteri para birimi
   seriNo      String?
   bankasi     String?
   durum       CekDurum  @default(PORTFOY)
@@ -532,6 +538,7 @@ model Subcontractor {
   purchaseMaterials   PurchaseMaterial[]
   subcontractorOrders SubcontractorOrder[]
   materialTransfers   MaterialTransfer[]
+  stockAdjustments    StockAdjustment[]
   portalCustomer      PortalCustomer?      @relation("PortalCustomerSubcontractor", fields: [portalCustomerId], references: [id])
   portalCustomerId    String?              @unique
 
@@ -563,6 +570,24 @@ model SubcontractorOrder {
   updatedAt         DateTime                 @updatedAt
 
   @@unique([companyId, orderNo])
+  @@index([companyId])
+  @@index([subcontractorId])
+}
+
+model StockAdjustment {
+  id              String         @id @default(cuid())
+  companyId       String
+  company         Company        @relation(fields: [companyId], references: [id])
+  materialId      String
+  material        Material       @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  subcontractorId String?
+  subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id])
+  delta           Float
+  type            String         // 'artirma' | 'azaltma' | 'stok_guncelleme'
+  notes           String?
+  createdAt       DateTime       @default(now())
+
+  @@index([materialId])
   @@index([companyId])
   @@index([subcontractorId])
 }
@@ -616,6 +641,27 @@ model SubcontractorScrap {
 
   @@index([orderId])
   @@index([companyId])
+}
+
+// ─── Audit Log ───────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  userName  String?
+  action    String   // CREATE | UPDATE | DELETE | ERROR
+  entity    String   // Invoice | Payment | Cek | Customer | Supplier | Material | Stock
+  entityId  String?
+  detail    String?
+  meta      Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+  @@index([createdAt])
 }
 
 // Fasoncu deposundaki anlık hammadde zimmet durumu

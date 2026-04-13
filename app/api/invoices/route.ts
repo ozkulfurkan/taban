@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { nowUtc, parseDateInput } from '@/lib/time';
+import { logAction, getIp } from '@/lib/audit-logger';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -174,5 +175,16 @@ const uniqueProductIds = ids;
     }
   }
 
+  await logAction({
+    companyId: user.companyId,
+    userId: user.id,
+    userName: user.name,
+    action: 'CREATE',
+    entity: isReturn ? 'ReturnInvoice' : 'Invoice',
+    entityId: invoice.id,
+    detail: `${isReturn ? 'İade faturası' : 'Fatura'} oluşturuldu — ${invoice.invoiceNo}`,
+    meta: { total: invoice.total, currency: invoice.currency },
+    ip: getIp(req),
+  });
   return NextResponse.json(invoice);
 }

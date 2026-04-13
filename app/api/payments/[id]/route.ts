@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { logAction, getIp } from '@/lib/audit-logger';
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
 
+  const deletedPayment = await prisma.payment.findFirst({
+    where: { id: params.id, companyId: user.companyId },
+    select: { amount: true, currency: true, method: true, customerId: true, supplierId: true },
+  });
   await prisma.$transaction(async (tx) => {
     const payment = await tx.payment.findFirst({
       where: { id: params.id, companyId: user.companyId },
@@ -66,5 +71,18 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     await tx.payment.delete({ where: { id: params.id } });
   });
 
+  if (deletedPayment) {
+    await logAction({
+      companyId: user.companyId,
+      userId: user.id,
+      userName: user.name,
+      action: 'DELETE',
+      entity: 'Payment',
+      entityId: params.id,
+      detail: `Ödeme silindi — ${deletedPayment.method} ${deletedPayment.amount} ${deletedPayment.currency}`,
+      meta: { amount: deletedPayment.amount, currency: deletedPayment.currency, method: deletedPayment.method },
+      ip: getIp(_),
+    });
+  }
   return NextResponse.json({ ok: true });
 }

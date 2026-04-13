@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { logAction, getIp } from '@/lib/audit-logger';
 
 const LIMIT = 50;
 
@@ -114,6 +115,16 @@ export async function POST(req: NextRequest) {
       currency: body.currency || 'TRY',
       notes: body.notes || null,
     },
+  });
+  await logAction({
+    companyId: user.companyId,
+    userId: user.id,
+    userName: user.name,
+    action: 'CREATE',
+    entity: 'Customer',
+    entityId: customer.id,
+    detail: `Müşteri oluşturuldu — ${customer.name}`,
+    ip: getIp(req),
   });
   return NextResponse.json(customer);
 }

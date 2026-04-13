@@ -70,10 +70,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   });
 
   // ── Birleşik timeline ────────────────────────────────────────────────────
+  // ── 5. STOK DÜZELTMELERİ ────────────────────────────────────────────────
+  const adjustments = await prisma.stockAdjustment.findMany({
+    where: { materialId: params.id, companyId: user.companyId },
+    orderBy: { createdAt: 'desc' },
+  });
+
   type Entry = {
     id: string;
     date: Date;
-    type: 'alis' | 'satis' | 'iade' | 'fason_transfer';
+    type: 'alis' | 'satis' | 'iade' | 'fason_transfer' | 'artirma' | 'azaltma' | 'stok_guncelleme';
     party: string;
     partyId: string;
     product: string | null;
@@ -158,6 +164,22 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       product: null,
       productId: null,
       kgAmount: t.direction === 'OUTGOING' ? -t.quantity : t.quantity,
+      pricePerKg: null,
+      currency: null,
+      invoiceNo: null,
+    });
+  }
+
+  for (const adj of adjustments) {
+    entries.push({
+      id: `adj-${adj.id}`,
+      date: adj.createdAt,
+      type: adj.type as any,
+      party: 'Manuel Düzeltme',
+      partyId: '',
+      product: adj.notes || null,
+      productId: null,
+      kgAmount: adj.delta,
       pricePerKg: null,
       currency: null,
       invoiceNo: null,

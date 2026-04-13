@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
-  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText, UserCog, Calculator, Globe, Factory
+  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText, UserCog, Calculator, Globe, Factory, ClipboardList
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -101,6 +101,7 @@ export default function Sidebar() {
       links: [
         { href: '/settings', label: t('nav', 'settings'), icon: Settings },
         ...(isAdmin || user?.role === 'COMPANY_OWNER' ? [{ href: '/settings/users', label: t('nav', 'users'), icon: UserCog }] : []),
+        ...(isAdmin ? [{ href: '/logs', label: 'Log Kayıtları', icon: ClipboardList }] : []),
         ...(isAdmin ? [{ href: '/admin', label: t('nav', 'admin'), icon: Shield }] : []),
         ...(isAdmin || isOwner ? [{ href: '/portal-admin', label: 'Müşteri Portalı', icon: Globe }] : []),
       ],
