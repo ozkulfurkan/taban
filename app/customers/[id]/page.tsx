@@ -70,7 +70,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
       if (rate) {
         const a = parseFloat(form.amount) || 0;
         const r = parseFloat(rate) || 0;
-        setForm(p => ({ ...p, exchangeRate: rate, recordedAmount: (a > 0 && r > 0) ? String(a / r) : '' }));
+        setForm(p => ({ ...p, exchangeRate: String(Math.round(parseFloat(rate) * 10000) / 10000), recordedAmount: (a > 0 && r > 0) ? String(a / r) : '' }));
       }
     }).catch(() => {});
   }, [form.paymentCurrency]);
@@ -96,7 +96,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
   // Kaydedilecek Tutar changes → recompute Kur
   const handleRecordedChange = (v: string) => {
     const rec = parseFloat(v) || 0;
-    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(amt / rec) : p.exchangeRate }));
+    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(Math.round((amt / rec) * 10000) / 10000) : p.exchangeRate }));
   };
 
   const handle = async (e: React.FormEvent) => {
@@ -120,7 +120,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
           currency: customer.currency || 'TRY',
           originalAmount: isSameCurrency ? null : amt,
           originalCurrency: isSameCurrency ? null : form.paymentCurrency,
-          exchangeRate: isSameCurrency ? null : parseFloat(form.exchangeRate) || null,
+          exchangeRate: isSameCurrency ? null : (parseFloat(form.exchangeRate) ? Math.round(parseFloat(form.exchangeRate) * 10000) / 10000 : null),
           date: nowIstanbulISO(),
           method: form.method,
           notes,
@@ -167,7 +167,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
                   <label className="block text-xs font-medium text-blue-700 mb-1">
                     {t('modal', 'rate')} (1 {customer.currency || 'TRY'}={form.paymentCurrency})
                   </label>
-                  <input type="number" step="0.0000000001" min="0.0000000001" value={form.exchangeRate}
+                  <input type="number" step="0.0001" min="0.0001" value={form.exchangeRate}
                     onChange={e => handleRateChange(e.target.value)} placeholder="0.0000"
                     className="w-full px-2 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white" />
                 </div>
