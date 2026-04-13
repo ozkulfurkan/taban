@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { logAction, getIp } from '@/lib/audit-logger';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -64,14 +65,38 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       notes: body.notes || null,
     },
   });
+  await logAction({
+    companyId: user.companyId,
+    userId: user.id,
+    userName: user.name,
+    action: 'UPDATE',
+    entity: 'Supplier',
+    entityId: params.id,
+    detail: `Tedarikçi güncellendi — ${body.name}`,
+    ip: getIp(req),
+  });
   return NextResponse.json({ ok: true });
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
 
+  const supplier = await prisma.supplier.findFirst({
+    where: { id: params.id, companyId: user.companyId },
+    select: { name: true },
+  });
   await prisma.supplier.deleteMany({ where: { id: params.id, companyId: user.companyId } });
+  await logAction({
+    companyId: user.companyId,
+    userId: user.id,
+    userName: user.name,
+    action: 'DELETE',
+    entity: 'Supplier',
+    entityId: params.id,
+    detail: `Tedarikçi silindi — ${supplier?.name ?? params.id}`,
+    ip: getIp(req),
+  });
   return NextResponse.json({ ok: true });
 }

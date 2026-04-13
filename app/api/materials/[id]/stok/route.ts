@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { logAction, getIp } from '@/lib/audit-logger';
 
 // POST: stok güncelle
 // subcontractorId yoksa → ana depo
@@ -71,6 +72,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       });
     });
 
+    await logAction({
+      companyId: user.companyId,
+      userId: user.id,
+      userName: user.name,
+      action: 'UPDATE',
+      entity: 'Stock',
+      entityId: params.id,
+      detail: `Fasoncu stoku güncellendi — ${material.name} (${type}) delta: ${delta}`,
+      meta: { type, delta, subcontractorId, notes },
+      ip: getIp(req),
+    });
     return NextResponse.json({ quantity: currentQty + delta });
   } else {
     // ── Ana depo stok güncellemesi ─────────────────────────────────────────
@@ -99,6 +111,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       }),
     ]);
 
+    await logAction({
+      companyId: user.companyId,
+      userId: user.id,
+      userName: user.name,
+      action: 'UPDATE',
+      entity: 'Stock',
+      entityId: params.id,
+      detail: `Ana depo stoku güncellendi — ${material.name} (${type}) delta: ${delta}`,
+      meta: { type, delta, notes },
+      ip: getIp(req),
+    });
     return NextResponse.json({ stock: updated.stock });
   }
 }

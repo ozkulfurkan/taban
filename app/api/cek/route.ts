@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { parseDateInputOrNow, parseDateInput } from '@/lib/time';
+import { logAction, getIp } from '@/lib/audit-logger';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -61,5 +62,16 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  await logAction({
+    companyId: user.companyId,
+    userId: user.id,
+    userName: user.name,
+    action: 'CREATE',
+    entity: 'Cek',
+    entityId: (cek as any).id,
+    detail: `Çek kaydedildi — ${borclu} ${tutar} ${currency || 'TRY'}`,
+    meta: { tutar, currency, borclu, seriNo },
+    ip: getIp(req),
+  });
   return NextResponse.json(cek, { status: 201 });
 }
