@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
   const user = session.user as any;
   if (!user.companyId) return NextResponse.json({ logs: [], total: 0, page: 1, pages: 0 });
 
-  // Sadece admin ve company_owner görebilir
-  if (user.role !== 'ADMIN' && user.role !== 'COMPANY_OWNER') {
+  // Sadece admin görebilir
+  if (user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

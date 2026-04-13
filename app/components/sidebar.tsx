@@ -101,7 +101,7 @@ export default function Sidebar() {
       links: [
         { href: '/settings', label: t('nav', 'settings'), icon: Settings },
         ...(isAdmin || user?.role === 'COMPANY_OWNER' ? [{ href: '/settings/users', label: t('nav', 'users'), icon: UserCog }] : []),
-        ...(isAdmin || isOwner ? [{ href: '/logs', label: 'Log Kayıtları', icon: ClipboardList }] : []),
+        ...(isAdmin ? [{ href: '/logs', label: 'Log Kayıtları', icon: ClipboardList }] : []),
         ...(isAdmin ? [{ href: '/admin', label: t('nav', 'admin'), icon: Shield }] : []),
         ...(isAdmin || isOwner ? [{ href: '/portal-admin', label: 'Müşteri Portalı', icon: Globe }] : []),
       ],
