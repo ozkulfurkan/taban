@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   });
   if (!customer) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const [invoices, payments] = await Promise.all([
+  const [invoices, payments, cekler] = await Promise.all([
     prisma.invoice.findMany({
       where: { customerId: params.id, date: { gte: from, lte: to } },
       include: { items: { orderBy: { id: 'asc' } } },
@@ -32,15 +32,21 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       where: { customerId: params.id, date: { gte: from, lte: to } },
       orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
     }),
+    prisma.cek.findMany({
+      where: { customerId: params.id, companyId: user.companyId, islemTarihi: { gte: from, lte: to } },
+      orderBy: [{ islemTarihi: 'asc' }],
+    }),
   ]);
 
   const totalDebit = invoices.reduce((s, i) => s + i.total, 0);
-  const totalCredit = payments.reduce((s, p) => s + p.amount, 0);
+  const totalCredit = payments.reduce((s, p) => s + p.amount, 0)
+    + cekler.reduce((s, c) => s + ((c as any).customerAmount ?? c.tutar), 0);
 
   return NextResponse.json({
     customer,
     invoices,
     payments,
+    cekler,
     totalDebit,
     totalCredit,
     balance: totalDebit - totalCredit,

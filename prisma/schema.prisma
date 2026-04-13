@@ -72,6 +72,7 @@ model Company {
   subcontractorOrders   SubcontractorOrder[]
   materialTransfers     MaterialTransfer[]
   subcontractorScraps   SubcontractorScrap[]
+  stockAdjustments      StockAdjustment[]
 }
 
 model User {
@@ -115,6 +116,7 @@ model Material {
   subcontractorStocks SubcontractorStock[]
   materialTransfers   MaterialTransfer[]
   subcontractorScraps SubcontractorScrap[]
+  stockAdjustments    StockAdjustment[]
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 }
@@ -423,8 +425,10 @@ model Cek {
   aciklama    String?
   islemTarihi DateTime  @default(now())
   vadesi      DateTime
-  tutar       Float
-  currency    String    @default("TRY")
+  tutar           Float
+  currency        String    @default("TRY")
+  customerAmount  Float?    // Müşteri para birimindeki karşılık (çapraz dövizde doldurulur)
+  customerCurrency String?  // Müşteri para birimi
   seriNo      String?
   bankasi     String?
   durum       CekDurum  @default(PORTFOY)
@@ -532,6 +536,7 @@ model Subcontractor {
   purchaseMaterials   PurchaseMaterial[]
   subcontractorOrders SubcontractorOrder[]
   materialTransfers   MaterialTransfer[]
+  stockAdjustments    StockAdjustment[]
   portalCustomer      PortalCustomer?      @relation("PortalCustomerSubcontractor", fields: [portalCustomerId], references: [id])
   portalCustomerId    String?              @unique
 
@@ -563,6 +568,24 @@ model SubcontractorOrder {
   updatedAt         DateTime                 @updatedAt
 
   @@unique([companyId, orderNo])
+  @@index([companyId])
+  @@index([subcontractorId])
+}
+
+model StockAdjustment {
+  id              String         @id @default(cuid())
+  companyId       String
+  company         Company        @relation(fields: [companyId], references: [id])
+  materialId      String
+  material        Material       @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  subcontractorId String?
+  subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id])
+  delta           Float
+  type            String         // 'artirma' | 'azaltma' | 'stok_guncelleme'
+  notes           String?
+  createdAt       DateTime       @default(now())
+
+  @@index([materialId])
   @@index([companyId])
   @@index([subcontractorId])
 }

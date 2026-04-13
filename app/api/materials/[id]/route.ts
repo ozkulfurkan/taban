@@ -4,6 +4,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthSession, unauthorized } from '@/lib/helpers';
 
+export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await getAuthSession() as any;
+    if (!session?.user) return unauthorized();
+
+    const material = await prisma.material.findFirst({
+      where: { id: params.id, companyId: session.user.companyId },
+      include: {
+        priceHistory: { orderBy: { createdAt: 'desc' }, take: 10 },
+        subcontractorStocks: {
+          include: { subcontractor: { select: { id: true, name: true } } },
+        },
+        materialTransfers: {
+          orderBy: { transferDate: 'desc' },
+          take: 30,
+          include: { subcontractor: { select: { id: true, name: true } } },
+        },
+      },
+    });
+    if (!material) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json(material);
+  } catch (error: any) {
+    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+  }
+}
+
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getAuthSession() as any;

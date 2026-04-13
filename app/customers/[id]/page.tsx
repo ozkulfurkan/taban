@@ -70,7 +70,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
       if (rate) {
         const a = parseFloat(form.amount) || 0;
         const r = parseFloat(rate) || 0;
-        setForm(p => ({ ...p, exchangeRate: rate, recordedAmount: (a > 0 && r > 0) ? String(a / r) : '' }));
+        setForm(p => ({ ...p, exchangeRate: String(Math.round(parseFloat(rate) * 10000) / 10000), recordedAmount: (a > 0 && r > 0) ? String(a / r) : '' }));
       }
     }).catch(() => {});
   }, [form.paymentCurrency]);
@@ -96,7 +96,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
   // Kaydedilecek Tutar changes → recompute Kur
   const handleRecordedChange = (v: string) => {
     const rec = parseFloat(v) || 0;
-    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(amt / rec) : p.exchangeRate }));
+    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(Math.round((amt / rec) * 10000) / 10000) : p.exchangeRate }));
   };
 
   const handle = async (e: React.FormEvent) => {
@@ -120,7 +120,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
           currency: customer.currency || 'TRY',
           originalAmount: isSameCurrency ? null : amt,
           originalCurrency: isSameCurrency ? null : form.paymentCurrency,
-          exchangeRate: isSameCurrency ? null : parseFloat(form.exchangeRate) || null,
+          exchangeRate: isSameCurrency ? null : (parseFloat(form.exchangeRate) ? Math.round(parseFloat(form.exchangeRate) * 10000) / 10000 : null),
           date: nowIstanbulISO(),
           method: form.method,
           notes,
@@ -167,7 +167,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
                   <label className="block text-xs font-medium text-blue-700 mb-1">
                     {t('modal', 'rate')} (1 {customer.currency || 'TRY'}={form.paymentCurrency})
                   </label>
-                  <input type="number" step="0.0000000001" min="0.0000000001" value={form.exchangeRate}
+                  <input type="number" step="0.0001" min="0.0001" value={form.exchangeRate}
                     onChange={e => handleRateChange(e.target.value)} placeholder="0.0000"
                     className="w-full px-2 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white" />
                 </div>
@@ -468,23 +468,31 @@ function calcAvgVade(checks: any[]) {
   return { date: avgDate, days: avgDays };
 }
 
-function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: string; onClose: () => void; onAdd: (cek: any) => void }) {
+function CekTanimModal({ borclu: defaultBorclu, customerCurrency, onClose, onAdd }: { borclu: string; customerCurrency: string; onClose: () => void; onAdd: (cek: any) => void }) {
   const { t } = useLanguage();
   const [form, setForm] = useState({
     borclu: defaultBorclu,
-    islemTarihi: toDateInputValue(),
+    islemTarihi: nowIstanbulISO(),
     vadesi: '',
     tutar: '',
     currency: 'TRY',
+    customerAmount: '',
     seriNo: '',
     bankasi: '',
   });
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const isCrossCurrency = form.currency !== customerCurrency;
 
   const handleAdd = () => {
     if (!form.vadesi || !form.tutar) return;
-    onAdd({ ...form, id: Math.random().toString(36).slice(2) });
+    if (isCrossCurrency && !form.customerAmount) return;
+    onAdd({
+      ...form,
+      customerAmount: isCrossCurrency ? parseFloat(form.customerAmount) : null,
+      customerCurrency: isCrossCurrency ? customerCurrency : null,
+      id: Math.random().toString(36).slice(2),
+    });
     onClose();
   };
 
@@ -498,8 +506,8 @@ function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: stri
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">İşlem Tarihi</label>
-              <input type="date" value={form.islemTarihi} onChange={e => set('islemTarihi', e.target.value)}
+              <label className="text-xs font-medium text-slate-500 mb-1 block">İşlem Tarihi & Saati</label>
+              <input type="datetime-local" value={form.islemTarihi} onChange={e => set('islemTarihi', e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
             </div>
             <div>
@@ -524,6 +532,24 @@ function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: stri
               </select>
             </div>
           </div>
+          {isCrossCurrency && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-1">
+              <label className="text-xs font-medium text-blue-700 block">
+                Müşteri Para Birimi Karşılığı ({customerCurrency}) *
+              </label>
+              <input
+                required
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={form.customerAmount}
+                onChange={e => set('customerAmount', e.target.value)}
+                placeholder={`Bu çekin ${customerCurrency} karşılığı`}
+                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 text-right font-semibold bg-white"
+              />
+              <p className="text-xs text-blue-500">Çek {form.currency} üzerinden, müşteri hesabı {customerCurrency} — bakiyeye bu tutar yansıyacak</p>
+            </div>
+          )}
           <div>
             <label className="text-xs font-medium text-slate-500 mb-1 block">Seri No</label>
             <input value={form.seriNo} onChange={e => set('seriNo', e.target.value)}
@@ -539,7 +565,7 @@ function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: stri
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">{t('common', 'cancel')}</button>
-            <button onClick={handleAdd} disabled={!form.vadesi || !form.tutar}
+            <button onClick={handleAdd} disabled={!form.vadesi || !form.tutar || (isCrossCurrency && !form.customerAmount)}
               className="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg disabled:opacity-50">Tamam</button>
           </div>
         </div>
@@ -576,6 +602,8 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
             vadesi: c.vadesi,
             tutar: parseFloat(c.tutar),
             currency: c.currency,
+            customerAmount: c.customerAmount ?? null,
+            customerCurrency: c.customerCurrency ?? null,
             seriNo: c.seriNo || null,
             bankasi: c.bankasi || null,
           }),
@@ -682,6 +710,7 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
       {showTanim && (
         <CekTanimModal
           borclu={customer.name}
+          customerCurrency={customer.currency || 'TRY'}
           onClose={() => setShowTanim(false)}
           onAdd={cek => { setChecks(prev => [...prev, cek]); }}
         />
@@ -1210,16 +1239,38 @@ export default function CustomerDetailPage() {
                             </td>
                           </tr>
                         ) : (
-                          <tr key={row.id} className="bg-cyan-50/40">
+                          <tr key={row.id} className="bg-cyan-50/40 group">
                             <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
                             <td className="px-4 py-2.5">
                               <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-cyan-100 text-cyan-700">Çek</span>
                             </td>
                             <td className="px-4 py-2.5 text-right font-semibold text-cyan-700">
-                              {row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
+                              {row.customerAmount != null ? (
+                                <>
+                                  {row.customerAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  <span className="text-xs font-normal text-slate-400 ml-1">{customer.currency}</span>
+                                  <span className="text-xs text-slate-400 ml-1">
+                                    ({row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {row.currency})
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  {row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
+                                </>
+                              )}
                             </td>
-                            <td className="px-2 py-2.5"></td>
+                            <td className="px-2 py-2.5 text-center">
+                              <button
+                                onClick={async () => {
+                                  if (!confirm('Bu çek kaydı silinecek ve portföyden çıkarılacak. Emin misiniz?')) return;
+                                  await fetch(`/api/cek/${row.id}`, { method: 'DELETE' });
+                                  load();
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

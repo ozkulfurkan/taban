@@ -8,19 +8,25 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
 
-  const customer = await prisma.customer.findFirst({
-    where: { id: params.id, companyId: user.companyId },
-    include: {
-      invoices: {
-        orderBy: { date: 'desc' },
-        include: {
-          items: true,
-          createdBy: { select: { name: true } },
+  const [customer, cekler] = await Promise.all([
+    prisma.customer.findFirst({
+      where: { id: params.id, companyId: user.companyId },
+      include: {
+        invoices: {
+          orderBy: { date: 'desc' },
+          include: {
+            items: true,
+            createdBy: { select: { name: true } },
+          },
         },
+        payments: { orderBy: { date: 'desc' }, select: { amount: true, method: true, notes: true, id: true, date: true, currency: true } },
       },
-      payments: { orderBy: { date: 'desc' }, select: { amount: true, method: true, notes: true, id: true, date: true, currency: true } },
-    },
-  });
+    }),
+    prisma.cek.findMany({
+      where: { customerId: params.id, companyId: user.companyId, islem: 'Müşteriden Alınan Çek Kaydı' },
+      orderBy: { islemTarihi: 'desc' },
+    }),
+  ]);
   if (!customer) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const salesInvoices = customer.invoices.filter((inv: any) => !inv.isReturn);
@@ -40,6 +46,15 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     }
   }
 
+  // Çekler bakiyeye dahil: customerAmount (çapraz döviz) veya tutar (aynı döviz)
+  let totalCek = 0;
+  for (const c of cekler) {
+    const amt = (c as any).customerAmount ?? c.tutar;
+    totalCek += amt;
+    balanceDelta -= amt;
+    totalPaid += amt;
+  }
+
   const balance = totalNormalInvoiced - totalReturnInvoiced + balanceDelta;
 
   return NextResponse.json({
@@ -48,6 +63,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     returns: returnInvoices,
     totalInvoiced: totalNormalInvoiced,
     totalPaid,
+    totalCek,
     balance,
   });
 }
