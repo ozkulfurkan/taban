@@ -468,7 +468,7 @@ function calcAvgVade(checks: any[]) {
   return { date: avgDate, days: avgDays };
 }
 
-function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: string; onClose: () => void; onAdd: (cek: any) => void }) {
+function CekTanimModal({ borclu: defaultBorclu, customerCurrency, onClose, onAdd }: { borclu: string; customerCurrency: string; onClose: () => void; onAdd: (cek: any) => void }) {
   const { t } = useLanguage();
   const [form, setForm] = useState({
     borclu: defaultBorclu,
@@ -476,15 +476,23 @@ function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: stri
     vadesi: '',
     tutar: '',
     currency: 'TRY',
+    customerAmount: '',
     seriNo: '',
     bankasi: '',
   });
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const isCrossCurrency = form.currency !== customerCurrency;
 
   const handleAdd = () => {
     if (!form.vadesi || !form.tutar) return;
-    onAdd({ ...form, id: Math.random().toString(36).slice(2) });
+    if (isCrossCurrency && !form.customerAmount) return;
+    onAdd({
+      ...form,
+      customerAmount: isCrossCurrency ? parseFloat(form.customerAmount) : null,
+      customerCurrency: isCrossCurrency ? customerCurrency : null,
+      id: Math.random().toString(36).slice(2),
+    });
     onClose();
   };
 
@@ -524,6 +532,24 @@ function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: stri
               </select>
             </div>
           </div>
+          {isCrossCurrency && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-1">
+              <label className="text-xs font-medium text-blue-700 block">
+                Müşteri Para Birimi Karşılığı ({customerCurrency}) *
+              </label>
+              <input
+                required
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={form.customerAmount}
+                onChange={e => set('customerAmount', e.target.value)}
+                placeholder={`Bu çekin ${customerCurrency} karşılığı`}
+                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 text-right font-semibold bg-white"
+              />
+              <p className="text-xs text-blue-500">Çek {form.currency} üzerinden, müşteri hesabı {customerCurrency} — bakiyeye bu tutar yansıyacak</p>
+            </div>
+          )}
           <div>
             <label className="text-xs font-medium text-slate-500 mb-1 block">Seri No</label>
             <input value={form.seriNo} onChange={e => set('seriNo', e.target.value)}
@@ -539,7 +565,7 @@ function CekTanimModal({ borclu: defaultBorclu, onClose, onAdd }: { borclu: stri
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">{t('common', 'cancel')}</button>
-            <button onClick={handleAdd} disabled={!form.vadesi || !form.tutar}
+            <button onClick={handleAdd} disabled={!form.vadesi || !form.tutar || (isCrossCurrency && !form.customerAmount)}
               className="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg disabled:opacity-50">Tamam</button>
           </div>
         </div>
@@ -576,6 +602,8 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
             vadesi: c.vadesi,
             tutar: parseFloat(c.tutar),
             currency: c.currency,
+            customerAmount: c.customerAmount ?? null,
+            customerCurrency: c.customerCurrency ?? null,
             seriNo: c.seriNo || null,
             bankasi: c.bankasi || null,
           }),
@@ -682,6 +710,7 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
       {showTanim && (
         <CekTanimModal
           borclu={customer.name}
+          customerCurrency={customer.currency || 'TRY'}
           onClose={() => setShowTanim(false)}
           onAdd={cek => { setChecks(prev => [...prev, cek]); }}
         />

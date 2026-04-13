@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   const user = session.user as any;
 
   const body = await req.json();
-  const { customerId, supplierId, borclu, islem, aciklama, islemTarihi, vadesi, tutar, currency, seriNo, bankasi } = body;
+  const { customerId, supplierId, borclu, islem, aciklama, islemTarihi, vadesi, tutar, currency, seriNo, bankasi, customerAmount, customerCurrency } = body;
 
   const cek = await prisma.cek.create({
     data: {
@@ -54,6 +54,8 @@ export async function POST(req: NextRequest) {
       vadesi: parseDateInput(vadesi) ?? new Date(),
       tutar: parseFloat(tutar),
       currency: currency || 'TRY',
+      customerAmount: customerAmount != null ? parseFloat(customerAmount) : null,
+      customerCurrency: customerCurrency || null,
       seriNo: seriNo || null,
       bankasi: bankasi || null,
     },

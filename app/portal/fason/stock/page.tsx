@@ -149,7 +149,7 @@ export default function FasonStockPage() {
                       {typeBadge(entry.type, entry.kgAmount)}
                     </td>
                     <td className={`px-4 py-3 text-right font-semibold ${entry.kgAmount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                      {entry.kgAmount > 0 ? '+' : ''}{Math.abs(entry.kgAmount).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
+                      {entry.kgAmount > 0 ? '+' : '−'}{Math.abs(entry.kgAmount).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                     </td>
                   </tr>
                 ))}

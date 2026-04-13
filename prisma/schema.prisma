@@ -425,8 +425,10 @@ model Cek {
   aciklama    String?
   islemTarihi DateTime  @default(now())
   vadesi      DateTime
-  tutar       Float
-  currency    String    @default("TRY")
+  tutar           Float
+  currency        String    @default("TRY")
+  customerAmount  Float?    // Müşteri para birimindeki karşılık (çapraz dövizde doldurulur)
+  customerCurrency String?  // Müşteri para birimi
   seriNo      String?
   bankasi     String?
   durum       CekDurum  @default(PORTFOY)
