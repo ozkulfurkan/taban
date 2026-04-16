@@ -359,12 +359,15 @@ export default function AccountEkstrePage() {
   const payments: any[] = data?.payments || [];
 
   // Running balance from start, newest first for display
+  // For cross-currency payments, originalAmount is the account-currency amount (e.g. 2500 TRY)
+  // while amount is the other-party currency (e.g. 56 USD). Use originalAmount when available.
   const rows: any[] = [];
   let balance = 0;
   payments.forEach(p => {
     const isIn = p.type === 'RECEIVED';
-    balance += isIn ? p.amount : -p.amount;
-    rows.push({ ...p, runningBalance: balance });
+    const accountAmt = p.originalAmount ?? p.amount;
+    balance += isIn ? accountAmt : -accountAmt;
+    rows.push({ ...p, displayAmount: accountAmt, runningBalance: balance });
   });
   const displayRows = [...rows].reverse(); // newest first
 
@@ -493,10 +496,10 @@ export default function AccountEkstrePage() {
                         <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{hesap || '—'}</td>
                         <td className="px-3 py-2.5 text-slate-500 max-w-[220px] truncate">{row.notes || ''}</td>
                         <td className="px-3 py-2.5 text-right font-semibold text-green-700">
-                          {isIn ? fmt(row.amount) : ''}
+                          {isIn ? fmt(row.displayAmount) : ''}
                         </td>
                         <td className="px-3 py-2.5 text-right font-semibold text-red-600">
-                          {!isIn ? fmt(row.amount) : ''}
+                          {!isIn ? fmt(row.displayAmount) : ''}
                         </td>
                         <td className={`px-3 py-2.5 text-right font-bold whitespace-nowrap ${row.runningBalance < 0 ? 'text-red-600' : 'text-slate-800'}`}>
                           {fmt(row.runningBalance)}
