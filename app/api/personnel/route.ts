@@ -71,23 +71,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'name, department, role zorunlu' }, { status: 400 });
   }
 
-  const employee = await (prisma.employee as any).create({
-    data: {
-      companyId: user.companyId,
-      name,
-      department,
-      role,
-      salary: parseFloat(salary) || 0,
-      currency: currency || 'TRY',
-      status: 'active',
-      hireDate: hireDate ? new Date(hireDate) : new Date(),
-      payday: parseInt(payday) || 1,
-      leaveBalance: 14,
-      phone: phone || null,
-      email: email || null,
-      notes: notes || null,
-    },
-  });
+  let employee: any;
+  try {
+    employee = await (prisma.employee as any).create({
+      data: {
+        companyId: user.companyId,
+        name,
+        department,
+        role,
+        salary: parseFloat(salary) || 0,
+        currency: currency || 'TRY',
+        status: 'active',
+        hireDate: hireDate ? new Date(hireDate) : new Date(),
+        payday: parseInt(payday) || 1,
+        leaveBalance: 14,
+        phone: phone || null,
+        email: email || null,
+        notes: notes || null,
+      },
+    });
+  } catch (err: any) {
+    console.error('[POST /api/personnel] DB error:', err?.message, err?.code);
+    return NextResponse.json({ error: err?.message ?? 'DB hatası' }, { status: 500 });
+  }
 
   await logAction({
     companyId: user.companyId,
