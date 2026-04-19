@@ -29,7 +29,8 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
       if (payment.customerId) whereClause.customerId = payment.customerId;
       if (payment.supplierId) whereClause.supplierId = payment.supplierId;
       if (payment.notes) {
-        const seriNo = payment.notes.split(' | ')[0];
+        const seriNoPart = payment.notes.split(' | ').find((s: string) => s.startsWith('Çek No: '));
+        const seriNo = seriNoPart ? seriNoPart.slice('Çek No: '.length) : null;
         if (seriNo) whereClause.seriNo = seriNo;
       }
       await tx.cek.updateMany({

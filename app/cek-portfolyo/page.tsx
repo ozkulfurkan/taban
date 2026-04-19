@@ -39,6 +39,7 @@ export default function CekPortfoyuPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ cek: any; durum: string } | null>(null);
 
   const DURUM_LABEL: Record<string, string> = {
@@ -88,6 +89,7 @@ export default function CekPortfoyuPage() {
 
   const handleDurumChange = (cek: any, durum: string) => {
     setOpenDropdown(null);
+    setMenuPos(null);
     if (cek.durum === 'TEDARIKCI_VERILDI' && durum === 'PORTFOY') {
       setConfirmModal({ cek, durum });
       return;
@@ -209,34 +211,22 @@ export default function CekPortfoyuPage() {
                           {DURUM_LABEL[c.durum] || c.durum}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-center relative">
-                        <div className="relative inline-block">
-                          <button
-                            onClick={() => setOpenDropdown(openDropdown === c.id ? null : c.id)}
-                            className="px-3 py-1 bg-slate-600 hover:bg-slate-700 text-white text-xs rounded-lg"
-                          >
-                            {t('checks', 'actions')} ▾
-                          </button>
-                          {openDropdown === c.id && (
-                            <>
-                              <div className="fixed inset-0 z-10" onClick={() => setOpenDropdown(null)} />
-                              <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 z-20 min-w-[220px] overflow-hidden">
-                                {ISLEMLER.filter(i => i.key !== c.durum).map(i => (
-                                  <button key={i.key}
-                                    onClick={() => handleDurumChange(c, i.key)}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
-                                    {i.label}
-                                  </button>
-                                ))}
-                                <div className="border-t border-slate-100" />
-                                <button onClick={() => { setOpenDropdown(null); handleDelete(c.id); }}
-                                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
-                                  {t('checks', 'deleteCheck')}
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
+                      <td className="px-3 py-2 text-center">
+                        <button
+                          onClick={(e) => {
+                            if (openDropdown === c.id) {
+                              setOpenDropdown(null);
+                              setMenuPos(null);
+                            } else {
+                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                              setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                              setOpenDropdown(c.id);
+                            }
+                          }}
+                          className="px-3 py-1 bg-slate-600 hover:bg-slate-700 text-white text-xs rounded-lg"
+                        >
+                          {t('checks', 'actions')} ▾
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -263,6 +253,30 @@ export default function CekPortfoyuPage() {
           </div>
         )}
       </div>
+      {/* Row dropdown — fixed position so overflow-x-auto doesn't clip it */}
+      {openDropdown && menuPos && (() => {
+        const cek = filtered.find(c => c.id === openDropdown);
+        if (!cek) return null;
+        return (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => { setOpenDropdown(null); setMenuPos(null); }} />
+            <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right }} className="bg-white rounded-xl shadow-lg border border-slate-100 z-40 min-w-[220px] overflow-hidden">
+              {ISLEMLER.filter(i => i.key !== cek.durum).map(i => (
+                <button key={i.key} onClick={() => handleDurumChange(cek, i.key)}
+                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                  {i.label}
+                </button>
+              ))}
+              <div className="border-t border-slate-100" />
+              <button onClick={() => { setOpenDropdown(null); setMenuPos(null); handleDelete(cek.id); }}
+                className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
+                {t('checks', 'deleteCheck')}
+              </button>
+            </div>
+          </>
+        );
+      })()}
+
       {/* Confirm modal: TEDARIKCI_VERILDI → PORTFOY */}
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
