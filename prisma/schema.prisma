@@ -436,6 +436,7 @@ model Cek {
   seriNo      String?
   bankasi     String?
   durum       CekDurum  @default(PORTFOY)
+  paymentId   String?   // linked Payment.id when check is collected (ODENDI)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }

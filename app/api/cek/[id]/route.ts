@@ -9,9 +9,29 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
 
-  const { removeSupplierPayment, ...body } = await req.json();
+  const { removeSupplierPayment, removePayment, ...body } = await req.json();
 
-  if (removeSupplierPayment) {
+  if (removePayment) {
+    // Reverting ODENDI → PORTFOY: delete linked payment and restore kasa balance
+    const cek = await prisma.cek.findFirst({ where: { id: params.id, companyId: user.companyId } });
+    if (cek?.paymentId) {
+      const payment = await prisma.payment.findUnique({ where: { id: cek.paymentId } });
+      if (payment) {
+        await prisma.payment.delete({ where: { id: cek.paymentId } });
+        if (payment.accountId) {
+          // Reverse RECEIVED: decrement balance
+          await prisma.account.update({
+            where: { id: payment.accountId },
+            data: { balance: { increment: -payment.amount } },
+          });
+        }
+      }
+    }
+    await prisma.cek.updateMany({
+      where: { id: params.id, companyId: user.companyId },
+      data: { ...body, paymentId: null },
+    });
+  } else if (removeSupplierPayment) {
     const cek = await prisma.cek.findFirst({
       where: { id: params.id, companyId: user.companyId },
     });
