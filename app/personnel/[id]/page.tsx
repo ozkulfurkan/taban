@@ -8,12 +8,12 @@ import {
   ArrowLeft, Pencil, CreditCard, Banknote, TrendingUp, Scissors,
   CalendarDays, Clock, Upload, X, Loader2,
   CheckCircle2, AlertCircle, FileText, StickyNote, BarChart3,
-  ChevronDown, Users
+  ChevronDown, Users, ClipboardList
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type EntryType = 'Maaş' | 'Avans' | 'Prim' | 'Kesinti' | 'İzin' | 'Mesai' | 'Diğer';
+type EntryType = 'Maaş' | 'Avans' | 'Prim' | 'Kesinti' | 'İzin' | 'Mesai' | 'Hakediş' | 'Diğer';
 
 type LedgerEntry = {
   id: string;
@@ -51,14 +51,15 @@ const ENTRY_COLORS: Record<EntryType, string> = {
   Kesinti: 'bg-red-100 text-red-700',
   İzin: 'bg-purple-100 text-purple-700',
   Mesai: 'bg-indigo-100 text-indigo-700',
+  Hakediş: 'bg-teal-100 text-teal-700',
   Diğer: 'bg-gray-100 text-gray-600',
 };
 
 const inputCls = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none';
 
-// ─── Payment Modal ────────────────────────────────────────────────────────────
+// ─── Payment Modal (Maaş / Avans — kasa gerekli) ─────────────────────────────
 
-type PaymentModalType = 'Maaş' | 'Avans' | 'Prim' | 'Kesinti';
+type PaymentModalType = 'Maaş' | 'Avans';
 
 function PaymentModal({ type, emp, empId, onClose, onSave }: {
   type: PaymentModalType;
@@ -84,8 +85,6 @@ function PaymentModal({ type, emp, empId, onClose, onSave }: {
     }).catch(() => setAccounts([]));
   }, []);
 
-  const isDebit = type === 'Kesinti';
-
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(amount) || 0;
@@ -100,14 +99,14 @@ function PaymentModal({ type, emp, empId, onClose, onSave }: {
           date,
           type,
           description: description || `${type} ödemesi`,
-          debit: isDebit ? amt : 0,
-          credit: isDebit ? 0 : amt,
+          debit: 0,
+          credit: amt,
           account: accountName || null,
+          accountId: accountId || null,
         }),
       });
       if (!res.ok) throw new Error();
-      const entry = await res.json();
-      onSave(entry);
+      onSave(await res.json());
     } catch {
       setErr('Kayıt sırasında hata oluştu.');
       setSaving(false);
@@ -117,8 +116,6 @@ function PaymentModal({ type, emp, empId, onClose, onSave }: {
   const ICON_MAP: Record<PaymentModalType, React.ReactNode> = {
     Maaş: <CreditCard className="w-5 h-5 text-blue-600" />,
     Avans: <Banknote className="w-5 h-5 text-orange-600" />,
-    Prim: <TrendingUp className="w-5 h-5 text-green-600" />,
-    Kesinti: <Scissors className="w-5 h-5 text-red-600" />,
   };
 
   return (
@@ -127,7 +124,7 @@ function PaymentModal({ type, emp, empId, onClose, onSave }: {
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             {ICON_MAP[type]}
-            <h2 className="text-base font-semibold text-gray-900">{type} {isDebit ? 'Yap' : 'Öde'}</h2>
+            <h2 className="text-base font-semibold text-gray-900">{type} Öde</h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
         </div>
@@ -137,11 +134,10 @@ function PaymentModal({ type, emp, empId, onClose, onSave }: {
             <input type="number" min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Kasa / Banka</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Kasa / Banka *</label>
             <select className={inputCls} value={accountId} onChange={e => {
               setAccountId(e.target.value);
-              const acc = accounts.find(a => a.id === e.target.value);
-              setAccountName(acc?.name || '');
+              setAccountName(accounts.find(a => a.id === e.target.value)?.name || '');
             }}>
               {accounts.length === 0 && <option value="">Kasa yükleniyor...</option>}
               {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
@@ -157,10 +153,240 @@ function PaymentModal({ type, emp, empId, onClose, onSave }: {
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">İptal</button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-              Kaydet
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2">
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}Öde
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Hakediş Modal (personeli alacaklandır, kasa yok) ─────────────────────────
+
+function HakedisModal({ emp, empId, onClose, onSave }: {
+  emp: Employee;
+  empId: string;
+  onClose: () => void;
+  onSave: (entry: LedgerEntry) => void;
+}) {
+  const [amount, setAmount] = useState(String(emp.salary));
+  const [description, setDescription] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const handle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(amount) || 0;
+    if (amt <= 0) return;
+    setSaving(true);
+    setErr('');
+    try {
+      const res = await fetch(`/api/personnel/${empId}/ledger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date,
+          type: 'Hakediş',
+          description: description || 'Hakediş',
+          debit: 0,
+          credit: amt,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      onSave(await res.json());
+    } catch {
+      setErr('Kayıt sırasında hata oluştu.');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-teal-600" />
+            <h2 className="text-base font-semibold text-gray-900">Hakediş Ekle</h2>
+          </div>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+        </div>
+        <form onSubmit={handle} className="p-6 space-y-4">
+          <p className="text-xs text-gray-500 bg-teal-50 px-3 py-2 rounded-lg">Personeli alacaklandırır. Kasadan para çıkmaz.</p>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Tutar ({emp.currency}) *</label>
+            <input type="number" min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
+            <input className={inputCls} value={description} onChange={e => setDescription(e.target.value)} placeholder="Nisan 2026 hakedişi..." />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Tarih</label>
+            <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
+          </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-60 flex items-center justify-center gap-2">
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Prim Modal (alacak, kasa yok) ────────────────────────────────────────────
+
+function PrimModal({ emp, empId, onClose, onSave }: {
+  emp: Employee;
+  empId: string;
+  onClose: () => void;
+  onSave: (entry: LedgerEntry) => void;
+}) {
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const handle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(amount) || 0;
+    if (amt <= 0) return;
+    setSaving(true);
+    setErr('');
+    try {
+      const res = await fetch(`/api/personnel/${empId}/ledger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date,
+          type: 'Prim',
+          description: description || 'Prim',
+          debit: 0,
+          credit: amt,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      onSave(await res.json());
+    } catch {
+      setErr('Kayıt sırasında hata oluştu.');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-green-600" />
+            <h2 className="text-base font-semibold text-gray-900">Prim Ekle</h2>
+          </div>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+        </div>
+        <form onSubmit={handle} className="p-6 space-y-4">
+          <p className="text-xs text-gray-500 bg-green-50 px-3 py-2 rounded-lg">Personeli alacaklandırır. Kasadan para çıkmaz.</p>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Prim Tutarı ({emp.currency}) *</label>
+            <input type="number" min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
+            <input className={inputCls} value={description} onChange={e => setDescription(e.target.value)} placeholder="Performans primi..." />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Tarih</label>
+            <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
+          </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60 flex items-center justify-center gap-2">
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Kesinti Modal (borç, kasa yok) ───────────────────────────────────────────
+
+function KesModal({ emp, empId, onClose, onSave }: {
+  emp: Employee;
+  empId: string;
+  onClose: () => void;
+  onSave: (entry: LedgerEntry) => void;
+}) {
+  const [amount, setAmount] = useState('');
+  const [description, setDescription] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const handle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(amount) || 0;
+    if (amt <= 0) return;
+    setSaving(true);
+    setErr('');
+    try {
+      const res = await fetch(`/api/personnel/${empId}/ledger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date,
+          type: 'Kesinti',
+          description: description || 'Kesinti',
+          debit: amt,
+          credit: 0,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      onSave(await res.json());
+    } catch {
+      setErr('Kayıt sırasında hata oluştu.');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Scissors className="w-5 h-5 text-red-600" />
+            <h2 className="text-base font-semibold text-gray-900">Kesinti Yap</h2>
+          </div>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+        </div>
+        <form onSubmit={handle} className="p-6 space-y-4">
+          <p className="text-xs text-gray-500 bg-red-50 px-3 py-2 rounded-lg">Personeli borçlandırır. Kasadan para çıkmaz.</p>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Kesinti Tutarı ({emp.currency}) *</label>
+            <input type="number" min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
+            <input className={inputCls} value={description} onChange={e => setDescription(e.target.value)} placeholder="Kesinti nedeni..." />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Tarih</label>
+            <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
+          </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-60 flex items-center justify-center gap-2">
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}Kaydet
             </button>
           </div>
         </form>
@@ -485,7 +711,7 @@ function EditModal({ emp, empId, onClose, onSave, onLeave }: {
 
 // ─── Main Detail Page ─────────────────────────────────────────────────────────
 
-type ModalType = 'Maaş' | 'Avans' | 'Prim' | 'Kesinti' | 'İzin' | 'Mesai' | 'Evrak' | 'Düzenle' | null;
+type ModalType = 'Maaş' | 'Avans' | 'Prim' | 'Kesinti' | 'Hakediş' | 'İzin' | 'Mesai' | 'Evrak' | 'Düzenle' | null;
 type TabType = 'izinler' | 'mesailer' | 'belgeler' | 'notlar' | 'performans';
 
 export default function PersonnelDetailPage() {
@@ -560,6 +786,7 @@ export default function PersonnelDetailPage() {
   }
 
   const ACTION_BUTTONS = [
+    { label: 'Hakediş Ekle', icon: ClipboardList, color: 'bg-teal-600 hover:bg-teal-700 text-white', modal: 'Hakediş' as ModalType },
     { label: 'Maaş Öde', icon: CreditCard, color: 'bg-blue-600 hover:bg-blue-700 text-white', modal: 'Maaş' as ModalType },
     { label: 'Avans Ver', icon: Banknote, color: 'bg-orange-500 hover:bg-orange-600 text-white', modal: 'Avans' as ModalType },
     { label: 'Prim Ekle', icon: TrendingUp, color: 'bg-green-600 hover:bg-green-700 text-white', modal: 'Prim' as ModalType },
@@ -808,7 +1035,7 @@ export default function PersonnelDetailPage() {
       </div>
 
       {/* Modals */}
-      {(modal === 'Maaş' || modal === 'Avans' || modal === 'Prim' || modal === 'Kesinti') && (
+      {(modal === 'Maaş' || modal === 'Avans') && (
         <PaymentModal
           type={modal as PaymentModalType}
           emp={emp}
@@ -817,7 +1044,43 @@ export default function PersonnelDetailPage() {
           onSave={entry => {
             setLedger(p => [entry, ...p]);
             setModal(null);
-            showToast(`${modal} işlemi kaydedildi.`);
+            showToast(`${modal} kaydedildi — kasa güncellendi.`);
+          }}
+        />
+      )}
+      {modal === 'Hakediş' && (
+        <HakedisModal
+          emp={emp}
+          empId={id}
+          onClose={() => setModal(null)}
+          onSave={entry => {
+            setLedger(p => [entry, ...p]);
+            setModal(null);
+            showToast('Hakediş kaydedildi.');
+          }}
+        />
+      )}
+      {modal === 'Prim' && (
+        <PrimModal
+          emp={emp}
+          empId={id}
+          onClose={() => setModal(null)}
+          onSave={entry => {
+            setLedger(p => [entry, ...p]);
+            setModal(null);
+            showToast('Prim kaydedildi.');
+          }}
+        />
+      )}
+      {modal === 'Kesinti' && (
+        <KesModal
+          emp={emp}
+          empId={id}
+          onClose={() => setModal(null)}
+          onSave={entry => {
+            setLedger(p => [entry, ...p]);
+            setModal(null);
+            showToast('Kesinti kaydedildi.');
           }}
         />
       )}
