@@ -28,35 +28,10 @@ type LedgerEntry = {
 
 type LeaveRecord = { id: string; startDate: string; endDate: string; type: string; days: number; note: string };
 type OvertimeRecord = { id: string; date: string; hours: number; amount: number; note: string };
-type DocumentRecord = { id: string; name: string; docType: string; date: string };
+type DocumentRecord = { id: string; name: string; docType: string; size: number; mimeType: string; createdBy: string | null; createdAt: string };
 type NoteRecord = { id: string; date: string; content: string; createdBy: string };
 type PerformRecord = { id: string; period: string; score: number; comment: string };
 
-// ─── Mock secondary data (tabs) ───────────────────────────────────────────────
-
-const MOCK_LEAVES: LeaveRecord[] = [
-  { id: 'lv1', startDate: '2026-03-10', endDate: '2026-03-14', type: 'Yıllık', days: 5, note: 'Tatil' },
-  { id: 'lv2', startDate: '2025-12-24', endDate: '2025-12-25', type: 'Mazeret', days: 2, note: 'Kişisel' },
-];
-
-const MOCK_OVERTIMES: OvertimeRecord[] = [
-  { id: 'ot1', date: '2026-04-12', hours: 4, amount: 800, note: 'Hafta sonu üretim' },
-  { id: 'ot2', date: '2026-03-28', hours: 6, amount: 1200, note: 'Acil sipariş' },
-];
-
-const MOCK_DOCS: DocumentRecord[] = [
-  { id: 'd1', name: 'İş Sözleşmesi.pdf', docType: 'Sözleşme', date: '2021-03-15' },
-  { id: 'd2', name: 'Kimlik Fotokopisi.pdf', docType: 'Kimlik', date: '2021-03-15' },
-];
-
-const MOCK_NOTES: NoteRecord[] = [
-  { id: 'n1', date: '2026-03-15', content: 'Performans değerlendirmesi olumlu. Terfi önerisi yapıldı.', createdBy: 'İK Yöneticisi' },
-];
-
-const MOCK_PERF: PerformRecord[] = [
-  { id: 'p1', period: 'Q1 2026', score: 88, comment: 'Hedefleri %90 gerçekleştirdi' },
-  { id: 'p2', period: 'Q4 2025', score: 92, comment: 'Mükemmel performans' },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -312,19 +287,49 @@ function OvertimeModal({ onClose, onSave }: { onClose: () => void; onSave: (r: O
 
 // ─── Document Modal ───────────────────────────────────────────────────────────
 
-function DocumentModal({ onClose, onSave }: { onClose: () => void; onSave: (r: DocumentRecord) => void }) {
-  const [form, setForm] = useState({ name: '', docType: 'Sözleşme' });
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+function DocumentModal({ empId, onClose, onSave }: { empId: string; onClose: () => void; onSave: (r: DocumentRecord) => void }) {
+  const [docType, setDocType] = useState('Sözleşme');
+  const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
-  const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
+  const [err, setErr] = useState('');
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null;
+    if (f && f.size > MAX_FILE_SIZE) {
+      setErr('Dosya 5 MB sınırını aşıyor.');
+      setFile(null);
+      e.target.value = '';
+      return;
+    }
+    setErr('');
+    setFile(f);
+  };
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name) return;
+    if (!file) { setErr('Lütfen bir dosya seçin.'); return; }
     setSaving(true);
-    await new Promise(r => setTimeout(r, 300));
-    onSave({ id: 'd-' + Date.now(), ...form, date: new Date().toISOString().slice(0, 10) });
-    setSaving(false);
+    setErr('');
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('docType', docType);
+      const res = await fetch(`/api/personnel/${empId}/documents`, { method: 'POST', body: fd });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Yükleme başarısız');
+      }
+      const doc = await res.json();
+      onSave(doc);
+    } catch (ex: any) {
+      setErr(ex.message || 'Yükleme sırasında hata oluştu.');
+      setSaving(false);
+    }
   };
+
+  const formatSize = (bytes: number) => bytes < 1024 * 1024 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1024 / 1024).toFixed(1) + ' MB';
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -335,19 +340,25 @@ function DocumentModal({ onClose, onSave }: { onClose: () => void; onSave: (r: D
         </div>
         <form onSubmit={handle} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Dosya Adı *</label>
-            <input className={inputCls} value={form.name} onChange={e => set('name', e.target.value)} placeholder="Belge_Adi.pdf" required />
+            <label className="block text-xs font-medium text-gray-600 mb-1">Dosya * (max 5 MB)</label>
+            <input
+              type="file"
+              onChange={handleFile}
+              className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer"
+            />
+            {file && <p className="text-xs text-gray-400 mt-1">{file.name} · {formatSize(file.size)}</p>}
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Belge Türü</label>
-            <select className={inputCls} value={form.docType} onChange={e => set('docType', e.target.value)}>
+            <select className={inputCls} value={docType} onChange={e => setDocType(e.target.value)}>
               {['Sözleşme', 'Kimlik', 'SGK', 'Diploma', 'Sertifika', 'Diğer'].map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
             <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-60 flex items-center justify-center gap-2">
-              {saving && <Loader2 className="w-4 h-4 animate-spin" />}Kaydet
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}Yükle
             </button>
           </div>
         </form>
@@ -483,11 +494,11 @@ export default function PersonnelDetailPage() {
 
   const [emp, setEmp] = useState<Employee | null>(null);
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
-  const [leaves, setLeaves] = useState<LeaveRecord[]>(MOCK_LEAVES);
-  const [overtimes, setOvertimes] = useState<OvertimeRecord[]>(MOCK_OVERTIMES);
-  const [docs, setDocs] = useState<DocumentRecord[]>(MOCK_DOCS);
-  const [notes] = useState<NoteRecord[]>(MOCK_NOTES);
-  const [perfs] = useState<PerformRecord[]>(MOCK_PERF);
+  const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
+  const [overtimes, setOvertimes] = useState<OvertimeRecord[]>([]);
+  const [docs, setDocs] = useState<DocumentRecord[]>([]);
+  const [notes] = useState<NoteRecord[]>([]);
+  const [perfs] = useState<PerformRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalType>(null);
   const [tab, setTab] = useState<TabType>('izinler');
@@ -497,16 +508,17 @@ export default function PersonnelDetailPage() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`/api/personnel/${id}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data) {
-          const { ledger: ledgerData, ...empData } = data;
-          setEmp(empData);
-          setLedger((ledgerData || []).sort((a: LedgerEntry, b: LedgerEntry) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        }
-      })
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch(`/api/personnel/${id}`).then(r => r.ok ? r.json() : null),
+      fetch(`/api/personnel/${id}/documents`).then(r => r.ok ? r.json() : []),
+    ]).then(([empData, docsData]) => {
+      if (empData) {
+        const { ledger: ledgerData, ...emp } = empData;
+        setEmp(emp);
+        setLedger((ledgerData || []).sort((a: LedgerEntry, b: LedgerEntry) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      }
+      setDocs(Array.isArray(docsData) ? docsData : []);
+    }).finally(() => setLoading(false));
   }, [id]);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -741,14 +753,20 @@ export default function PersonnelDetailPage() {
                   {docs.length === 0 ? <p className="text-sm text-gray-400 text-center py-8">Belge yok</p> :
                     docs.map(d => (
                       <div key={d.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <div>
-                            <p className="text-sm text-gray-800 font-medium">{d.name}</p>
-                            <p className="text-xs text-gray-400">{d.docType} · {formatDate(d.date)}</p>
+                          <div className="min-w-0">
+                            <p className="text-sm text-gray-800 font-medium truncate">{d.name}</p>
+                            <p className="text-xs text-gray-400">{d.docType} · {formatDate(d.createdAt)} · {d.size < 1048576 ? (d.size / 1024).toFixed(0) + ' KB' : (d.size / 1048576).toFixed(1) + ' MB'}</p>
                           </div>
                         </div>
-                        <button className="text-xs text-blue-600 hover:underline ml-2">İndir</button>
+                        <a
+                          href={`/api/personnel/${id}/documents/${d.id}`}
+                          download={d.name}
+                          className="text-xs text-blue-600 hover:underline ml-2 flex-shrink-0"
+                        >
+                          İndir
+                        </a>
                       </div>
                     ))}
                 </div>
@@ -828,12 +846,13 @@ export default function PersonnelDetailPage() {
       )}
       {modal === 'Evrak' && (
         <DocumentModal
+          empId={id}
           onClose={() => setModal(null)}
           onSave={record => {
             setDocs(p => [record, ...p]);
             setModal(null);
             setTab('belgeler');
-            showToast('Belge eklendi.');
+            showToast('Belge yüklendi.');
           }}
         />
       )}

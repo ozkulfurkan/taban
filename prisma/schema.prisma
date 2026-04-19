@@ -59,6 +59,7 @@ model Company {
   users              User[]
   auditLogs          AuditLog[]
   employees          Employee[]
+  personnelDocuments PersonnelDocument[]
   materials          Material[]
   soleCalculations   SoleCalculation[]
   customers          Customer[]
@@ -686,6 +687,7 @@ model Employee {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   ledger          PersonnelLedger[]
+  documents       PersonnelDocument[]
 
   @@index([companyId])
 }
@@ -701,6 +703,24 @@ model PersonnelLedger {
   debit       Float    @default(0)
   credit      Float    @default(0)
   account     String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([companyId])
+}
+
+model PersonnelDocument {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  name        String
+  docType     String
+  size        Int
+  mimeType    String
+  data        Bytes
   createdBy   String?
   createdAt   DateTime @default(now())
 
