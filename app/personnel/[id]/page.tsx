@@ -8,7 +8,7 @@ import {
   ArrowLeft, Pencil, CreditCard, Banknote, TrendingUp, Scissors,
   CalendarDays, Clock, Upload, X, Loader2,
   CheckCircle2, AlertCircle, FileText, StickyNote, BarChart3,
-  ChevronDown, Users, ClipboardList
+  ChevronDown, Users, ClipboardList, Trash2
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -79,7 +79,8 @@ function PaymentModal({ type, emp, empId, onClose, onSave }: {
 
   useEffect(() => {
     fetch('/api/accounts').then(r => r.json()).then(data => {
-      const list = Array.isArray(data) ? data : [];
+      const all = Array.isArray(data) ? data : [];
+      const list = all.filter((a: any) => a.currency === 'TRY');
       setAccounts(list);
       if (list.length > 0) { setAccountId(list[0].id); setAccountName(list[0].name); }
     }).catch(() => setAccounts([]));
@@ -729,6 +730,114 @@ function EditModal({ emp, empId, onClose, onSave, onLeave }: {
   );
 }
 
+// ─── Ledger Edit Modal ────────────────────────────────────────────────────────
+
+function LedgerEditModal({ entry, empId, onClose, onSaved }: {
+  entry: LedgerEntry & { paymentId?: string };
+  empId: string;
+  onClose: () => void;
+  onSaved: (updated: any) => void;
+}) {
+  const hasCash = (entry.type === 'Maaş' || entry.type === 'Avans');
+  const [amount, setAmount] = useState(String(hasCash ? Number(entry.debit) : Number(entry.credit)));
+  const [description, setDescription] = useState(entry.description || '');
+  const [date, setDate] = useState(entry.date ? entry.date.slice(0, 10) : new Date().toISOString().slice(0, 10));
+  const [accountId, setAccountId] = useState('');
+  const [accountName, setAccountName] = useState(entry.account || '');
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    if (!hasCash) return;
+    fetch('/api/accounts').then(r => r.json()).then(data => {
+      const list = (Array.isArray(data) ? data : []).filter((a: any) => a.currency === 'TRY');
+      setAccounts(list);
+      const match = list.find((a: any) => a.name === entry.account);
+      if (match) setAccountId(match.id);
+      else if (list.length > 0) setAccountId(list[0].id);
+    }).catch(() => {});
+  }, [hasCash, entry.account]);
+
+  const handle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(amount) || 0;
+    if (amt <= 0) return;
+    setSaving(true);
+    setErr('');
+    try {
+      // Delete old entry (reverses kasa if needed)
+      const delRes = await fetch(`/api/personnel/${empId}/ledger?entryId=${entry.id}`, { method: 'DELETE' });
+      if (!delRes.ok) throw new Error();
+      // Create new entry
+      const selAcc = accounts.find(a => a.id === accountId);
+      const res = await fetch(`/api/personnel/${empId}/ledger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date,
+          type: entry.type,
+          description,
+          amount: amt,
+          account: selAcc?.name || accountName || null,
+          accountId: hasCash ? (accountId || null) : null,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      onSaved({ deleted: entry.id, created: await res.json() });
+    } catch {
+      setErr('Güncelleme sırasında hata oluştu.');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Pencil className="w-5 h-5 text-gray-600" />
+            <h2 className="text-base font-semibold text-gray-900">{entry.type} Düzenle</h2>
+          </div>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+        </div>
+        <form onSubmit={handle} className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Tutar *</label>
+            <input type="number" min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} required />
+          </div>
+          {hasCash && accounts.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Kasa *</label>
+              <select className={inputCls} value={accountId} onChange={e => {
+                setAccountId(e.target.value);
+                setAccountName(accounts.find(a => a.id === e.target.value)?.name || '');
+              }}>
+                {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+            </div>
+          )}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
+            <input className={inputCls} value={description} onChange={e => setDescription(e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Tarih</label>
+            <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
+          </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2">
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}Güncelle
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Detail Page ─────────────────────────────────────────────────────────
 
 type ModalType = 'Maaş' | 'Avans' | 'Prim' | 'Kesinti' | 'Hakediş' | 'İzin' | 'Mesai' | 'Evrak' | 'Düzenle' | null;
@@ -752,6 +861,7 @@ export default function PersonnelDetailPage() {
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [noteInput, setNoteInput] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<(LedgerEntry & { paymentId?: string }) | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -798,6 +908,18 @@ export default function PersonnelDetailPage() {
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleDeleteEntry = async (entry: LedgerEntry & { paymentId?: string }) => {
+    if (!confirm(`"${entry.type}" kaydını silmek istediğinize emin misiniz?`)) return;
+    try {
+      const res = await fetch(`/api/personnel/${id}/ledger?entryId=${entry.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      setLedger(prev => prev.filter(e => e.id !== entry.id));
+      showToast('Kayıt silindi.');
+    } catch {
+      showToast('Silme sırasında hata oluştu.', 'error');
+    }
   };
 
   // Kümülatif bakiye hesapla (en eski → en yeni)
@@ -950,7 +1072,7 @@ export default function PersonnelDetailPage() {
                       <th className="text-right px-4 py-3 text-xs font-semibold text-red-500">Borç</th>
                       <th className="text-right px-4 py-3 text-xs font-semibold text-green-600">Alacak</th>
                       <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Bakiye</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 hidden lg:table-cell">Kasa</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-500"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -966,7 +1088,16 @@ export default function PersonnelDetailPage() {
                         <td className={`px-4 py-3 text-right font-semibold ${e.runningBalance < 0 ? 'text-red-600' : 'text-gray-800'}`}>
                           {formatMoney(e.runningBalance)}
                         </td>
-                        <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">{e.account || '—'}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1 justify-end">
+                            <button onClick={() => setEditingEntry(e as any)} className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-400 hover:text-blue-600 transition-colors" title="Düzenle">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => handleDeleteEntry(e as any)} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-600 transition-colors" title="Sil">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1199,6 +1330,19 @@ export default function PersonnelDetailPage() {
             setEmp(e => e ? { ...e, status: 'left' } : e);
             setModal(null);
             showToast('Personel işten çıkarıldı.', 'error');
+          }}
+        />
+      )}
+
+      {editingEntry && (
+        <LedgerEditModal
+          entry={editingEntry}
+          empId={id}
+          onClose={() => setEditingEntry(null)}
+          onSaved={({ deleted, created }) => {
+            setLedger(prev => [created, ...prev.filter(e => e.id !== deleted)]);
+            setEditingEntry(null);
+            showToast('Kayıt güncellendi.');
           }}
         />
       )}
