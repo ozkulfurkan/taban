@@ -21,9 +21,11 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
 
     // Çek ödemesi silindiyse ilgili çeki portföye geri al
     if (payment.method === 'Çek') {
+      // originalAmount = TRY check tutar when payment was recorded in foreign currency
+      const checkTutar = payment.originalAmount ?? payment.amount;
       const whereClause: any = {
         companyId: user.companyId,
-        tutar: payment.amount,
+        tutar: checkTutar,
         durum: { not: 'PORTFOY' },
       };
       if (payment.customerId) whereClause.customerId = payment.customerId;

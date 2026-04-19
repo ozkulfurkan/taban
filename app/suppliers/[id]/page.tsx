@@ -1052,15 +1052,16 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               supplierId: supplier.id,
-              amount: parseFloat(c.tutar),
-              currency: c.currency || 'TRY',
-              date: c.islemTarihi,
-              method: 'Çek',
+              // FX: amount = supplier currency equivalent, original = TRY check amount
+              amount: hasFx ? parseFloat(c.tutar) / rate : parseFloat(c.tutar),
+              currency: hasFx ? supplier.currency : (c.currency || 'TRY'),
               ...(hasFx ? {
-                originalAmount: parseFloat(c.tutar) / rate,
-                originalCurrency: supplier.currency,
+                originalAmount: parseFloat(c.tutar),
+                originalCurrency: c.currency || 'TRY',
                 exchangeRate: rate,
               } : {}),
+              date: c.islemTarihi,
+              method: 'Çek',
               notes: [
                 c.seriNo ? `Çek No: ${c.seriNo}` : '',
                 c.bankasi ? `Banka: ${c.bankasi}` : '',
@@ -1091,15 +1092,16 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               supplierId: supplier.id,
-              amount: parseFloat(c.tutar),
-              currency: c.currency || 'TRY',
-              date: c._verilisTarihi || toDateInputValue(),
-              method: 'Çek',
+              // FX: amount = supplier currency equivalent, original = TRY check amount
+              amount: hasFx ? parseFloat(c.tutar) / rate : parseFloat(c.tutar),
+              currency: hasFx ? supplier.currency : (c.currency || 'TRY'),
               ...(hasFx ? {
-                originalAmount: parseFloat(c.tutar) / rate,
-                originalCurrency: supplier.currency,
+                originalAmount: parseFloat(c.tutar),
+                originalCurrency: c.currency || 'TRY',
                 exchangeRate: rate,
               } : {}),
+              date: c._verilisTarihi || toDateInputValue(),
+              method: 'Çek',
               notes: [
                 c.seriNo ? `Çek No: ${c.seriNo}` : '',
                 c.bankasi ? `Banka: ${c.bankasi}` : '',
@@ -1179,17 +1181,15 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
                         <td className="px-3 py-2">
                           {supplier.currency !== 'TRY' ? (
                             <div className="space-y-1">
+                              <input
+                                type="number" step="0.0001" placeholder="Kur girin"
+                                value={rates[c.id] || ''}
+                                onChange={e => setRates(r => ({ ...r, [c.id]: e.target.value }))}
+                                className="w-24 px-2 py-1 border border-slate-200 rounded text-xs text-right outline-none focus:ring-1 focus:ring-teal-400"
+                              />
                               <div className="flex items-center gap-1">
-                                <span className="text-xs text-slate-400 w-6">Kur:</span>
-                                <input
-                                  type="number" step="0.0001" placeholder="0.00"
-                                  value={rates[c.id] || ''}
-                                  onChange={e => setRates(r => ({ ...r, [c.id]: e.target.value }))}
-                                  className="w-20 px-2 py-1 border border-slate-200 rounded text-xs text-right outline-none focus:ring-1 focus:ring-teal-400"
-                                />
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs font-medium text-slate-700 w-20 text-right">
+                                <span className="text-xs text-slate-400">Kur:</span>
+                                <span className="text-xs font-medium text-slate-700">
                                   {rates[c.id] && parseFloat(rates[c.id]) > 0
                                     ? fmtC(Number(c.tutar) / parseFloat(rates[c.id]))
                                     : '—'}
