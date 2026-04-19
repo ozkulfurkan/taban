@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import {
   ArrowLeft, Loader2, Pencil, TrendingDown, TrendingUp,
-  ArrowLeftRight, ChevronDown, Trash2, X, Save, FileText,
+  ArrowLeftRight, ChevronDown, Trash2, X, Save,
 } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -358,18 +358,30 @@ export default function AccountEkstrePage() {
   const allAccounts = data?.allAccounts || [];
   const payments: any[] = data?.payments || [];
 
-  // Running balance from start, newest first for display
-  // For cross-currency payments, originalAmount is the account-currency amount (e.g. 2500 TRY)
-  // while amount is the other-party currency (e.g. 56 USD). Use originalAmount when available.
-  const rows: any[] = [];
-  let balance = 0;
-  payments.forEach(p => {
+  // Running balance — start from offset so last row matches account.balance
+  const totalFromPayments = payments.reduce((sum: number, p: any) => {
     const isIn = p.type === 'RECEIVED';
     const accountAmt = p.originalAmount ?? p.amount;
-    balance += isIn ? accountAmt : -accountAmt;
-    rows.push({ ...p, displayAmount: accountAmt, runningBalance: balance });
-  });
-  const displayRows = [...rows].reverse(); // newest first
+    return sum + (isIn ? accountAmt : -accountAmt);
+  }, 0);
+  const initialBalance = account ? account.balance - totalFromPayments : 0;
+
+  const rows: any[] = [];
+  let balance = initialBalance;
+  // payments are sorted oldest-first from API → compute running balance in order
+  [...payments]
+    .sort((a: any, b: any) => {
+      const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    })
+    .forEach((p: any) => {
+      const isIn = p.type === 'RECEIVED';
+      const accountAmt = p.originalAmount ?? p.amount;
+      balance += isIn ? accountAmt : -accountAmt;
+      rows.push({ ...p, displayAmount: accountAmt, runningBalance: balance });
+    });
+  const displayRows = [...rows].reverse(); // newest first (same-day: latest createdAt on top)
 
   const filtered = search
     ? displayRows.filter(r =>
@@ -440,9 +452,6 @@ export default function AccountEkstrePage() {
               </>
             )}
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors">
-            <FileText className="w-4 h-4" /> Dökümanlar
-          </button>
         </div>
 
         {/* Table */}
