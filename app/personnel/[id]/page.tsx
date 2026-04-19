@@ -3,8 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
-import { MOCK_EMPLOYEES } from '@/app/personnel/page';
-import type { Employee } from '@/app/personnel/page';
+import { MOCK_EMPLOYEES } from '@/app/personnel/data';
+import type { Employee } from '@/app/personnel/data';
 import {
   ArrowLeft, Pencil, CreditCard, Banknote, TrendingUp, Scissors,
   CalendarDays, Clock, Upload, ChevronRight, X, Loader2,
