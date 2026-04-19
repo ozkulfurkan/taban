@@ -984,7 +984,7 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
 }) {
   const [kendiCekler, setKendiCekler] = useState<any[]>([]);
   const [portfoyCekler, setPortfoyCekler] = useState<any[]>([]);
-  const [rates, setRates] = useState<Record<string, string>>({});
+  const [fxAmounts, setFxAmounts] = useState<Record<string, string>>({});
   const [aciklama, setAciklama] = useState('');
   const [showKendiTanim, setShowKendiTanim] = useState(false);
   const [showPortfoy, setShowPortfoy] = useState(false);
@@ -1045,20 +1045,18 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
         ),
         // Kendi çekleri → ödeme kaydı (bakiye düşsün)
         ...kendiCekler.map(c => {
-          const rate = rates[c.id] ? parseFloat(rates[c.id]) : 0;
-          const hasFx = supplier.currency !== 'TRY' && rate > 0;
+          const fxAmt = fxAmounts[c.id] ? parseFloat(fxAmounts[c.id]) : 0;
+          const hasFx = supplier.currency !== 'TRY' && fxAmt > 0;
           return fetch('/api/payments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               supplierId: supplier.id,
-              // FX: amount = supplier currency equivalent, original = TRY check amount
-              amount: hasFx ? parseFloat(c.tutar) / rate : parseFloat(c.tutar),
+              amount: hasFx ? fxAmt : parseFloat(c.tutar),
               currency: hasFx ? supplier.currency : (c.currency || 'TRY'),
               ...(hasFx ? {
                 originalAmount: parseFloat(c.tutar),
                 originalCurrency: c.currency || 'TRY',
-                exchangeRate: rate,
               } : {}),
               date: c.islemTarihi,
               method: 'Çek',
@@ -1085,20 +1083,18 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
           })
         ),
         ...portfoyCekler.map(c => {
-          const rate = rates[c.id] ? parseFloat(rates[c.id]) : 0;
-          const hasFx = supplier.currency !== 'TRY' && rate > 0;
+          const fxAmt = fxAmounts[c.id] ? parseFloat(fxAmounts[c.id]) : 0;
+          const hasFx = supplier.currency !== 'TRY' && fxAmt > 0;
           return fetch('/api/payments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               supplierId: supplier.id,
-              // FX: amount = supplier currency equivalent, original = TRY check amount
-              amount: hasFx ? parseFloat(c.tutar) / rate : parseFloat(c.tutar),
+              amount: hasFx ? fxAmt : parseFloat(c.tutar),
               currency: hasFx ? supplier.currency : (c.currency || 'TRY'),
               ...(hasFx ? {
                 originalAmount: parseFloat(c.tutar),
                 originalCurrency: c.currency || 'TRY',
-                exchangeRate: rate,
               } : {}),
               date: c._verilisTarihi || toDateInputValue(),
               method: 'Çek',
@@ -1180,24 +1176,16 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
                         <td className="px-3 py-2 font-medium">{fmtC(Number(c.tutar))} {c.currency}</td>
                         <td className="px-3 py-2">
                           {supplier.currency !== 'TRY' ? (
-                            <div className="space-y-1">
+                            <div className="flex items-center gap-1">
                               <input
-                                type="number" step="0.0001" placeholder="Kur girin"
-                                value={rates[c.id] || ''}
-                                onChange={e => setRates(r => ({ ...r, [c.id]: e.target.value }))}
-                                className="w-24 px-2 py-1 border border-slate-200 rounded text-xs text-right outline-none focus:ring-1 focus:ring-teal-400"
+                                type="number" step="0.01" placeholder="0.00"
+                                value={fxAmounts[c.id] || ''}
+                                onChange={e => setFxAmounts(r => ({ ...r, [c.id]: e.target.value }))}
+                                className="w-24 px-2 py-1 border border-slate-300 rounded text-xs text-right outline-none focus:ring-1 focus:ring-teal-400"
                               />
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs text-slate-400">Kur:</span>
-                                <span className="text-xs font-medium text-slate-700">
-                                  {rates[c.id] && parseFloat(rates[c.id]) > 0
-                                    ? fmtC(Number(c.tutar) / parseFloat(rates[c.id]))
-                                    : '—'}
-                                </span>
-                                <span className="text-xs font-semibold px-1.5 py-0.5 bg-slate-200 rounded text-slate-700 select-none cursor-default">
-                                  {supplier.currency}
-                                </span>
-                              </div>
+                              <span className="text-xs font-semibold px-1.5 py-0.5 bg-slate-200 rounded text-slate-700 select-none cursor-default">
+                                {supplier.currency}
+                              </span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1">
