@@ -6,9 +6,6 @@ import { logAction, getIp } from '@/lib/audit-logger';
 
 type Params = { params: { id: string } };
 
-// Kasa bakiyesini düşen tipler (nakit çıkışı var)
-const CASH_OUT_TYPES = ['Maaş', 'Avans'];
-
 export async function POST(req: NextRequest, { params }: Params) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -21,36 +18,63 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!employee) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const body = await req.json();
-  const { date, type, description, debit, credit, account, accountId } = body;
+  const { date, type, description, amount, account, accountId } = body;
 
-  if (!type || (debit == null && credit == null)) {
-    return NextResponse.json({ error: 'type ve tutar zorunlu' }, { status: 400 });
+  if (!type || !amount) {
+    return NextResponse.json({ error: 'type ve amount zorunlu' }, { status: 400 });
   }
 
-  const creditAmt = parseFloat(credit) || 0;
-  const debitAmt = parseFloat(debit) || 0;
+  const amt = parseFloat(amount) || 0;
+  const entryDate = date ? new Date(date) : new Date();
+
+  // Muhasebe mantığı:
+  // Hakediş / Prim = personel hak kazandı → credit (bakiye artar — borcumuz artar)
+  // Maaş / Avans  = nakit ödeme → debit (bakiye düşer — borcumuz azalır)
+  // Kesinti        = personel borçlandı → debit
+  const isCashPayment = type === 'Maaş' || type === 'Avans';
+  const isEarning     = type === 'Hakediş' || type === 'Prim';
+
+  const creditAmt = isEarning ? amt : 0;
+  const debitAmt  = (isCashPayment || type === 'Kesinti') ? amt : 0;
+
+  let paymentId: string | null = null;
+
+  // Kasa: Maaş / Avans → Payment kaydı oluştur + bakiye düş
+  if (isCashPayment && accountId && amt > 0) {
+    const payment = await prisma.payment.create({
+      data: {
+        companyId: user.companyId,
+        type: 'PAID',
+        accountId,
+        amount: amt,
+        currency: employee.currency || 'TRY',
+        date: entryDate,
+        method: 'Nakit',
+        notes: `${type} — ${employee.name}${description ? ' — ' + description : ''}`,
+      },
+    });
+    paymentId = payment.id;
+
+    await prisma.account.update({
+      where: { id: accountId },
+      data: { balance: { increment: -amt } },
+    });
+  }
 
   const entry = await (prisma.personnelLedger as any).create({
     data: {
       companyId: user.companyId,
       employeeId: params.id,
-      date: date ? new Date(date) : new Date(),
+      date: entryDate,
       type,
-      description: description || '',
+      description: description || type,
       debit: debitAmt,
       credit: creditAmt,
       account: account || null,
+      paymentId,
       createdBy: user.name || user.email || 'Sistem',
     },
   });
-
-  // Kasa bakiyesini düş (Maaş / Avans için nakit çıkışı)
-  if (CASH_OUT_TYPES.includes(type) && accountId && creditAmt > 0) {
-    await prisma.account.update({
-      where: { id: accountId },
-      data: { balance: { increment: -creditAmt } },
-    });
-  }
 
   await logAction({
     companyId: user.companyId,
@@ -59,9 +83,42 @@ export async function POST(req: NextRequest, { params }: Params) {
     action: 'CREATE',
     entity: 'PersonnelLedger',
     entityId: entry.id,
-    detail: `${type} — ${employee.name} — ${creditAmt || debitAmt} TL`,
+    detail: `${type} — ${employee.name} — ${amt} TL`,
     ip: getIp(req),
   });
 
   return NextResponse.json(entry, { status: 201 });
+}
+
+export async function DELETE(req: NextRequest, { params }: Params) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = session.user as any;
+
+  const { searchParams } = new URL(req.url);
+  const entryId = searchParams.get('entryId');
+  if (!entryId) return NextResponse.json({ error: 'entryId gerekli' }, { status: 400 });
+
+  const entry = await (prisma.personnelLedger as any).findFirst({
+    where: { id: entryId, employeeId: params.id, companyId: user.companyId },
+  });
+  if (!entry) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  // Eğer bağlı Payment varsa → sil + kasa bakiyesini geri yükle
+  if (entry.paymentId) {
+    const payment = await prisma.payment.findUnique({ where: { id: entry.paymentId } });
+    if (payment) {
+      await prisma.payment.delete({ where: { id: entry.paymentId } });
+      if (payment.accountId) {
+        await prisma.account.update({
+          where: { id: payment.accountId },
+          data: { balance: { increment: payment.amount } },
+        });
+      }
+    }
+  }
+
+  await (prisma.personnelLedger as any).delete({ where: { id: entryId } });
+
+  return NextResponse.json({ ok: true });
 }

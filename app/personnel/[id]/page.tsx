@@ -29,7 +29,7 @@ type LedgerEntry = {
 type LeaveRecord = { id: string; startDate: string; endDate: string; type: string; days: number; note: string };
 type OvertimeRecord = { id: string; date: string; hours: number; amount: number; note: string };
 type DocumentRecord = { id: string; name: string; docType: string; size: number; mimeType: string; createdBy: string | null; createdAt: string };
-type NoteRecord = { id: string; date: string; content: string; createdBy: string };
+type NoteRecord = { id: string; content: string; createdBy: string | null; createdAt: string };
 type PerformRecord = { id: string; period: string; score: number; comment: string };
 
 
@@ -99,8 +99,7 @@ function PaymentModal({ type, emp, empId, onClose, onSave }: {
           date,
           type,
           description: description || `${type} ödemesi`,
-          debit: 0,
-          credit: amt,
+          amount: amt,
           account: accountName || null,
           accountId: accountId || null,
         }),
@@ -192,8 +191,7 @@ function HakedisModal({ emp, empId, onClose, onSave }: {
           date,
           type: 'Hakediş',
           description: description || 'Hakediş',
-          debit: 0,
-          credit: amt,
+          amount: amt,
         }),
       });
       if (!res.ok) throw new Error();
@@ -269,8 +267,7 @@ function PrimModal({ emp, empId, onClose, onSave }: {
           date,
           type: 'Prim',
           description: description || 'Prim',
-          debit: 0,
-          credit: amt,
+          amount: amt,
         }),
       });
       if (!res.ok) throw new Error();
@@ -346,8 +343,7 @@ function KesModal({ emp, empId, onClose, onSave }: {
           date,
           type: 'Kesinti',
           description: description || 'Kesinti',
-          debit: amt,
-          credit: 0,
+          amount: amt,
         }),
       });
       if (!res.ok) throw new Error();
@@ -397,9 +393,10 @@ function KesModal({ emp, empId, onClose, onSave }: {
 
 // ─── Leave Modal ──────────────────────────────────────────────────────────────
 
-function LeaveModal({ onClose, onSave }: { onClose: () => void; onSave: (r: LeaveRecord) => void }) {
+function LeaveModal({ empId, onClose, onSave }: { empId: string; onClose: () => void; onSave: (r: LeaveRecord) => void }) {
   const [form, setForm] = useState({ type: 'Yıllık', startDate: '', endDate: '', note: '' });
   const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
   const days = useMemo(() => {
@@ -412,9 +409,19 @@ function LeaveModal({ onClose, onSave }: { onClose: () => void; onSave: (r: Leav
     e.preventDefault();
     if (!form.startDate || !form.endDate || days <= 0) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 300));
-    onSave({ id: 'lv-' + Date.now(), ...form, days });
-    setSaving(false);
+    setErr('');
+    try {
+      const res = await fetch(`/api/personnel/${empId}/leaves`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, days }),
+      });
+      if (!res.ok) throw new Error();
+      onSave(await res.json());
+    } catch {
+      setErr('Kayıt sırasında hata oluştu.');
+      setSaving(false);
+    }
   };
 
   return (
@@ -446,6 +453,7 @@ function LeaveModal({ onClose, onSave }: { onClose: () => void; onSave: (r: Leav
             <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
             <input className={inputCls} value={form.note} onChange={e => set('note', e.target.value)} placeholder="İzin nedeni..." />
           </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">İptal</button>
             <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-60 flex items-center justify-center gap-2">
@@ -460,17 +468,28 @@ function LeaveModal({ onClose, onSave }: { onClose: () => void; onSave: (r: Leav
 
 // ─── Overtime Modal ───────────────────────────────────────────────────────────
 
-function OvertimeModal({ onClose, onSave }: { onClose: () => void; onSave: (r: OvertimeRecord) => void }) {
+function OvertimeModal({ empId, onClose, onSave }: { empId: string; onClose: () => void; onSave: (r: OvertimeRecord) => void }) {
   const [form, setForm] = useState({ date: new Date().toISOString().slice(0, 10), hours: '', amount: '', note: '' });
   const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await new Promise(r => setTimeout(r, 300));
-    onSave({ id: 'ot-' + Date.now(), date: form.date, hours: parseFloat(form.hours) || 0, amount: parseFloat(form.amount) || 0, note: form.note });
-    setSaving(false);
+    setErr('');
+    try {
+      const res = await fetch(`/api/personnel/${empId}/overtimes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: form.date, hours: form.hours, amount: form.amount, note: form.note }),
+      });
+      if (!res.ok) throw new Error();
+      onSave(await res.json());
+    } catch {
+      setErr('Kayıt sırasında hata oluştu.');
+      setSaving(false);
+    }
   };
 
   return (
@@ -499,6 +518,7 @@ function OvertimeModal({ onClose, onSave }: { onClose: () => void; onSave: (r: O
             <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
             <input className={inputCls} value={form.note} onChange={e => set('note', e.target.value)} placeholder="Mesai nedeni..." />
           </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
             <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-60 flex items-center justify-center gap-2">
@@ -723,13 +743,15 @@ export default function PersonnelDetailPage() {
   const [leaves, setLeaves] = useState<LeaveRecord[]>([]);
   const [overtimes, setOvertimes] = useState<OvertimeRecord[]>([]);
   const [docs, setDocs] = useState<DocumentRecord[]>([]);
-  const [notes] = useState<NoteRecord[]>([]);
+  const [notes, setNotes] = useState<NoteRecord[]>([]);
   const [perfs] = useState<PerformRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalType>(null);
   const [tab, setTab] = useState<TabType>('izinler');
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [noteInput, setNoteInput] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -737,15 +759,41 @@ export default function PersonnelDetailPage() {
     Promise.all([
       fetch(`/api/personnel/${id}`).then(r => r.ok ? r.json() : null),
       fetch(`/api/personnel/${id}/documents`).then(r => r.ok ? r.json() : []),
-    ]).then(([empData, docsData]) => {
+      fetch(`/api/personnel/${id}/leaves`).then(r => r.ok ? r.json() : []),
+      fetch(`/api/personnel/${id}/overtimes`).then(r => r.ok ? r.json() : []),
+      fetch(`/api/personnel/${id}/notes`).then(r => r.ok ? r.json() : []),
+    ]).then(([empData, docsData, leavesData, overtimesData, notesData]) => {
       if (empData) {
         const { ledger: ledgerData, ...emp } = empData;
         setEmp(emp);
         setLedger((ledgerData || []).sort((a: LedgerEntry, b: LedgerEntry) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       }
       setDocs(Array.isArray(docsData) ? docsData : []);
+      setLeaves(Array.isArray(leavesData) ? leavesData : []);
+      setOvertimes(Array.isArray(overtimesData) ? overtimesData : []);
+      setNotes(Array.isArray(notesData) ? notesData : []);
     }).finally(() => setLoading(false));
   }, [id]);
+
+  const handleAddNote = async () => {
+    if (!noteInput.trim()) return;
+    setSavingNote(true);
+    try {
+      const res = await fetch(`/api/personnel/${id}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: noteInput }),
+      });
+      if (!res.ok) throw new Error();
+      const note = await res.json();
+      setNotes(p => [note, ...p]);
+      setNoteInput('');
+    } catch {
+      showToast('Not kaydedilemedi.', 'error');
+    } finally {
+      setSavingNote(false);
+    }
+  };
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -944,7 +992,7 @@ export default function PersonnelDetailPage() {
               {tab === 'izinler' && (
                 <div className="space-y-2">
                   {leaves.length === 0 ? <p className="text-sm text-gray-400 text-center py-8">İzin kaydı yok</p> :
-                    leaves.map(l => (
+                    leaves.map((l: any) => (
                       <div key={l.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-xl">
                         <div>
                           <span className="text-xs font-semibold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">{l.type}</span>
@@ -960,7 +1008,7 @@ export default function PersonnelDetailPage() {
               {tab === 'mesailer' && (
                 <div className="space-y-2">
                   {overtimes.length === 0 ? <p className="text-sm text-gray-400 text-center py-8">Mesai kaydı yok</p> :
-                    overtimes.map(o => (
+                    overtimes.map((o: any) => (
                       <div key={o.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-xl">
                         <div>
                           <p className="text-sm font-medium text-gray-800">{formatDate(o.date)}</p>
@@ -1001,11 +1049,27 @@ export default function PersonnelDetailPage() {
 
               {tab === 'notlar' && (
                 <div className="space-y-3">
-                  {notes.length === 0 ? <p className="text-sm text-gray-400 text-center py-8">Not yok</p> :
+                  <div className="flex gap-2">
+                    <textarea
+                      rows={2}
+                      value={noteInput}
+                      onChange={e => setNoteInput(e.target.value)}
+                      placeholder="Yeni not ekle..."
+                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                    />
+                    <button
+                      onClick={handleAddNote}
+                      disabled={savingNote || !noteInput.trim()}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                    >
+                      {savingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <StickyNote className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {notes.length === 0 ? <p className="text-sm text-gray-400 text-center py-6">Not yok</p> :
                     notes.map(n => (
                       <div key={n.id} className="p-3 bg-gray-50 rounded-xl">
                         <p className="text-sm text-gray-700">{n.content}</p>
-                        <p className="text-xs text-gray-400 mt-1.5">{formatDate(n.date)} · {n.createdBy}</p>
+                        <p className="text-xs text-gray-400 mt-1.5">{formatDate(n.createdAt)} · {n.createdBy || 'Sistem'}</p>
                       </div>
                     ))}
                 </div>
@@ -1086,6 +1150,7 @@ export default function PersonnelDetailPage() {
       )}
       {modal === 'İzin' && (
         <LeaveModal
+          empId={id}
           onClose={() => setModal(null)}
           onSave={record => {
             setLeaves(p => [record, ...p]);
@@ -1098,6 +1163,7 @@ export default function PersonnelDetailPage() {
       )}
       {modal === 'Mesai' && (
         <OvertimeModal
+          empId={id}
           onClose={() => setModal(null)}
           onSave={record => {
             setOvertimes(p => [record, ...p]);

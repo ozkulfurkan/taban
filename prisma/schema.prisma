@@ -688,6 +688,9 @@ model Employee {
   updatedAt       DateTime          @updatedAt
   ledger          PersonnelLedger[]
   documents       PersonnelDocument[]
+  leaves          PersonnelLeave[]
+  overtimes       PersonnelOvertime[]
+  personnelNotes  PersonnelNote[]
 
   @@index([companyId])
 }
@@ -698,16 +701,60 @@ model PersonnelLedger {
   employeeId  String
   employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   date        DateTime
-  type        String   // Maaş | Avans | Prim | Kesinti | İzin | Mesai | Diğer
+  type        String   // Maaş | Avans | Hakediş | Prim | Kesinti | İzin | Mesai | Diğer
   description String?
   debit       Float    @default(0)
   credit      Float    @default(0)
   account     String?
+  paymentId   String?  // linked Payment.id for kasa integration
   createdBy   String?
   createdAt   DateTime @default(now())
 
   @@index([employeeId])
   @@index([companyId])
+}
+
+model PersonnelLeave {
+  id          String   @id @default(cuid())
+  companyId   String
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  startDate   DateTime
+  endDate     DateTime
+  type        String   // Yıllık | Mazeret | Ücretsiz | Hastalık
+  days        Float
+  note        String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([employeeId])
+}
+
+model PersonnelOvertime {
+  id          String   @id @default(cuid())
+  companyId   String
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date        DateTime
+  hours       Float
+  amount      Float    @default(0)
+  note        String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([employeeId])
+}
+
+model PersonnelNote {
+  id          String   @id @default(cuid())
+  companyId   String
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  content     String
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([employeeId])
 }
 
 model PersonnelDocument {
