@@ -58,6 +58,7 @@ model Company {
   updatedAt          DateTime           @updatedAt
   users              User[]
   auditLogs          AuditLog[]
+  employees          Employee[]
   materials          Material[]
   soleCalculations   SoleCalculation[]
   customers          Customer[]
@@ -662,6 +663,49 @@ model AuditLog {
 
   @@index([companyId])
   @@index([createdAt])
+}
+
+// ─── Personel Takip ──────────────────────────────────────────────────────────
+
+model Employee {
+  id              String            @id @default(cuid())
+  companyId       String
+  company         Company           @relation(fields: [companyId], references: [id])
+  name            String
+  department      String
+  role            String
+  salary          Float             @default(0)
+  currency        String            @default("TRY")
+  status          String            @default("active") // active | left
+  hireDate        DateTime
+  payday          Int               @default(1)
+  leaveBalance    Float             @default(14)
+  phone           String?
+  email           String?
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  ledger          PersonnelLedger[]
+
+  @@index([companyId])
+}
+
+model PersonnelLedger {
+  id          String   @id @default(cuid())
+  companyId   String
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date        DateTime
+  type        String   // Maaş | Avans | Prim | Kesinti | İzin | Mesai | Diğer
+  description String?
+  debit       Float    @default(0)
+  credit      Float    @default(0)
+  account     String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([companyId])
 }
 
 // Fasoncu deposundaki anlık hammadde zimmet durumu

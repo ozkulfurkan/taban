@@ -3,11 +3,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
-import { MOCK_EMPLOYEES } from '@/app/personnel/data';
 import type { Employee } from '@/app/personnel/data';
 import {
   ArrowLeft, Pencil, CreditCard, Banknote, TrendingUp, Scissors,
-  CalendarDays, Clock, Upload, ChevronRight, X, Loader2,
+  CalendarDays, Clock, Upload, X, Loader2,
   CheckCircle2, AlertCircle, FileText, StickyNote, BarChart3,
   ChevronDown, Users
 } from 'lucide-react';
@@ -33,45 +32,30 @@ type DocumentRecord = { id: string; name: string; docType: string; date: string 
 type NoteRecord = { id: string; date: string; content: string; createdBy: string };
 type PerformRecord = { id: string; period: string; score: number; comment: string };
 
-// ─── Mock Ledger ─────────────────────────────────────────────────────────────
-
-const MOCK_LEDGER: LedgerEntry[] = [
-  { id: 'l1', date: '2026-04-05', type: 'Maaş', description: 'Nisan 2026 maaş ödemesi', debit: 0, credit: 25000, account: 'Ana Kasa', createdBy: 'Admin' },
-  { id: 'l2', date: '2026-03-25', type: 'Avans', description: 'Mart avans talebi', debit: 3000, credit: 0, account: 'Ana Kasa', createdBy: 'Admin' },
-  { id: 'l3', date: '2026-03-05', type: 'Maaş', description: 'Mart 2026 maaş ödemesi', debit: 0, credit: 25000, account: 'Ana Kasa', createdBy: 'Admin' },
-  { id: 'l4', date: '2026-02-15', type: 'Prim', description: 'Yılsonu performans primi', debit: 0, credit: 5000, account: 'Banka', createdBy: 'Muhasebe' },
-  { id: 'l5', date: '2026-02-05', type: 'Maaş', description: 'Şubat 2026 maaş ödemesi', debit: 0, credit: 25000, account: 'Ana Kasa', createdBy: 'Admin' },
-  { id: 'l6', date: '2026-01-20', type: 'Kesinti', description: 'Gecikme kesintisi', debit: 500, credit: 0, account: '—', createdBy: 'İK' },
-  { id: 'l7', date: '2026-01-05', type: 'Maaş', description: 'Ocak 2026 maaş ödemesi', debit: 0, credit: 25000, account: 'Ana Kasa', createdBy: 'Admin' },
-];
+// ─── Mock secondary data (tabs) ───────────────────────────────────────────────
 
 const MOCK_LEAVES: LeaveRecord[] = [
   { id: 'lv1', startDate: '2026-03-10', endDate: '2026-03-14', type: 'Yıllık', days: 5, note: 'Tatil' },
   { id: 'lv2', startDate: '2025-12-24', endDate: '2025-12-25', type: 'Mazeret', days: 2, note: 'Kişisel' },
-  { id: 'lv3', startDate: '2025-08-01', endDate: '2025-08-15', type: 'Yıllık', days: 15, note: 'Yaz tatili' },
 ];
 
 const MOCK_OVERTIMES: OvertimeRecord[] = [
   { id: 'ot1', date: '2026-04-12', hours: 4, amount: 800, note: 'Hafta sonu üretim' },
   { id: 'ot2', date: '2026-03-28', hours: 6, amount: 1200, note: 'Acil sipariş' },
-  { id: 'ot3', date: '2026-02-20', hours: 3, amount: 600, note: 'Bakım çalışması' },
 ];
 
 const MOCK_DOCS: DocumentRecord[] = [
   { id: 'd1', name: 'İş Sözleşmesi.pdf', docType: 'Sözleşme', date: '2021-03-15' },
   { id: 'd2', name: 'Kimlik Fotokopisi.pdf', docType: 'Kimlik', date: '2021-03-15' },
-  { id: 'd3', name: 'SGK Belgesi.pdf', docType: 'SGK', date: '2022-01-10' },
 ];
 
 const MOCK_NOTES: NoteRecord[] = [
   { id: 'n1', date: '2026-03-15', content: 'Performans değerlendirmesi olumlu. Terfi önerisi yapıldı.', createdBy: 'İK Yöneticisi' },
-  { id: 'n2', date: '2025-11-20', content: 'Eğitime katıldı, sertifika alındı.', createdBy: 'Admin' },
 ];
 
 const MOCK_PERF: PerformRecord[] = [
   { id: 'p1', period: 'Q1 2026', score: 88, comment: 'Hedefleri %90 gerçekleştirdi' },
   { id: 'p2', period: 'Q4 2025', score: 92, comment: 'Mükemmel performans' },
-  { id: 'p3', period: 'Q3 2025', score: 78, comment: 'Gelişim alanları belirlendi' },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -101,9 +85,10 @@ const inputCls = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm foc
 
 type PaymentModalType = 'Maaş' | 'Avans' | 'Prim' | 'Kesinti';
 
-function PaymentModal({ type, emp, onClose, onSave }: {
+function PaymentModal({ type, emp, empId, onClose, onSave }: {
   type: PaymentModalType;
   emp: Employee;
+  empId: string;
   onClose: () => void;
   onSave: (entry: LedgerEntry) => void;
 }) {
@@ -114,6 +99,7 @@ function PaymentModal({ type, emp, onClose, onSave }: {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [accounts, setAccounts] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
 
   useEffect(() => {
     fetch('/api/accounts').then(r => r.json()).then(data => {
@@ -130,19 +116,27 @@ function PaymentModal({ type, emp, onClose, onSave }: {
     const amt = parseFloat(amount) || 0;
     if (amt <= 0) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 400));
-    const entry: LedgerEntry = {
-      id: 'l-' + Date.now(),
-      date,
-      type,
-      description: description || `${type} ödemesi`,
-      debit: isDebit ? amt : 0,
-      credit: isDebit ? 0 : amt,
-      account: accountName || '—',
-      createdBy: 'Kullanıcı',
-    };
-    onSave(entry);
-    setSaving(false);
+    setErr('');
+    try {
+      const res = await fetch(`/api/personnel/${empId}/ledger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date,
+          type,
+          description: description || `${type} ödemesi`,
+          debit: isDebit ? amt : 0,
+          credit: isDebit ? 0 : amt,
+          account: accountName || null,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const entry = await res.json();
+      onSave(entry);
+    } catch {
+      setErr('Kayıt sırasında hata oluştu.');
+      setSaving(false);
+    }
   };
 
   const ICON_MAP: Record<PaymentModalType, React.ReactNode> = {
@@ -186,6 +180,7 @@ function PaymentModal({ type, emp, onClose, onSave }: {
             <label className="block text-xs font-medium text-gray-600 mb-1">Tarih</label>
             <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
           </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">İptal</button>
             <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
@@ -363,8 +358,9 @@ function DocumentModal({ onClose, onSave }: { onClose: () => void; onSave: (r: D
 
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
 
-function EditModal({ emp, onClose, onSave, onLeave }: {
+function EditModal({ emp, empId, onClose, onSave, onLeave }: {
   emp: Employee;
+  empId: string;
   onClose: () => void;
   onSave: (updated: Partial<Employee>) => void;
   onLeave: () => void;
@@ -375,14 +371,40 @@ function EditModal({ emp, onClose, onSave, onLeave }: {
   });
   const [saving, setSaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [err, setErr] = useState('');
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await new Promise(r => setTimeout(r, 300));
-    onSave({ name: form.name, department: form.department, role: form.role, salary: parseFloat(form.salary) || emp.salary, payday: parseInt(form.payday) || emp.payday, status: form.status as any });
-    setSaving(false);
+    setErr('');
+    try {
+      const res = await fetch(`/api/personnel/${empId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name, department: form.department, role: form.role, salary: form.salary, payday: form.payday, status: form.status }),
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      onSave(updated);
+    } catch {
+      setErr('Güncelleme sırasında hata oluştu.');
+      setSaving(false);
+    }
+  };
+
+  const handleLeave = async () => {
+    try {
+      const res = await fetch(`/api/personnel/${empId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'left' }),
+      });
+      if (!res.ok) throw new Error();
+      onLeave();
+    } catch {
+      setErr('İşlem sırasında hata oluştu.');
+    }
   };
 
   return (
@@ -422,6 +444,7 @@ function EditModal({ emp, onClose, onSave, onLeave }: {
               <option value="left">Ayrıldı</option>
             </select>
           </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
             <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2">
@@ -434,7 +457,7 @@ function EditModal({ emp, onClose, onSave, onLeave }: {
                 <p className="text-sm text-red-700 mb-3">Personeli işten çıkarmak istediğinizden emin misiniz?</p>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => setConfirmLeave(false)} className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm">Hayır</button>
-                  <button type="button" onClick={onLeave} className="flex-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">Evet, Çıkar</button>
+                  <button type="button" onClick={handleLeave} className="flex-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">Evet, Çıkar</button>
                 </div>
               </div>
             ) : (
@@ -459,20 +482,31 @@ export default function PersonnelDetailPage() {
   const router = useRouter();
 
   const [emp, setEmp] = useState<Employee | null>(null);
-  const [ledger, setLedger] = useState<LedgerEntry[]>(MOCK_LEDGER);
+  const [ledger, setLedger] = useState<LedgerEntry[]>([]);
   const [leaves, setLeaves] = useState<LeaveRecord[]>(MOCK_LEAVES);
   const [overtimes, setOvertimes] = useState<OvertimeRecord[]>(MOCK_OVERTIMES);
   const [docs, setDocs] = useState<DocumentRecord[]>(MOCK_DOCS);
   const [notes] = useState<NoteRecord[]>(MOCK_NOTES);
   const [perfs] = useState<PerformRecord[]>(MOCK_PERF);
+  const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<ModalType>(null);
   const [tab, setTab] = useState<TabType>('izinler');
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
-    const found = MOCK_EMPLOYEES.find(e => e.id === id);
-    setEmp(found ? { ...found } : null);
+    if (!id) return;
+    setLoading(true);
+    fetch(`/api/personnel/${id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          const { ledger: ledgerData, ...empData } = data;
+          setEmp(empData);
+          setLedger((ledgerData || []).sort((a: LedgerEntry, b: LedgerEntry) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        }
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -480,14 +514,24 @@ export default function PersonnelDetailPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Kümülatif bakiye hesapla
+  // Kümülatif bakiye hesapla (en eski → en yeni)
   const ledgerWithBalance = useMemo(() => {
     let running = 0;
     return [...ledger].reverse().map(e => {
-      running += e.credit - e.debit;
+      running += (Number(e.credit) || 0) - (Number(e.debit) || 0);
       return { ...e, runningBalance: running };
     }).reverse();
   }, [ledger]);
+
+  if (loading) {
+    return (
+      <AppShell>
+        <div className="flex items-center justify-center h-64 text-gray-400">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </AppShell>
+    );
+  }
 
   if (!emp) {
     return (
@@ -522,6 +566,9 @@ export default function PersonnelDetailPage() {
     { key: 'performans', label: 'Performans', icon: BarChart3 },
   ];
 
+  // Compute balance from ledger (source of truth)
+  const balance = ledger.reduce((sum, e) => sum + (Number(e.credit) || 0) - (Number(e.debit) || 0), 0);
+
   return (
     <AppShell>
       <div className="p-4 md:p-6 max-w-7xl mx-auto">
@@ -535,7 +582,7 @@ export default function PersonnelDetailPage() {
         <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-4">
           <div className="flex flex-wrap items-start gap-4">
             <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl font-bold text-blue-600">{emp.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
+              <span className="text-xl font-bold text-blue-600">{emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}</span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
@@ -554,7 +601,7 @@ export default function PersonnelDetailPage() {
               { label: 'İşe Giriş', value: formatDate(emp.hireDate) },
               { label: 'Maaş', value: formatMoney(emp.salary, emp.currency) },
               { label: 'Kalan İzin', value: emp.leaveBalance + ' gün' },
-              { label: 'Bakiye', value: emp.balance === 0 ? '—' : (emp.balance > 0 ? '+' : '') + formatMoney(emp.balance, emp.currency), color: emp.balance < 0 ? 'text-red-600' : emp.balance > 0 ? 'text-green-600' : 'text-gray-700' },
+              { label: 'Bakiye', value: balance === 0 ? '—' : (balance > 0 ? '+' : '') + formatMoney(balance, emp.currency), color: balance < 0 ? 'text-red-600' : balance > 0 ? 'text-green-600' : 'text-gray-700' },
             ].map(item => (
               <div key={item.label}>
                 <p className="text-xs text-gray-400 mb-1">{item.label}</p>
@@ -624,15 +671,15 @@ export default function PersonnelDetailPage() {
                       <tr key={e.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(e.date)}</td>
                         <td className="px-4 py-3">
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${ENTRY_COLORS[e.type]}`}>{e.type}</span>
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${ENTRY_COLORS[e.type as EntryType] ?? 'bg-gray-100 text-gray-600'}`}>{e.type}</span>
                         </td>
                         <td className="px-4 py-3 text-gray-600 hidden md:table-cell max-w-[160px] truncate">{e.description}</td>
-                        <td className="px-4 py-3 text-right text-red-500 font-medium">{e.debit > 0 ? formatMoney(e.debit) : '—'}</td>
-                        <td className="px-4 py-3 text-right text-green-600 font-medium">{e.credit > 0 ? formatMoney(e.credit) : '—'}</td>
+                        <td className="px-4 py-3 text-right text-red-500 font-medium">{Number(e.debit) > 0 ? formatMoney(Number(e.debit)) : '—'}</td>
+                        <td className="px-4 py-3 text-right text-green-600 font-medium">{Number(e.credit) > 0 ? formatMoney(Number(e.credit)) : '—'}</td>
                         <td className={`px-4 py-3 text-right font-semibold ${e.runningBalance < 0 ? 'text-red-600' : 'text-gray-800'}`}>
                           {formatMoney(e.runningBalance)}
                         </td>
-                        <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">{e.account}</td>
+                        <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">{e.account || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -643,7 +690,6 @@ export default function PersonnelDetailPage() {
 
           {/* Right: Tabs */}
           <div className="lg:col-span-2 bg-white border border-gray-200 rounded-2xl overflow-hidden">
-            {/* Tab Headers */}
             <div className="flex border-b border-gray-100 overflow-x-auto">
               {TABS.map(t => (
                 <button key={t.key} onClick={() => setTab(t.key)}
@@ -654,7 +700,6 @@ export default function PersonnelDetailPage() {
               ))}
             </div>
 
-            {/* Tab Content */}
             <div className="p-4 overflow-y-auto max-h-[500px]">
 
               {tab === 'izinler' && (
@@ -749,10 +794,10 @@ export default function PersonnelDetailPage() {
         <PaymentModal
           type={modal as PaymentModalType}
           emp={emp}
+          empId={id}
           onClose={() => setModal(null)}
           onSave={entry => {
             setLedger(p => [entry, ...p]);
-            setEmp(e => e ? { ...e, balance: e.balance + entry.credit - entry.debit, lastPaymentDate: entry.date } : e);
             setModal(null);
             showToast(`${modal} işlemi kaydedildi.`);
           }}
@@ -795,6 +840,7 @@ export default function PersonnelDetailPage() {
       {modal === 'Düzenle' && (
         <EditModal
           emp={emp}
+          empId={id}
           onClose={() => setModal(null)}
           onSave={updated => {
             setEmp(e => e ? { ...e, ...updated } : e);

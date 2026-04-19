@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import {
   UserCheck, Plus, Search, X, ChevronRight, Loader2,
   AlertCircle, CheckCircle2, Users
 } from 'lucide-react';
-import { MOCK_EMPLOYEES } from '@/app/personnel/data';
 import type { Employee } from '@/app/personnel/data';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -30,13 +29,12 @@ function formatMoney(n: number, currency = 'TRY') {
   return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n) + ' ' + currency;
 }
 
-const DEPARTMENTS = Array.from(new Set(MOCK_EMPLOYEES.map(e => e.department))).sort();
-
 // ─── Add Employee Modal ───────────────────────────────────────────────────────
 
 function AddEmployeeModal({ onClose, onSave }: { onClose: () => void; onSave: (emp: Employee) => void }) {
-  const [form, setForm] = useState({ name: '', department: '', role: '', salary: '', currency: 'TRY', hireDate: '', payday: '1' });
+  const [form, setForm] = useState({ name: '', department: '', role: '', salary: '', currency: 'TRY', hireDate: '', payday: '1', phone: '', email: '' });
   const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
 
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
@@ -44,23 +42,20 @@ function AddEmployeeModal({ onClose, onSave }: { onClose: () => void; onSave: (e
     e.preventDefault();
     if (!form.name || !form.department || !form.role || !form.salary) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 400));
-    const emp: Employee = {
-      id: 'emp-' + Date.now(),
-      name: form.name,
-      department: form.department,
-      role: form.role,
-      salary: parseFloat(form.salary) || 0,
-      currency: form.currency,
-      status: 'active',
-      hireDate: form.hireDate || new Date().toISOString().slice(0, 10),
-      payday: parseInt(form.payday) || 1,
-      lastPaymentDate: null,
-      balance: 0,
-      leaveBalance: 14,
-    };
-    onSave(emp);
-    setSaving(false);
+    setErr('');
+    try {
+      const res = await fetch('/api/personnel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error('Kayıt başarısız');
+      const emp = await res.json();
+      onSave(emp);
+    } catch {
+      setErr('Kayıt sırasında hata oluştu.');
+      setSaving(false);
+    }
   };
 
   const inputCls = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none';
@@ -104,7 +99,16 @@ function AddEmployeeModal({ onClose, onSave }: { onClose: () => void; onSave: (e
               <label className="block text-xs font-medium text-gray-600 mb-1">Maaş Günü</label>
               <input type="number" min="1" max="31" className={inputCls} value={form.payday} onChange={e => set('payday', e.target.value)} />
             </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Telefon</label>
+              <input className={inputCls} value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="0532 111 2233" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">E-posta</label>
+              <input type="email" className={inputCls} value={form.email} onChange={e => set('email', e.target.value)} placeholder="ad@firma.com" />
+            </div>
           </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">İptal</button>
             <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
@@ -125,7 +129,7 @@ function SkeletonRow() {
     <tr>
       {[140, 100, 120, 90, 70, 100, 80, 60].map((w, i) => (
         <td key={i} className="px-4 py-3">
-          <div className={`h-4 bg-gray-200 rounded animate-pulse`} style={{ width: w }} />
+          <div className="h-4 bg-gray-200 rounded animate-pulse" style={{ width: w }} />
         </td>
       ))}
     </tr>
@@ -136,8 +140,8 @@ function SkeletonRow() {
 
 export default function PersonnelPage() {
   const router = useRouter();
-  const [employees, setEmployees] = useState<Employee[]>(MOCK_EMPLOYEES);
-  const [loading] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'left'>('all');
   const [deptFilter, setDeptFilter] = useState('');
@@ -149,6 +153,20 @@ export default function PersonnelPage() {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
+
+  const fetchEmployees = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/personnel');
+      if (res.ok) setEmployees(await res.json());
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
+
+  const departments = useMemo(() => Array.from(new Set(employees.map(e => e.department))).sort(), [employees]);
 
   const filtered = useMemo(() => {
     return employees.filter(e => {
@@ -221,7 +239,7 @@ export default function PersonnelPage() {
               className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             >
               <option value="">Tümü</option>
-              {DEPARTMENTS.map(d => <option key={d}>{d}</option>)}
+              {departments.map(d => <option key={d}>{d}</option>)}
             </select>
           </div>
           <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -274,7 +292,7 @@ export default function PersonnelPage() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                              <span className="text-xs font-bold text-blue-600">{emp.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
+                              <span className="text-xs font-bold text-blue-600">{emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}</span>
                             </div>
                             <div>
                               <p className="font-medium text-gray-900">{emp.name}</p>
