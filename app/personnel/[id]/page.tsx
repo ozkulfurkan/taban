@@ -1072,7 +1072,7 @@ export default function PersonnelDetailPage() {
                       <th className="text-right px-4 py-3 text-xs font-semibold text-red-500">Borç</th>
                       <th className="text-right px-4 py-3 text-xs font-semibold text-green-600">Alacak</th>
                       <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Bakiye</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-500"></th>
+                      <th className="px-2 py-3 w-16"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -1088,13 +1088,13 @@ export default function PersonnelDetailPage() {
                         <td className={`px-4 py-3 text-right font-semibold ${e.runningBalance < 0 ? 'text-red-600' : 'text-gray-800'}`}>
                           {formatMoney(e.runningBalance)}
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1 justify-end">
-                            <button onClick={() => setEditingEntry(e as any)} className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-400 hover:text-blue-600 transition-colors" title="Düzenle">
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
+                        <td className="px-2 py-3 w-16">
+                          <div className="flex items-center gap-0.5">
                             <button onClick={() => handleDeleteEntry(e as any)} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-600 transition-colors" title="Sil">
                               <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => setEditingEntry(e as any)} className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-400 hover:text-blue-600 transition-colors" title="Düzenle">
+                              <Pencil className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
