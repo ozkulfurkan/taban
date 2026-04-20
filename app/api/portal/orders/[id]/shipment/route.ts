@@ -35,6 +35,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     prisma.orderStatusHistory.create({ data: { orderId: params.id, status: 'SHIPPED', note: `İrsaliye: ${deliveryNoteNo ?? '-'}` } }),
   ]);
 
+  if (!order.portalCustomer) return NextResponse.json({ ok: true });
+
   sendMail({
     to: order.portalCustomer.email,
     subject: `Siparişiniz sevk edildi: ${order.orderNo}`,
