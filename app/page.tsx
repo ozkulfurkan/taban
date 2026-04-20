@@ -14,6 +14,9 @@ import {
   Layers,
   Truck,
   ChevronRight,
+  UserCheck,
+  Wallet,
+  Smartphone,
 } from 'lucide-react';
 
 const FEATURES = [
@@ -53,6 +56,25 @@ const FEATURES = [
     desc: 'Müşteriler kendi siparişlerini ve katalog ürünlerini portal üzerinden görür.',
     color: 'bg-cyan-50 text-cyan-600',
   },
+  {
+    icon: Wallet,
+    title: 'Ön Muhasebe',
+    desc: 'Cari hesaplar, çek portföyü, alış/satış faturaları ve ödeme takibi tek ekranda.',
+    color: 'bg-indigo-50 text-indigo-600',
+  },
+  {
+    icon: UserCheck,
+    title: 'Personel Takip',
+    desc: 'Personel giriş/çıkış, izin ve fazla mesai kayıtlarını kolayca yönetin.',
+    color: 'bg-teal-50 text-teal-600',
+  },
+  {
+    icon: Smartphone,
+    title: 'Mobil Uygulama',
+    desc: 'Yakında — iOS ve Android uygulamasıyla tüm verilerinize her yerden ulaşın.',
+    color: 'bg-slate-100 text-slate-400',
+    soon: true,
+  },
 ];
 
 const STEPS = [
@@ -74,10 +96,10 @@ const STEPS = [
 ];
 
 const STATS = [
-  { value: '11', label: 'Numara desteği (36–46)' },
   { value: 'Anlık', label: 'Stok güncelleme' },
   { value: '3', label: 'Ayrı portal (admin/müşteri/fasoncu)' },
   { value: '100%', label: 'Web tabanlı, kurulum yok' },
+  { value: '500 ₺', label: 'Aylık (ilk 6 ay ücretsiz)' },
 ];
 
 export default function LandingPage() {
@@ -101,6 +123,11 @@ export default function LandingPage() {
         </div>
       </header>
 
+      {/* Mayıs kampanya banner */}
+      <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-center py-2.5 px-4 text-sm font-semibold">
+        🎉 Mayıs ayına özel: Yeni üyelikler <span className="underline">6 ay ücretsiz</span> — Sonrasında aylık yalnızca 500 ₺
+      </div>
+
       {/* Hero */}
       <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-950 text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 md:py-28">
@@ -114,7 +141,7 @@ export default function LandingPage() {
               <span className="text-blue-400">maliyeti takip et.</span>
             </h1>
             <p className="text-slate-300 text-lg mb-8 leading-relaxed">
-              Sipariş, hammadde, fason ve satış — tüm süreçleri tek platformda yönetin.
+              Sipariş, hammadde, fason, muhasebe ve personel — tüm süreçleri tek platformda yönetin.
               Stok gerçek zamanlı güncellenir, maliyet otomatik hesaplanır.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -125,7 +152,7 @@ export default function LandingPage() {
                 Hemen Başla <ArrowRight className="w-4 h-4" />
               </Link>
               <a
-                href="mailto:ozkulfurkann@gmail.com?subject=SoleCost Demo İsteği"
+                href="mailto:solecost101@gmail.com?subject=SoleCost Demo İsteği"
                 className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl text-sm transition-colors border border-white/20"
               >
                 Demo İste
@@ -160,7 +187,10 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {FEATURES.map(f => (
-              <div key={f.title} className="bg-white rounded-2xl border border-slate-100 p-6 hover:shadow-md transition-shadow">
+              <div key={f.title} className={`bg-white rounded-2xl border p-6 hover:shadow-md transition-shadow relative ${f.soon ? 'border-slate-100 opacity-70' : 'border-slate-100'}`}>
+                {f.soon && (
+                  <span className="absolute top-4 right-4 text-xs bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded-full">Çok Yakında</span>
+                )}
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${f.color}`}>
                   <f.icon className="w-5 h-5" />
                 </div>
@@ -200,7 +230,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Feature highlights */}
+      {/* Feature highlight 1 */}
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid md:grid-cols-2 gap-10 items-center">
@@ -231,9 +261,9 @@ export default function LandingPage() {
               </div>
               <div className="space-y-3">
                 {[
-                  { name: '701 Krep Termogranül', required: '245,50 kg', stock: '420,00 kg', ok: true },
-                  { name: 'Siyah Taban Granülü', required: '180,00 kg', stock: '120,50 kg', ok: false },
-                  { name: 'Beyaz Hammadde', required: '92,30 kg', stock: '315,00 kg', ok: true },
+                  { name: '701 Krep Termogranül', required: '245,50 kg', ok: true },
+                  { name: 'Siyah Taban Granülü', required: '180,00 kg', ok: false },
+                  { name: 'Beyaz Hammadde', required: '92,30 kg', ok: true },
                 ].map(row => (
                   <div key={row.name} className={`rounded-lg p-3 flex items-center justify-between text-xs ${row.ok ? 'bg-slate-700/60' : 'bg-red-900/40 border border-red-700/40'}`}>
                     <span className="font-medium text-slate-200 truncate mr-2">{row.name}</span>
@@ -252,7 +282,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Second highlight */}
+      {/* Feature highlight 2 */}
       <section className="py-20 bg-slate-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="grid md:grid-cols-2 gap-10 items-center">
@@ -278,17 +308,19 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="order-1 md:order-2">
-              <h2 className="text-3xl font-bold text-slate-900 mb-4">Müşterileriniz kendi siparişlerini takip etsin</h2>
+              <h2 className="text-3xl font-bold text-slate-900 mb-4">Tam ön muhasebe ve personel takibi</h2>
               <p className="text-slate-500 mb-6 leading-relaxed">
-                Her müşterinize özel portal erişimi verin. Sipariş durumlarını, termin tarihlerini
-                ve ürün katalogunu portaldan görebilsinler.
+                Cari hesaplar, çek portföyü, alış/satış faturaları ve ödeme takibini yönetin.
+                Personel giriş/çıkış, izin ve mesai kayıtlarını tek sistemde tutun.
               </p>
               <ul className="space-y-3">
                 {[
+                  'Cari hesap ve ekstre takibi',
+                  'Çek portföyü yönetimi',
+                  'Alış/satış faturaları ve ödeme kayıtları',
+                  'Personel izin, mesai ve devam takibi',
                   'Müşteriye özel giriş ve sipariş geçmişi',
-                  'Sipariş numarası, numara dağılımı ve termin',
                   'Fasoncu için ayrı portal (hammadde zimmet)',
-                  'E-posta bildirim desteği',
                 ].map(item => (
                   <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
                     <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
@@ -301,35 +333,42 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* Pricing / CTA */}
       <section className="py-20 bg-gradient-to-br from-blue-600 to-blue-800 text-white">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-extrabold mb-4">Hemen kullanmaya başlayın</h2>
-          <p className="text-blue-200 mb-8 text-lg">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/20 rounded-full text-white text-xs font-semibold mb-5">
+            🎉 Mayıs ayına özel kampanya
+          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-3">İlk 6 ay tamamen ücretsiz</h2>
+          <p className="text-blue-200 mb-2 text-lg">Sonrasında aylık yalnızca <span className="font-bold text-white">500 ₺</span></p>
+          <p className="text-blue-300 text-sm mb-8">
             Kurulum gerektirmez. Tarayıcınızdan giriş yapın, dakikalar içinde sipariş almaya başlayın.
           </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-700 font-bold rounded-xl text-base hover:bg-blue-50 transition-colors shadow-xl"
-          >
-            Giriş Yap <ChevronRight className="w-5 h-5" />
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-700 font-bold rounded-xl text-base hover:bg-blue-50 transition-colors shadow-xl"
+            >
+              Hemen Başla <ChevronRight className="w-5 h-5" />
+            </Link>
+            <a
+              href="mailto:solecost101@gmail.com?subject=SoleCost Demo İsteği"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl text-base border border-white/30 transition-colors"
+            >
+              Demo İste
+            </a>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-slate-400 py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
-              <Layers className="w-3 h-3 text-white" />
-            </div>
-            <span className="font-semibold text-white">SoleCost</span>
-            <span className="text-slate-600">© 2025</span>
+      <footer className="bg-slate-900 text-slate-500 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-center gap-2 text-sm">
+          <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
+            <Layers className="w-3 h-3 text-white" />
           </div>
-          <a href="mailto:ozkulfurkann@gmail.com" className="hover:text-white transition-colors">
-            ozkulfurkann@gmail.com
-          </a>
+          <span className="font-semibold text-white">SoleCost</span>
+          <span className="text-slate-600">© 2025</span>
         </div>
       </footer>
     </div>
