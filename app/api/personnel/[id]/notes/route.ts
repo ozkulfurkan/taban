@@ -10,11 +10,16 @@ export async function GET(req: NextRequest, { params }: Params) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
 
-  const notes = await (prisma.personnelNote as any).findMany({
-    where: { employeeId: params.id, companyId: user.companyId },
-    orderBy: { createdAt: 'desc' },
-  });
-  return NextResponse.json(notes);
+  try {
+    const notes = await (prisma.personnelNote as any).findMany({
+      where: { employeeId: params.id, companyId: user.companyId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return NextResponse.json(notes);
+  } catch (err: any) {
+    console.error('[GET /api/personnel/:id/notes]', err?.message);
+    return NextResponse.json({ error: err?.message ?? 'DB hatası' }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
@@ -27,13 +32,18 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { content } = body;
   if (!content?.trim()) return NextResponse.json({ error: 'İçerik boş olamaz' }, { status: 400 });
 
-  const note = await (prisma.personnelNote as any).create({
-    data: {
-      companyId: user.companyId,
-      employeeId: params.id,
-      content: content.trim(),
-      createdBy: user.name || user.email || 'Sistem',
-    },
-  });
-  return NextResponse.json(note, { status: 201 });
+  try {
+    const note = await (prisma.personnelNote as any).create({
+      data: {
+        companyId: user.companyId,
+        employeeId: params.id,
+        content: content.trim(),
+        createdBy: user.name || user.email || 'Sistem',
+      },
+    });
+    return NextResponse.json(note, { status: 201 });
+  } catch (err: any) {
+    console.error('[POST /api/personnel/:id/notes]', err?.message);
+    return NextResponse.json({ error: err?.message ?? 'DB hatası' }, { status: 500 });
+  }
 }
