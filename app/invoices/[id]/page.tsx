@@ -5,10 +5,208 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
+import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import {
   Loader2, Printer, Pencil, X, CreditCard, User,
   Plus, Trash2, Save, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers,
 } from 'lucide-react';
+
+interface EditLineItem {
+  productId?: string;
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  discount: string;
+  notes: string;
+  partVariantsData?: Array<{ partId: string; materialId: string }>;
+}
+
+function ItemModal({ initial, currency, products, materials, onConfirm, onClose }: {
+  initial: EditLineItem; currency: string; products: any[]; materials: any[];
+  onConfirm: (item: EditLineItem) => void; onClose: () => void;
+}) {
+  const [item, setItem] = useState<EditLineItem>({ ...initial });
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [partMaterials, setPartMaterials] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    if (initial.partVariantsData) {
+      for (const pv of initial.partVariantsData) map[pv.partId] = pv.materialId;
+    }
+    return map;
+  });
+  const set = (field: keyof EditLineItem, val: string) => setItem(p => ({ ...p, [field]: val }));
+
+  const handleProductSelect = (productId: string) => {
+    if (!productId) { setSelectedProduct(null); setPartMaterials({}); return; }
+    const p = products.find((p: any) => p.id === productId);
+    if (!p) return;
+    setSelectedProduct(p);
+    const unitPrice = p.currency === currency ? toPriceInput(p.unitPrice) : '';
+    setItem(prev => ({ ...prev, productId: p.id, description: p.name, unitPrice }));
+    const defaults: Record<string, string> = {};
+    for (const part of (p.parts ?? [])) {
+      if (part.materialId) defaults[part.id] = part.materialId;
+    }
+    setPartMaterials(defaults);
+  };
+
+  useEffect(() => {
+    if (initial.productId && !selectedProduct) {
+      const p = products.find((p: any) => p.id === initial.productId);
+      if (p) {
+        setSelectedProduct(p);
+        if (!initial.partVariantsData || initial.partVariantsData.length === 0) {
+          const defaults: Record<string, string> = {};
+          for (const part of (p.parts ?? [])) {
+            if (part.materialId) defaults[part.id] = part.materialId;
+          }
+          setPartMaterials(defaults);
+        }
+      }
+    }
+  }, []);
+
+  const qty = fromPriceInput(item.quantity);
+  const price = fromPriceInput(item.unitPrice);
+  const disc = fromPriceInput(item.discount);
+  const gross = qty * price;
+  const discAmount = gross * disc / 100;
+  const total = gross - discAmount;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col">
+        <div className="bg-emerald-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <h3 className="text-white font-semibold text-base">{item.description || 'Ürün / Hizmet'}</h3>
+          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-4 overflow-y-auto flex-1">
+          {products.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Ürün Kataloğundan Seç</label>
+              <select value={item.productId ?? ''} onChange={e => handleProductSelect(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                <option value="">Manuel Giriş</option>
+                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
+          {!item.productId && (
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Ürün Adı</label>
+              <input value={item.description} onChange={e => set('description', e.target.value)} placeholder="Açıklama girin"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Miktar</label>
+              <input type="text" inputMode="decimal" value={item.quantity}
+                onChange={e => set('quantity', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none" />
+            </div>
+            {!(selectedProduct && (selectedProduct.parts ?? []).length > 0) && (
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Stok</label>
+                <div className={`px-3 py-2 border rounded-lg text-sm ${
+                  selectedProduct
+                    ? selectedProduct.stock <= 0
+                      ? 'bg-red-50 border-red-200 text-red-600 font-medium'
+                      : 'bg-green-50 border-green-200 text-green-700 font-medium'
+                    : 'bg-slate-50 border-slate-200 text-slate-400'
+                }`}>
+                  {selectedProduct ? `${selectedProduct.stock} ${selectedProduct.unit}` : '—'}
+                </div>
+              </div>
+            )}
+          </div>
+          {selectedProduct && (selectedProduct.parts ?? []).length > 0 && (
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-600">Hammadde Seçimi</label>
+              {(selectedProduct.parts as any[]).map((part: any) => {
+                const selectedMatId = partMaterials[part.id] ?? '';
+                const selectedMat = materials.find(m => m.id === selectedMatId);
+                const stock = selectedMat?.stock ?? part.material?.stock ?? null;
+                return (
+                  <div key={part.id} className="flex items-center gap-2">
+                    <span className="w-24 flex-shrink-0 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1.5 rounded-lg text-center truncate">{part.name}</span>
+                    <select
+                      value={selectedMatId}
+                      onChange={e => setPartMaterials(prev => ({ ...prev, [part.id]: e.target.value }))}
+                      className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+                    >
+                      <option value="">— Seç —</option>
+                      {materials.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </select>
+                    <div className={`w-24 flex-shrink-0 px-2 py-1.5 border rounded-lg text-xs text-right ${
+                      stock === null ? 'bg-slate-50 border-slate-200 text-slate-400' :
+                      stock <= 0 ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
+                      'bg-green-50 border-green-200 text-green-700 font-medium'
+                    }`}>
+                      {stock !== null ? `${stock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : '—'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Birim Fiyat</label>
+              <div className="flex">
+                <input type="text" inputMode="decimal" value={item.unitPrice}
+                  onChange={e => set('unitPrice', normalizePriceInput(e.target.value))}
+                  onKeyDown={blockDot}
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0" />
+                <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs font-semibold text-slate-600 flex items-center">{currency}</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">İndirim (%)</label>
+              <div className="flex">
+                <input type="text" inputMode="decimal" value={item.discount}
+                  onChange={e => set('discount', normalizePriceInput(e.target.value))}
+                  onKeyDown={blockDot}
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0" />
+                <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs text-slate-500 flex items-center">%</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs text-slate-500">Brüt</span>
+              <span className="text-sm text-slate-600">{gross.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
+            </div>
+            <div className="flex justify-between items-center border-t border-amber-200 pt-2 mt-1">
+              <span className="text-sm font-bold text-slate-700">TOPLAM</span>
+              <span className="text-lg font-bold text-slate-800">{total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama (isteğe bağlı)</label>
+            <input value={item.notes} onChange={e => set('notes', e.target.value)} placeholder="Açıklama girin"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+          </div>
+        </div>
+        <div className="px-5 pb-4 pt-3 border-t border-slate-100 flex-shrink-0">
+          <button type="button" onClick={() => {
+            if (item.description || item.unitPrice) {
+              const pvd = Object.entries(partMaterials)
+                .filter(([, matId]) => matId)
+                .map(([partId, materialId]) => ({ partId, materialId }));
+              onConfirm({ ...item, partVariantsData: pvd.length > 0 ? pvd : undefined });
+            }
+          }}
+            disabled={!item.description && !item.unitPrice}
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+            <CheckCircle className="w-4 h-4" /> Güncelle
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -16,7 +214,7 @@ const toInput = (d: string | Date | null) => toDateInputValue(d);
 
 const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı', 'POS'];
 
-function emptyItem() {
+function emptyItem(): EditLineItem {
   return { description: '', quantity: '1', unitPrice: '', discount: '0', notes: '' };
 }
 
@@ -32,9 +230,14 @@ export default function InvoiceDetailPage() {
   const [showPayForm, setShowPayForm] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
 
+  const [products, setProducts] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [itemModal, setItemModal] = useState<{ open: boolean; editIndex: number | null }>({ open: false, editIndex: null });
+  const [draftItem, setDraftItem] = useState<EditLineItem>(emptyItem());
+
   // Edit form state
   const [editForm, setEditForm] = useState<any>({});
-  const [editItems, setEditItems] = useState<any[]>([]);
+  const [editItems, setEditItems] = useState<EditLineItem[]>([]);
 
   // Payment form state
   const [payForm, setPayForm] = useState({
@@ -102,11 +305,15 @@ export default function InvoiceDetailPage() {
             notes: d.notes || '',
           });
           setEditItems((d.items || []).map((i: any) => ({
+            productId: i.productId || undefined,
             description: i.description,
             quantity: String(i.quantity),
             unitPrice: String(i.unitPrice),
             discount: String(i.discount ?? 0),
             notes: i.notes || '',
+            partVariantsData: Array.isArray(i.partVariantsData) && i.partVariantsData.length > 0
+              ? i.partVariantsData
+              : undefined,
           })));
         }
       })
@@ -114,6 +321,11 @@ export default function InvoiceDetailPage() {
   }, [params?.id]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    fetch('/api/products').then(r => r.json()).then(d => setProducts(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch('/api/materials').then(r => r.json()).then(d => setMaterials(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
 
   // Compute preview totals from editItems
   const previewTotals = editItems.reduce((acc, i) => {
@@ -144,11 +356,13 @@ export default function InvoiceDetailPage() {
           ...editForm,
           vatRate: parseFloat(editForm.vatRate) || 0,
           items: editItems.map(i => ({
+            productId: i.productId || null,
             description: i.description,
             quantity: parseFloat(i.quantity) || 0,
             unitPrice: parseFloat(i.unitPrice) || 0,
             discount: parseFloat(i.discount) || 0,
             notes: i.notes || null,
+            partVariantsData: i.partVariantsData || null,
           })),
         }),
       });
@@ -189,10 +403,23 @@ export default function InvoiceDetailPage() {
     } finally { setPayLoading(false); }
   };
 
-  const addItem = () => setEditItems(p => [...p, emptyItem()]);
+  const addItem = () => {
+    setDraftItem(emptyItem());
+    setItemModal({ open: true, editIndex: null });
+  };
+  const openEditItemModal = (idx: number) => {
+    setDraftItem({ ...editItems[idx] });
+    setItemModal({ open: true, editIndex: idx });
+  };
+  const handleItemModalConfirm = (item: EditLineItem) => {
+    if (itemModal.editIndex !== null) {
+      setEditItems(prev => prev.map((it, i) => i === itemModal.editIndex ? item : it));
+    } else {
+      setEditItems(prev => [...prev, item]);
+    }
+    setItemModal({ open: false, editIndex: null });
+  };
   const removeItem = (i: number) => setEditItems(p => p.filter((_, idx) => idx !== i));
-  const setItem = (i: number, f: string, v: string) =>
-    setEditItems(p => p.map((row, idx) => idx === i ? { ...row, [f]: v } : row));
 
   if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div></AppShell>;
   if (!invoice) return <AppShell><div className="text-center py-16 text-slate-400">Fatura bulunamadı</div></AppShell>;
@@ -435,31 +662,31 @@ export default function InvoiceDetailPage() {
                         <tr key={idx} className="hover:bg-slate-50/50">
                           <td className="px-3 py-2 text-slate-400 text-xs">{idx + 1}</td>
                           <td className="px-3 py-2">
-                            <input value={item.description} onChange={e => setItem(idx, 'description', e.target.value)}
-                              className="w-full px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
+                            <p className="font-medium text-slate-700 text-sm">{item.description}</p>
+                            {item.partVariantsData && item.partVariantsData.length > 0 && (
+                              <p className="text-xs text-purple-600">
+                                {item.partVariantsData.map(pv => {
+                                  const mat = materials.find(m => m.id === pv.materialId);
+                                  return mat?.name;
+                                }).filter(Boolean).join(', ')}
+                              </p>
+                            )}
                           </td>
-                          <td className="px-3 py-2">
-                            <input type="number" step="0.01" value={item.quantity} onChange={e => setItem(idx, 'quantity', e.target.value)}
-                              className="w-20 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-blue-400" />
-                          </td>
-                          <td className="px-3 py-2">
-                            <input type="number" step="0.01" value={item.unitPrice} onChange={e => setItem(idx, 'unitPrice', e.target.value)}
-                              className="w-24 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-blue-400" />
-                          </td>
+                          <td className="px-3 py-2 text-right text-slate-600 text-sm">{qty.toLocaleString('tr-TR')}</td>
+                          <td className="px-3 py-2 text-right text-slate-600 text-sm">{fmt(price)}</td>
                           <td className="px-3 py-2 text-right text-slate-600">{fmt(tutar)}</td>
-                          <td className="px-3 py-2">
-                            <div className="flex items-center gap-1 justify-end">
-                              <input type="number" step="0.01" min="0" max="100" value={item.discount} onChange={e => setItem(idx, 'discount', e.target.value)}
-                                className="w-16 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-blue-400" />
-                              <span className="text-xs text-slate-400">%</span>
-                            </div>
-                          </td>
+                          <td className="px-3 py-2 text-right text-slate-500 text-sm">{disc > 0 ? `%${disc}` : '—'}</td>
                           <td className="px-3 py-2 text-right text-slate-700 font-medium">{fmt(net)}</td>
                           <td className="px-3 py-2 text-right text-slate-500">{fmt(kdv)}</td>
                           <td className="px-3 py-2">
-                            <button onClick={() => removeItem(idx)} className="p-1 text-red-400 hover:text-red-600">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex items-center gap-1 justify-end">
+                              <button onClick={() => openEditItemModal(idx)} className="p-1 text-slate-400 hover:text-blue-600" title="Düzenle">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => removeItem(idx)} className="p-1 text-red-400 hover:text-red-600" title="Sil">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -577,6 +804,18 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Kalem Düzenleme Modalı */}
+      {itemModal.open && (
+        <ItemModal
+          initial={draftItem}
+          currency={editForm.currency || invoice?.currency || 'USD'}
+          products={products}
+          materials={materials}
+          onConfirm={handleItemModalConfirm}
+          onClose={() => setItemModal({ open: false, editIndex: null })}
+        />
+      )}
 
       {/* Stok Düşümü Modalı */}
       {showStokModal && (

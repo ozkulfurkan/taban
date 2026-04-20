@@ -43,6 +43,7 @@ export default function Sidebar() {
     '/subcontractors': 'fason',
     '/subcontractor-orders': 'fason',
     '/personnel': 'personnel',
+    '/orders': 'orders',
   };
 
   const canSee = (href: string) => {
@@ -81,6 +82,7 @@ export default function Sidebar() {
     {
       title: 'Operasyonlar',
       links: [
+        { href: '/orders', label: 'Siparişler', icon: ClipboardList },
         { href: '/subcontractors', label: 'Fasoncular', icon: Factory },
         { href: '/subcontractor-orders', label: 'Fason Siparişleri', icon: Factory },
         { href: '/personnel', label: 'Personel Takip', icon: UserCheck },

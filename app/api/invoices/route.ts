@@ -101,8 +101,8 @@ export async function POST(req: NextRequest) {
             discount: disc,
             total: sign * qty * price * (1 - disc / 100),
             notes: i.notes || null,
-            partVariantsData: Array.isArray(i.partVariants) && i.partVariants.length > 0
-              ? i.partVariants
+            partVariantsData: Array.isArray(i.partVariantsData) && i.partVariantsData.length > 0
+              ? i.partVariantsData
               : undefined,
           };
         }),
@@ -148,11 +148,15 @@ const uniqueProductIds = ids;
       const product = products.find((p: any) => p.id === item.productId);
       if (!product) continue;
 
+      const partVariants: Array<{ partId: string; materialId: string }> =
+        Array.isArray(item.partVariantsData) ? (item.partVariantsData as any) : [];
+
       for (const part of product.parts) {
-        if (!part.materialId) continue;
+        const matId = partVariants.find(pv => pv.partId === part.id)?.materialId ?? part.materialId;
+        if (!matId) continue;
         const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
         const kgUsed = (grossGrams * qty) / 1000;
-        materialMap.set(part.materialId, (materialMap.get(part.materialId) || 0) + kgUsed);
+        materialMap.set(matId, (materialMap.get(matId) || 0) + kgUsed);
       }
     }
 

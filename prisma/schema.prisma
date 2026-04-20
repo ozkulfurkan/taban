@@ -302,6 +302,7 @@ model Invoice {
   createdBy      User?         @relation(fields: [createdById], references: [id])
   items          InvoiceItem[]
   payments       Payment[]
+  soleOrder      SoleOrder?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 }
@@ -477,8 +478,8 @@ model SoleOrder {
   company               Company              @relation(fields: [companyId], references: [id])
   customerId            String
   customer              Customer             @relation(fields: [customerId], references: [id])
-  portalCustomerId      String
-  portalCustomer        PortalCustomer       @relation(fields: [portalCustomerId], references: [id])
+  portalCustomerId      String?
+  portalCustomer        PortalCustomer?      @relation(fields: [portalCustomerId], references: [id])
   orderNo               String
   productId             String?
   product               Product?             @relation(fields: [productId], references: [id])
@@ -492,6 +493,10 @@ model SoleOrder {
   notes                 String?
   colorPartials         Json?
   orderItems            Json?
+  partVariantsData      Json?
+  invoiceId             String?              @unique
+  invoice               Invoice?             @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  convertedAt           DateTime?
   status                OrderStatus          @default(ORDER_RECEIVED)
   statusHistory         OrderStatusHistory[]
   shipment              OrderShipment?
