@@ -32,7 +32,7 @@ export default function NewOrderPage() {
 
   const handleProductChange = (productId: string) => {
     setForm(f => ({ ...f, productId }));
-    if (!productId) { setSelectedProduct(null); setPartMaterials({}); setColorPartials({}); return; }
+    if (!productId) { setSelectedProduct(null); setPartMaterials({}); return; }
     const p = products.find((p: any) => p.id === productId);
     setSelectedProduct(p ?? null);
     if (p) {
