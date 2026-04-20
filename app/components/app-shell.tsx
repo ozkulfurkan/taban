@@ -81,7 +81,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <UserMenu />
           </div>
         </div>
-        <div className="max-w-[1200px] mx-auto p-4 md:p-6 lg:p-8">
+        <div className="max-w-[1200px] mx-auto p-4 pb-20 md:p-6 lg:p-8 lg:pb-8">
           {children}
         </div>
       </main>
