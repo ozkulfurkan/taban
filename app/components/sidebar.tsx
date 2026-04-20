@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
   FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText,
-  UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck, Building2
+  UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -119,7 +119,7 @@ export default function Sidebar() {
         <Link
           href={link.href}
           onClick={() => setMobileOpen(false)}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
             link.special
               ? active
                 ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'
@@ -168,14 +168,14 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-2">
+      <nav className="flex-1 overflow-y-auto sidebar-scroll py-2">
         {sections.map((section, si) => {
           const visibleLinks = section.links.filter(link => canSee(link.href));
           if (visibleLinks.length === 0) return null;
           return (
             <div key={si}>
               {section.title && !collapsed && (
-                <p className="text-xs text-blue-300/70 px-4 pt-4 pb-1.5 uppercase tracking-widest font-semibold">
+                <p className="text-[10px] text-blue-300/60 px-4 pt-3.5 pb-1 uppercase tracking-widest font-semibold">
                   {section.title}
                 </p>
               )}
@@ -192,23 +192,6 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* User info */}
-      {!collapsed && (
-        <div className="p-3 border-t border-blue-800/30">
-          <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg bg-blue-800/30">
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-              {user?.name?.charAt(0)?.toUpperCase() ?? 'U'}
-            </div>
-            <div className="min-w-0">
-              <p className="text-white text-xs font-medium truncate">{user?.name ?? 'Kullanıcı'}</p>
-              <p className="text-blue-300/70 text-xs truncate flex items-center gap-1">
-                <Building2 className="w-3 h-3 flex-shrink-0" />
-                {user?.companyName ?? ''}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 
