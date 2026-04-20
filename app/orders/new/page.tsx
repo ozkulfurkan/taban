@@ -21,7 +21,6 @@ export default function NewOrderPage() {
     notes: '',
   });
   const [sizeDistribution, setSizeDistribution] = useState<Record<string, number>>({});
-  const [colorPartials, setColorPartials] = useState<Record<string, string>>({});
   const [partMaterials, setPartMaterials] = useState<Record<string, string>>({});
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
@@ -43,6 +42,7 @@ export default function NewOrderPage() {
         if (part.materialId) defaults[part.id] = part.materialId;
       }
       setPartMaterials(defaults);
+      setSizeDistribution({});
     }
   };
 
@@ -52,13 +52,6 @@ export default function NewOrderPage() {
     e.preventDefault();
     if (!form.customerId) return alert('Müşteri seçin');
     if (totalQty === 0) return alert('En az 1 adet girin');
-
-    const colorPartialsArr = selectedProduct?.parts?.length > 0
-      ? (selectedProduct.parts as any[]).map((part: any) => ({
-          name: part.name,
-          color: colorPartials[part.id] || '',
-        }))
-      : [];
 
     const partVariantsData = Object.entries(partMaterials)
       .filter(([, matId]) => matId)
@@ -76,7 +69,6 @@ export default function NewOrderPage() {
           sizeDistribution,
           requestedDeliveryDate: form.requestedDeliveryDate || null,
           notes: form.notes || null,
-          colorPartials: colorPartialsArr.length > 0 ? colorPartialsArr : null,
           partVariantsData: partVariantsData.length > 0 ? partVariantsData : null,
         }),
       });
@@ -126,13 +118,6 @@ export default function NewOrderPage() {
                 {products.map((p: any) => <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ''}{p.name}</option>)}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Model Kodu / Adı</label>
-              <input value={form.productCode} onChange={e => setForm(f => ({ ...f, productCode: e.target.value }))}
-                placeholder="Örn: SC-100 veya manuel model adı"
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-            </div>
-
             {/* Hammadde Seçimi — ürünün parts'ı varsa */}
             {selectedProduct && (selectedProduct.parts ?? []).length > 0 && (
               <div className="space-y-2">
@@ -167,25 +152,6 @@ export default function NewOrderPage() {
               </div>
             )}
 
-            {/* Renk bilgisi */}
-            {selectedProduct && (selectedProduct.parts ?? []).length > 0 ? (
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-600">Renk Bilgisi</label>
-                {(selectedProduct.parts as any[]).map((part: any) => (
-                  <div key={part.id} className="flex items-center gap-2">
-                    <span className="w-24 flex-shrink-0 text-xs font-medium text-slate-500 bg-slate-50 px-2 py-1.5 rounded-lg text-center truncate">
-                      {part.name}
-                    </span>
-                    <input
-                      value={colorPartials[part.id] ?? ''}
-                      onChange={e => setColorPartials(prev => ({ ...prev, [part.id]: e.target.value }))}
-                      placeholder="Renk girin (opsiyonel)"
-                      className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : null}
           </div>
 
           {/* Numara Dağılımı */}
@@ -196,7 +162,7 @@ export default function NewOrderPage() {
                 <span className="text-sm font-bold text-blue-600">{totalQty} çift</span>
               )}
             </div>
-            <SizeTable value={sizeDistribution} onChange={setSizeDistribution} />
+            <SizeTable value={sizeDistribution} onChange={setSizeDistribution} sizes={selectedProduct?.sizes} />
           </div>
 
           {/* Diğer */}

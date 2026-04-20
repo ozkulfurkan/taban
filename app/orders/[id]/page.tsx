@@ -12,12 +12,9 @@ import {
 } from 'lucide-react';
 
 const ALL_STATUSES = [
-  { key: 'ORDER_RECEIVED', label: 'Sipariş Alındı' },
-  { key: 'IN_PRODUCTION', label: 'Üretime Girdi' },
-  { key: 'MOLDING', label: 'Kalıplama' },
-  { key: 'PAINTING', label: 'Boya / Apre' },
-  { key: 'PACKAGING', label: 'Paketleme' },
-  { key: 'READY_FOR_SHIPMENT', label: 'Sevkiyata Hazır' },
+  { key: 'ORDER_RECEIVED', label: 'Bekliyor' },
+  { key: 'IN_PRODUCTION', label: 'Üretimde' },
+  { key: 'READY_FOR_SHIPMENT', label: 'Hazır' },
   { key: 'SHIPPED', label: 'Sevk Edildi' },
 ];
 
@@ -78,7 +75,9 @@ export default function OrderDetailPage() {
           status: d.status,
           confirmedDeliveryDate: d.confirmedDeliveryDate
             ? new Date(d.confirmedDeliveryDate).toISOString().split('T')[0]
-            : '',
+            : d.requestedDeliveryDate
+              ? new Date(d.requestedDeliveryDate).toISOString().split('T')[0]
+              : '',
         }));
       })
       .finally(() => setLoading(false));
@@ -135,6 +134,12 @@ export default function OrderDetailPage() {
     loadOrder();
   };
 
+  const handleCancel = async () => {
+    if (!confirm('Siparişi iptal etmek istediğinizden emin misiniz?')) return;
+    await fetch(`/api/orders/${params?.id}`, { method: 'DELETE' });
+    router.push('/orders');
+  };
+
   const handleConvert = () => {
     const p = new URLSearchParams({ orderId: String(params?.id) });
     if (order?.customerId) p.set('customerId', order.customerId);
@@ -164,6 +169,12 @@ export default function OrderDetailPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            {order.status !== 'SHIPPED' && order.status !== 'CANCELLED' && (
+              <button onClick={handleCancel}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium transition-colors">
+                <X className="w-4 h-4" /> İptal Et
+              </button>
+            )}
             <button onClick={() => setShowPrintModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors">
               <Printer className="w-4 h-4" /> Üretim Çıktısı
