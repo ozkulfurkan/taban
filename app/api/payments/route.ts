@@ -96,10 +96,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Update account balance: incoming (customer) → increment, outgoing (supplier) → decrement
+    // Update account balance: incoming → increment, outgoing → decrement
+    // _type overrides the customerId heuristic (used by Para Girişi / Para Çıkışı buttons)
     if (accountId) {
       const incrementBy = originalAmount ? parseFloat(originalAmount) : parseFloat(amount);
-      const isIncoming = !!customerId;
+      const isIncoming = _type ? _type === 'RECEIVED' : !!customerId;
       await tx.account.update({
         where: { id: accountId },
         data: { balance: { increment: isIncoming ? incrementBy : -incrementBy } },

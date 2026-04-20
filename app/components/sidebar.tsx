@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
-  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText, UserCog, Calculator, Globe, Factory, ClipboardList
+  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText, UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,6 +43,7 @@ export default function Sidebar() {
     '/settings': 'settings',
     '/subcontractors': 'fason',
     '/subcontractor-orders': 'fason',
+    '/personnel': 'personnel',
   };
 
   const canSee = (href: string) => {
@@ -88,6 +89,12 @@ export default function Sidebar() {
       links: [
         { href: '/subcontractors', label: 'Fasoncular', icon: Factory },
         { href: '/subcontractor-orders', label: 'Fason Siparişleri', icon: Factory },
+      ],
+    },
+    {
+      title: 'İnsan Kaynakları',
+      links: [
+        { href: '/personnel', label: 'Personel Takip', icon: UserCheck },
       ],
     },
     {
