@@ -45,7 +45,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const user = session.user as any;
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
-  const existing = await prisma.invoice.findFirst({ where: { id: params.id, companyId: user.companyId } });
+  const existing = await prisma.invoice.findFirst({
+    where: { id: params.id, companyId: user.companyId },
+    include: {
+      items: { include: { product: { include: { parts: true } } } },
+    },
+  });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const body = await req.json();
@@ -76,6 +81,24 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const invoice = await prisma.$transaction(async (tx) => {
     if (items) {
+      // Eski hammadde stoğunu geri al (stok düşüldüyse)
+      if (existing.stockDeducted && !existing.isReturn) {
+        for (const oldItem of existing.items) {
+          if (!oldItem.productId || !(oldItem as any).product) continue;
+          const pvData: Array<{ partId: string; materialId: string }> =
+            Array.isArray((oldItem as any).partVariantsData) ? (oldItem as any).partVariantsData : [];
+          for (const part of (oldItem as any).product.parts) {
+            const matId = pvData.find(pv => pv.partId === part.id)?.materialId ?? part.materialId;
+            if (!matId) continue;
+            const kgUsed = (part.gramsPerPiece * (1 + part.wasteRate / 100) * oldItem.quantity) / 1000;
+            await tx.material.updateMany({
+              where: { id: matId, companyId: user.companyId },
+              data: { stock: { increment: kgUsed } },
+            });
+          }
+        }
+      }
+
       await tx.invoiceItem.deleteMany({ where: { invoiceId: params.id } });
       await tx.invoiceItem.createMany({
         data: items.map((i: any) => {
@@ -91,9 +114,46 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             discount: disc,
             total: qty * price * (1 - disc / 100),
             notes: i.notes || null,
+            partVariantsData: Array.isArray(i.partVariantsData) && i.partVariantsData.length > 0
+              ? i.partVariantsData
+              : undefined,
           };
         }),
       });
+
+      // Yeni hammadde stoğunu düş (stok daha önce düşüldüyse)
+      if (existing.stockDeducted && !existing.isReturn) {
+        const newProductItems = items.filter((i: any) => i.productId);
+        if (newProductItems.length > 0) {
+          const seen = new Set<string>();
+          const uniqueIds: string[] = [];
+          for (const i of newProductItems) { if (!seen.has(i.productId)) { seen.add(i.productId); uniqueIds.push(i.productId); } }
+          const products = await tx.product.findMany({
+            where: { id: { in: uniqueIds }, companyId: user.companyId },
+            include: { parts: true },
+          });
+          const materialMap = new Map<string, number>();
+          for (const item of newProductItems) {
+            const qty = parseFloat(item.quantity) || 0;
+            const product = products.find((p: any) => p.id === item.productId);
+            if (!product) continue;
+            const pvData: Array<{ partId: string; materialId: string }> =
+              Array.isArray(item.partVariantsData) ? item.partVariantsData : [];
+            for (const part of product.parts) {
+              const matId = pvData.find(pv => pv.partId === part.id)?.materialId ?? part.materialId;
+              if (!matId) continue;
+              const kgUsed = (part.gramsPerPiece * (1 + part.wasteRate / 100) * qty) / 1000;
+              materialMap.set(matId, (materialMap.get(matId) || 0) + kgUsed);
+            }
+          }
+          for (const [matId, kg] of Array.from(materialMap.entries())) {
+            await tx.material.updateMany({
+              where: { id: matId, companyId: user.companyId },
+              data: { stock: { decrement: kg } },
+            });
+          }
+        }
+      }
     }
     return tx.invoice.update({
       where: { id: params.id },
@@ -159,13 +219,16 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
         data: { stock: { increment: sign * item.quantity } },
       });
 
-      // Hammadde stoğunu geri al
+      // Hammadde stoğunu geri al (partVariantsData'daki seçili malzemeyi kullan)
+      const partVariants: Array<{ partId: string; materialId: string }> =
+        Array.isArray((item as any).partVariantsData) ? (item as any).partVariantsData : [];
       for (const part of item.product.parts) {
-        if (!part.materialId) continue;
+        const matId = partVariants.find(pv => pv.partId === part.id)?.materialId ?? part.materialId;
+        if (!matId) continue;
         const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
         const kgUsed = (grossGrams * item.quantity) / 1000;
         await tx.material.updateMany({
-          where: { id: part.materialId, companyId: user.companyId },
+          where: { id: matId, companyId: user.companyId },
           data: { stock: { increment: sign * kgUsed } },
         });
       }

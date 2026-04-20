@@ -1,14 +1,16 @@
 'use client';
 
-const SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];
+const ALL_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];
 
 interface SizeTableProps {
   value: Record<string, number>;
   onChange?: (val: Record<string, number>) => void;
   readOnly?: boolean;
+  sizes?: string[];
 }
 
-export default function SizeTable({ value, onChange, readOnly = false }: SizeTableProps) {
+export default function SizeTable({ value, onChange, readOnly = false, sizes: sizesProp }: SizeTableProps) {
+  const SIZES = (sizesProp && sizesProp.length > 0) ? sizesProp : ALL_SIZES;
   const total = SIZES.reduce((s, sz) => s + (Number(value[sz]) || 0), 0);
 
   const handleChange = (size: string, raw: string) => {

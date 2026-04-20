@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import {
   ArrowLeft, Loader2, Pencil, TrendingDown, TrendingUp,
-  ArrowLeftRight, ChevronDown, Trash2, X, Save, FileText,
+  ArrowLeftRight, ChevronDown, Trash2, X, Save,
 } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -332,6 +332,7 @@ export default function AccountEkstrePage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [openRowMenu, setOpenRowMenu] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [transferDropdown, setTransferDropdown] = useState(false);
   const [modal, setModal] = useState<'giris' | 'cikis' | 'transfer' | 'edit' | null>(null);
   const [transferTargetId, setTransferTargetId] = useState<string>('');
@@ -350,6 +351,7 @@ export default function AccountEkstrePage() {
   const handleDeletePayment = async (id: string) => {
     if (!confirm('Bu işlem silinecek. Emin misiniz?')) return;
     setOpenRowMenu(null);
+    setMenuPos(null);
     await fetch(`/api/payments/${id}`, { method: 'DELETE' });
     load();
   };
@@ -358,15 +360,30 @@ export default function AccountEkstrePage() {
   const allAccounts = data?.allAccounts || [];
   const payments: any[] = data?.payments || [];
 
-  // Running balance from start, newest first for display
-  const rows: any[] = [];
-  let balance = 0;
-  payments.forEach(p => {
+  // Running balance — start from offset so last row matches account.balance
+  const totalFromPayments = payments.reduce((sum: number, p: any) => {
     const isIn = p.type === 'RECEIVED';
-    balance += isIn ? p.amount : -p.amount;
-    rows.push({ ...p, runningBalance: balance });
-  });
-  const displayRows = [...rows].reverse(); // newest first
+    const accountAmt = p.originalAmount ?? p.amount;
+    return sum + (isIn ? accountAmt : -accountAmt);
+  }, 0);
+  const initialBalance = account ? account.balance - totalFromPayments : 0;
+
+  const rows: any[] = [];
+  let balance = initialBalance;
+  // payments are sorted oldest-first from API → compute running balance in order
+  [...payments]
+    .sort((a: any, b: any) => {
+      const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    })
+    .forEach((p: any) => {
+      const isIn = p.type === 'RECEIVED';
+      const accountAmt = p.originalAmount ?? p.amount;
+      balance += isIn ? accountAmt : -accountAmt;
+      rows.push({ ...p, displayAmount: accountAmt, runningBalance: balance });
+    });
+  const displayRows = [...rows].reverse(); // newest first (same-day: latest createdAt on top)
 
   const filtered = search
     ? displayRows.filter(r =>
@@ -437,9 +454,6 @@ export default function AccountEkstrePage() {
               </>
             )}
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors">
-            <FileText className="w-4 h-4" /> Dökümanlar
-          </button>
         </div>
 
         {/* Table */}
@@ -493,34 +507,29 @@ export default function AccountEkstrePage() {
                         <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{hesap || '—'}</td>
                         <td className="px-3 py-2.5 text-slate-500 max-w-[220px] truncate">{row.notes || ''}</td>
                         <td className="px-3 py-2.5 text-right font-semibold text-green-700">
-                          {isIn ? fmt(row.amount) : ''}
+                          {isIn ? fmt(row.displayAmount) : ''}
                         </td>
                         <td className="px-3 py-2.5 text-right font-semibold text-red-600">
-                          {!isIn ? fmt(row.amount) : ''}
+                          {!isIn ? fmt(row.displayAmount) : ''}
                         </td>
                         <td className={`px-3 py-2.5 text-right font-bold whitespace-nowrap ${row.runningBalance < 0 ? 'text-red-600' : 'text-slate-800'}`}>
                           {fmt(row.runningBalance)}
                         </td>
-                        <td className="px-3 py-2.5 text-center relative">
-                          <div className="relative inline-block">
-                            <button
-                              onClick={() => setOpenRowMenu(openRowMenu === row.id ? null : row.id)}
-                              className="px-3 py-1 bg-slate-500 hover:bg-slate-600 text-white text-xs rounded-lg">
-                              İşlem ▾
-                            </button>
-                            {openRowMenu === row.id && (
-                              <>
-                                <div className="fixed inset-0 z-10" onClick={() => setOpenRowMenu(null)} />
-                                <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 z-20 min-w-[140px] overflow-hidden">
-                                  <button
-                                    onClick={() => handleDeletePayment(row.id)}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                    <Trash2 className="w-3.5 h-3.5" /> Sil
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
+                        <td className="px-3 py-2.5 text-center">
+                          <button
+                            onClick={(e) => {
+                              if (openRowMenu === row.id) {
+                                setOpenRowMenu(null);
+                                setMenuPos(null);
+                              } else {
+                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                                setOpenRowMenu(row.id);
+                              }
+                            }}
+                            className="px-3 py-1 bg-slate-500 hover:bg-slate-600 text-white text-xs rounded-lg">
+                            İşlem ▾
+                          </button>
                         </td>
                       </tr>
                     );
@@ -531,6 +540,20 @@ export default function AccountEkstrePage() {
           )}
         </div>
       </div>
+
+      {/* Row dropdown menu — fixed so overflow-x-auto doesn't clip it */}
+      {openRowMenu && menuPos && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => { setOpenRowMenu(null); setMenuPos(null); }} />
+          <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right }} className="bg-white rounded-xl shadow-lg border border-slate-100 z-40 min-w-[140px] overflow-hidden">
+            <button
+              onClick={() => handleDeletePayment(openRowMenu)}
+              className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+              <Trash2 className="w-3.5 h-3.5" /> Sil
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Modals */}
       {modal === 'edit' && account && (

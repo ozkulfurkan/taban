@@ -36,7 +36,6 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
     amount: '',
     exchangeRate: '',
     recordedAmount: '',
-    method: 'Nakit',
     notes: '',
   });
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -122,7 +121,6 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
           originalCurrency: isSameCurrency ? null : form.paymentCurrency,
           exchangeRate: isSameCurrency ? null : (parseFloat(form.exchangeRate) ? Math.round(parseFloat(form.exchangeRate) * 10000) / 10000 : null),
           date: nowIstanbulISO(),
-          method: form.method,
           notes,
         }),
       });
@@ -183,13 +181,6 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
               <p className="text-xs text-blue-500">{t('modal', 'rateHint')}</p>
             </div>
           )}
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'paymentMethod')}</label>
-            <select value={form.method} onChange={e => set('method', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
-              {METHODS.map(m => <option key={m}>{m}</option>)}
-            </select>
-          </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'notes')}</label>
             <input value={form.notes} onChange={e => set('notes', e.target.value)}

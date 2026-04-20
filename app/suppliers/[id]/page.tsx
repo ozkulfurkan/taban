@@ -43,7 +43,6 @@ function OdemeModal({ supplier, onClose, onSaved }: {
     amount: '',
     exchangeRate: '',
     recordedAmount: '',
-    method: 'Nakit',
     notes: '',
   });
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -124,7 +123,6 @@ function OdemeModal({ supplier, onClose, onSaved }: {
           originalCurrency: isSameCurrency ? null : form.paymentCurrency,
           exchangeRate: isSameCurrency ? null : (parseFloat(form.exchangeRate) ? Math.round(parseFloat(form.exchangeRate) * 10000) / 10000 : null),
           date: nowIstanbulISO(),
-          method: form.method,
           notes,
         }),
       });
@@ -186,13 +184,6 @@ function OdemeModal({ supplier, onClose, onSaved }: {
               <p className="text-xs text-blue-500">{t('modal', 'rateHint')}</p>
             </div>
           )}
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'paymentMethod')}</label>
-            <select value={form.method} onChange={e => set('method', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
-              {METHODS.map(m => <option key={m}>{m}</option>)}
-            </select>
-          </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'notes')}</label>
             <input value={form.notes} onChange={e => set('notes', e.target.value)}
@@ -993,6 +984,7 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
 }) {
   const [kendiCekler, setKendiCekler] = useState<any[]>([]);
   const [portfoyCekler, setPortfoyCekler] = useState<any[]>([]);
+  const [fxAmounts, setFxAmounts] = useState<Record<string, string>>({});
   const [aciklama, setAciklama] = useState('');
   const [showKendiTanim, setShowKendiTanim] = useState(false);
   const [showPortfoy, setShowPortfoy] = useState(false);
@@ -1052,14 +1044,20 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
           })
         ),
         // Kendi çekleri → ödeme kaydı (bakiye düşsün)
-        ...kendiCekler.map(c =>
-          fetch('/api/payments', {
+        ...kendiCekler.map(c => {
+          const fxAmt = fxAmounts[c.id] ? parseFloat(fxAmounts[c.id]) : 0;
+          const hasFx = supplier.currency !== 'TRY' && fxAmt > 0;
+          return fetch('/api/payments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               supplierId: supplier.id,
-              amount: parseFloat(c.tutar),
-              currency: c.currency || 'TRY',
+              amount: hasFx ? fxAmt : parseFloat(c.tutar),
+              currency: hasFx ? supplier.currency : (c.currency || 'TRY'),
+              ...(hasFx ? {
+                originalAmount: parseFloat(c.tutar),
+                originalCurrency: c.currency || 'TRY',
+              } : {}),
               date: c.islemTarihi,
               method: 'Çek',
               notes: [
@@ -1069,8 +1067,8 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
                 aciklama,
               ].filter(Boolean).join(' | '),
             }),
-          })
-        ),
+          });
+        }),
         // Portföy çekleri → durumu güncelle + ödeme kaydı
         ...portfoyCekler.map(c =>
           fetch(`/api/cek/${c.id}`, {
@@ -1084,14 +1082,20 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
             }),
           })
         ),
-        ...portfoyCekler.map(c =>
-          fetch('/api/payments', {
+        ...portfoyCekler.map(c => {
+          const fxAmt = fxAmounts[c.id] ? parseFloat(fxAmounts[c.id]) : 0;
+          const hasFx = supplier.currency !== 'TRY' && fxAmt > 0;
+          return fetch('/api/payments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               supplierId: supplier.id,
-              amount: parseFloat(c.tutar),
-              currency: c.currency || 'TRY',
+              amount: hasFx ? fxAmt : parseFloat(c.tutar),
+              currency: hasFx ? supplier.currency : (c.currency || 'TRY'),
+              ...(hasFx ? {
+                originalAmount: parseFloat(c.tutar),
+                originalCurrency: c.currency || 'TRY',
+              } : {}),
               date: c._verilisTarihi || toDateInputValue(),
               method: 'Çek',
               notes: [
@@ -1102,8 +1106,8 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
                 aciklama,
               ].filter(Boolean).join(' | '),
             }),
-          })
-        ),
+          });
+        }),
       ]);
       onSaved();
       onClose();
@@ -1171,10 +1175,24 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
                       <tr key={c.id} className="border-t border-slate-100">
                         <td className="px-3 py-2 font-medium">{fmtC(Number(c.tutar))} {c.currency}</td>
                         <td className="px-3 py-2">
-                          <div className="flex items-center gap-1">
-                            <input type="number" defaultValue={c.tutar} className="w-24 px-2 py-1 border border-slate-200 rounded text-xs text-right" readOnly />
-                            <span className="text-xs text-slate-400">{c.currency}</span>
-                          </div>
+                          {supplier.currency !== 'TRY' ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number" step="0.01" placeholder="0.00"
+                                value={fxAmounts[c.id] || ''}
+                                onChange={e => setFxAmounts(r => ({ ...r, [c.id]: e.target.value }))}
+                                className="w-24 px-2 py-1 border border-slate-300 rounded text-xs text-right outline-none focus:ring-1 focus:ring-teal-400"
+                              />
+                              <span className="text-xs font-semibold px-1.5 py-0.5 bg-slate-200 rounded text-slate-700 select-none cursor-default">
+                                {supplier.currency}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-slate-700">{fmtC(Number(c.tutar))}</span>
+                              <span className="text-xs text-slate-400">{c.currency || 'TRY'}</span>
+                            </div>
+                          )}
                         </td>
                         <td className="px-3 py-2 text-slate-500 text-xs">{fmtDateC(c.vadesi)}</td>
                         <td className="px-3 py-2 text-slate-500 text-xs max-w-[120px] truncate">{c.borclu}</td>

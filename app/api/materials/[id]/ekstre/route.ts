@@ -79,6 +79,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   type Entry = {
     id: string;
     date: Date;
+    createdAt: Date;
     type: 'alis' | 'satis' | 'iade' | 'fason_transfer' | 'artirma' | 'azaltma' | 'stok_guncelleme';
     party: string;
     partyId: string;
@@ -96,6 +97,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     entries.push({
       id: pm.id,
       date: pm.purchase.date,
+      createdAt: (pm as any).createdAt ?? pm.purchase.date,
       type: 'alis',
       party: pm.purchase.supplier?.name ?? '—',
       partyId: pm.purchase.supplierId,
@@ -118,6 +120,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       entries.push({
         id: ii.id,
         date: (ii as any).invoice.date,
+        createdAt: (ii as any).createdAt ?? (ii as any).invoice.date,
         type: 'satis',
         party: (ii as any).invoice.customer?.name ?? '—',
         partyId: (ii as any).invoice.customerId,
@@ -141,6 +144,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       entries.push({
         id: `ret-${ii.id}`,
         date: (ii as any).invoice.date,
+        createdAt: (ii as any).createdAt ?? (ii as any).invoice.date,
         type: 'iade',
         party: (ii as any).invoice.customer?.name ?? '—',
         partyId: (ii as any).invoice.customerId,
@@ -158,6 +162,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     entries.push({
       id: `tr-${t.id}`,
       date: t.transferDate,
+      createdAt: (t as any).createdAt ?? t.transferDate,
       type: 'fason_transfer',
       party: `${(t as any).subcontractor?.name ?? '—'} (Fasoncu)`,
       partyId: t.subcontractorId,
@@ -174,6 +179,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     entries.push({
       id: `adj-${adj.id}`,
       date: adj.createdAt,
+      createdAt: adj.createdAt,
       type: adj.type as any,
       party: 'Manuel Düzeltme',
       partyId: '',
@@ -186,7 +192,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     });
   }
 
-  entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  entries.sort((a, b) => {
+    const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (dateDiff !== 0) return dateDiff;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   return NextResponse.json({
     material: {

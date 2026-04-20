@@ -365,6 +365,7 @@ export default function NewInvoicePage() {
   const lockedCustomerId = searchParams?.get('customerId') ?? '';
   const prefillProductId = searchParams?.get('productId') ?? '';
   const prefillQuantity  = searchParams?.get('quantity')  ?? '';
+  const orderId          = searchParams?.get('orderId')   ?? '';
 
   const [form, setForm] = useState(() => {
     const now = new Date();
@@ -399,6 +400,27 @@ export default function NewInvoicePage() {
     fetch('/api/products').then(r => r.json()).then(d => setProducts(Array.isArray(d) ? d : [])).catch(console.error);
     fetch('/api/materials').then(r => r.json()).then(d => setMaterials(Array.isArray(d) ? d : [])).catch(console.error);
   }, []);
+
+  // Pre-fill from orderId (Siparişler → Satışa Çevir)
+  useEffect(() => {
+    if (!orderId || products.length === 0 || items.length > 0) return;
+    fetch(`/api/orders/${orderId}`)
+      .then(r => r.json())
+      .then((order: any) => {
+        if (!order?.id || !order.productId) return;
+        const product = products.find((p: any) => p.id === order.productId);
+        setItems([{
+          productId: order.productId,
+          description: order.productCode || product?.name || '',
+          quantity: String(order.totalQuantity || 1),
+          unitPrice: product ? toPriceInput(product.unitPrice) : '',
+          discount: '0',
+          notes: '',
+          partVariantsData: Array.isArray(order.partVariantsData) ? order.partVariantsData : undefined,
+        }]);
+      })
+      .catch(console.error);
+  }, [orderId, products]);
 
   // Pre-fill line item from URL params (e.g. coming from portal order "Satışa Çevir")
   useEffect(() => {
@@ -474,7 +496,7 @@ export default function NewInvoicePage() {
     setSaving(true);
     try {
       const dateTimeIso = new Date(`${form.date}T${form.time}`).toISOString();
-    const res = await fetch('/api/invoices', {
+      const res = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, date: dateTimeIso, items }),
@@ -482,6 +504,13 @@ export default function NewInvoicePage() {
       const data = await res.json();
       if (data.id) {
         setStockConfirm(null);
+        if (orderId) {
+          await fetch(`/api/orders/${orderId}/mark-converted`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoiceId: data.id }),
+          }).catch(console.error);
+        }
         router.push(form.customerId ? `/customers/${form.customerId}` : `/invoices/${data.id}`);
       }
     } catch (e) { console.error(e); }

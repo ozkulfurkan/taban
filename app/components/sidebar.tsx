@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
-  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText, UserCog, Calculator, Globe, Factory, ClipboardList
+  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText,
+  UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,13 +28,11 @@ export default function Sidebar() {
   const hasFullAccess = isAdmin || isOwner;
   const allowedPages: string[] = user?.allowedPages ?? [];
 
-  // Map href prefix → permission key (must match ALL_PAGES keys in settings/users)
   const PAGE_KEY: Record<string, string> = {
     '/dashboard': 'dashboard',
     '/customers': 'customers',
     '/suppliers': 'suppliers',
     '/invoices': 'invoices',
-    '/quotes': 'invoices',
     '/payments': 'payments',
     '/products': 'products',
     '/materials': 'materials',
@@ -43,6 +42,8 @@ export default function Sidebar() {
     '/settings': 'settings',
     '/subcontractors': 'fason',
     '/subcontractor-orders': 'fason',
+    '/personnel': 'personnel',
+    '/orders': 'orders',
   };
 
   const canSee = (href: string) => {
@@ -56,6 +57,7 @@ export default function Sidebar() {
     {
       links: [
         { href: '/dashboard', label: t('nav', 'home'), icon: LayoutDashboard },
+        { href: '/products/new?from=maliyet', label: 'Maliyet Hesaplama', icon: Calculator, special: true },
       ],
     },
     {
@@ -65,54 +67,80 @@ export default function Sidebar() {
         { href: '/suppliers', label: t('nav', 'suppliers'), icon: Truck },
         { href: '/invoices', label: t('nav', 'sales'), icon: Receipt },
         { href: '/purchases', label: 'Alışlar', icon: Package },
-        { href: '/quotes/new', label: t('nav', 'quotes'), icon: FileText },
         { href: '/payments', label: t('nav', 'payments'), icon: CreditCard },
       ],
     },
     {
-      title: t('nav', 'stock'),
+      title: 'Stok & Hesaplar',
       links: [
         { href: '/products', label: t('nav', 'products'), icon: BoxIcon },
         { href: '/materials', label: t('nav', 'rawMaterials'), icon: Package },
-      ],
-    },
-    {
-      title: t('nav', 'cashManagement'),
-      links: [
         { href: '/accounts', label: t('nav', 'accounts'), icon: Landmark },
         { href: '/cek-portfolyo', label: t('nav', 'checkPortfolio'), icon: ScrollText },
       ],
     },
     {
-      title: 'Fason',
+      title: 'Operasyonlar',
       links: [
+        { href: '/orders', label: 'Siparişler', icon: ClipboardList },
         { href: '/subcontractors', label: 'Fasoncular', icon: Factory },
         { href: '/subcontractor-orders', label: 'Fason Siparişleri', icon: Factory },
-      ],
-    },
-    {
-      title: 'Araçlar',
-      links: [
-        { href: '/products/new?from=maliyet', label: 'Maliyet Hesaplama', icon: Calculator, special: true },
+        { href: '/personnel', label: 'Personel Takip', icon: UserCheck },
+        ...(isAdmin || isOwner ? [{ href: '/portal-admin', label: 'Müşteri Portalı', icon: Globe }] : []),
       ],
     },
     {
       title: t('nav', 'system'),
       links: [
         { href: '/settings', label: t('nav', 'settings'), icon: Settings },
-        ...(isAdmin || user?.role === 'COMPANY_OWNER' ? [{ href: '/settings/users', label: t('nav', 'users'), icon: UserCog }] : []),
+        ...(isAdmin || isOwner ? [{ href: '/settings/users', label: t('nav', 'users'), icon: UserCog }] : []),
         ...(isAdmin ? [{ href: '/logs', label: 'Log Kayıtları', icon: ClipboardList }] : []),
         ...(isAdmin ? [{ href: '/admin', label: t('nav', 'admin'), icon: Shield }] : []),
-        ...(isAdmin || isOwner ? [{ href: '/portal-admin', label: 'Müşteri Portalı', icon: Globe }] : []),
       ],
     },
   ];
 
   const isActive = (href: string) => {
-    if (href === '/calculations/new') return pathname === href;
-    if (href === '/quotes/new') return pathname === href || pathname?.startsWith('/quotes');
     if (href === '/products/new?from=maliyet') return pathname === '/products/new';
+    if (href === '/quotes/new') return pathname === href || pathname?.startsWith('/quotes');
     return pathname === href || pathname?.startsWith(href + '/');
+  };
+
+  const bottomTabs = [
+    { href: '/dashboard', label: 'Ana Sayfa', icon: LayoutDashboard },
+    { href: '/customers', label: 'Ticari', icon: Users },
+    { href: '/products', label: 'Stok', icon: BoxIcon },
+    { href: '/accounts', label: 'Hesaplar', icon: Landmark },
+  ];
+
+  const NavLink = ({ link }: { link: LinkItem }) => {
+    const Icon = link.icon;
+    const active = isActive(link.href);
+    return (
+      <div className="relative group">
+        <Link
+          href={link.href}
+          onClick={() => setMobileOpen(false)}
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+            link.special
+              ? active
+                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'
+                : 'text-amber-300 hover:bg-amber-500/20 hover:text-amber-200'
+              : active
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                : 'text-blue-200 hover:bg-blue-800/50 hover:text-white'
+          }`}
+        >
+          {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
+          {!collapsed && <span>{link.label}</span>}
+        </Link>
+        {collapsed && (
+          <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
+            {link.label}
+          </span>
+        )}
+      </div>
+    );
   };
 
   const NavContent = () => (
@@ -120,16 +148,21 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="p-4 flex items-center justify-between border-b border-blue-800/30">
         {!collapsed && (
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">SC</div>
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/30">SC</div>
             <span className="text-white font-semibold text-lg">SoleCost</span>
+          </Link>
+        )}
+        {collapsed && (
+          <Link href="/dashboard" className="mx-auto">
+            <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/30">SC</div>
           </Link>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="text-blue-300 hover:text-white transition-colors hidden lg:block"
         >
-          <ChevronLeft className={`w-5 h-5 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
+          <ChevronLeft className={`w-5 h-5 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
         </button>
         <button onClick={() => setMobileOpen(false)} className="text-blue-300 hover:text-white lg:hidden">
           <X className="w-5 h-5" />
@@ -137,45 +170,28 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-2">
-        {sections.map((section, si) => (
-          <div key={si}>
-            {section.title && !collapsed && (
-              <p className="text-xs text-blue-400/60 px-4 pt-4 pb-1 uppercase tracking-widest font-semibold">
-                {section.title}
-              </p>
-            )}
-            {section.title && collapsed && si > 0 && (
-              <div className="mx-3 my-2 border-t border-blue-800/40" />
-            )}
-            <div className="px-2 space-y-0.5">
-              {section.links.filter(link => canSee(link.href)).map((link) => {
-                const Icon = link.icon;
-                const active = isActive(link.href);
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    title={collapsed ? link.label : undefined}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                      link.special
-                        ? active
-                          ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'
-                          : 'text-amber-300 hover:bg-amber-500/20 hover:text-amber-200'
-                        : active
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                          : 'text-blue-200 hover:bg-blue-800/50 hover:text-white'
-                    }`}
-                  >
-                    {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
-                    {!collapsed && <span>{link.label}</span>}
-                  </Link>
-                );
-              })}
+      <nav className="flex-1 overflow-y-auto sidebar-scroll py-2">
+        {sections.map((section, si) => {
+          const visibleLinks = section.links.filter(link => canSee(link.href));
+          if (visibleLinks.length === 0) return null;
+          return (
+            <div key={si}>
+              {section.title && !collapsed && (
+                <p className="text-[10px] text-blue-300/60 px-4 pt-3.5 pb-1 uppercase tracking-widest font-semibold">
+                  {section.title}
+                </p>
+              )}
+              {section.title && collapsed && si > 0 && (
+                <div className="mx-3 my-2 border-t border-blue-800/40" />
+              )}
+              <div className="px-2 space-y-0.5">
+                {visibleLinks.map((link) => (
+                  <NavLink key={link.href} link={link} />
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
     </div>
@@ -183,13 +199,31 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile toggle */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 lg:hidden bg-blue-900 text-white p-2 rounded-lg shadow-lg"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+      {/* Mobile bottom nav */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-slate-900 border-t border-blue-800/40 flex">
+        {bottomTabs.map(tab => {
+          const active = isActive(tab.href);
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={`flex-1 flex flex-col items-center py-2 gap-0.5 text-xs transition-colors ${
+                active ? 'text-blue-400' : 'text-blue-300/60 hover:text-blue-200'
+              }`}
+            >
+              <tab.icon className="w-5 h-5" />
+              <span>{tab.label}</span>
+            </Link>
+          );
+        })}
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="flex-1 flex flex-col items-center py-2 gap-0.5 text-xs text-blue-300/60 hover:text-blue-200 transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+          <span>Menü</span>
+        </button>
+      </nav>
 
       {/* Mobile overlay */}
       <AnimatePresence>
@@ -204,7 +238,7 @@ export default function Sidebar() {
         )}
       </AnimatePresence>
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.aside
