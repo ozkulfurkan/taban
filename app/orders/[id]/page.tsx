@@ -61,6 +61,7 @@ export default function OrderDetailPage() {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showSubModal, setShowSubModal] = useState(false);
   const [subcontractors, setSubcontractors] = useState<any[]>([]);
+  const [materialsList, setMaterialsList] = useState<any[]>([]);
   const [selectedSubId, setSelectedSubId] = useState('');
   const [subModalItem, setSubModalItem] = useState<any>(null);
 
@@ -87,6 +88,7 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     fetch('/api/subcontractors').then(r => r.json()).then(d => { if (Array.isArray(d)) setSubcontractors(d); });
+    fetch('/api/materials').then(r => r.json()).then(d => { if (Array.isArray(d)) setMaterialsList(d); });
   }, []);
 
   const handleSendToSubcontractor = () => {
@@ -340,7 +342,6 @@ export default function OrderDetailPage() {
           <dl className="grid grid-cols-2 gap-3 text-sm mb-4">
             {[
               ['Model', order.productCode || order.product?.name || '—'],
-              ['Malzeme', order.material || '—'],
               ['Toplam Adet', order.totalQuantity],
               ['Portal Kullanıcı', order.portalCustomer?.email || 'Admin tarafından oluşturuldu'],
               ['İstenen Termin', fmt(order.requestedDeliveryDate)],
@@ -352,6 +353,32 @@ export default function OrderDetailPage() {
               </div>
             ))}
           </dl>
+
+          {/* Hammadde Seçimleri */}
+          {Array.isArray(order.partVariantsData) && order.partVariantsData.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs text-slate-400 mb-2 uppercase tracking-wide font-semibold">Hammadde Seçimleri</p>
+              <div className="space-y-1.5">
+                {(order.partVariantsData as any[]).map((pv: any) => {
+                  const part = (order.product?.parts ?? []).find((p: any) => p.id === pv.partId);
+                  const mat = materialsList.find((m: any) => m.id === pv.materialId) ?? part?.material;
+                  return (
+                    <div key={pv.partId} className="flex items-center gap-2">
+                      <span className="w-20 flex-shrink-0 text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1.5 rounded-lg text-center">{part?.name ?? '—'}</span>
+                      <span className="text-sm font-medium text-slate-700">{mat?.name ?? pv.materialId}</span>
+                      {mat?.stock !== undefined && (
+                        <span className={`ml-auto text-xs font-medium px-2 py-1 rounded-lg ${
+                          mat.stock <= 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'
+                        }`}>
+                          {mat.stock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Paket İçeriği */}
           {isPackage && (

@@ -74,7 +74,7 @@ export default function NewOrderPage() {
       });
       const data = await res.json();
       if (data.id) {
-        router.push(`/orders/${data.id}`);
+        router.push('/orders');
       } else {
         alert(data.error || 'Hata oluştu');
       }
@@ -83,110 +83,111 @@ export default function NewOrderPage() {
     }
   };
 
+  const parts: any[] = selectedProduct?.parts ?? [];
+
   return (
     <AppShell>
-      <div className="max-w-2xl mx-auto space-y-5">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
+      <form onSubmit={handleSubmit} className="space-y-4 max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors">
+              <ArrowLeft className="w-5 h-5 text-slate-600" />
+            </button>
+            <h1 className="text-xl font-bold text-slate-800">Yeni Sipariş</h1>
+          </div>
+          <button type="submit" disabled={saving || totalQty === 0 || !form.customerId}
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? 'Kaydediliyor...' : 'Siparişi Oluştur'}
           </button>
-          <h1 className="text-xl font-bold text-slate-800">Yeni Sipariş</h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Müşteri */}
-          <div className="bg-white rounded-xl p-5 shadow-sm space-y-4">
-            <h2 className="font-semibold text-slate-700">Müşteri Bilgisi</h2>
+        {/* Top row: Müşteri | Ürün | Termin */}
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Müşteri *</label>
               <select required value={form.customerId} onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))}
                 className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                <option value="">— Müşteri Seçin —</option>
+                <option value="">— Seçin —</option>
                 {customers.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
-          </div>
-
-          {/* Ürün */}
-          <div className="bg-white rounded-xl p-5 shadow-sm space-y-4">
-            <h2 className="font-semibold text-slate-700">Ürün Bilgisi</h2>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ürün Kataloğu</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Ürün</label>
               <select value={form.productId} onChange={e => handleProductChange(e.target.value)}
                 className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                 <option value="">— Katalogdan Seç —</option>
                 {products.map((p: any) => <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ''}{p.name}</option>)}
               </select>
             </div>
-            {/* Hammadde Seçimi — ürünün parts'ı varsa */}
-            {selectedProduct && (selectedProduct.parts ?? []).length > 0 && (
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-slate-600">Hammadde Seçimi</label>
-                {(selectedProduct.parts as any[]).map((part: any) => {
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">İstenen Termin</label>
+              <input type="date" value={form.requestedDeliveryDate} onChange={e => setForm(f => ({ ...f, requestedDeliveryDate: e.target.value }))}
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+          </div>
+        </div>
+
+        {/* Main 2-column: Left=Hammadde, Right=Numara */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+          {/* Left — Hammadde Seçimi */}
+          <div className="bg-white rounded-xl p-4 shadow-sm space-y-4">
+            <h2 className="font-semibold text-slate-700 text-sm">Hammadde Seçimi</h2>
+            {parts.length === 0 ? (
+              <p className="text-sm text-slate-400">Ürün seçildikten sonra hammadde seçimi görünür.</p>
+            ) : (
+              <div className="space-y-3">
+                {parts.map((part: any) => {
                   const selectedMatId = partMaterials[part.id] ?? '';
                   const selectedMat = materials.find((m: any) => m.id === selectedMatId);
                   const stock = selectedMat?.stock ?? part.material?.stock ?? null;
                   return (
-                    <div key={part.id} className="flex items-center gap-2">
-                      <span className="w-24 flex-shrink-0 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1.5 rounded-lg text-center truncate">
-                        {part.name}
-                      </span>
-                      <select
-                        value={selectedMatId}
-                        onChange={e => setPartMaterials(prev => ({ ...prev, [part.id]: e.target.value }))}
-                        className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                      >
-                        <option value="">— Seç —</option>
-                        {materials.map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                      </select>
-                      <div className={`w-24 flex-shrink-0 px-2 py-1.5 border rounded-lg text-xs text-right ${
-                        stock === null ? 'bg-slate-50 border-slate-200 text-slate-400' :
-                        stock <= 0 ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
-                        'bg-green-50 border-green-200 text-green-700 font-medium'
-                      }`}>
-                        {stock !== null ? `${stock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : '—'}
+                    <div key={part.id} className="space-y-1.5">
+                      <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{part.name}</span>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={selectedMatId}
+                          onChange={e => setPartMaterials(prev => ({ ...prev, [part.id]: e.target.value }))}
+                          className="flex-1 min-w-0 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                        >
+                          <option value="">— Seç —</option>
+                          {materials.map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        </select>
+                        <div className={`w-28 flex-shrink-0 px-2.5 py-2 border rounded-lg text-xs text-right font-medium ${
+                          stock === null ? 'bg-slate-50 border-slate-200 text-slate-400' :
+                          stock <= 0 ? 'bg-red-50 border-red-200 text-red-600' :
+                          'bg-green-50 border-green-200 text-green-700'
+                        }`}>
+                          {stock !== null ? `${stock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : '—'}
+                        </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
             )}
-
-          </div>
-
-          {/* Numara Dağılımı */}
-          <div className="bg-white rounded-xl p-5 shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-700">Numara Dağılımı *</h2>
-              {totalQty > 0 && (
-                <span className="text-sm font-bold text-blue-600">{totalQty} çift</span>
-              )}
-            </div>
-            <SizeTable value={sizeDistribution} onChange={setSizeDistribution} sizes={selectedProduct?.sizes} />
-          </div>
-
-          {/* Diğer */}
-          <div className="bg-white rounded-xl p-5 shadow-sm space-y-4">
-            <h2 className="font-semibold text-slate-700">Diğer Bilgiler</h2>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">İstenen Termin</label>
-              <input type="date" value={form.requestedDeliveryDate} onChange={e => setForm(f => ({ ...f, requestedDeliveryDate: e.target.value }))}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-            </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Notlar</label>
               <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3}
+                placeholder="Opsiyonel sipariş notu..."
                 className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
             </div>
           </div>
 
-          <button type="submit" disabled={saving || totalQty === 0 || !form.customerId}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Kaydediliyor...' : 'Siparişi Oluştur'}
-          </button>
-        </form>
-      </div>
+          {/* Right — Numara Dağılımı */}
+          <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-slate-700 text-sm">Numara Dağılımı *</h2>
+              {totalQty > 0 && (
+                <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">{totalQty} çift</span>
+              )}
+            </div>
+            <SizeTable value={sizeDistribution} onChange={setSizeDistribution} sizes={selectedProduct?.sizes} />
+          </div>
+        </div>
+      </form>
     </AppShell>
   );
 }
