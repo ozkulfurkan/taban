@@ -48,6 +48,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const terminStr = confirmedDeliveryDate
     ? new Date(confirmedDeliveryDate).toLocaleDateString('tr-TR')
     : (order.confirmedDeliveryDate ? new Date(order.confirmedDeliveryDate).toLocaleDateString('tr-TR') : null);
+  if (!order.portalCustomer) return NextResponse.json({ ok: true });
+
   sendMail({
     to: order.portalCustomer.email,
     subject: `Siparişiniz güncellendi: ${label}`,
