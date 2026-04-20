@@ -32,9 +32,17 @@ const STATUS_BORDER: Record<string, string> = {
 const fmt = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString('tr-TR') : '—';
 
+function defaultDateFrom() {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 1);
+  return d.toISOString().split('T')[0];
+}
+
 export default function OrdersPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('ORDER_RECEIVED');
+  const [dateFrom, setDateFrom] = useState(defaultDateFrom);
+  const [dateTo, setDateTo] = useState(new Date().toISOString().split('T')[0]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uretimData, setUretimData] = useState<{ orders: any[]; materialRequirements: any[] } | null>(null);
@@ -42,12 +50,14 @@ export default function OrdersPage() {
 
   const loadOrders = useCallback(() => {
     setLoading(true);
-    const url = activeTab ? `/api/orders?status=${activeTab}` : '/api/orders';
-    fetch(url)
+    const params = new URLSearchParams({ status: activeTab });
+    if (dateFrom) params.set('from', dateFrom);
+    if (dateTo) params.set('to', dateTo);
+    fetch(`/api/orders?${params.toString()}`)
       .then(r => r.json())
       .then(d => setOrders(Array.isArray(d) ? d : []))
       .finally(() => setLoading(false));
-  }, [activeTab]);
+  }, [activeTab, dateFrom, dateTo]);
 
   useEffect(() => { loadOrders(); }, [loadOrders]);
 
@@ -79,6 +89,20 @@ export default function OrdersPage() {
             className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors">
             <Plus className="w-4 h-4" /> Yeni Sipariş
           </Link>
+        </div>
+
+        {/* Date filter */}
+        <div className="flex items-center gap-2 flex-wrap bg-white rounded-xl px-4 py-3 shadow-sm">
+          <span className="text-xs font-medium text-slate-500">Tarih:</span>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+            className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+          <span className="text-xs text-slate-400">—</span>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+            className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+          <button onClick={() => { setDateFrom(defaultDateFrom()); setDateTo(new Date().toISOString().split('T')[0]); }}
+            className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
+            Son 1 Ay
+          </button>
         </div>
 
         {/* Status tabs */}

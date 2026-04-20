@@ -14,12 +14,20 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get('status');
   const customerId = searchParams.get('customerId');
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
 
   const orders = await prisma.soleOrder.findMany({
     where: {
       companyId: user.companyId,
       ...(status ? { status: status as any } : {}),
       ...(customerId ? { customerId } : {}),
+      ...(from || to ? {
+        createdAt: {
+          ...(from ? { gte: new Date(from) } : {}),
+          ...(to ? { lte: new Date(to + 'T23:59:59') } : {}),
+        },
+      } : {}),
     },
     include: {
       customer: { select: { id: true, name: true } },

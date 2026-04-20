@@ -27,6 +27,33 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' },
   });
 
+  // Collect all pvData materialIds for bulk fetch
+  const allPvMatIds = new Set<string>();
+  const allPackageProductIds = new Set<string>();
+  for (const order of orders) {
+    const pvData = Array.isArray((order as any).partVariantsData) ? (order as any).partVariantsData : [];
+    for (const pv of pvData) if (pv.materialId) allPvMatIds.add(pv.materialId);
+    if (Array.isArray((order as any).orderItems)) {
+      for (const item of (order as any).orderItems as any[]) {
+        if (item.productId) allPackageProductIds.add(item.productId);
+      }
+    }
+  }
+
+  const [pvMaterials, packageProducts] = await Promise.all([
+    allPvMatIds.size > 0
+      ? prisma.material.findMany({ where: { id: { in: Array.from(allPvMatIds) } }, select: { id: true, name: true, stock: true } })
+      : [],
+    allPackageProductIds.size > 0
+      ? prisma.product.findMany({
+          where: { id: { in: Array.from(allPackageProductIds) } },
+          include: { parts: { include: { material: { select: { id: true, name: true, stock: true } } } } },
+        })
+      : [],
+  ]);
+  const pvMaterialMap = new Map(pvMaterials.map((m: any) => [m.id, m]));
+  const packageProductMap = new Map(packageProducts.map((p: any) => [p.id, p]));
+
   // Hammadde gereksinimi hesapla
   const materialMap = new Map<string, { materialId: string; name: string; requiredKg: number; currentStock: number }>();
 
@@ -38,7 +65,9 @@ export async function GET(req: NextRequest) {
       if (!product?.parts) return;
       for (const part of product.parts) {
         const matId = pvData.find(pv => pv.partId === part.id)?.materialId ?? part.materialId;
-        if (!matId || !part.material) continue;
+        if (!matId) continue;
+        const mat = pvMaterialMap.get(matId) ?? part.material;
+        if (!mat) continue;
         const kgNeeded = (part.gramsPerPiece * (1 + part.wasteRate / 100) * qty) / 1000;
         const existing = materialMap.get(matId);
         if (existing) {
@@ -46,9 +75,9 @@ export async function GET(req: NextRequest) {
         } else {
           materialMap.set(matId, {
             materialId: matId,
-            name: part.material.name,
+            name: mat.name,
             requiredKg: kgNeeded,
-            currentStock: part.material.stock ?? 0,
+            currentStock: mat.stock ?? 0,
           });
         }
       }
@@ -56,18 +85,9 @@ export async function GET(req: NextRequest) {
 
     const isPackage = Array.isArray((order as any).orderItems) && (order as any).orderItems.length > 0;
     if (isPackage) {
-      // Package: her item için product çek
       for (const item of (order as any).orderItems as any[]) {
         if (item.productId) {
-          const p = await prisma.product.findUnique({
-            where: { id: item.productId },
-            include: {
-              parts: {
-                include: { material: { select: { id: true, name: true, stock: true } } },
-              },
-            },
-          });
-          processProduct(p, item.totalQuantity || 0);
+          processProduct(packageProductMap.get(item.productId), item.totalQuantity || 0);
         }
       }
     } else {

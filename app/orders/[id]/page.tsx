@@ -21,7 +21,7 @@ const ALL_STATUSES = [
 const fmt = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString('tr-TR') : '—';
 
-function calcMaterialReqs(order: any): Array<{ materialId: string; name: string; requiredKg: number; currentStock: number }> {
+function calcMaterialReqs(order: any, materialsList: any[]): Array<{ materialId: string; name: string; requiredKg: number; currentStock: number }> {
   const map = new Map<string, { materialId: string; name: string; requiredKg: number; currentStock: number }>();
   if (!order?.product?.parts) return [];
 
@@ -30,7 +30,9 @@ function calcMaterialReqs(order: any): Array<{ materialId: string; name: string;
 
   for (const part of order.product.parts) {
     const matId = pvData.find(pv => pv.partId === part.id)?.materialId ?? part.materialId;
-    if (!matId || !part.material) continue;
+    if (!matId) continue;
+    const mat = materialsList.find((m: any) => m.id === matId) ?? part.material;
+    if (!mat) continue;
     const kgNeeded = (part.gramsPerPiece * (1 + part.wasteRate / 100) * order.totalQuantity) / 1000;
     const existing = map.get(matId);
     if (existing) {
@@ -38,9 +40,9 @@ function calcMaterialReqs(order: any): Array<{ materialId: string; name: string;
     } else {
       map.set(matId, {
         materialId: matId,
-        name: part.material.name,
+        name: mat.name,
         requiredKg: kgNeeded,
-        currentStock: part.material.stock ?? 0,
+        currentStock: mat.stock ?? 0,
       });
     }
   }
@@ -152,12 +154,12 @@ export default function OrderDetailPage() {
   if (!order || order.error) return <AppShell><p className="text-slate-500">Sipariş bulunamadı.</p></AppShell>;
 
   const isPackage = Array.isArray(order.orderItems) && order.orderItems.length > 0;
-  const materialReqs = order.status === 'IN_PRODUCTION' ? calcMaterialReqs(order) : [];
+  const materialReqs = order.status === 'IN_PRODUCTION' ? calcMaterialReqs(order, materialsList) : [];
 
   return (
     <>
     <AppShell>
-      <div className="max-w-2xl mx-auto space-y-5">
+      <div className="max-w-5xl mx-auto space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3 flex-wrap">
           <button onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors">
@@ -215,255 +217,254 @@ export default function OrderDetailPage() {
           <OrderStepper status={order.status} />
         </div>
 
-        {/* Hammadde Gereksinimleri (IN_PRODUCTION) */}
-        {order.status === 'IN_PRODUCTION' && materialReqs.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="bg-amber-50 border-b border-amber-100 px-4 py-3 flex items-center gap-2">
-              <Package className="w-4 h-4 text-amber-600" />
-              <h2 className="font-semibold text-amber-800 text-sm">Hammadde Gereksinimi</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 text-xs font-semibold text-slate-500 border-b">
-                    <th className="px-4 py-2.5 text-left">Hammadde</th>
-                    <th className="px-4 py-2.5 text-right">Gerekli (kg)</th>
-                    <th className="px-4 py-2.5 text-right">Stok (kg)</th>
-                    <th className="px-4 py-2.5 text-left">Durum</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {materialReqs.map(m => {
-                    const ok = m.currentStock >= m.requiredKg;
-                    return (
-                      <tr key={m.materialId} className={ok ? '' : 'bg-red-50/40'}>
-                        <td className="px-4 py-2.5 font-medium text-slate-700">{m.name}</td>
-                        <td className="px-4 py-2.5 text-right text-slate-600">{m.requiredKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td className="px-4 py-2.5 text-right text-slate-600">{m.currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td className="px-4 py-2.5">
-                          {ok ? (
-                            <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                              <CheckCircle className="w-3.5 h-3.5" /> Yeterli
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1 text-xs text-red-600 font-medium">
-                              <AlertTriangle className="w-3.5 h-3.5" />
-                              Eksik ({(m.requiredKg - m.currentStock).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg)
+        {/* 2-column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+
+          {/* LEFT — Sipariş Bilgileri + Beden */}
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl p-5 shadow-sm">
+              <h2 className="font-semibold text-slate-700 mb-4">Sipariş Bilgileri</h2>
+              <dl className="grid grid-cols-2 gap-3 text-sm mb-4">
+                {[
+                  ['Model', order.productCode || order.product?.name || '—'],
+                  ['Toplam Adet', order.totalQuantity],
+                  ['Portal Kullanıcı', order.portalCustomer?.email || 'Admin tarafından oluşturuldu'],
+                  ['İstenen Termin', fmt(order.requestedDeliveryDate)],
+                  ['Onaylanan Termin', fmt(order.confirmedDeliveryDate)],
+                ].map(([k, v]) => (
+                  <div key={String(k)}>
+                    <dt className="text-xs text-slate-400">{k}</dt>
+                    <dd className="font-medium text-slate-700">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+
+              {/* Hammadde Seçimleri */}
+              {Array.isArray(order.partVariantsData) && order.partVariantsData.length > 0 && (
+                <div className="mb-2">
+                  <p className="text-xs text-slate-400 mb-2 uppercase tracking-wide font-semibold">Hammadde Seçimleri</p>
+                  <div className="space-y-1.5">
+                    {(order.partVariantsData as any[]).map((pv: any) => {
+                      const part = (order.product?.parts ?? []).find((p: any) => p.id === pv.partId);
+                      const mat = materialsList.find((m: any) => m.id === pv.materialId) ?? part?.material;
+                      return (
+                        <div key={pv.partId} className="flex items-center gap-2">
+                          <span className="w-20 flex-shrink-0 text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-1.5 rounded-lg text-center">{part?.name ?? '—'}</span>
+                          <span className="text-sm font-medium text-slate-700">{mat?.name ?? pv.materialId}</span>
+                          {mat?.stock !== undefined && (
+                            <span className={`ml-auto text-xs font-medium px-2 py-1 rounded-lg ${mat.stock <= 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>
+                              {mat.stock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                             </span>
                           )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Status update */}
-        <div className="bg-white rounded-xl p-5 shadow-sm">
-          <h2 className="font-semibold text-slate-700 mb-4">Durum Güncelle</h2>
-          <form onSubmit={handleStatusUpdate} className="space-y-3">
-            <select value={statusForm.status} onChange={e => setStatusForm(f => ({ ...f, status: e.target.value }))}
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-              {ALL_STATUSES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-            </select>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Termin Tarihi</label>
-              <input type="date" value={statusForm.confirmedDeliveryDate}
-                onChange={e => setStatusForm(f => ({ ...f, confirmedDeliveryDate: e.target.value }))}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-            </div>
-            <input placeholder="Not (opsiyonel)" value={statusForm.note} onChange={e => setStatusForm(f => ({ ...f, note: e.target.value }))}
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-            <button type="submit" disabled={saving}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Kaydet
-            </button>
-          </form>
-        </div>
-
-        {/* Shipment */}
-        <div className="bg-white rounded-xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-slate-700">Sevkiyat</h2>
-            {!showShipForm && (
-              <button onClick={() => setShowShipForm(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium">
-                <Truck className="w-4 h-4" /> {order.shipment ? 'Güncelle' : 'Sevkiyat Ekle'}
-              </button>
-            )}
-          </div>
-          {order.shipment && !showShipForm && (
-            <dl className="grid grid-cols-2 gap-3 text-sm">
-              {[['Sevk Tarihi', fmt(order.shipment.shipmentDate)],
-                ['İrsaliye No', order.shipment.deliveryNoteNo || '—'],
-                ['Taşıyıcı', order.shipment.carrier || '—'],
-                ['Takip No', order.shipment.trackingNo || '—']].map(([k, v]) => (
-                <div key={String(k)}>
-                  <dt className="text-xs text-slate-400">{k}</dt>
-                  <dd className="font-medium text-slate-700">{v}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-          {showShipForm && (
-            <form onSubmit={handleShipment} className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="block text-xs font-medium text-slate-500 mb-1">Sevk Tarihi *</label>
-                <input type="date" required value={shipForm.shipmentDate} onChange={e => setShipForm(f => ({ ...f, shipmentDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
-              {[['deliveryNoteNo', 'İrsaliye No'], ['carrier', 'Taşıyıcı'], ['trackingNo', 'Takip No']].map(([field, label]) => (
-                <div key={field}>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">{label}</label>
-                  <input value={(shipForm as any)[field]} onChange={e => setShipForm(f => ({ ...f, [field]: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
-              ))}
-              <div className="col-span-2 flex gap-2">
-                <button type="button" onClick={() => setShowShipForm(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
-                <button type="submit" disabled={shipping}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium">
-                  {shipping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
-                  Kaydet
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-
-        {/* Order details */}
-        <div className="bg-white rounded-xl p-5 shadow-sm">
-          <h2 className="font-semibold text-slate-700 mb-4">Sipariş Detayları</h2>
-          <dl className="grid grid-cols-2 gap-3 text-sm mb-4">
-            {[
-              ['Model', order.productCode || order.product?.name || '—'],
-              ['Toplam Adet', order.totalQuantity],
-              ['Portal Kullanıcı', order.portalCustomer?.email || 'Admin tarafından oluşturuldu'],
-              ['İstenen Termin', fmt(order.requestedDeliveryDate)],
-              ['Onaylanan Termin', fmt(order.confirmedDeliveryDate)],
-            ].map(([k, v]) => (
-              <div key={String(k)}>
-                <dt className="text-xs text-slate-400">{k}</dt>
-                <dd className="font-medium text-slate-700">{v}</dd>
-              </div>
-            ))}
-          </dl>
-
-          {/* Hammadde Seçimleri */}
-          {Array.isArray(order.partVariantsData) && order.partVariantsData.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs text-slate-400 mb-2 uppercase tracking-wide font-semibold">Hammadde Seçimleri</p>
-              <div className="space-y-1.5">
-                {(order.partVariantsData as any[]).map((pv: any) => {
-                  const part = (order.product?.parts ?? []).find((p: any) => p.id === pv.partId);
-                  const mat = materialsList.find((m: any) => m.id === pv.materialId) ?? part?.material;
-                  return (
-                    <div key={pv.partId} className="flex items-center gap-2">
-                      <span className="w-20 flex-shrink-0 text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1.5 rounded-lg text-center">{part?.name ?? '—'}</span>
-                      <span className="text-sm font-medium text-slate-700">{mat?.name ?? pv.materialId}</span>
-                      {mat?.stock !== undefined && (
-                        <span className={`ml-auto text-xs font-medium px-2 py-1 rounded-lg ${
-                          mat.stock <= 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'
-                        }`}>
-                          {mat.stock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Paket İçeriği */}
-          {isPackage && (
-            <div className="mb-4 overflow-x-auto">
-              <p className="text-xs text-slate-400 mb-2 uppercase tracking-wide font-semibold">Paket İçeriği</p>
-              <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
-                <thead className="bg-slate-50">
-                  <tr>
-                    {['Model', 'Renk', 'Beden Dağılımı', 'Adet', ''].map(h => (
-                      <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b border-slate-200">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {(order.orderItems as any[]).map((item: any, i: number) => (
-                    <tr key={i} className="hover:bg-slate-50">
-                      <td className="px-3 py-2.5 text-xs font-semibold text-blue-600">{item.productCode || item.productName || '—'}</td>
-                      <td className="px-3 py-2.5 text-slate-600 text-xs">{item.color || '—'}</td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex flex-wrap gap-1">
-                          {Object.entries(item.sizeDistribution || {})
-                            .filter(([, qty]) => (qty as number) > 0)
-                            .map(([sz, qty]) => (
-                              <span key={sz} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50 text-blue-700 text-xs rounded font-medium">
-                                {sz}×{qty as number}
-                              </span>
-                            ))}
                         </div>
-                      </td>
-                      <td className="px-3 py-2.5 font-semibold text-slate-800 text-xs">{item.totalQuantity}</td>
-                      <td className="px-3 py-2.5">
-                        <button onClick={() => { setSubModalItem(item); setShowSubModal(true); }}
-                          className="flex items-center gap-1 px-2.5 py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg text-xs font-medium">
-                          <Factory className="w-3.5 h-3.5" /> Fasoncuya
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Renk Partileri */}
-          {!isPackage && Array.isArray(order.colorPartials) && order.colorPartials.length > 0 ? (
-            <div className="mb-4">
-              <p className="text-xs text-slate-400 mb-2">Renk Partileri</p>
-              <div className="flex flex-wrap gap-2">
-                {(order.colorPartials as any[]).map((p: any, i: number) => (
-                  <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                    <span className="text-blue-400">{p.name}</span>
-                    <span className="w-px h-3 bg-blue-200" />
-                    {p.color}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : order.color ? (
-            <div className="mb-4">
-              <p className="text-xs text-slate-400 mb-1">Renk</p>
-              <p className="font-medium text-slate-700">{order.color}</p>
-            </div>
-          ) : null}
-
-          <SizeTable value={order.sizeDistribution || {}} readOnly />
-        </div>
-
-        {/* Status history */}
-        {order.statusHistory?.length > 0 && (
-          <div className="bg-white rounded-xl p-5 shadow-sm">
-            <h2 className="font-semibold text-slate-700 mb-3">Durum Geçmişi</h2>
-            <div className="space-y-2">
-              {order.statusHistory.map((h: any) => (
-                <div key={h.id} className="flex items-start gap-3 text-sm">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
-                  <div>
-                    <span className="font-medium text-slate-700">{h.status.replace(/_/g, ' ')}</span>
-                    {h.note && <span className="text-slate-500 ml-2">— {h.note}</span>}
-                    <p className="text-xs text-slate-400">{new Date(h.createdAt).toLocaleString('tr-TR')}</p>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
+              )}
+
+              {/* Renk Partileri */}
+              {!isPackage && Array.isArray(order.colorPartials) && order.colorPartials.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs text-slate-400 mb-2">Renk Partileri</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(order.colorPartials as any[]).map((p: any, i: number) => (
+                      <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                        <span className="text-blue-400">{p.name}</span>
+                        <span className="w-px h-3 bg-blue-200" />
+                        {p.color}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Paket İçeriği */}
+              {isPackage && (
+                <div className="mt-3 overflow-x-auto">
+                  <p className="text-xs text-slate-400 mb-2 uppercase tracking-wide font-semibold">Paket İçeriği</p>
+                  <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
+                    <thead className="bg-slate-50">
+                      <tr>{['Model', 'Renk', 'Beden', 'Adet', ''].map(h => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b border-slate-200">{h}</th>
+                      ))}</tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(order.orderItems as any[]).map((item: any, i: number) => (
+                        <tr key={i} className="hover:bg-slate-50">
+                          <td className="px-3 py-2 text-xs font-semibold text-blue-600">{item.productCode || item.productName || '—'}</td>
+                          <td className="px-3 py-2 text-slate-600 text-xs">{item.color || '—'}</td>
+                          <td className="px-3 py-2">
+                            <div className="flex flex-wrap gap-1">
+                              {Object.entries(item.sizeDistribution || {}).filter(([, q]) => (q as number) > 0).map(([sz, q]) => (
+                                <span key={sz} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-xs rounded font-medium">{sz}×{q as number}</span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 font-semibold text-slate-800 text-xs">{item.totalQuantity}</td>
+                          <td className="px-3 py-2">
+                            <button onClick={() => { setSubModalItem(item); setShowSubModal(true); }}
+                              className="flex items-center gap-1 px-2 py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded text-xs font-medium">
+                              <Factory className="w-3 h-3" /> Fasoncu
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Beden Dağılımı */}
+            <div className="bg-white rounded-xl p-5 shadow-sm">
+              <h2 className="font-semibold text-slate-700 mb-3">Beden Dağılımı</h2>
+              <SizeTable value={order.sizeDistribution || {}} readOnly />
             </div>
           </div>
-        )}
+
+          {/* RIGHT — Yönetim */}
+          <div className="space-y-4">
+            {/* Status update */}
+            <div className="bg-white rounded-xl p-5 shadow-sm">
+              <h2 className="font-semibold text-slate-700 mb-4">Durum Güncelle</h2>
+              <form onSubmit={handleStatusUpdate} className="space-y-3">
+                <select value={statusForm.status} onChange={e => setStatusForm(f => ({ ...f, status: e.target.value }))}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                  {ALL_STATUSES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                </select>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Termin Tarihi</label>
+                  <input type="date" value={statusForm.confirmedDeliveryDate}
+                    onChange={e => setStatusForm(f => ({ ...f, confirmedDeliveryDate: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <input placeholder="Not (opsiyonel)" value={statusForm.note} onChange={e => setStatusForm(f => ({ ...f, note: e.target.value }))}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <button type="submit" disabled={saving}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Kaydet
+                </button>
+              </form>
+            </div>
+
+            {/* Shipment */}
+            <div className="bg-white rounded-xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-slate-700">Sevkiyat</h2>
+                {!showShipForm && (
+                  <button onClick={() => setShowShipForm(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium">
+                    <Truck className="w-4 h-4" /> {order.shipment ? 'Güncelle' : 'Sevkiyat Ekle'}
+                  </button>
+                )}
+              </div>
+              {order.shipment && !showShipForm && (
+                <dl className="grid grid-cols-2 gap-3 text-sm">
+                  {[['Sevk Tarihi', fmt(order.shipment.shipmentDate)],
+                    ['İrsaliye No', order.shipment.deliveryNoteNo || '—'],
+                    ['Taşıyıcı', order.shipment.carrier || '—'],
+                    ['Takip No', order.shipment.trackingNo || '—']].map(([k, v]) => (
+                    <div key={String(k)}>
+                      <dt className="text-xs text-slate-400">{k}</dt>
+                      <dd className="font-medium text-slate-700">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {showShipForm && (
+                <form onSubmit={handleShipment} className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Sevk Tarihi *</label>
+                    <input type="date" required value={shipForm.shipmentDate} onChange={e => setShipForm(f => ({ ...f, shipmentDate: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  {[['deliveryNoteNo', 'İrsaliye No'], ['carrier', 'Taşıyıcı'], ['trackingNo', 'Takip No']].map(([field, label]) => (
+                    <div key={field}>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">{label}</label>
+                      <input value={(shipForm as any)[field]} onChange={e => setShipForm(f => ({ ...f, [field]: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                  ))}
+                  <div className="col-span-2 flex gap-2">
+                    <button type="button" onClick={() => setShowShipForm(false)}
+                      className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+                    <button type="submit" disabled={shipping}
+                      className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium">
+                      {shipping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
+                      Kaydet
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* Hammadde Gereksinimleri (IN_PRODUCTION) */}
+            {order.status === 'IN_PRODUCTION' && materialReqs.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="bg-amber-50 border-b border-amber-100 px-4 py-3 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-amber-600" />
+                  <h2 className="font-semibold text-amber-800 text-sm">Hammadde Gereksinimi</h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 text-xs font-semibold text-slate-500 border-b">
+                        <th className="px-4 py-2.5 text-left">Hammadde</th>
+                        <th className="px-4 py-2.5 text-right">Gerekli (kg)</th>
+                        <th className="px-4 py-2.5 text-right">Stok (kg)</th>
+                        <th className="px-4 py-2.5 text-left">Durum</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {materialReqs.map(m => {
+                        const ok = m.currentStock >= m.requiredKg;
+                        return (
+                          <tr key={m.materialId} className={ok ? '' : 'bg-red-50/40'}>
+                            <td className="px-4 py-2.5 font-medium text-slate-700">{m.name}</td>
+                            <td className="px-4 py-2.5 text-right text-slate-600">{m.requiredKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td className="px-4 py-2.5 text-right text-slate-600">{m.currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td className="px-4 py-2.5">
+                              {ok ? (
+                                <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium"><CheckCircle className="w-3.5 h-3.5" /> Yeterli</span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-xs text-red-600 font-medium">
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                  Eksik ({(m.requiredKg - m.currentStock).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg)
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Status history */}
+            {order.statusHistory?.length > 0 && (
+              <div className="bg-white rounded-xl p-5 shadow-sm">
+                <h2 className="font-semibold text-slate-700 mb-3">Durum Geçmişi</h2>
+                <div className="space-y-2">
+                  {order.statusHistory.map((h: any) => (
+                    <div key={h.id} className="flex items-start gap-3 text-sm">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium text-slate-700">{h.status.replace(/_/g, ' ')}</span>
+                        {h.note && <span className="text-slate-500 ml-2">— {h.note}</span>}
+                        <p className="text-xs text-slate-400">{new Date(h.createdAt).toLocaleString('tr-TR')}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
     </AppShell>
 
