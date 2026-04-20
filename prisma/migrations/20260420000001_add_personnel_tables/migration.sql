@@ -63,6 +63,46 @@ CREATE TABLE IF NOT EXISTS "SubcontractorStock" (
     CONSTRAINT "SubcontractorStock_pkey" PRIMARY KEY ("id")
 );
 
+-- PersonnelLeave
+CREATE TABLE IF NOT EXISTS "PersonnelLeave" (
+    "id" TEXT NOT NULL,
+    "companyId" TEXT NOT NULL,
+    "employeeId" TEXT NOT NULL,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "type" TEXT NOT NULL,
+    "days" DOUBLE PRECISION NOT NULL,
+    "note" TEXT,
+    "createdBy" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "PersonnelLeave_pkey" PRIMARY KEY ("id")
+);
+
+-- PersonnelOvertime
+CREATE TABLE IF NOT EXISTS "PersonnelOvertime" (
+    "id" TEXT NOT NULL,
+    "companyId" TEXT NOT NULL,
+    "employeeId" TEXT NOT NULL,
+    "date" TIMESTAMP(3) NOT NULL,
+    "hours" DOUBLE PRECISION NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "note" TEXT,
+    "createdBy" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "PersonnelOvertime_pkey" PRIMARY KEY ("id")
+);
+
+-- PersonnelNote
+CREATE TABLE IF NOT EXISTS "PersonnelNote" (
+    "id" TEXT NOT NULL,
+    "companyId" TEXT NOT NULL,
+    "employeeId" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "createdBy" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "PersonnelNote_pkey" PRIMARY KEY ("id")
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS "Employee_companyId_idx" ON "Employee"("companyId");
 CREATE INDEX IF NOT EXISTS "PersonnelLedger_employeeId_idx" ON "PersonnelLedger"("employeeId");
@@ -71,6 +111,9 @@ CREATE INDEX IF NOT EXISTS "PersonnelDocument_employeeId_idx" ON "PersonnelDocum
 CREATE INDEX IF NOT EXISTS "PersonnelDocument_companyId_idx" ON "PersonnelDocument"("companyId");
 CREATE INDEX IF NOT EXISTS "SubcontractorStock_subcontractorId_idx" ON "SubcontractorStock"("subcontractorId");
 CREATE UNIQUE INDEX IF NOT EXISTS "SubcontractorStock_subcontractorId_materialId_key" ON "SubcontractorStock"("subcontractorId", "materialId");
+CREATE INDEX IF NOT EXISTS "PersonnelLeave_employeeId_idx" ON "PersonnelLeave"("employeeId");
+CREATE INDEX IF NOT EXISTS "PersonnelOvertime_employeeId_idx" ON "PersonnelOvertime"("employeeId");
+CREATE INDEX IF NOT EXISTS "PersonnelNote_employeeId_idx" ON "PersonnelNote"("employeeId");
 
 -- Foreign Keys (skip if already exists)
 DO $$ BEGIN
@@ -112,5 +155,26 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'SubcontractorStock_materialId_fkey') THEN
     ALTER TABLE "SubcontractorStock" ADD CONSTRAINT "SubcontractorStock_materialId_fkey"
       FOREIGN KEY ("materialId") REFERENCES "Material"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'PersonnelLeave_employeeId_fkey') THEN
+    ALTER TABLE "PersonnelLeave" ADD CONSTRAINT "PersonnelLeave_employeeId_fkey"
+      FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'PersonnelOvertime_employeeId_fkey') THEN
+    ALTER TABLE "PersonnelOvertime" ADD CONSTRAINT "PersonnelOvertime_employeeId_fkey"
+      FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'PersonnelNote_employeeId_fkey') THEN
+    ALTER TABLE "PersonnelNote" ADD CONSTRAINT "PersonnelNote_employeeId_fkey"
+      FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
 END $$;
