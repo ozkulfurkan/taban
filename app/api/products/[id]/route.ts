@@ -18,6 +18,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
         orderBy: { sortOrder: 'asc' },
       },
       extraCosts: { orderBy: { sortOrder: 'asc' } },
+      category: { select: { id: true, name: true } },
     },
   });
   if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -44,6 +45,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         currency: productFields.currency || 'USD',
         stock: parseFloat(productFields.stock) || 0,
         notes: productFields.notes || null,
+        categoryId: productFields.categoryId || null,
         sizes: Array.isArray(productFields.sizes) ? productFields.sizes : [],
         laborCostPerPair: parseFloat(productFields.laborCostPerPair) || 0,
         laborCurrency: productFields.laborCurrency || 'USD',

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, Pencil, X,
@@ -9,7 +10,7 @@ import {
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
-const UNITS = ['çift', 'adet', 'kg', 'metre', 'paket'];
+const ALL_UNITS = ['çift', 'adet', 'kg', 'ton', 'lt', 'metre', 'paket'];
 const CURRENCIES = ['USD', 'EUR', 'TRY'];
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 const fmt2 = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -31,8 +32,13 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const costRef = useRef<HTMLDivElement>(null);
+  const { data: session } = useSession();
+  const companyType = (session?.user as any)?.companyType ?? 'SOLE_MANUFACTURER';
+  const isMaterial = companyType === 'MATERIAL_SUPPLIER';
+  const UNITS = isMaterial ? ['kg', 'ton', 'lt', 'adet'] : ALL_UNITS;
 
   const [product, setProduct] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
   const [company, setCompany] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -97,6 +103,7 @@ export default function ProductDetailPage() {
           currency: prod.currency || 'USD',
           stock: String(prod.stock ?? ''),
           notes: prod.notes || '',
+          categoryId: prod.categoryId || '',
           laborCostPerPair: toPriceInput(prod.laborCostPerPair ?? '0'),
           laborCurrency: prod.laborCurrency || 'USD',
           ciftPerKoli: String(prod.ciftPerKoli ?? '0'),
@@ -124,6 +131,10 @@ export default function ProductDetailPage() {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
+    fetch('/api/product-categories').then(r => r.json()).then(d => setCategories(Array.isArray(d) ? d : []));
+  }, []);
+
+  useEffect(() => {
     if (searchParams?.get('edit') === 'true') setEditing(true);
   }, [searchParams]);
 
@@ -141,6 +152,7 @@ export default function ProductDetailPage() {
           unitPrice: fromPriceInput(editForm.unitPrice),
           laborCostPerPair: fromPriceInput(editForm.laborCostPerPair),
           koliFiyati: fromPriceInput(editForm.koliFiyati),
+          categoryId: editForm.categoryId || null,
           parts: editParts,
           extraCosts: editExtras.map((e: any) => ({ ...e, amount: fromPriceInput(e.amount) })),
           sizes: editSizes,
@@ -356,6 +368,18 @@ export default function ProductDetailPage() {
                     )}
                   </div>
                 ))}
+                <div className="px-4 py-2.5">
+                  <span className="text-xs font-semibold text-slate-500 block mb-1">Kategori</span>
+                  {editing ? (
+                    <select value={editForm.categoryId} onChange={e => setEditForm((p: any) => ({ ...p, categoryId: e.target.value }))}
+                      className="w-full px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none focus:ring-1 focus:ring-blue-400">
+                      <option value="">— Seç —</option>
+                      {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  ) : (
+                    <p className="text-sm text-slate-600">{product.category?.name || <span className="text-slate-300 italic">—</span>}</p>
+                  )}
+                </div>
                 <div className="px-4 py-2.5">
                   <span className="text-xs font-semibold text-slate-500 block mb-1">Notlar</span>
                   {editing ? (

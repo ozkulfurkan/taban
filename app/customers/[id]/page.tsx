@@ -731,6 +731,10 @@ export default function CustomerDetailPage() {
   const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null);
   const [paymentsShown, setPaymentsShown] = useState(10);
   const [cekler, setCekler] = useState<any[]>([]);
+  const [customPrices, setCustomPrices] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [priceForm, setPriceForm] = useState({ productId: '', unitPrice: '', currency: 'TRY' });
+  const [priceSaving, setPriceSaving] = useState(false);
 
   const STATUS_LABEL: Record<string, string> = {
     DRAFT: t('invoices', 'statusDraft'),
@@ -757,6 +761,31 @@ export default function CustomerDetailPage() {
   };
 
   useEffect(() => { load(); }, [params?.id]);
+
+  useEffect(() => {
+    if (!params?.id) return;
+    fetch(`/api/customers/${params.id}/prices`).then(r => r.json()).then(d => setCustomPrices(Array.isArray(d) ? d : []));
+    fetch('/api/products').then(r => r.json()).then(d => setAllProducts(Array.isArray(d) ? d : []));
+  }, [params?.id]);
+
+  const handleAddCustomPrice = async () => {
+    if (!priceForm.productId || !priceForm.unitPrice) return;
+    setPriceSaving(true);
+    await fetch(`/api/customers/${params.id}/prices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId: priceForm.productId, unitPrice: parseFloat(priceForm.unitPrice.replace(',', '.')), currency: priceForm.currency }),
+    });
+    const updated = await fetch(`/api/customers/${params.id}/prices`).then(r => r.json());
+    setCustomPrices(Array.isArray(updated) ? updated : []);
+    setPriceForm({ productId: '', unitPrice: '', currency: 'TRY' });
+    setPriceSaving(false);
+  };
+
+  const handleDeleteCustomPrice = async (productId: string) => {
+    await fetch(`/api/customers/${params.id}/prices/${productId}`, { method: 'DELETE' });
+    setCustomPrices(prev => prev.filter(p => p.productId !== productId));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -1279,6 +1308,89 @@ export default function CustomerDetailPage() {
               </div>
             );
           })()}
+        </div>
+
+        {/* Özel Fiyatlar */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
+            <h2 className="font-semibold text-white text-sm uppercase tracking-wide">Özel Fiyatlar</h2>
+            <span className="text-slate-300 text-xs">{customPrices.length} ürün</span>
+          </div>
+          <div className="p-4 border-b border-slate-100">
+            <div className="flex gap-2 flex-wrap">
+              <select
+                value={priceForm.productId}
+                onChange={e => setPriceForm(f => ({ ...f, productId: e.target.value }))}
+                className="flex-1 min-w-[160px] px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+              >
+                <option value="">— Ürün Seç —</option>
+                {allProducts.map((p: any) => (
+                  <option key={p.id} value={p.id}>{p.name}{p.code ? ` (${p.code})` : ''}</option>
+                ))}
+              </select>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={priceForm.unitPrice}
+                onChange={e => setPriceForm(f => ({ ...f, unitPrice: e.target.value }))}
+                placeholder="Fiyat"
+                className="w-28 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+              <select
+                value={priceForm.currency}
+                onChange={e => setPriceForm(f => ({ ...f, currency: e.target.value }))}
+                className="w-24 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+              >
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <button
+                onClick={handleAddCustomPrice}
+                disabled={priceSaving || !priceForm.productId || !priceForm.unitPrice}
+                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+              >
+                {priceSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlusCircle className="w-3.5 h-3.5" />}
+                Ekle / Güncelle
+              </button>
+            </div>
+          </div>
+          {customPrices.length === 0 ? (
+            <div className="py-8 text-center text-slate-400 text-sm">Henüz özel fiyat eklenmemiş</div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+                  <th className="px-4 py-2 text-left">Ürün</th>
+                  <th className="px-4 py-2 text-left">Kod</th>
+                  <th className="px-4 py-2 text-right">Katalog Fiyatı</th>
+                  <th className="px-4 py-2 text-right">Özel Fiyat</th>
+                  <th className="w-8"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {customPrices.map((cp: any) => (
+                  <tr key={cp.productId} className="hover:bg-slate-50 group">
+                    <td className="px-4 py-2.5 font-medium text-slate-800">{cp.product?.name ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-slate-400 text-xs">{cp.product?.code ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-right text-slate-400 text-xs">
+                      {cp.product?.unitPrice != null ? `${cp.product.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cp.product.currency}` : '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-blue-700">
+                      {cp.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-xs font-normal text-slate-400 ml-1">{cp.currency}</span>
+                    </td>
+                    <td className="px-2 py-2.5 text-center">
+                      <button
+                        onClick={() => handleDeleteCustomPrice(cp.productId)}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Return Invoices */}

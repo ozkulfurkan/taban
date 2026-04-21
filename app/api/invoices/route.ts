@@ -123,8 +123,9 @@ export async function POST(req: NextRequest) {
   });
   if (stockUpdates.length > 0) await Promise.all(stockUpdates);
 
-  // Otomatik hammadde stoğu düşümü (sadece satış faturalarında)
-  if (productItems.length > 0 && !isReturn) {
+  // Otomatik hammadde stoğu düşümü (sadece SOLE_MANUFACTURER satış faturalarında)
+  const company = await prisma.company.findUnique({ where: { id: user.companyId }, select: { companyType: true } });
+  if (productItems.length > 0 && !isReturn && company?.companyType !== 'MATERIAL_SUPPLIER') {
     const ids: string[] = [];
 
 for (let i = 0; i < productItems.length; i++) {
