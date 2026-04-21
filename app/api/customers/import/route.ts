@@ -49,9 +49,10 @@ export async function POST(req: NextRequest) {
     const address = String(row['Adres'] ?? '').trim() || null;
     const email = String(row['E-posta'] ?? '').trim() || null;
     const notes = String(row['Notlar'] ?? '').trim() || null;
+    const baslangicBakiye = parseFloat(String(row['Başlangıç Bakiyesi'] ?? '').replace(',', '.')) || 0;
 
     try {
-      await prisma.customer.create({
+      const customer = await prisma.customer.create({
         data: {
           companyId: user.companyId,
           name,
@@ -64,6 +65,22 @@ export async function POST(req: NextRequest) {
           notes,
         },
       });
+
+      if (baslangicBakiye > 0) {
+        await prisma.payment.create({
+          data: {
+            companyId: user.companyId,
+            customerId: customer.id,
+            amount: baslangicBakiye,
+            currency,
+            date: new Date(),
+            method: 'Borç Fişi',
+            type: 'RECEIVED',
+            notes: 'Başlangıç bakiyesi',
+          },
+        });
+      }
+
       results.created++;
     } catch (err: any) {
       results.errors.push(`Satır ${rowNum} (${name}): Kaydedilemedi`);

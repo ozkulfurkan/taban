@@ -106,7 +106,7 @@ function ItemModal({ initial, currency, products, materials, customerPrices, onC
               <select value={item.productId ?? ''} onChange={e => handleProductSelect(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
                 <option value="">{t('newInvoice', 'manualEntry')}</option>
-                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {products.map(p => <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ${p.name}` : p.name}</option>)}
               </select>
             </div>
           )}
@@ -707,7 +707,7 @@ export default function NewInvoicePage() {
                           onMouseDown={() => handleProductClick(p)}
                           className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-blue-500 hover:text-white text-sm transition-colors text-left"
                         >
-                          <span className="font-medium">{p.name}</span>
+                          <span className="font-medium">{p.name}{p.code ? <span className="ml-1.5 text-xs font-normal opacity-60">{p.code}</span> : null}</span>
                           <span className="text-xs opacity-70 ml-2 flex-shrink-0">{p.stock} {p.unit}</span>
                         </button>
                       ))

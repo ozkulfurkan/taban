@@ -7,6 +7,7 @@ import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, Pencil, X,
   Package, Calculator, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Warehouse,
+  FileText, Users,
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
@@ -58,6 +59,16 @@ export default function ProductDetailPage() {
   // Stok yönetimi
   const [stokAmt, setStokAmt] = useState('');
   const [stokLoading, setStokLoading] = useState(false);
+
+  // Stok hareketleri (MATERIAL_SUPPLIER)
+  const [ekstre, setEkstre] = useState<any[]>([]);
+  const [ekstreLoading, setEkstreLoading] = useState(false);
+
+  // Müşteri özel fiyatlar
+  const [productPrices, setProductPrices] = useState<any[]>([]);
+  const [allCustomers, setAllCustomers] = useState<any[]>([]);
+  const [ppForm, setPpForm] = useState({ customerId: '', unitPrice: '', currency: 'TRY' });
+  const [ppSaving, setPpSaving] = useState(false);
 
   const handleStok = async (sign: 1 | -1) => {
     const amt = parseFloat(stokAmt);
@@ -138,6 +149,20 @@ export default function ProductDetailPage() {
     if (searchParams?.get('edit') === 'true') setEditing(true);
   }, [searchParams]);
 
+  useEffect(() => {
+    if (!params?.id || !isMaterial) return;
+    setEkstreLoading(true);
+    fetch(`/api/products/${params.id}/ekstre`).then(r => r.json()).then(d => {
+      setEkstre(Array.isArray(d?.entries) ? d.entries : []);
+    }).finally(() => setEkstreLoading(false));
+  }, [params?.id, isMaterial]);
+
+  useEffect(() => {
+    if (!params?.id) return;
+    fetch(`/api/products/${params.id}/prices`).then(r => r.json()).then(d => setProductPrices(Array.isArray(d) ? d : []));
+    fetch('/api/customers').then(r => r.json()).then(d => setAllCustomers(Array.isArray(d) ? d : []));
+  }, [params?.id]);
+
   const handleSave = async () => {
     // Validate: part name required
     const emptyName = editParts.find(p => !p.name.trim());
@@ -161,6 +186,25 @@ export default function ProductDetailPage() {
       const updated = await res.json();
       if (!updated?.error) { setProduct(updated); setEditing(false); }
     } finally { setSaving(false); }
+  };
+
+  const handleAddProductPrice = async () => {
+    if (!ppForm.customerId || !ppForm.unitPrice) return;
+    setPpSaving(true);
+    await fetch(`/api/products/${params.id}/prices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customerId: ppForm.customerId, unitPrice: parseFloat(ppForm.unitPrice.replace(',', '.')), currency: ppForm.currency }),
+    });
+    const updated = await fetch(`/api/products/${params.id}/prices`).then(r => r.json());
+    setProductPrices(Array.isArray(updated) ? updated : []);
+    setPpForm({ customerId: '', unitPrice: '', currency: 'TRY' });
+    setPpSaving(false);
+  };
+
+  const handleDeleteProductPrice = async (customerId: string) => {
+    await fetch(`/api/products/${params.id}/prices/${customerId}`, { method: 'DELETE' });
+    setProductPrices(prev => prev.filter(p => p.customerId !== customerId));
   };
 
   const handleUpdatePrice = async () => {
@@ -842,6 +886,137 @@ export default function ProductDetailPage() {
 
           </div>
         </div>
+      </div>
+
+      {/* Stok Hareketleri — sadece MATERIAL_SUPPLIER */}
+      {isMaterial && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden mt-6">
+          <div className="bg-teal-700 px-4 py-3 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-white" />
+            <h2 className="text-white font-semibold text-sm">Stok Hareketleri</h2>
+          </div>
+          {ekstreLoading ? (
+            <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-teal-600" /></div>
+          ) : ekstre.length === 0 ? (
+            <div className="text-center py-10 text-slate-400 text-sm">Henüz hareket kaydı yok</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
+                    <th className="px-4 py-2.5 text-left">Tarih</th>
+                    <th className="px-4 py-2.5 text-left">İşlem</th>
+                    <th className="px-4 py-2.5 text-left">Müşteri</th>
+                    <th className="px-4 py-2.5 text-left">Fatura No</th>
+                    <th className="px-4 py-2.5 text-right">Miktar</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {ekstre.map((e: any) => (
+                    <tr key={e.id} className="hover:bg-slate-50/50">
+                      <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">
+                        {new Date(e.date).toLocaleDateString('tr-TR')}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {e.type === 'satis'
+                          ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Satış</span>
+                          : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">İade</span>
+                        }
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-600 text-xs">{e.party}</td>
+                      <td className="px-4 py-2.5 text-slate-400 text-xs">{e.invoiceNo ?? '—'}</td>
+                      <td className={`px-4 py-2.5 text-right font-semibold ${e.qty > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {e.qty > 0 ? '+' : ''}{e.qty.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {product?.unit}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Müşteri Özel Fiyatlar */}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden mt-6">
+        <div className="bg-slate-700 px-4 py-3 flex items-center gap-2">
+          <Users className="w-4 h-4 text-white" />
+          <h2 className="text-white font-semibold text-sm">Müşteri Özel Fiyatlar</h2>
+          <span className="text-slate-300 text-xs ml-auto">{productPrices.length} müşteri</span>
+        </div>
+        <div className="p-4 border-b border-slate-100">
+          <div className="flex gap-2 flex-wrap">
+            <select
+              value={ppForm.customerId}
+              onChange={e => setPpForm(f => ({ ...f, customerId: e.target.value }))}
+              className="flex-1 min-w-[160px] px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+            >
+              <option value="">— Müşteri Seç —</option>
+              {allCustomers.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={ppForm.unitPrice}
+              onChange={e => setPpForm(f => ({ ...f, unitPrice: e.target.value }))}
+              placeholder="Fiyat"
+              className="w-28 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+            <select
+              value={ppForm.currency}
+              onChange={e => setPpForm(f => ({ ...f, currency: e.target.value }))}
+              className="w-24 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+            >
+              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <button
+              onClick={handleAddProductPrice}
+              disabled={ppSaving || !ppForm.customerId || !ppForm.unitPrice}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+            >
+              {ppSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              Ekle / Güncelle
+            </button>
+          </div>
+        </div>
+        {productPrices.length === 0 ? (
+          <div className="py-8 text-center text-slate-400 text-sm">Henüz özel fiyat eklenmemiş</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+                <th className="px-4 py-2 text-left">Müşteri</th>
+                <th className="px-4 py-2 text-right">Katalog Fiyatı</th>
+                <th className="px-4 py-2 text-right">Özel Fiyat</th>
+                <th className="w-8"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {productPrices.map((pp: any) => (
+                <tr key={pp.customerId} className="hover:bg-slate-50 group">
+                  <td className="px-4 py-2.5 font-medium text-slate-800">{pp.customer?.name ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-right text-slate-400 text-xs">
+                    {product ? `${fmt2(product.unitPrice)} ${product.currency}` : '—'}
+                  </td>
+                  <td className="px-4 py-2.5 text-right font-semibold text-blue-700">
+                    {pp.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <span className="text-xs font-normal text-slate-400 ml-1">{pp.currency}</span>
+                  </td>
+                  <td className="px-2 py-2.5 text-center">
+                    <button
+                      onClick={() => handleDeleteProductPrice(pp.customerId)}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Price Warning Modal */}
