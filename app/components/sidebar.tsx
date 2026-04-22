@@ -58,7 +58,10 @@ export default function Sidebar() {
     {
       links: [
         { href: '/dashboard', label: t('nav', 'home'), icon: LayoutDashboard },
-        ...(!isMaterial ? [{ href: '/products/new?from=maliyet', label: 'Maliyet Hesaplama', icon: Calculator, special: true }] : []),
+        ...(isMaterial
+          ? [{ href: '/hesaplayici', label: 'Hesaplayıcı', icon: Calculator, special: true }]
+          : [{ href: '/products/new?from=maliyet', label: 'Maliyet Hesaplama', icon: Calculator, special: true }]
+        ),
       ],
     },
     {
