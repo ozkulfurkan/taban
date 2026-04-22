@@ -268,8 +268,8 @@ export default function ProductsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  <th className="px-4 py-3 text-left">{t('products', 'productName')}</th>
                   <th className="px-4 py-3 text-left">{t('products', 'code')}</th>
+                  <th className="px-4 py-3 text-left">{t('products', 'productName')}</th>
                   <th className="px-4 py-3 text-left">Kategori</th>
                   <th className="px-4 py-3 text-left">{t('products', 'unit')}</th>
                   <th className="px-4 py-3 text-right">{t('products', 'unitPrice')}</th>
@@ -290,11 +290,11 @@ export default function ProductsPage() {
                       className="hover:bg-blue-50/50 cursor-pointer"
                       onClick={() => router.push(`/products/${p.id}?edit=true`)}
                     >
+                      <td className="px-4 py-3 text-slate-500">{p.code || '—'}</td>
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-800">{p.name}</p>
                         {p.description && <p className="text-xs text-slate-400 mt-0.5">{p.description}</p>}
                       </td>
-                      <td className="px-4 py-3 text-slate-500">{p.code || '—'}</td>
                       <td className="px-4 py-3 text-slate-500 text-xs">{p.category?.name ?? '—'}</td>
                       <td className="px-4 py-3 text-slate-500">{p.unit}</td>
                       <td className="px-4 py-3 text-right font-semibold text-blue-600">
