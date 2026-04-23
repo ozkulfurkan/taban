@@ -27,24 +27,19 @@ export async function POST(req: NextRequest) {
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const rowNum = i + 2; // Excel row number (1=header, 2=first data row)
+    const rowNum = i + 2;
 
-    const name = String(row['Müşteri Adı'] ?? '').trim();
-    const currency = String(row['Para Birimi'] ?? '').trim().toUpperCase();
+    const name = String(row['Tedarikçi Adı'] ?? '').trim();
+    const currencyRaw = String(row['Para Birimi'] ?? '').trim().toUpperCase();
+    const currency = VALID_CURRENCIES.includes(currencyRaw) ? currencyRaw : 'TRY';
 
     if (!name) {
-      results.errors.push(`Satır ${rowNum}: Müşteri Adı zorunludur`);
-      results.skipped++;
-      continue;
-    }
-    if (!VALID_CURRENCIES.includes(currency)) {
-      results.errors.push(`Satır ${rowNum} (${name}): Para Birimi geçersiz — TRY, USD veya EUR olmalı`);
+      results.errors.push(`Satır ${rowNum}: Tedarikçi Adı zorunludur`);
       results.skipped++;
       continue;
     }
 
     const taxId = String(row['Vergi Kimlik No'] ?? '').trim() || null;
-    const taxOffice = String(row['Vergi Dairesi'] ?? '').trim() || null;
     const phone = String(row['Telefon'] ?? '').trim() || null;
     const address = String(row['Adres'] ?? '').trim() || null;
     const email = String(row['E-posta'] ?? '').trim() || null;
@@ -52,13 +47,12 @@ export async function POST(req: NextRequest) {
     const baslangicBakiye = parseFloat(String(row['Başlangıç Bakiyesi'] ?? '').replace(',', '.')) || 0;
 
     try {
-      const customer = await prisma.customer.create({
+      const supplier = await prisma.supplier.create({
         data: {
           companyId: user.companyId,
           name,
           currency,
           taxId,
-          taxOffice,
           phone,
           address,
           email,
@@ -70,19 +64,19 @@ export async function POST(req: NextRequest) {
         await prisma.payment.create({
           data: {
             companyId: user.companyId,
-            customerId: customer.id,
+            supplierId: supplier.id,
             amount: baslangicBakiye,
             currency,
             date: new Date(),
             method: 'Borç Fişi',
-            type: 'RECEIVED',
+            type: 'PAID',
             notes: 'Başlangıç bakiyesi',
           },
         });
       }
 
       results.created++;
-    } catch (err: any) {
+    } catch {
       results.errors.push(`Satır ${rowNum} (${name}): Kaydedilemedi`);
       results.skipped++;
     }

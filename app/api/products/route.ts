@@ -25,6 +25,7 @@ export async function GET() {
         orderBy: { sortOrder: 'asc' },
       },
       _count: { select: { portalCustomers: true } },
+      category: { select: { id: true, name: true } },
     },
     orderBy: { name: 'asc' },
   });
@@ -49,6 +50,7 @@ export async function POST(req: NextRequest) {
       currency: body.currency || 'USD',
       stock: parseFloat(body.stock) || 0,
       notes: body.notes || null,
+      categoryId: body.categoryId || null,
     },
   });
   return NextResponse.json(product);

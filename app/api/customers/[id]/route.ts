@@ -16,7 +16,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
         invoices: {
           orderBy: { date: 'desc' },
           include: {
-            items: true,
+            items: { include: { product: { select: { code: true } } } },
             createdBy: { select: { name: true } },
           },
         },

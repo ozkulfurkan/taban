@@ -67,7 +67,7 @@ export const authOptions: NextAuthOptions = {
         if (credentials?.impersonateToken) {
           const user = await prisma.user.findUnique({
             where: { impersonateToken: credentials.impersonateToken },
-            include: { company: true },
+            include: { company: { select: { name: true, companyType: true } } },
           });
           if (!user || !user.impersonateTokenExpiry || user.impersonateTokenExpiry < new Date()) {
             return null;
@@ -83,6 +83,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
             companyId: user.companyId,
             companyName: user.company?.name ?? null,
+            companyType: user.company?.companyType ?? 'SOLE_MANUFACTURER',
             language: user.language,
             currency: user.currency,
             allowedPages: (user as any).allowedPages ?? [],
@@ -93,7 +94,7 @@ export const authOptions: NextAuthOptions = {
         try {
           const user = await prisma.user.findUnique({
             where: { email: credentials.email },
-            include: { company: true },
+            include: { company: { select: { name: true, companyType: true } } },
           });
           if (!user) return null;
           const isValid = await bcrypt.compare(credentials.password, user.password);
@@ -128,6 +129,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
             companyId: user.companyId,
             companyName: user.company?.name ?? null,
+            companyType: user.company?.companyType ?? 'SOLE_MANUFACTURER',
             language: user.language,
             currency: user.currency,
             allowedPages: (user as any).allowedPages ?? [],
@@ -162,6 +164,7 @@ export const authOptions: NextAuthOptions = {
           token.role = user.role;
           token.companyId = user.companyId;
           token.companyName = user.companyName;
+          token.companyType = (user as any).companyType ?? 'SOLE_MANUFACTURER';
           token.language = user.language;
           token.currency = user.currency;
           token.allowedPages = (user as any).allowedPages ?? [];
@@ -186,6 +189,7 @@ export const authOptions: NextAuthOptions = {
           session.user.role = token.role;
           session.user.companyId = token.companyId;
           session.user.companyName = token.companyName;
+          (session.user as any).companyType = token.companyType ?? 'SOLE_MANUFACTURER';
           session.user.language = token.language;
           session.user.currency = token.currency;
           (session.user as any).allowedPages = token.allowedPages ?? [];
