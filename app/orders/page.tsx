@@ -38,11 +38,25 @@ function defaultDateFrom() {
   return d.toISOString().split('T')[0];
 }
 
+type DatePreset = '1w' | '1m' | '3m' | 'custom';
+
+function presetRange(preset: DatePreset): { from: string; to: string } {
+  const today = new Date();
+  const to = today.toISOString().split('T')[0];
+  const from = new Date(today);
+  if (preset === '1w') from.setDate(from.getDate() - 7);
+  else if (preset === '1m') from.setMonth(from.getMonth() - 1);
+  else if (preset === '3m') from.setMonth(from.getMonth() - 3);
+  return { from: from.toISOString().split('T')[0], to };
+}
+
 export default function OrdersPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('ORDER_RECEIVED');
+  const [datePreset, setDatePreset] = useState<DatePreset>('1m');
   const [dateFrom, setDateFrom] = useState(defaultDateFrom);
   const [dateTo, setDateTo] = useState(new Date().toISOString().split('T')[0]);
+  const [terminPreset, setTerminPreset] = useState<DatePreset | ''>('');
   const [terminFrom, setTerminFrom] = useState('');
   const [terminTo, setTerminTo] = useState('');
   const [customerFilter, setCustomerFilter] = useState('');
@@ -106,56 +120,90 @@ export default function OrdersPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl px-4 py-3 shadow-sm space-y-2.5">
-          {/* Müşteri */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium text-slate-500 w-24 flex-shrink-0">Müşteri:</span>
-            <select
-              value={customerFilter}
-              onChange={e => setCustomerFilter(e.target.value)}
-              className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white min-w-[200px]"
-            >
-              <option value="">Tümü</option>
-              {customers.map((c: any) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            {customerFilter && (
-              <button onClick={() => setCustomerFilter('')}
-                className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                Temizle
-              </button>
-            )}
-          </div>
+        <div className="bg-white rounded-xl shadow-sm divide-y divide-slate-100">
+          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
 
-          {/* Sipariş tarihi */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium text-slate-500 w-24 flex-shrink-0">Sipariş Tarihi:</span>
-            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-              className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
-            <span className="text-xs text-slate-400">—</span>
-            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-              className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
-            <button onClick={() => { setDateFrom(defaultDateFrom()); setDateTo(new Date().toISOString().split('T')[0]); }}
-              className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
-              Son 1 Ay
-            </button>
-          </div>
+            {/* Müşteri */}
+            <div className="px-4 py-3 flex flex-col gap-1.5">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Müşteri</span>
+              <select
+                value={customerFilter}
+                onChange={e => setCustomerFilter(e.target.value)}
+                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+              >
+                <option value="">Tümü</option>
+                {customers.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Termin tarihi */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium text-slate-500 w-24 flex-shrink-0">Termin Tarihi:</span>
-            <input type="date" value={terminFrom} onChange={e => setTerminFrom(e.target.value)}
-              className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
-            <span className="text-xs text-slate-400">—</span>
-            <input type="date" value={terminTo} onChange={e => setTerminTo(e.target.value)}
-              className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
-            {(terminFrom || terminTo) && (
-              <button onClick={() => { setTerminFrom(''); setTerminTo(''); }}
-                className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
-                Temizle
-              </button>
-            )}
+            {/* Sipariş Tarihi */}
+            <div className="px-4 py-3 flex flex-col gap-1.5">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Sipariş Tarihi</span>
+              <select
+                value={datePreset}
+                onChange={e => {
+                  const v = e.target.value as DatePreset;
+                  setDatePreset(v);
+                  if (v !== 'custom') {
+                    const r = presetRange(v);
+                    setDateFrom(r.from);
+                    setDateTo(r.to);
+                  }
+                }}
+                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+              >
+                <option value="1w">Son 1 Hafta</option>
+                <option value="1m">Son 1 Ay</option>
+                <option value="3m">Son 3 Ay</option>
+                <option value="custom">Gelişmiş Arama</option>
+              </select>
+              {datePreset === 'custom' && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                    className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <span className="text-slate-400 text-xs">—</span>
+                  <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                    className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              )}
+            </div>
+
+            {/* Termin Tarihi */}
+            <div className="px-4 py-3 flex flex-col gap-1.5">
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Termin Tarihi</span>
+              <select
+                value={terminPreset}
+                onChange={e => {
+                  const v = e.target.value as DatePreset | '';
+                  setTerminPreset(v);
+                  if (v === '') { setTerminFrom(''); setTerminTo(''); }
+                  else if (v !== 'custom') {
+                    const r = presetRange(v);
+                    setTerminFrom(r.from);
+                    setTerminTo(r.to);
+                  }
+                }}
+                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+              >
+                <option value="">Tümü</option>
+                <option value="1w">Son 1 Hafta</option>
+                <option value="1m">Son 1 Ay</option>
+                <option value="3m">Son 3 Ay</option>
+                <option value="custom">Gelişmiş Arama</option>
+              </select>
+              {terminPreset === 'custom' && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <input type="date" value={terminFrom} onChange={e => setTerminFrom(e.target.value)}
+                    className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <span className="text-slate-400 text-xs">—</span>
+                  <input type="date" value={terminTo} onChange={e => setTerminTo(e.target.value)}
+                    className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
 
