@@ -52,9 +52,34 @@ function UserMenu() {
   );
 }
 
+const IDLE_MS = 30 * 60 * 1000; // 30 dakika
+
+function useIdleLogout() {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const reset = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        signOut({ callbackUrl: '/login' });
+      }, IDLE_MS);
+    };
+
+    const events = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'];
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }));
+    reset();
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      events.forEach(e => window.removeEventListener(e, reset));
+    };
+  }, []);
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession() || {};
   const router = useRouter();
+  useIdleLogout();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
