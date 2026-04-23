@@ -41,6 +41,11 @@ enum SubscriptionStatus {
   PRO
 }
 
+enum CompanyType {
+  SOLE_MANUFACTURER
+  MATERIAL_SUPPLIER
+}
+
 model Company {
   id                 String             @id @default(cuid())
   name               String
@@ -54,6 +59,7 @@ model Company {
   usdToTry           Float              @default(1)
   eurToTry           Float              @default(1)
   vatRate            Float              @default(20)
+  companyType        CompanyType        @default(SOLE_MANUFACTURER)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   users              User[]
@@ -76,6 +82,9 @@ model Company {
   materialTransfers     MaterialTransfer[]
   subcontractorScraps   SubcontractorScrap[]
   stockAdjustments      StockAdjustment[]
+  productCategories     ProductCategory[]
+  customerProductPrices CustomerProductPrice[]
+  materialCalculations  MaterialCalculation[]
 }
 
 model User {
@@ -204,14 +213,17 @@ model Product {
   koliFiyati       Float              @default(0)
   koliCurrency     String             @default("USD")
   portalVisible    Boolean            @default(false)
+  categoryId       String?
+  category         ProductCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   parts               ProductPart[]
   extraCosts          ProductExtraCost[]
   invoiceItems        InvoiceItem[]
   soleOrders          SoleOrder[]
   portalCustomers     ProductPortalCustomer[]
-  subcontractorOrders SubcontractorOrder[]
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  subcontractorOrders   SubcontractorOrder[]
+  customerProductPrices CustomerProductPrice[]
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 }
 
 model ProductPart {
@@ -254,11 +266,12 @@ model Customer {
   notes      String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  invoices       Invoice[]
-  payments       Payment[]
-  cekler         Cek[]
-  portalCustomer PortalCustomer?
-  soleOrders     SoleOrder[]
+  invoices              Invoice[]
+  payments              Payment[]
+  cekler                Cek[]
+  portalCustomer        PortalCustomer?
+  soleOrders            SoleOrder[]
+  customerProductPrices CustomerProductPrice[]
 }
 
 model Supplier {
@@ -651,6 +664,40 @@ model SubcontractorScrap {
   @@index([companyId])
 }
 
+// ─── Ürün Kategorileri ────────────────────────────────────────────────────────
+
+model ProductCategory {
+  id        String    @id @default(cuid())
+  companyId String
+  company   Company   @relation(fields: [companyId], references: [id])
+  name      String
+  createdAt DateTime  @default(now())
+  products  Product[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+// ─── Müşteri Özel Fiyatlandırma ──────────────────────────────────────────────
+
+model CustomerProductPrice {
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  unitPrice  Float
+  currency   String   @default("TRY")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([customerId, productId])
+  @@index([companyId])
+  @@index([customerId])
+}
+
 // ─── Audit Log ───────────────────────────────────────────────────────────────
 
 model AuditLog {
@@ -793,4 +840,37 @@ model SubcontractorStock {
 
   @@unique([subcontractorId, materialId])
   @@index([subcontractorId])
+}
+
+// ─── Hammaddeci Maliyet Hesaplayıcısı ────────────────────────────────────────
+
+model MaterialCalculation {
+  id         String                    @id @default(cuid())
+  companyId  String
+  company    Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name       String
+  notes      String?
+  kurUsd     Float                     @default(0)
+  kurEur     Float                     @default(0)
+  kdvRate    Float                     @default(0.20)
+  laborPerKg Float                     @default(0)
+  laborCur   String                    @default("TRY")
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
+  items      MaterialCalculationItem[]
+
+  @@index([companyId])
+}
+
+model MaterialCalculationItem {
+  id             String              @id @default(cuid())
+  calculationId  String
+  calculation    MaterialCalculation @relation(fields: [calculationId], references: [id], onDelete: Cascade)
+  name           String
+  qty            Float               @default(0)
+  currency       String              @default("TRY")
+  unitPriceExVat Float               @default(0)
+  sortOrder      Int                 @default(0)
+
+  @@index([calculationId])
 }

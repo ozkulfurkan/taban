@@ -8,7 +8,7 @@ import { formatDate, toDateInputValue } from '@/lib/time';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import {
   Loader2, Printer, Pencil, X, CreditCard, User,
-  Plus, Trash2, Save, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers,
+  Plus, Trash2, Save, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers, Search,
 } from 'lucide-react';
 
 interface EditLineItem {
@@ -88,7 +88,7 @@ function ItemModal({ initial, currency, products, materials, onConfirm, onClose 
               <select value={item.productId ?? ''} onChange={e => handleProductSelect(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
                 <option value="">Manuel Giriş</option>
-                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {products.map(p => <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ${p.name}` : p.name}</option>)}
               </select>
             </div>
           )}
@@ -232,6 +232,8 @@ export default function InvoiceDetailPage() {
 
   const [products, setProducts] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
+  const [productSearch, setProductSearch] = useState('');
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [itemModal, setItemModal] = useState<{ open: boolean; editIndex: number | null }>({ open: false, editIndex: null });
   const [draftItem, setDraftItem] = useState<EditLineItem>(emptyItem());
 
@@ -405,6 +407,20 @@ export default function InvoiceDetailPage() {
 
   const addItem = () => {
     setDraftItem(emptyItem());
+    setItemModal({ open: true, editIndex: null });
+  };
+
+  const filteredSearchProducts = productSearch.length >= 2
+    ? products.filter(p =>
+        p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+        (p.code && p.code.toLowerCase().includes(productSearch.toLowerCase()))
+      )
+    : [];
+
+  const handleSearchProductClick = (product: any) => {
+    setProductSearch('');
+    setShowSearchDropdown(false);
+    setDraftItem({ ...emptyItem(), productId: product.id, description: product.name, unitPrice: toPriceInput(product.unitPrice) });
     setItemModal({ open: true, editIndex: null });
   };
   const openEditItemModal = (idx: number) => {
@@ -628,10 +644,55 @@ export default function InvoiceDetailPage() {
                 {editing && (
                   <button onClick={addItem}
                     className="flex items-center gap-1.5 px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-medium">
-                    <Plus className="w-3.5 h-3.5" /> Satır Ekle
+                    <Plus className="w-3.5 h-3.5" /> Manuel Ekle
                   </button>
                 )}
               </div>
+
+              {/* Product search box — only in edit mode */}
+              {editing && (
+                <div className="px-4 py-3 border-b border-slate-100 relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={productSearch}
+                      onChange={e => { setProductSearch(e.target.value); setShowSearchDropdown(true); }}
+                      onFocus={() => setShowSearchDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowSearchDropdown(false), 150)}
+                      placeholder="Ürün isminden veya kodundan arayın..."
+                      className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                    />
+                    {showSearchDropdown && productSearch.length >= 2 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+                        {filteredSearchProducts.length === 0 ? (
+                          <div className="px-4 py-3 text-sm text-slate-400">Sonuç bulunamadı</div>
+                        ) : (
+                          filteredSearchProducts.map(p => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onMouseDown={() => handleSearchProductClick(p)}
+                              className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-green-500 hover:text-white text-sm transition-colors text-left"
+                            >
+                              <span className="font-medium">
+                                {p.name}
+                                {p.code && <span className="ml-2 text-xs opacity-60">{p.code}</span>}
+                              </span>
+                              <span className="text-xs opacity-70 ml-2 flex-shrink-0">{p.stock} {p.unit}</span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                    {showSearchDropdown && productSearch.length > 0 && productSearch.length < 2 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-md z-20">
+                        <div className="px-4 py-3 text-sm text-slate-400">En az 2 karakter girin</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Items table */}
               <div className="overflow-x-auto">

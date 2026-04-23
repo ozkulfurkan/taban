@@ -38,6 +38,7 @@ export default function SettingsPage() {
   const [vatRate, setVatRate] = useState('20');
   const [logoUrl, setLogoUrl] = useState('');
   const [banks, setBanks] = useState<BankEntry[]>([]);
+  const [companyType, setCompanyType] = useState('SOLE_MANUFACTURER');
   const [companyLoading, setCompanyLoading] = useState(true);
 
   const canEditCompany = user?.role === 'ADMIN' || user?.role === 'COMPANY_OWNER';
@@ -55,6 +56,7 @@ export default function SettingsPage() {
           setEurToTry(String(d.eurToTry ?? 1));
           setVatRate(String(d.vatRate ?? 20));
           setLogoUrl(d.logoUrl ?? '');
+          setCompanyType(d.companyType ?? 'SOLE_MANUFACTURER');
           try {
             setBanks(d.bankInfo ? JSON.parse(d.bankInfo) : []);
           } catch {
@@ -106,6 +108,7 @@ export default function SettingsPage() {
           vatRate,
           logoUrl,
           bankInfo: JSON.stringify(banks),
+          companyType,
         }),
       });
       if (res.ok) {
@@ -290,6 +293,32 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <input type="number" step="0.1" min="0" max="100" value={vatRate} onChange={(e) => setVatRate(e.target.value)} disabled={!canEditCompany} className="w-32 px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
                 <span className="text-slate-500">%</span>
+              </div>
+            </div>
+
+            {/* Company Type */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Şirket Tipi</label>
+              <div className="flex gap-3">
+                {[
+                  { value: 'SOLE_MANUFACTURER', label: 'Taban Üreticisi', desc: 'Parçalar, numara, maliyet hesaplama' },
+                  { value: 'MATERIAL_SUPPLIER', label: 'Hammaddeci', desc: 'Kg bazlı katalog, direkt satış' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={!canEditCompany}
+                    onClick={() => setCompanyType(opt.value)}
+                    className={`flex-1 px-4 py-3 rounded-xl border-2 text-left transition-all disabled:cursor-not-allowed ${
+                      companyType === opt.value
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="font-medium text-sm text-slate-800">{opt.label}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">{opt.desc}</div>
+                  </button>
+                ))}
               </div>
             </div>
 
