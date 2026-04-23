@@ -43,21 +43,35 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState('ORDER_RECEIVED');
   const [dateFrom, setDateFrom] = useState(defaultDateFrom);
   const [dateTo, setDateTo] = useState(new Date().toISOString().split('T')[0]);
+  const [terminFrom, setTerminFrom] = useState('');
+  const [terminTo, setTerminTo] = useState('');
+  const [customerFilter, setCustomerFilter] = useState('');
+  const [customers, setCustomers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uretimData, setUretimData] = useState<{ orders: any[]; materialRequirements: any[] } | null>(null);
   const [uretimLoading, setUretimLoading] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/customers')
+      .then(r => r.json())
+      .then(d => setCustomers(Array.isArray(d) ? d : (d.customers ?? [])))
+      .catch(() => {});
+  }, []);
 
   const loadOrders = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams({ status: activeTab });
     if (dateFrom) params.set('from', dateFrom);
     if (dateTo) params.set('to', dateTo);
+    if (terminFrom) params.set('terminFrom', terminFrom);
+    if (terminTo) params.set('terminTo', terminTo);
+    if (customerFilter) params.set('customerId', customerFilter);
     fetch(`/api/orders?${params.toString()}`)
       .then(r => r.json())
       .then(d => setOrders(Array.isArray(d) ? d : []))
       .finally(() => setLoading(false));
-  }, [activeTab, dateFrom, dateTo]);
+  }, [activeTab, dateFrom, dateTo, terminFrom, terminTo, customerFilter]);
 
   useEffect(() => { loadOrders(); }, [loadOrders]);
 
@@ -91,18 +105,58 @@ export default function OrdersPage() {
           </Link>
         </div>
 
-        {/* Date filter */}
-        <div className="flex items-center gap-2 flex-wrap bg-white rounded-xl px-4 py-3 shadow-sm">
-          <span className="text-xs font-medium text-slate-500">Tarih:</span>
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-            className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
-          <span className="text-xs text-slate-400">—</span>
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-            className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
-          <button onClick={() => { setDateFrom(defaultDateFrom()); setDateTo(new Date().toISOString().split('T')[0]); }}
-            className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
-            Son 1 Ay
-          </button>
+        {/* Filters */}
+        <div className="bg-white rounded-xl px-4 py-3 shadow-sm space-y-2.5">
+          {/* Müşteri */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium text-slate-500 w-24 flex-shrink-0">Müşteri:</span>
+            <select
+              value={customerFilter}
+              onChange={e => setCustomerFilter(e.target.value)}
+              className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white min-w-[200px]"
+            >
+              <option value="">Tümü</option>
+              {customers.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            {customerFilter && (
+              <button onClick={() => setCustomerFilter('')}
+                className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                Temizle
+              </button>
+            )}
+          </div>
+
+          {/* Sipariş tarihi */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium text-slate-500 w-24 flex-shrink-0">Sipariş Tarihi:</span>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+              className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+            <span className="text-xs text-slate-400">—</span>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+              className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+            <button onClick={() => { setDateFrom(defaultDateFrom()); setDateTo(new Date().toISOString().split('T')[0]); }}
+              className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
+              Son 1 Ay
+            </button>
+          </div>
+
+          {/* Termin tarihi */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium text-slate-500 w-24 flex-shrink-0">Termin Tarihi:</span>
+            <input type="date" value={terminFrom} onChange={e => setTerminFrom(e.target.value)}
+              className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+            <span className="text-xs text-slate-400">—</span>
+            <input type="date" value={terminTo} onChange={e => setTerminTo(e.target.value)}
+              className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+            {(terminFrom || terminTo) && (
+              <button onClick={() => { setTerminFrom(''); setTerminTo(''); }}
+                className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
+                Temizle
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Status tabs */}

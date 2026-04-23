@@ -16,6 +16,8 @@ export async function GET(req: NextRequest) {
   const customerId = searchParams.get('customerId');
   const from = searchParams.get('from');
   const to = searchParams.get('to');
+  const terminFrom = searchParams.get('terminFrom');
+  const terminTo = searchParams.get('terminTo');
 
   const orders = await prisma.soleOrder.findMany({
     where: {
@@ -26,6 +28,12 @@ export async function GET(req: NextRequest) {
         createdAt: {
           ...(from ? { gte: new Date(from) } : {}),
           ...(to ? { lte: new Date(to + 'T23:59:59') } : {}),
+        },
+      } : {}),
+      ...(terminFrom || terminTo ? {
+        requestedDeliveryDate: {
+          ...(terminFrom ? { gte: new Date(terminFrom) } : {}),
+          ...(terminTo ? { lte: new Date(terminTo + 'T23:59:59') } : {}),
         },
       } : {}),
     },
