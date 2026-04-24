@@ -313,14 +313,13 @@ export default function OrdersPage() {
             <div className="overflow-x-auto">
               {/* Header */}
               <div className="grid grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide min-w-[860px]">
-                <div onClick={e => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleAll}
-                    className="w-3.5 h-3.5 accent-blue-400 cursor-pointer"
-                  />
-                </div>
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onClick={e => e.stopPropagation()}
+                  onChange={toggleAll}
+                  className="w-3.5 h-3.5 accent-blue-400 cursor-pointer"
+                />
                 <span>Sipariş No</span>
                 <span>Müşteri</span>
                 <span>Taban</span>
@@ -344,14 +343,13 @@ export default function OrdersPage() {
                       className={`grid grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-3 border-l-4 ${STATUS_BORDER[order.status] ?? 'border-slate-300'} ${isSelected ? 'bg-blue-50/60' : 'hover:bg-slate-50/80'} cursor-pointer transition-colors`}
                     >
                       {/* Checkbox */}
-                      <div onClick={e => { e.stopPropagation(); toggleOne(order.id); }}>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleOne(order.id)}
-                          className="w-3.5 h-3.5 accent-blue-500 cursor-pointer"
-                        />
-                      </div>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onClick={e => e.stopPropagation()}
+                        onChange={() => toggleOne(order.id)}
+                        className="w-3.5 h-3.5 accent-blue-500 cursor-pointer"
+                      />
 
                       {/* Sipariş No */}
                       <div className="flex flex-col gap-0.5">
