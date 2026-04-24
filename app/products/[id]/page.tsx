@@ -12,6 +12,21 @@ import {
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
 const ALL_UNITS = ['çift', 'adet', 'kg', 'ton', 'lt', 'metre', 'paket'];
+
+function parseSizeInput(input: string): string[] {
+  const result: string[] = [];
+  for (const part of input.split(',').map(v => v.trim()).filter(Boolean)) {
+    const m = part.match(/^(\d+)-(\d+)$/);
+    if (m) {
+      const [from, to] = [parseInt(m[1]), parseInt(m[2])];
+      const step = from <= to ? 1 : -1;
+      for (let i = from; step > 0 ? i <= to : i >= to; i += step) result.push(String(i));
+    } else {
+      result.push(part);
+    }
+  }
+  return result;
+}
 const CURRENCIES = ['USD', 'EUR', 'TRY'];
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 const fmt2 = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -446,7 +461,7 @@ export default function ProductDetailPage() {
                           onKeyDown={e => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              const vals = sizeInput.split(',').map(v => v.trim()).filter(Boolean);
+                              const vals = parseSizeInput(sizeInput);
                               setEditSizes(p => {
                                 const next = [...p];
                                 vals.forEach(v => { if (!next.includes(v)) next.push(v); });
@@ -455,13 +470,13 @@ export default function ProductDetailPage() {
                               setSizeInput('');
                             }
                           }}
-                          placeholder="36,37,38 veya S,M,L"
+                          placeholder="36-40 veya 36,37,38 veya S,M,L"
                           className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400"
                         />
                         <button
                           type="button"
                           onClick={() => {
-                            const vals = sizeInput.split(',').map(v => v.trim()).filter(Boolean);
+                            const vals = parseSizeInput(sizeInput);
                             setEditSizes(p => {
                               const next = [...p];
                               vals.forEach(v => { if (!next.includes(v)) next.push(v); });
@@ -474,7 +489,10 @@ export default function ProductDetailPage() {
                           Ekle
                         </button>
                       </div>
-                      <p className="text-xs text-slate-400">Virgülle ayırarak toplu ekleyebilirsiniz: <span className="font-medium text-slate-500">36,37,38,39,40</span></p>
+                      <p className="text-xs text-slate-400">
+                        Asorti aralığı girerseniz o numaralar listelenir: <span className="font-medium text-slate-500">36-40</span>
+                        {' '}· Virgülle toplu ekleyebilirsiniz: <span className="font-medium text-slate-500">36,37,38</span>
+                      </p>
                       <div className="flex flex-wrap gap-1.5">
                         {editSizes.map(s => (
                           <span key={s} className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">

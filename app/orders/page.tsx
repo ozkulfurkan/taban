@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import Link from 'next/link';
-import { Loader2, Plus, ClipboardList, ShoppingCart, CheckCircle, AlertTriangle } from 'lucide-react';
+import {
+  Loader2, Plus, ClipboardList, CheckCircle, AlertTriangle,
+  Pencil, ChevronDown, Factory, Truck,
+} from 'lucide-react';
 
 const STATUS_TABS = [
   { key: 'ORDER_RECEIVED', label: 'Bekliyor' },
@@ -12,14 +15,6 @@ const STATUS_TABS = [
   { key: 'READY_FOR_SHIPMENT', label: 'Hazır' },
   { key: 'SHIPPED', label: 'Sevk Edildi' },
 ];
-
-const STATUS_LABELS: Record<string, string> = {
-  ORDER_RECEIVED: 'Bekliyor',
-  IN_PRODUCTION: 'Üretimde',
-  READY_FOR_SHIPMENT: 'Hazır',
-  SHIPPED: 'Sevk Edildi',
-  CANCELLED: 'İptal',
-};
 
 const STATUS_BORDER: Record<string, string> = {
   ORDER_RECEIVED: 'border-blue-400',
@@ -50,6 +45,21 @@ function presetRange(preset: DatePreset): { from: string; to: string } {
   return { from: from.toISOString().split('T')[0], to };
 }
 
+function terminPresetRange(preset: DatePreset): { from: string; to: string } {
+  const today = new Date();
+  const from = today.toISOString().split('T')[0];
+  const to = new Date(today);
+  if (preset === '1w') to.setDate(to.getDate() + 7);
+  else if (preset === '1m') to.setMonth(to.getMonth() + 1);
+  else if (preset === '3m') to.setMonth(to.getMonth() + 3);
+  return { from, to: to.toISOString().split('T')[0] };
+}
+
+const BULK_ACTIONS = [
+  { key: 'IN_PRODUCTION', label: 'Üretime Gönder', icon: Factory, note: 'Toplu üretime alındı' },
+  { key: 'READY_FOR_SHIPMENT', label: 'Sevke Gönder', icon: Truck, note: 'Toplu sevke hazır' },
+];
+
 export default function OrdersPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('ORDER_RECEIVED');
@@ -66,6 +76,20 @@ export default function OrdersPage() {
   const [uretimData, setUretimData] = useState<{ orders: any[]; materialRequirements: any[] } | null>(null);
   const [uretimLoading, setUretimLoading] = useState(false);
 
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const bulkRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (bulkRef.current && !bulkRef.current.contains(e.target as Node)) setBulkOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   useEffect(() => {
     fetch('/api/customers')
       .then(r => r.json())
@@ -75,6 +99,7 @@ export default function OrdersPage() {
 
   const loadOrders = useCallback(() => {
     setLoading(true);
+    setSelectedIds(new Set());
     const params = new URLSearchParams({ status: activeTab });
     if (dateFrom) params.set('from', dateFrom);
     if (dateTo) params.set('to', dateTo);
@@ -98,10 +123,34 @@ export default function OrdersPage() {
       .finally(() => setUretimLoading(false));
   }, [activeTab]);
 
-  const handleConvert = (order: any) => {
-    const params = new URLSearchParams({ orderId: order.id });
-    if (order.customerId) params.set('customerId', order.customerId);
-    router.push(`/invoices/new?${params.toString()}`);
+  const handleBulkStatus = async (status: string, note: string) => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    setBulkOpen(false);
+    await Promise.all(
+      Array.from(selectedIds).map(id =>
+        fetch(`/api/orders/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status, statusNote: note }),
+        })
+      )
+    );
+    setBulkLoading(false);
+    loadOrders();
+  };
+
+  const allSelected = orders.length > 0 && orders.every(o => selectedIds.has(o.id));
+  const toggleAll = () => {
+    if (allSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(orders.map(o => o.id)));
+  };
+  const toggleOne = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   };
 
   return (
@@ -180,7 +229,7 @@ export default function OrdersPage() {
                   setTerminPreset(v);
                   if (v === '') { setTerminFrom(''); setTerminTo(''); }
                   else if (v !== 'custom') {
-                    const r = presetRange(v);
+                    const r = terminPresetRange(v);
                     setTerminFrom(r.from);
                     setTerminTo(r.to);
                   }
@@ -188,9 +237,9 @@ export default function OrdersPage() {
                 className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
               >
                 <option value="">Tümü</option>
-                <option value="1w">Son 1 Hafta</option>
-                <option value="1m">Son 1 Ay</option>
-                <option value="3m">Son 3 Ay</option>
+                <option value="1w">Gelecek 1 Hafta</option>
+                <option value="1m">Gelecek 1 Ay</option>
+                <option value="3m">Gelecek 3 Ay</option>
                 <option value="custom">Gelişmiş Arama</option>
               </select>
               {terminPreset === 'custom' && (
@@ -207,19 +256,51 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        {/* Status tabs */}
-        <div className="flex gap-1 overflow-x-auto pb-1">
-          {STATUS_TABS.map(tab => (
-            <button key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === tab.key
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-              }`}>
-              {tab.label}
-            </button>
-          ))}
+        {/* Status tabs + bulk actions */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex gap-1 overflow-x-auto pb-1 flex-1">
+            {STATUS_TABS.map(tab => (
+              <button key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === tab.key
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Bulk action dropdown */}
+          {selectedIds.size > 0 && (
+            <div className="relative flex-shrink-0" ref={bulkRef}>
+              <button
+                onClick={() => setBulkOpen(o => !o)}
+                disabled={bulkLoading}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
+              >
+                {bulkLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <><span className="text-slate-300 text-xs">{selectedIds.size} seçili</span><span className="mx-1 text-slate-500">|</span>Toplu İşlem<ChevronDown className="w-3.5 h-3.5" /></>
+                }
+              </button>
+              {bulkOpen && (
+                <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-xl shadow-lg border border-slate-100 py-1 min-w-[180px]">
+                  {BULK_ACTIONS.map(action => (
+                    <button
+                      key={action.key}
+                      onClick={() => handleBulkStatus(action.key, action.note)}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 text-left transition-colors"
+                    >
+                      <action.icon className="w-4 h-4 text-slate-400" />
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Orders table */}
@@ -231,14 +312,22 @@ export default function OrdersPage() {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               {/* Header */}
-              <div className="grid grid-cols-[160px_1fr_1fr_110px_110px_80px_160px] items-center px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide min-w-[860px]">
+              <div className="grid grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide min-w-[860px]">
+                <div onClick={e => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    className="w-3.5 h-3.5 accent-blue-400 cursor-pointer"
+                  />
+                </div>
                 <span>Sipariş No</span>
                 <span>Müşteri</span>
                 <span>Taban</span>
                 <span>Sipariş Tarihi</span>
                 <span>Termin</span>
                 <span className="text-right">Adet</span>
-                <span className="text-right">İşlemler</span>
+                <span></span>
               </div>
 
               {/* Rows */}
@@ -247,12 +336,23 @@ export default function OrdersPage() {
                   const productCode = order.productCode || order.product?.code;
                   const productName = order.product?.name;
                   const isOverdue = !order.invoiceId && order.requestedDeliveryDate && new Date(order.requestedDeliveryDate) < new Date();
+                  const isSelected = selectedIds.has(order.id);
                   return (
                     <div
                       key={order.id}
                       onClick={() => router.push(`/orders/${order.id}`)}
-                      className={`grid grid-cols-[160px_1fr_1fr_110px_110px_80px_160px] items-center px-4 py-3 border-l-4 ${STATUS_BORDER[order.status] ?? 'border-slate-300'} hover:bg-slate-50/80 cursor-pointer transition-colors`}
+                      className={`grid grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-3 border-l-4 ${STATUS_BORDER[order.status] ?? 'border-slate-300'} ${isSelected ? 'bg-blue-50/60' : 'hover:bg-slate-50/80'} cursor-pointer transition-colors`}
                     >
+                      {/* Checkbox */}
+                      <div onClick={e => { e.stopPropagation(); toggleOne(order.id); }}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleOne(order.id)}
+                          className="w-3.5 h-3.5 accent-blue-500 cursor-pointer"
+                        />
+                      </div>
+
                       {/* Sipariş No */}
                       <div className="flex flex-col gap-0.5">
                         <span className="font-bold text-slate-800 text-sm">{order.orderNo}</span>
@@ -290,22 +390,12 @@ export default function OrdersPage() {
                         <span className="text-xs font-normal text-slate-400 ml-0.5">çift</span>
                       </div>
 
-                      {/* İşlemler */}
-                      <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
-                        {order.invoiceId ? (
-                          <Link href={`/invoices/${order.invoiceId}`}
-                            className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors">
-                            <CheckCircle className="w-3.5 h-3.5" /> Fatura
-                          </Link>
-                        ) : order.status !== 'SHIPPED' && order.status !== 'CANCELLED' ? (
-                          <button onClick={() => handleConvert(order)}
-                            className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors">
-                            <ShoppingCart className="w-3.5 h-3.5" /> Satışa Çevir
-                          </button>
-                        ) : null}
+                      {/* Düzenle */}
+                      <div className="flex items-center justify-center" onClick={e => e.stopPropagation()}>
                         <Link href={`/orders/${order.id}`}
-                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors">
-                          Yönet →
+                          className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-colors"
+                          title="Düzenle">
+                          <Pencil className="w-3.5 h-3.5" />
                         </Link>
                       </div>
                     </div>
