@@ -318,6 +318,8 @@ model Invoice {
   soleOrder      SoleOrder?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+
+  @@unique([companyId, invoiceNo])
 }
 
 model InvoiceItem {
@@ -352,6 +354,8 @@ model Purchase {
   purchaseMaterials PurchaseMaterial[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+
+  @@unique([companyId, invoiceNo])
 }
 
 model PurchaseMaterial {
@@ -516,6 +520,8 @@ model SoleOrder {
   subcontractorOrders   SubcontractorOrder[]
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
+
+  @@unique([companyId, orderNo])
 }
 
 model OrderStatusHistory {

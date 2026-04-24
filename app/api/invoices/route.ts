@@ -68,15 +68,25 @@ export async function POST(req: NextRequest) {
   const total = subtotal + vatAmount;
 
   const now = new Date();
-  const prefix = isReturn ? 'IAD' : 'FTR';
-  const invoiceNo = rest.invoiceNo || `${prefix}-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*9000)+1000}`;
+  const year = now.getFullYear();
+  const ftrPrefix = isReturn ? `IAD-${year}-` : `FTR-${year}-`;
 
   try {
-  const invoice = await prisma.invoice.create({
+  const invoice = await prisma.$transaction(async (tx) => {
+    let resolvedInvoiceNo = rest.invoiceNo as string | undefined;
+    if (!resolvedInvoiceNo) {
+      const last = await tx.invoice.findFirst({
+        where: { companyId: user.companyId, invoiceNo: { startsWith: ftrPrefix } },
+        orderBy: { invoiceNo: 'desc' },
+      });
+      const seq = last ? parseInt(last.invoiceNo.split('-')[2]) + 1 : 1;
+      resolvedInvoiceNo = `${ftrPrefix}${String(seq).padStart(4, '0')}`;
+    }
+    return tx.invoice.create({
     data: {
       companyId: user.companyId,
       customerId: rest.customerId,
-      invoiceNo,
+      invoiceNo: resolvedInvoiceNo,
       date: parseDateInput(rest.date) ?? nowUtc(),
       dueDate: rest.dueDate ? parseDateInput(rest.dueDate) : null,
       currency: rest.currency || 'USD',
@@ -110,6 +120,7 @@ export async function POST(req: NextRequest) {
       },
     },
     include: { items: true, customer: true },
+    });
   });
 
   // Ürün stoğunu güncelle (product.stock)
