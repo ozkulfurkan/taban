@@ -755,7 +755,7 @@ export default function NewInvoicePage() {
                           </td>
                           <td className="py-2 px-2 text-right text-slate-600">{item.quantity}</td>
                           <td className="py-2 px-2 text-right text-slate-600">
-                            {(parseFloat(item.unitPrice) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {fromPriceInput(item.unitPrice).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           <td className="py-2 px-2 text-right text-slate-500">
                             {parseFloat(item.discount) > 0 ? `%${item.discount}` : '—'}
