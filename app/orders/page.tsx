@@ -222,57 +222,97 @@ export default function OrdersPage() {
           ))}
         </div>
 
-        {/* Orders list */}
+        {/* Orders table */}
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-blue-600" /></div>
         ) : orders.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm text-center py-16 text-slate-400 text-sm">Sipariş bulunamadı</div>
         ) : (
-          <div className="space-y-2">
-            {orders.map((order: any) => (
-              <div key={order.id} className={`bg-white rounded-xl shadow-sm overflow-hidden border-l-4 ${STATUS_BORDER[order.status] ?? 'border-slate-300'}`}>
-                <div className="px-4 py-3.5 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-slate-800 text-sm">{order.orderNo}</span>
-                      {order.invoiceId && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs rounded-full font-medium border border-emerald-200">
-                          <CheckCircle className="w-3 h-3" /> Faturalandı
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-slate-700 mt-0.5">
-                      <span className="font-medium">{order.customer?.name ?? '—'}</span>
-                      {(order.productCode || order.product?.code || order.product?.name) && (
-                        <span className="text-slate-400"> · {order.productCode || order.product?.code || order.product?.name}</span>
-                      )}
-                      <span className="text-slate-400"> · </span>
-                      <span className="font-semibold text-slate-600">{order.totalQuantity} çift</span>
-                    </p>
-                    {order.requestedDeliveryDate && (
-                      <p className="text-xs text-slate-400 mt-0.5">Termin: {fmt(order.requestedDeliveryDate)}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {order.invoiceId ? (
-                      <Link href={`/invoices/${order.invoiceId}`}
-                        className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-medium hover:bg-emerald-100">
-                        <CheckCircle className="w-3.5 h-3.5" /> Fatura
-                      </Link>
-                    ) : order.status !== 'SHIPPED' && order.status !== 'CANCELLED' && (
-                      <button onClick={() => handleConvert(order)}
-                        className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium hover:bg-blue-100">
-                        <ShoppingCart className="w-3.5 h-3.5" /> Satışa Çevir
-                      </button>
-                    )}
-                    <Link href={`/orders/${order.id}`}
-                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors">
-                      Yönet →
-                    </Link>
-                  </div>
-                </div>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              {/* Header */}
+              <div className="grid grid-cols-[160px_1fr_1fr_110px_110px_80px_160px] items-center px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide min-w-[860px]">
+                <span>Sipariş No</span>
+                <span>Müşteri</span>
+                <span>Taban</span>
+                <span>Sipariş Tarihi</span>
+                <span>Termin</span>
+                <span className="text-right">Adet</span>
+                <span className="text-right">İşlemler</span>
               </div>
-            ))}
+
+              {/* Rows */}
+              <div className="divide-y divide-slate-100 min-w-[860px]">
+                {orders.map((order: any) => {
+                  const productCode = order.productCode || order.product?.code;
+                  const productName = order.product?.name;
+                  const isOverdue = !order.invoiceId && order.requestedDeliveryDate && new Date(order.requestedDeliveryDate) < new Date();
+                  return (
+                    <div
+                      key={order.id}
+                      onClick={() => router.push(`/orders/${order.id}`)}
+                      className={`grid grid-cols-[160px_1fr_1fr_110px_110px_80px_160px] items-center px-4 py-3 border-l-4 ${STATUS_BORDER[order.status] ?? 'border-slate-300'} hover:bg-slate-50/80 cursor-pointer transition-colors`}
+                    >
+                      {/* Sipariş No */}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-slate-800 text-sm">{order.orderNo}</span>
+                        {order.invoiceId && (
+                          <span className="inline-flex items-center gap-0.5 text-emerald-600 text-[10px] font-medium">
+                            <CheckCircle className="w-3 h-3" /> Faturalandı
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Müşteri */}
+                      <div className="text-sm text-slate-700 font-medium truncate pr-2">
+                        {order.customer?.name ?? '—'}
+                      </div>
+
+                      {/* Taban */}
+                      <div className="flex flex-col gap-0.5 pr-2">
+                        {productCode && <span className="text-xs font-semibold text-slate-500">{productCode}</span>}
+                        {productName && <span className="text-xs text-slate-600 truncate">{productName}</span>}
+                        {!productCode && !productName && <span className="text-xs text-slate-400">—</span>}
+                      </div>
+
+                      {/* Sipariş Tarihi */}
+                      <div className="text-xs text-slate-500">{fmt(order.createdAt)}</div>
+
+                      {/* Termin */}
+                      <div className={`text-xs font-medium flex items-center gap-1 ${isOverdue ? 'text-red-500' : 'text-slate-500'}`}>
+                        {isOverdue && <AlertTriangle className="w-3 h-3 flex-shrink-0" />}
+                        {order.requestedDeliveryDate ? fmt(order.requestedDeliveryDate) : '—'}
+                      </div>
+
+                      {/* Adet */}
+                      <div className="text-sm font-semibold text-slate-700 text-right">
+                        {order.totalQuantity}
+                        <span className="text-xs font-normal text-slate-400 ml-0.5">çift</span>
+                      </div>
+
+                      {/* İşlemler */}
+                      <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
+                        {order.invoiceId ? (
+                          <Link href={`/invoices/${order.invoiceId}`}
+                            className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-medium hover:bg-emerald-100 transition-colors">
+                            <CheckCircle className="w-3.5 h-3.5" /> Fatura
+                          </Link>
+                        ) : order.status !== 'SHIPPED' && order.status !== 'CANCELLED' ? (
+                          <button onClick={() => handleConvert(order)}
+                            className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors">
+                            <ShoppingCart className="w-3.5 h-3.5" /> Satışa Çevir
+                          </button>
+                        ) : null}
+                        <Link href={`/orders/${order.id}`}
+                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors">
+                          Yönet →
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 
