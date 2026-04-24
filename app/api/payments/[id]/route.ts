@@ -13,6 +13,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     where: { id: params.id, companyId: user.companyId },
     select: { amount: true, currency: true, method: true, customerId: true, supplierId: true },
   });
+  try {
   await prisma.$transaction(async (tx) => {
     const payment = await tx.payment.findFirst({
       where: { id: params.id, companyId: user.companyId },
@@ -96,4 +97,17 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     });
   }
   return NextResponse.json({ ok: true });
+  } catch (err: any) {
+    await logAction({
+      companyId: user.companyId,
+      userId: user.id,
+      userName: user.name,
+      action: 'ERROR',
+      entity: 'Payment',
+      entityId: params.id,
+      detail: `Ödeme silinemedi: ${err?.message ?? 'Bilinmeyen hata'}`,
+      ip: getIp(_),
+    });
+    return NextResponse.json({ error: 'Ödeme silinemedi' }, { status: 500 });
+  }
 }

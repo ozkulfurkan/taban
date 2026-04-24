@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
 
   if (computedTotal <= 0) return NextResponse.json({ error: 'Invalid total' }, { status: 400 });
 
+  try {
   const purchase = await prisma.purchase.create({
     data: {
       companyId: user.companyId,
@@ -141,4 +142,17 @@ export async function POST(req: NextRequest) {
     ip: getIp(req),
   });
   return NextResponse.json(purchase, { status: 201 });
+  } catch (err: any) {
+    await logAction({
+      companyId: user.companyId,
+      userId: user.id,
+      userName: user.name,
+      action: 'ERROR',
+      entity: 'Purchase',
+      detail: `Alış kaydedilemedi: ${err?.message ?? 'Bilinmeyen hata'}`,
+      meta: { supplierId, invoiceNo },
+      ip: getIp(req),
+    });
+    return NextResponse.json({ error: 'Alış kaydedilemedi' }, { status: 500 });
+  }
 }

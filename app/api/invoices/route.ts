@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
   const prefix = isReturn ? 'IAD' : 'FTR';
   const invoiceNo = rest.invoiceNo || `${prefix}-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*9000)+1000}`;
 
+  try {
   const invoice = await prisma.invoice.create({
     data: {
       companyId: user.companyId,
@@ -192,4 +193,16 @@ const uniqueProductIds = ids;
     ip: getIp(req),
   });
   return NextResponse.json(invoice);
+  } catch (err: any) {
+    await logAction({
+      companyId: user.companyId,
+      userId: user.id,
+      userName: user.name,
+      action: 'ERROR',
+      entity: isReturn ? 'ReturnInvoice' : 'Invoice',
+      detail: `${isReturn ? 'İade faturası' : 'Fatura'} oluşturulamadı: ${err?.message ?? 'Bilinmeyen hata'}`,
+      ip: getIp(req),
+    });
+    return NextResponse.json({ error: 'Fatura oluşturulamadı' }, { status: 500 });
+  }
 }

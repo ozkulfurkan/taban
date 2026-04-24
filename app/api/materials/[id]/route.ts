@@ -81,6 +81,19 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json(updated);
   } catch (error: any) {
     console.error('PUT material error:', error);
+    const session2 = await getAuthSession() as any;
+    if (session2?.user?.companyId) {
+      await logAction({
+        companyId: session2.user.companyId,
+        userId: session2.user.id,
+        userName: session2.user.name,
+        action: 'ERROR',
+        entity: 'Material',
+        entityId: params.id,
+        detail: `Hammadde güncellenemedi: ${error?.message ?? 'Bilinmeyen hata'}`,
+        ip: getIp(req),
+      });
+    }
     return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
   }
 }
@@ -126,6 +139,19 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('DELETE material error:', error);
+    const session2 = await getAuthSession() as any;
+    if (session2?.user?.companyId) {
+      await logAction({
+        companyId: session2.user.companyId,
+        userId: session2.user.id,
+        userName: session2.user.name,
+        action: 'ERROR',
+        entity: 'Material',
+        entityId: params.id,
+        detail: `Hammadde silinemedi: ${error?.message ?? 'Bilinmeyen hata'}`,
+        ip: getIp(req),
+      });
+    }
     return NextResponse.json({ error: 'Silme işlemi başarısız.' }, { status: 500 });
   }
 }
