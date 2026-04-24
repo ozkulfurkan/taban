@@ -3,10 +3,64 @@
 import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { LogIn, Eye, EyeOff, Loader2, ExternalLink } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LogIn, Eye, EyeOff, Loader2, ExternalLink, CheckCircle2, MailWarning, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/language-context';
+
+function UnverifiedEmailBanner({ email }: { email: string }) {
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
+
+  const handleResend = async () => {
+    if (resendLoading || resendSent) return;
+    setResendLoading(true);
+    try {
+      await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      setResendSent(true);
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 overflow-hidden"
+    >
+      <div className="flex gap-3 p-4">
+        <MailWarning className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-amber-200 text-sm font-medium">E-posta adresiniz henüz doğrulanmamış.</p>
+          <p className="text-amber-300/70 text-xs mt-0.5">Lütfen gelen kutunuzu kontrol edin.</p>
+        </div>
+      </div>
+      <div className="px-4 pb-3">
+        <button
+          onClick={handleResend}
+          disabled={resendLoading || resendSent}
+          className="w-full py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-amber-200 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {resendLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : resendSent ? (
+            <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+          ) : (
+            <RotateCcw className="w-3.5 h-3.5" />
+          )}
+          <span className={resendSent ? 'text-green-400' : ''}>
+            {resendSent ? 'Doğrulama Maili Gönderildi!' : 'Doğrulama Mailini Tekrar Gönder'}
+          </span>
+        </button>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function LoginPage() {
   const { t } = useLanguage();
@@ -16,10 +70,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
+  const [unverifiedEmail, setUnverifiedEmail] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (searchParams.get('registered') === '1') {
+      setSuccess('Kayıt başarılı. Lütfen e-posta adresinizi doğrulayın.');
+    }
     if (searchParams.get('verified') === '1') {
       setSuccess('E-posta adresiniz doğrulandı. Giriş yapabilirsiniz.');
     }
@@ -31,6 +89,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setUnverifiedEmail('');
     setSuccess('');
     setLoading(true);
     try {
@@ -47,15 +106,14 @@ export default function LoginPage() {
         });
         const status = await statusRes.json();
         if (status.exists && !status.emailVerified) {
-          setError('E-posta adresiniz henüz doğrulanmamış. Doğrulama maili gönderildi, lütfen gelen kutunuzu kontrol edin.');
+          setUnverifiedEmail(email);
         } else {
           setError('E-posta veya şifre hatalı.');
         }
       } else {
         router.replace('/dashboard');
       }
-    } catch (err: any) {
-      console.error(err);
+    } catch {
       setError('Bir hata oluştu.');
     } finally {
       setLoading(false);
@@ -80,18 +138,37 @@ export default function LoginPage() {
 
         <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/10">
           <h2 className="text-xl font-semibold text-white mb-6">{t('auth', 'loginTitle')}</h2>
-          
-          {success && (
-            <div className="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-lg text-green-200 text-sm">
-              {success}
-            </div>
-          )}
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-sm">
-              {error}
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {success && (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="mb-4 flex items-start gap-3 p-4 bg-green-500/15 border border-green-500/25 rounded-xl"
+              >
+                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                <p className="text-green-200 text-sm leading-relaxed">{success}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {unverifiedEmail ? (
+              <UnverifiedEmailBanner key="unverified" email={unverifiedEmail} />
+            ) : error ? (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-sm"
+              >
+                {error}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
