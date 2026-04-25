@@ -4,8 +4,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
+import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(getRateLimitKey(req, 'resend'), { limit: 3, windowMs: 5 * 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: `Çok fazla istek. ${rl.retryAfter} saniye sonra tekrar deneyin.` },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
+
   try {
     const { email } = await req.json();
     if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 });

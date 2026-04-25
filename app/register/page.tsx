@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserPlus, Eye, EyeOff, Loader2, Mail, CheckCircle2, ArrowRight, RotateCcw } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, Loader2, Mail, CheckCircle2, ArrowRight, RotateCcw, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/language-context';
 
@@ -199,6 +199,25 @@ function SuccessModal({
   );
 }
 
+function passwordRules(pass: string) {
+  return {
+    minLength: pass.length >= 6,
+    hasLetter: /[a-zA-ZğüşıöçĞÜŞİÖÇ]/.test(pass),
+    hasNumber: /[0-9]/.test(pass),
+  };
+}
+
+function PasswordRule({ ok, text }: { ok: boolean; text: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      {ok
+        ? <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+        : <XCircle className="w-3.5 h-3.5 text-red-400/70 flex-shrink-0" />}
+      <span className={`text-xs ${ok ? 'text-green-300' : 'text-slate-400'}`}>{text}</span>
+    </div>
+  );
+}
+
 export default function RegisterPage() {
   const { t } = useLanguage();
   const router = useRouter();
@@ -208,6 +227,9 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+
+  const rules = passwordRules(form.password);
+  const passwordValid = rules.minLength && rules.hasLetter && rules.hasNumber;
 
   const handleGoToLogin = () => {
     router.replace('/login?registered=1');
@@ -326,11 +348,18 @@ export default function RegisterPage() {
                   {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              {form.password && (
+                <div className="mt-2 flex gap-4 flex-wrap">
+                  <PasswordRule ok={rules.minLength} text="En az 6 karakter" />
+                  <PasswordRule ok={rules.hasLetter} text="En az 1 harf" />
+                  <PasswordRule ok={rules.hasNumber} text="En az 1 rakam" />
+                </div>
+              )}
             </div>
             <button
               type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+              disabled={loading || !passwordValid}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5" />}
               {t('auth', 'register')}
