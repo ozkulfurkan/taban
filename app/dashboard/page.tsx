@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import PendingOrdersWidget from '@/app/components/pending-orders-widget';
-import { WidgetShell } from '@/app/components/widget-shell';
+import { WidgetShell, SortablePairShell } from '@/app/components/widget-shell';
 import {
   DndContext, closestCenter, PointerSensor,
   KeyboardSensor, useSensor, useSensors,
@@ -37,7 +37,7 @@ const CEK_DURUM_COLOR: Record<string, string> = {
   BANKAYA_VERILDI: 'bg-purple-100 text-purple-700',
 };
 
-const DEFAULT_ORDER = ['kpi', 'assets', 'checks', 'orders'];
+const DEFAULT_ORDER = ['kpi', 'pair', 'orders'];
 const STORAGE_KEY = 'dashboard_layout_v1';
 
 interface LayoutState {
@@ -248,35 +248,11 @@ export default function DashboardPage() {
      (data.monthlyCiro ?? 0) === 0 &&
      Object.values(assets).every((v: any) => v === 0));
 
-  const widgetMap: Record<string, React.ReactNode> = {
-    kpi: <KpiContent data={data} />,
-    assets: <AssetsContent assets={assets} t={t} />,
-    checks: <ChecksContent checks={upcomingChecks} t={t} />,
-    orders: <PendingOrdersWidget embedded />,
-  };
-
-  const widgetMeta: Record<string, { title: string; icon: React.ReactNode; headerExtra?: React.ReactNode }> = {
+  const singleWidgets: Record<string, { title: string; icon: React.ReactNode; headerExtra?: React.ReactNode; content: React.ReactNode }> = {
     kpi: {
       title: 'Finansal Özet',
       icon: <BarChart2 className="w-4 h-4" />,
-    },
-    assets: {
-      title: 'Varlıklar',
-      icon: <TrendingUp className="w-4 h-4" />,
-      headerExtra: (
-        <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full tabular-nums">
-          {fmt(assetTotal)} TL
-        </span>
-      ),
-    },
-    checks: {
-      title: t('dashboard', 'upcomingChecks'),
-      icon: <AlertCircle className="w-4 h-4 text-amber-500" />,
-      headerExtra: (
-        <Link href="/cek-portfolyo" className="text-xs text-blue-600 hover:underline flex items-center gap-0.5">
-          {t('dashboard', 'viewAll')} <ChevronRight className="w-3 h-3" />
-        </Link>
-      ),
+      content: <KpiContent data={data} />,
     },
     orders: {
       title: 'Bekleyen Siparişler',
@@ -286,6 +262,7 @@ export default function DashboardPage() {
           Tümünü Gör <ChevronRight className="w-3 h-3" />
         </Link>
       ),
+      content: <PendingOrdersWidget embedded />,
     },
   };
 
@@ -361,19 +338,51 @@ export default function DashboardPage() {
           <SortableContext items={layout.order} strategy={verticalListSortingStrategy}>
             <div className="space-y-4">
               {layout.order.map(id => {
-                const meta = widgetMeta[id];
-                if (!meta) return null;
+                if (id === 'pair') {
+                  return (
+                    <SortablePairShell
+                      key="pair"
+                      id="pair"
+                      left={{
+                        title: 'Varlıklar',
+                        icon: <TrendingUp className="w-4 h-4" />,
+                        headerExtra: (
+                          <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full tabular-nums">
+                            {fmt(assetTotal)} TL
+                          </span>
+                        ),
+                        collapsed: layout.collapsed.includes('assets'),
+                        onToggle: () => toggleCollapse('assets'),
+                        children: <AssetsContent assets={assets} t={t} />,
+                      }}
+                      right={{
+                        title: t('dashboard', 'upcomingChecks'),
+                        icon: <AlertCircle className="w-4 h-4 text-amber-500" />,
+                        headerExtra: (
+                          <Link href="/cek-portfolyo" className="text-xs text-blue-600 hover:underline flex items-center gap-0.5">
+                            {t('dashboard', 'viewAll')} <ChevronRight className="w-3 h-3" />
+                          </Link>
+                        ),
+                        collapsed: layout.collapsed.includes('checks'),
+                        onToggle: () => toggleCollapse('checks'),
+                        children: <ChecksContent checks={upcomingChecks} t={t} />,
+                      }}
+                    />
+                  );
+                }
+                const w = singleWidgets[id];
+                if (!w) return null;
                 return (
                   <WidgetShell
                     key={id}
                     id={id}
-                    title={meta.title}
-                    icon={meta.icon}
-                    headerExtra={meta.headerExtra}
+                    title={w.title}
+                    icon={w.icon}
+                    headerExtra={w.headerExtra}
                     collapsed={layout.collapsed.includes(id)}
                     onToggle={() => toggleCollapse(id)}
                   >
-                    {widgetMap[id]}
+                    {w.content}
                   </WidgetShell>
                 );
               })}
