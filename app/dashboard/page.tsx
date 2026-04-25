@@ -10,6 +10,7 @@ import {
   ScrollText, ChevronRight, Loader2, AlertCircle,
   Users, Package, FileText, Layers
 } from 'lucide-react';
+import PendingOrdersWidget from '@/app/components/pending-orders-widget';
 import Link from 'next/link';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -279,6 +280,8 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+        {/* Pending Orders Widget */}
+        <PendingOrdersWidget />
       </div>
     </AppShell>
   );
