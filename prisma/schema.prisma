@@ -15,6 +15,24 @@ enum Role {
   VIEWER
 }
 
+enum TicketStatus {
+  YENI
+  INCELENIYOR
+  CEVAPLANDI
+  COZULDU
+}
+
+enum TicketPriority {
+  DUSUK
+  ORTA
+  KRITIK
+}
+
+enum TicketType {
+  BUG
+  ONERI
+}
+
 enum PortalCustomerType {
   CUSTOMER
   SUBCONTRACTOR
@@ -85,6 +103,7 @@ model Company {
   productCategories     ProductCategory[]
   customerProductPrices CustomerProductPrice[]
   materialCalculations  MaterialCalculation[]
+  supportTickets        SupportTicket[]
 }
 
 model User {
@@ -107,6 +126,8 @@ model User {
   soleCalculations SoleCalculation[]
   invoices         Invoice[]
   auditLogs        AuditLog[]
+  supportTickets   SupportTicket[]  @relation("ticketCreator")
+  ticketMessages   TicketMessage[]  @relation("messageAuthor")
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 }
@@ -879,4 +900,54 @@ model MaterialCalculationItem {
   sortOrder      Int                 @default(0)
 
   @@index([calculationId])
+}
+
+// ─── Destek Merkezi ────────────────────────────────────────────────────────────
+
+model SupportTicket {
+  id          String           @id @default(cuid())
+  ticketNo    String
+  companyId   String
+  company     Company          @relation(fields: [companyId], references: [id])
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], name: "ticketCreator")
+  type        TicketType       @default(BUG)
+  title       String
+  description String
+  module      String?
+  priority    TicketPriority   @default(ORTA)
+  status      TicketStatus     @default(YENI)
+  pageUrl     String?
+  browser     String?
+  messages    TicketMessage[]
+  attachments TicketAttachment[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  resolvedAt  DateTime?
+
+  @@unique([companyId, ticketNo])
+  @@index([companyId])
+  @@index([status])
+}
+
+model TicketMessage {
+  id        String        @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id], name: "messageAuthor")
+  isAdmin   Boolean       @default(false)
+  content   String
+  createdAt DateTime      @default(now())
+}
+
+model TicketAttachment {
+  id        String        @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  name      String
+  size      Int
+  mimeType  String
+  data      Bytes
+  createdAt DateTime      @default(now())
 }
