@@ -5,6 +5,7 @@ export async function GET() {
   const headers = [
     'Müşteri Adı',
     'Para Birimi',
+    'Başlangıç Bakiyesi',
     'Vergi Kimlik No',
     'Vergi Dairesi',
     'Telefon',
@@ -16,6 +17,7 @@ export async function GET() {
   const example = [
     'Örnek Firma A.Ş.',
     'TRY',
+    '1500.00',
     '1234567890',
     'Kadıköy VD',
     '05551234567',
@@ -28,7 +30,7 @@ export async function GET() {
 
   // Column widths
   ws['!cols'] = [
-    { wch: 30 }, { wch: 14 }, { wch: 18 }, { wch: 18 },
+    { wch: 30 }, { wch: 14 }, { wch: 20 }, { wch: 18 }, { wch: 18 },
     { wch: 16 }, { wch: 35 }, { wch: 28 }, { wch: 20 },
   ];
 

@@ -5,14 +5,29 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
+import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(getRateLimitKey(req, 'signup'), { limit: 5, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: `Çok fazla istek. ${rl.retryAfter} saniye sonra tekrar deneyin.` },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } }
+    );
+  }
+
   try {
     const body = await req.json();
     const { email, password, name, companyName } = body ?? {};
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
+    }
+    if (!/[a-zA-ZğüşıöçĞÜŞİÖÇ]/.test(password) || !/[0-9]/.test(password) || password.length < 6) {
+      return NextResponse.json(
+        { error: 'Şifre en az 6 karakter, 1 harf ve 1 rakam içermelidir.' },
+        { status: 400 }
+      );
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });

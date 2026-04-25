@@ -103,28 +103,42 @@ export async function POST(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
   const body = await req.json();
-  const customer = await prisma.customer.create({
-    data: {
+  try {
+    const customer = await prisma.customer.create({
+      data: {
+        companyId: user.companyId,
+        name: body.name,
+        taxId: body.taxId || null,
+        taxOffice: body.taxOffice || null,
+        email: body.email || null,
+        phone: body.phone || null,
+        address: body.address || null,
+        currency: body.currency || 'TRY',
+        notes: body.notes || null,
+      },
+    });
+    await logAction({
       companyId: user.companyId,
-      name: body.name,
-      taxId: body.taxId || null,
-      taxOffice: body.taxOffice || null,
-      email: body.email || null,
-      phone: body.phone || null,
-      address: body.address || null,
-      currency: body.currency || 'TRY',
-      notes: body.notes || null,
-    },
-  });
-  await logAction({
-    companyId: user.companyId,
-    userId: user.id,
-    userName: user.name,
-    action: 'CREATE',
-    entity: 'Customer',
-    entityId: customer.id,
-    detail: `Müşteri oluşturuldu — ${customer.name}`,
-    ip: getIp(req),
-  });
-  return NextResponse.json(customer);
+      userId: user.id,
+      userName: user.name,
+      action: 'CREATE',
+      entity: 'Customer',
+      entityId: customer.id,
+      detail: `Müşteri oluşturuldu — ${customer.name}`,
+      ip: getIp(req),
+    });
+    return NextResponse.json(customer);
+  } catch (err: any) {
+    await logAction({
+      companyId: user.companyId,
+      userId: user.id,
+      userName: user.name,
+      action: 'ERROR',
+      entity: 'Customer',
+      detail: `Müşteri oluşturulamadı: ${err?.message ?? 'Bilinmeyen hata'}`,
+      meta: { input: { name: body.name } },
+      ip: getIp(req),
+    });
+    return NextResponse.json({ error: 'Müşteri oluşturulamadı' }, { status: 500 });
+  }
 }

@@ -34,8 +34,9 @@ function lineTotal(item: LineItem) {
 }
 
 // ── Line Item Modal ───────────────────────────────────────────────────────────
-function ItemModal({ initial, currency, products, materials, onConfirm, onClose }: {
+function ItemModal({ initial, currency, products, materials, customerPrices, onConfirm, onClose }: {
   initial: LineItem; currency: string; products: any[]; materials: any[];
+  customerPrices?: Record<string, { unitPrice: number; currency: string }>;
   onConfirm: (item: LineItem) => void; onClose: () => void;
 }) {
   const { t } = useLanguage();
@@ -55,7 +56,10 @@ function ItemModal({ initial, currency, products, materials, onConfirm, onClose 
     const p = products.find((p: any) => p.id === productId);
     if (!p) return;
     setSelectedProduct(p);
-    const unitPrice = p.currency === currency ? toPriceInput(p.unitPrice) : '';
+    const custPrice = customerPrices?.[productId];
+    const unitPrice = custPrice
+      ? toPriceInput(custPrice.unitPrice)
+      : p.currency === currency ? toPriceInput(p.unitPrice) : '';
     setItem(prev => ({ ...prev, productId: p.id, description: p.name, unitPrice }));
     const defaults: Record<string, string> = {};
     for (const part of (p.parts ?? [])) {
@@ -102,7 +106,7 @@ function ItemModal({ initial, currency, products, materials, onConfirm, onClose 
               <select value={item.productId ?? ''} onChange={e => handleProductSelect(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
                 <option value="">{t('newInvoice', 'manualEntry')}</option>
-                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {products.map(p => <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ${p.name}` : p.name}</option>)}
               </select>
             </div>
           )}
@@ -184,7 +188,12 @@ function ItemModal({ initial, currency, products, materials, onConfirm, onClose 
                 />
                 <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs font-semibold text-slate-600 flex items-center">{currency}</span>
               </div>
-              {selectedProduct && selectedProduct.currency !== currency && (
+              {selectedProduct && customerPrices?.[selectedProduct.id] && (
+                <p className="text-xs text-emerald-600 mt-1">
+                  ✓ Özel fiyat: {customerPrices[selectedProduct.id].unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {customerPrices[selectedProduct.id].currency}
+                </p>
+              )}
+              {selectedProduct && !customerPrices?.[selectedProduct.id] && selectedProduct.currency !== currency && (
                 <p className="text-xs text-amber-600 mt-1">
                   ⚠ Katalog fiyatı: {selectedProduct.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedProduct.currency}
                 </p>
@@ -384,6 +393,7 @@ export default function NewInvoicePage() {
   });
 
   const [items, setItems] = useState<LineItem[]>([]);
+  const [customerPrices, setCustomerPrices] = useState<Record<string, { unitPrice: number; currency: string }>>({});
 
   useEffect(() => {
     fetch('/api/customers').then(r => r.json()).then(d => {
@@ -448,6 +458,19 @@ export default function NewInvoicePage() {
   useEffect(() => {
     if (selectedCustomer?.currency) {
       setField('currency', selectedCustomer.currency);
+    }
+    if (form.customerId) {
+      fetch(`/api/customers/${form.customerId}/prices`)
+        .then(r => r.json())
+        .then((d: any[]) => {
+          if (!Array.isArray(d)) return;
+          const map: Record<string, { unitPrice: number; currency: string }> = {};
+          for (const p of d) map[p.productId] = { unitPrice: p.unitPrice, currency: p.currency };
+          setCustomerPrices(map);
+        })
+        .catch(() => setCustomerPrices({}));
+    } else {
+      setCustomerPrices({});
     }
   }, [form.customerId, customers]); // customers bağımlılığı: async yüklenince de çalışsın
 
@@ -684,7 +707,7 @@ export default function NewInvoicePage() {
                           onMouseDown={() => handleProductClick(p)}
                           className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-blue-500 hover:text-white text-sm transition-colors text-left"
                         >
-                          <span className="font-medium">{p.name}</span>
+                          <span className="font-medium">{p.name}{p.code ? <span className="ml-1.5 text-xs font-normal opacity-60">{p.code}</span> : null}</span>
                           <span className="text-xs opacity-70 ml-2 flex-shrink-0">{p.stock} {p.unit}</span>
                         </button>
                       ))
@@ -732,7 +755,7 @@ export default function NewInvoicePage() {
                           </td>
                           <td className="py-2 px-2 text-right text-slate-600">{item.quantity}</td>
                           <td className="py-2 px-2 text-right text-slate-600">
-                            {(parseFloat(item.unitPrice) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {fromPriceInput(item.unitPrice).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           <td className="py-2 px-2 text-right text-slate-500">
                             {parseFloat(item.discount) > 0 ? `%${item.discount}` : '—'}
@@ -801,6 +824,7 @@ export default function NewInvoicePage() {
           currency={form.currency}
           products={products}
           materials={materials}
+          customerPrices={customerPrices}
           onConfirm={handleModalConfirm}
           onClose={() => setModal({ open: false, editIndex: null })}
         />

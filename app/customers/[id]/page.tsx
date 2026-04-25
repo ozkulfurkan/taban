@@ -1118,6 +1118,7 @@ export default function CustomerDetailPage() {
                                       <tr key={item.id}>
                                         <td className="px-3 py-2 text-slate-700">
                                           {item.quantity > 0 && <span className="text-slate-400 mr-1">{item.quantity} x</span>}
+                                          {item.product?.code && <span className="text-slate-400 font-mono mr-1 text-xs">[{item.product.code}]</span>}
                                           {item.description}
                                         </td>
                                         <td className="px-3 py-2 text-right text-slate-600">

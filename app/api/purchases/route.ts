@@ -62,16 +62,32 @@ export async function POST(req: NextRequest) {
 
   if (computedTotal <= 0) return NextResponse.json({ error: 'Invalid total' }, { status: 400 });
 
-  const purchase = await prisma.purchase.create({
-    data: {
-      companyId: user.companyId,
-      supplierId,
-      invoiceNo: invoiceNo || null,
-      date: parseDateInputOrNow(date),
-      currency: currency || 'TRY',
-      total: computedTotal,
-      notes: notes || null,
-    },
+  const now = new Date();
+  const year = now.getFullYear();
+  const alfPrefix = `ALF-${year}-`;
+
+  try {
+  const purchase = await prisma.$transaction(async (tx) => {
+    let resolvedInvoiceNo = invoiceNo as string | undefined;
+    if (!resolvedInvoiceNo) {
+      const last = await tx.purchase.findFirst({
+        where: { companyId: user.companyId, invoiceNo: { startsWith: alfPrefix } },
+        orderBy: { invoiceNo: 'desc' },
+      });
+      const seq = last ? parseInt(last.invoiceNo!.split('-')[2]) + 1 : 1;
+      resolvedInvoiceNo = `${alfPrefix}${String(seq).padStart(4, '0')}`;
+    }
+    return tx.purchase.create({
+      data: {
+        companyId: user.companyId,
+        supplierId,
+        invoiceNo: resolvedInvoiceNo,
+        date: parseDateInputOrNow(date),
+        currency: currency || 'TRY',
+        total: computedTotal,
+        notes: notes || null,
+      },
+    });
   });
 
   // Handle items: update product/material stock and create PurchaseMaterial records
@@ -141,4 +157,17 @@ export async function POST(req: NextRequest) {
     ip: getIp(req),
   });
   return NextResponse.json(purchase, { status: 201 });
+  } catch (err: any) {
+    await logAction({
+      companyId: user.companyId,
+      userId: user.id,
+      userName: user.name,
+      action: 'ERROR',
+      entity: 'Purchase',
+      detail: `Alış kaydedilemedi: ${err?.message ?? 'Bilinmeyen hata'}`,
+      meta: { supplierId, invoiceNo },
+      ip: getIp(req),
+    });
+    return NextResponse.json({ error: 'Alış kaydedilemedi' }, { status: 500 });
+  }
 }

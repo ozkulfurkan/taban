@@ -37,18 +37,19 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await getAuthSession() as any;
+  if (!session?.user) return unauthorized();
+  if (session.user.role === 'VIEWER') return NextResponse.json({ error: 'No permission' }, { status: 403 });
+
+  const body = await req.json();
+  const { name, category, supplier, pricePerKg, currency, description } = body ?? {};
+
+  if (!name || pricePerKg == null) return badRequest('Name and price required');
+
+  const companyId = session.user.companyId;
+  if (!companyId) return badRequest('No company assigned');
+
   try {
-    const session = await getAuthSession() as any;
-    if (!session?.user) return unauthorized();
-    if (session.user.role === 'VIEWER') return NextResponse.json({ error: 'No permission' }, { status: 403 });
-
-    const body = await req.json();
-    const { name, category, supplier, pricePerKg, currency, description } = body ?? {};
-
-    if (!name || pricePerKg == null) return badRequest('Name and price required');
-
-    const companyId = session.user.companyId;
-    if (!companyId) return badRequest('No company assigned');
 
     const material = await prisma.material.create({
       data: {
@@ -84,6 +85,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(material, { status: 201 });
   } catch (error: any) {
     console.error('POST materials error:', error);
+    await logAction({
+      companyId,
+      userId: session.user.id,
+      userName: session.user.name,
+      action: 'ERROR',
+      entity: 'Material',
+      detail: `Hammadde oluşturulamadı: ${error?.message ?? 'Bilinmeyen hata'}`,
+      meta: { input: { name } },
+      ip: getIp(req),
+    });
     return NextResponse.json({ error: 'Failed to create' }, { status: 500 });
   }
 }

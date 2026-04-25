@@ -39,10 +39,13 @@ export default function LogsPage() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [companies, setCompanies] = useState<any[]>([]);
   const [entity, setEntity] = useState('');
   const [action, setAction] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [companyId, setCompanyId] = useState('');
 
   const load = async (p = page) => {
     setLoading(true);
@@ -51,6 +54,7 @@ export default function LogsPage() {
     if (action) params.set('action', action);
     if (from) params.set('from', from);
     if (to) params.set('to', to);
+    if (companyId) params.set('companyId', companyId);
     try {
       const res = await fetch(`/api/logs?${params}`);
       if (res.ok) {
@@ -59,13 +63,15 @@ export default function LogsPage() {
         setTotal(data.total ?? 0);
         setPages(data.pages ?? 1);
         setPage(p);
+        setIsSuperAdmin(data.isSuperAdmin ?? false);
+        if (data.companies?.length) setCompanies(data.companies);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { load(1); }, [entity, action, from, to]);
+  useEffect(() => { load(1); }, [entity, action, from, to, companyId]);
 
   const formatDate = (d: string) =>
     new Date(d).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
@@ -82,6 +88,21 @@ export default function LogsPage() {
 
         {/* Filtreler */}
         <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3">
+          {isSuperAdmin && companies.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-gray-500 font-medium">Şirket</label>
+              <select
+                value={companyId}
+                onChange={e => setCompanyId(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Tümü</option>
+                {companies.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-gray-500 font-medium">Varlık</label>
             <select
@@ -136,6 +157,9 @@ export default function LogsPage() {
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">Tarih</th>
+                    {isSuperAdmin && (
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">Şirket</th>
+                    )}
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">Kullanıcı</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">İşlem</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">Varlık</th>
@@ -147,6 +171,11 @@ export default function LogsPage() {
                   {logs.map((log: any) => (
                     <tr key={log.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(log.createdAt)}</td>
+                      {isSuperAdmin && (
+                        <td className="px-4 py-3 text-gray-600 text-xs font-medium whitespace-nowrap">
+                          {log.company?.name ?? '—'}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-gray-700 font-medium">{log.userName ?? '—'}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${ACTION_COLORS[log.action] ?? 'bg-gray-100 text-gray-700'}`}>

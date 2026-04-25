@@ -319,7 +319,11 @@ export default function OrderDetailPage() {
             {/* Beden Dağılımı */}
             <div className="bg-white rounded-xl p-5 shadow-sm">
               <h2 className="font-semibold text-slate-700 mb-3">Beden Dağılımı</h2>
-              <SizeTable value={order.sizeDistribution || {}} readOnly />
+              <SizeTable
+                value={order.sizeDistribution || {}}
+                sizes={Object.keys(order.sizeDistribution || {}).filter(sz => (order.sizeDistribution?.[sz] || 0) > 0)}
+                readOnly
+              />
             </div>
           </div>
 

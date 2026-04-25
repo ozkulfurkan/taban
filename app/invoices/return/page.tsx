@@ -6,6 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle, RotateCcw } from 'lucide-react';
+import { fromPriceInput } from '@/lib/price-input';
 
 interface LineItem {
   productId?: string;
@@ -26,9 +27,9 @@ const VAT_RATES = ['0', '1', '8', '10', '18', '20'];
 const EMPTY_ITEM: LineItem = { description: '', quantity: '1', unitPrice: '', discount: '0', notes: '' };
 
 function lineTotal(item: LineItem) {
-  const qty = parseFloat(item.quantity) || 0;
-  const price = parseFloat(item.unitPrice) || 0;
-  const disc = parseFloat(item.discount) || 0;
+  const qty = fromPriceInput(item.quantity);
+  const price = fromPriceInput(item.unitPrice);
+  const disc = fromPriceInput(item.discount);
   return qty * price * (1 - disc / 100);
 }
 
@@ -57,9 +58,9 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
     }
   }, []);
 
-  const qty = parseFloat(item.quantity) || 0;
-  const price = parseFloat(item.unitPrice) || 0;
-  const disc = parseFloat(item.discount) || 0;
+  const qty = fromPriceInput(item.quantity);
+  const price = fromPriceInput(item.unitPrice);
+  const disc = fromPriceInput(item.discount);
   const gross = qty * price;
   const discAmount = gross * disc / 100;
   const total = gross - discAmount;
@@ -449,7 +450,7 @@ export default function ReturnInvoicePage() {
                           </td>
                           <td className="py-2 px-2 text-right text-slate-600">{item.quantity}</td>
                           <td className="py-2 px-2 text-right text-slate-600">
-                            {(parseFloat(item.unitPrice) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {fromPriceInput(item.unitPrice).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           <td className="py-2 px-2 text-right text-slate-500">
                             {parseFloat(item.discount) > 0 ? `%${item.discount}` : '—'}

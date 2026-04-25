@@ -81,8 +81,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const invoice = await prisma.$transaction(async (tx) => {
     if (items) {
-      // Eski hammadde stoğunu geri al (stok düşüldüyse)
-      if (existing.stockDeducted && !existing.isReturn) {
+      // Eski hammadde stoğunu geri al (stok düşüldüyse, sadece SOLE_MANUFACTURER)
+      if (existing.stockDeducted && !existing.isReturn && user.companyType !== 'MATERIAL_SUPPLIER') {
         for (const oldItem of existing.items) {
           if (!oldItem.productId || !(oldItem as any).product) continue;
           const pvData: Array<{ partId: string; materialId: string }> =
@@ -121,8 +121,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         }),
       });
 
-      // Yeni hammadde stoğunu düş (stok daha önce düşüldüyse)
-      if (existing.stockDeducted && !existing.isReturn) {
+      // Yeni hammadde stoğunu düş (stok daha önce düşüldüyse, sadece SOLE_MANUFACTURER)
+      if (existing.stockDeducted && !existing.isReturn && user.companyType !== 'MATERIAL_SUPPLIER') {
         const newProductItems = items.filter((i: any) => i.productId);
         if (newProductItems.length > 0) {
           const seen = new Set<string>();
@@ -219,18 +219,20 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
         data: { stock: { increment: sign * item.quantity } },
       });
 
-      // Hammadde stoğunu geri al (partVariantsData'daki seçili malzemeyi kullan)
-      const partVariants: Array<{ partId: string; materialId: string }> =
-        Array.isArray((item as any).partVariantsData) ? (item as any).partVariantsData : [];
-      for (const part of item.product.parts) {
-        const matId = partVariants.find(pv => pv.partId === part.id)?.materialId ?? part.materialId;
-        if (!matId) continue;
-        const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
-        const kgUsed = (grossGrams * item.quantity) / 1000;
-        await tx.material.updateMany({
-          where: { id: matId, companyId: user.companyId },
-          data: { stock: { increment: sign * kgUsed } },
-        });
+      // Hammadde stoğunu geri al (sadece SOLE_MANUFACTURER)
+      if (user.companyType !== 'MATERIAL_SUPPLIER') {
+        const partVariants: Array<{ partId: string; materialId: string }> =
+          Array.isArray((item as any).partVariantsData) ? (item as any).partVariantsData : [];
+        for (const part of item.product.parts) {
+          const matId = partVariants.find(pv => pv.partId === part.id)?.materialId ?? part.materialId;
+          if (!matId) continue;
+          const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
+          const kgUsed = (grossGrams * item.quantity) / 1000;
+          await tx.material.updateMany({
+            where: { id: matId, companyId: user.companyId },
+            data: { stock: { increment: sign * kgUsed } },
+          });
+        }
       }
     }
 

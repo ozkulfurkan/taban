@@ -34,8 +34,9 @@ export async function PUT(req: NextRequest) {
     if (!companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
     const body = await req.json();
-    const { name, address, taxId, phone, bankInfo, logoUrl, usdToTry, eurToTry, vatRate } = body ?? {};
+    const { name, address, taxId, phone, bankInfo, logoUrl, usdToTry, eurToTry, vatRate, companyType } = body ?? {};
 
+    const VALID_COMPANY_TYPES = ['SOLE_MANUFACTURER', 'MATERIAL_SUPPLIER'];
     const updated = await prisma.company.update({
       where: { id: companyId },
       data: {
@@ -48,6 +49,7 @@ export async function PUT(req: NextRequest) {
         ...(usdToTry !== undefined ? { usdToTry: parseFloat(usdToTry) || 1 } : {}),
         ...(eurToTry !== undefined ? { eurToTry: parseFloat(eurToTry) || 1 } : {}),
         ...(vatRate !== undefined ? { vatRate: parseFloat(vatRate) || 0 } : {}),
+        ...(companyType !== undefined && VALID_COMPANY_TYPES.includes(companyType) ? { companyType } : {}),
       },
     });
 

@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
   FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText,
-  UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck
+  UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck, LifeBuoy
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,6 +27,7 @@ export default function Sidebar() {
   const isOwner = user?.role === 'COMPANY_OWNER';
   const hasFullAccess = isAdmin || isOwner;
   const allowedPages: string[] = user?.allowedPages ?? [];
+  const isMaterial = user?.companyType === 'MATERIAL_SUPPLIER';
 
   const PAGE_KEY: Record<string, string> = {
     '/dashboard': 'dashboard',
@@ -57,7 +58,10 @@ export default function Sidebar() {
     {
       links: [
         { href: '/dashboard', label: t('nav', 'home'), icon: LayoutDashboard },
-        { href: '/products/new?from=maliyet', label: 'Maliyet Hesaplama', icon: Calculator, special: true },
+        ...(isMaterial
+          ? [{ href: '/hesaplayici', label: 'Hesaplayıcı', icon: Calculator, special: true }]
+          : [{ href: '/products/new?from=maliyet', label: 'Maliyet Hesaplama', icon: Calculator, special: true }]
+        ),
       ],
     },
     {
@@ -74,7 +78,7 @@ export default function Sidebar() {
       title: 'Stok & Hesaplar',
       links: [
         { href: '/products', label: t('nav', 'products'), icon: BoxIcon },
-        { href: '/materials', label: t('nav', 'rawMaterials'), icon: Package },
+        ...(!isMaterial ? [{ href: '/materials', label: t('nav', 'rawMaterials'), icon: Package }] : []),
         { href: '/accounts', label: t('nav', 'accounts'), icon: Landmark },
         { href: '/cek-portfolyo', label: t('nav', 'checkPortfolio'), icon: ScrollText },
       ],
@@ -82,9 +86,9 @@ export default function Sidebar() {
     {
       title: 'Operasyonlar',
       links: [
-        { href: '/orders', label: 'Siparişler', icon: ClipboardList },
-        { href: '/subcontractors', label: 'Fasoncular', icon: Factory },
-        { href: '/subcontractor-orders', label: 'Fason Siparişleri', icon: Factory },
+        ...(!isMaterial ? [{ href: '/orders', label: 'Siparişler', icon: ClipboardList }] : []),
+        ...(!isMaterial ? [{ href: '/subcontractors', label: 'Fasoncular', icon: Factory }] : []),
+        ...(!isMaterial ? [{ href: '/subcontractor-orders', label: 'Fason Siparişleri', icon: Factory }] : []),
         { href: '/personnel', label: 'Personel Takip', icon: UserCheck },
         ...(isAdmin || isOwner ? [{ href: '/portal-admin', label: 'Müşteri Portalı', icon: Globe }] : []),
       ],
@@ -95,6 +99,7 @@ export default function Sidebar() {
         { href: '/settings', label: t('nav', 'settings'), icon: Settings },
         ...(isAdmin || isOwner ? [{ href: '/settings/users', label: t('nav', 'users'), icon: UserCog }] : []),
         ...(isAdmin ? [{ href: '/logs', label: 'Log Kayıtları', icon: ClipboardList }] : []),
+        ...(isAdmin ? [{ href: '/admin/destek', label: 'Destek Yönetimi', icon: LifeBuoy }] : []),
         ...(isAdmin ? [{ href: '/admin', label: t('nav', 'admin'), icon: Shield }] : []),
       ],
     },
