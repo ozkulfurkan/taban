@@ -21,7 +21,8 @@ export async function GET() {
     if (!session?.user) return unauthorized();
 
     const companyId = session.user.companyId;
-    const where = session.user.role === 'ADMIN' ? {} : { companyId };
+    if (!companyId) return unauthorized();
+    const where = { companyId };
 
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
