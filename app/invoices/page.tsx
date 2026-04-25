@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Plus, Loader2, Minus, ShoppingCart, User, Printer, Trash2 } from 'lucide-react';
+import { Plus, Loader2, Minus, ShoppingCart, User, Printer, Trash2, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -50,8 +50,8 @@ export default function InvoicesPage() {
 
   const filtered = invoices.filter(inv => {
     if (customerIdParam && inv.customerId !== customerIdParam) return false;
-    if (search.length >= 3) {
-      const q = search.toLowerCase();
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
       return (
         inv.invoiceNo?.toLowerCase().includes(q) ||
         inv.customer?.name?.toLowerCase().includes(q)
@@ -72,16 +72,18 @@ export default function InvoicesPage() {
           <div className="flex items-center gap-3 flex-wrap">
             {/* Search */}
             <div className="flex items-center gap-2 border border-slate-200 rounded-lg bg-white px-3 py-1.5 shadow-sm">
-              <span className="text-sm text-slate-500 font-medium whitespace-nowrap">Ara:</span>
-              <select className="text-sm text-slate-600 outline-none bg-transparent border-r border-slate-200 pr-2 mr-1">
-                <option>Müşteri İsmi / Belge No</option>
-              </select>
+              <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="arama... (en az 3)"
-                className="text-sm outline-none w-40 placeholder:text-slate-300"
+                placeholder="Müşteri veya belge no..."
+                className="text-sm outline-none w-44 placeholder:text-slate-300"
               />
+              {search && (
+                <button onClick={() => setSearch('')} className="text-slate-300 hover:text-slate-500">
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             <Link href="/invoices/new"
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm text-sm">
@@ -117,8 +119,17 @@ export default function InvoicesPage() {
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
         ) : !filtered.length ? (
-          <div className="text-center py-16 bg-white rounded-xl shadow-sm text-slate-400 text-sm">
-            {search.length >= 3 ? t('invoices', 'noResults') : t('invoices', 'empty')}
+          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
+            {search.trim() ? (
+              <p className="text-slate-400 text-sm">{t('invoices', 'noResults')}</p>
+            ) : (
+              <>
+                <p className="text-slate-400 text-sm mb-3">{t('invoices', 'empty')}</p>
+                <Link href="/invoices/new" className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                  <Plus className="w-4 h-4" /> Fatura kes
+                </Link>
+              </>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">

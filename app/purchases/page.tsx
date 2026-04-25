@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
-import { Plus, Loader2, ShoppingCart, Building2, Printer, Trash2, Package } from 'lucide-react';
+import { Plus, Loader2, ShoppingCart, Building2, Printer, Trash2, Package, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -49,8 +49,8 @@ export default function PurchasesListPage() {
       const computedStatus = remaining <= 0 ? 'PAID' : remaining < p.total ? 'PARTIAL' : 'PENDING';
       if (computedStatus !== statusFilter && p.status !== statusFilter) return false;
     }
-    if (search.length >= 3) {
-      const q = search.toLowerCase();
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
       return (
         p.invoiceNo?.toLowerCase().includes(q) ||
         p.supplier?.name?.toLowerCase().includes(q)
@@ -71,16 +71,18 @@ export default function PurchasesListPage() {
           <div className="flex items-center gap-3 flex-wrap">
             {/* Search */}
             <div className="flex items-center gap-2 border border-slate-200 rounded-lg bg-white px-3 py-1.5 shadow-sm">
-              <span className="text-sm text-slate-500 font-medium whitespace-nowrap">Ara:</span>
-              <select className="text-sm text-slate-600 outline-none bg-transparent border-r border-slate-200 pr-2 mr-1">
-                <option>Tedarikçi İsmi / Belge No</option>
-              </select>
+              <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="arama... (en az 3)"
-                className="text-sm outline-none w-40 placeholder:text-slate-300"
+                placeholder="Tedarikçi veya belge no..."
+                className="text-sm outline-none w-44 placeholder:text-slate-300"
               />
+              {search && (
+                <button onClick={() => setSearch('')} className="text-slate-300 hover:text-slate-500">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             <Link href="/purchases/new"
               className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors shadow-sm text-sm">
