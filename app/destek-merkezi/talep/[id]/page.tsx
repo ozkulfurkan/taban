@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Bug, Lightbulb, Send, Loader2, Clock,
-  User, Shield, CheckCircle2, AlertCircle, ChevronDown, Paperclip, Image
+  User, Shield, CheckCircle2, AlertCircle, ChevronDown, Paperclip, X
 } from 'lucide-react';
 import AppShell from '@/app/components/app-shell';
 
@@ -78,6 +78,7 @@ export default function TicketDetailPage() {
   const [sending, setSending] = useState(false);
   const [statusChanging, setStatusChanging] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchTicket = () => {
@@ -242,7 +243,16 @@ export default function TicketDetailPage() {
               {ticket.attachments.map(att => {
                 const isImage = att.mimeType.startsWith('image/');
                 const url = `/api/support/tickets/${ticket.id}/attachments/${att.id}`;
-                return (
+                return isImage ? (
+                  <button
+                    key={att.id}
+                    onClick={() => setLightbox(url)}
+                    className="group relative overflow-hidden rounded-xl border border-slate-200 hover:border-blue-300 transition-colors"
+                  >
+                    <img src={url} alt={att.name} className="w-40 h-28 object-cover" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                  </button>
+                ) : (
                   <a
                     key={att.id}
                     href={url}
@@ -250,22 +260,9 @@ export default function TicketDetailPage() {
                     rel="noopener noreferrer"
                     className="group relative overflow-hidden rounded-xl border border-slate-200 hover:border-blue-300 transition-colors"
                   >
-                    {isImage ? (
-                      <img
-                        src={url}
-                        alt={att.name}
-                        className="w-40 h-28 object-cover"
-                      />
-                    ) : (
-                      <div className="w-40 h-28 flex flex-col items-center justify-center gap-2 bg-slate-50">
-                        <Paperclip className="w-6 h-6 text-slate-400" />
-                        <span className="text-xs text-slate-500 px-2 text-center truncate w-full">{att.name}</span>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-end p-2">
-                      <span className="text-xs text-white bg-black/50 rounded px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity truncate max-w-full">
-                        {att.name}
-                      </span>
+                    <div className="w-40 h-28 flex flex-col items-center justify-center gap-2 bg-slate-50">
+                      <Paperclip className="w-6 h-6 text-slate-400" />
+                      <span className="text-xs text-slate-500 px-2 text-center truncate w-full">{att.name}</span>
                     </div>
                   </a>
                 );
@@ -273,6 +270,41 @@ export default function TicketDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Lightbox */}
+        <AnimatePresence>
+          {lightbox && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+              onClick={() => setLightbox(null)}
+            >
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.92, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                className="relative z-10 max-w-[90vw] max-h-[90vh]"
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setLightbox(null)}
+                  className="absolute -top-3 -right-3 z-20 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-4 h-4 text-slate-700" />
+                </button>
+                <img
+                  src={lightbox}
+                  alt="Ekran görüntüsü"
+                  className="max-w-full max-h-[85vh] rounded-xl shadow-2xl object-contain"
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Messages */}
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">

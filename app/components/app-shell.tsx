@@ -54,17 +54,17 @@ function UserMenu() {
   );
 }
 
-function AdminDestekLink() {
+function DestekLink() {
   const { data: session } = useSession() || {};
   const user = session?.user as any;
-  if (user?.role !== 'ADMIN') return null;
+  if (!user || user.role === 'ADMIN') return null;
   return (
     <Link
-      href="/admin/destek"
+      href="/destek-merkezi"
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
     >
       <LifeBuoy className="w-4 h-4 text-blue-500" />
-      <span className="hidden sm:block">Destek Yönetimi</span>
+      <span className="hidden sm:block">Destek Merkezi</span>
     </Link>
   );
 }
@@ -228,7 +228,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1 overflow-y-auto">
         <div className="sticky top-0 z-30 bg-slate-50/80 backdrop-blur border-b border-slate-200/60">
           <div className="max-w-[1200px] mx-auto px-4 md:px-6 lg:px-8 h-14 flex items-center justify-end gap-2">
-            <AdminDestekLink />
+            <DestekLink />
             <UserMenu />
           </div>
         </div>
