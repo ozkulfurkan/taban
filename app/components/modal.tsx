@@ -23,6 +23,9 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             onClick={onClose}
           />
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            data-testid="modal"
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}

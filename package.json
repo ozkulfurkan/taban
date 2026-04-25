@@ -6,6 +6,13 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report",
+    "test:headed": "playwright test --headed",
+    "test:auth": "playwright test tests/e2e/auth",
+    "test:orders": "playwright test tests/e2e/orders",
+    "test:ux": "playwright test tests/e2e/ux",
     "postinstall": "prisma generate"
   },
   "prisma": {
@@ -13,6 +20,7 @@
   },
   "devDependencies": {
     "@next/swc-wasm-nodejs": "13.5.1",
+    "@playwright/test": "^1.59.1",
     "@types/node": "20.6.2",
     "@types/nodemailer": "^8.0.0",
     "@types/react": "18.2.22",
@@ -36,6 +44,10 @@
     "@aws-sdk/client-s3": "^3.0.0",
     "@aws-sdk/s3-request-presigner": "^3.0.0",
     "@azure/storage-blob": "^12.0.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/modifiers": "^9.0.0",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@floating-ui/react": "0.26.0",
     "@headlessui/react": "1.7.18",
     "@hookform/resolvers": "3.9.0",

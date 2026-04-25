@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { CreditCard, Loader2, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { CreditCard, Loader2, ArrowDownCircle, ArrowUpCircle, Info } from 'lucide-react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 export default function PaymentsPage() {
@@ -57,7 +58,11 @@ export default function PaymentsPage() {
         ) : !payments.length ? (
           <div className="text-center py-16 bg-white rounded-xl shadow-sm">
             <CreditCard className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-400">{t('payments', 'empty')}</p>
+            <p className="text-slate-400 text-sm mb-3">{t('payments', 'empty')}</p>
+            <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+              <Info className="w-4 h-4 flex-shrink-0" />
+              <span>Ödemeler <Link href="/customers" className="font-semibold underline underline-offset-2 hover:text-blue-900">Müşteri</Link> veya <Link href="/suppliers" className="font-semibold underline underline-offset-2 hover:text-blue-900">Tedarikçi</Link> sayfasından eklenir.</span>
+            </div>
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">

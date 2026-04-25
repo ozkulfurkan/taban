@@ -86,7 +86,7 @@ function TahsilModal({ cek, onClose, onSaved }: { cek: any; onClose: () => void;
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="bg-teal-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+        <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h2 className="text-white font-bold text-sm">Çek Tahsil Et — {cek.borclu}</h2>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-4 h-4" /></button>
         </div>
