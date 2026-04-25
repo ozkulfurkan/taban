@@ -50,11 +50,13 @@ function AccountModal({
     color: initial?.color ?? '#3B82F6',
   });
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState('');
 
   const set = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
 
   const handleSave = async () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) { setNameError('Hesap adı zorunludur.'); return; }
+    setNameError('');
     setSaving(true);
     try {
       await fetch(isEdit ? `/api/accounts/${initial!.id}` : '/api/accounts', {
@@ -77,9 +79,12 @@ function AccountModal({
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('accounts', 'description')}</label>
-            <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Örn. TL Kasa, Garanti TL"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            <label className="block text-xs font-medium text-slate-500 mb-1">{t('accounts', 'description')} <span className="text-red-500">*</span></label>
+            <input value={form.name}
+              onChange={e => { set('name', e.target.value); if (e.target.value.trim()) setNameError(''); }}
+              placeholder="Örn. TL Kasa, Garanti TL"
+              className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none ${nameError ? 'border-red-400 ring-1 ring-red-400' : 'border-slate-200'}`} />
+            {nameError && <p className="mt-1 text-xs text-red-500">{nameError}</p>}
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">{t('accounts', 'accountType')}</label>

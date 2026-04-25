@@ -405,7 +405,7 @@ export default function MaterialDetailPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/40" onClick={() => setStokModal(null)} />
             <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-              <div className={`${stokModal.subcontractorId ? 'bg-blue-600' : 'bg-emerald-600'} rounded-t-2xl px-5 py-4 flex items-center justify-between`}>
+              <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
                 <h3 className="text-white font-semibold text-base">
                   {stokModal.subcontractorId ? `Fasoncu Stok Güncelle — ${stokModal.subcontractorName}` : 'Stok Güncelle (Ana Depo)'}
                 </h3>
@@ -520,7 +520,7 @@ export default function MaterialDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setReceiveModal(null)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-            <div className="bg-emerald-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+            <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
               <h3 className="text-white font-semibold text-base">Fasoncudan Al — {receiveModal.name}</h3>
               <button onClick={() => setReceiveModal(null)} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
             </div>

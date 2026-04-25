@@ -135,7 +135,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="bg-emerald-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+        <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold">{t('customerDetail', 'collect')}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
@@ -608,7 +608,7 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-          <div className="bg-teal-600 rounded-t-2xl px-6 py-4 flex items-center justify-between flex-shrink-0">
+          <div className="bg-blue-600 rounded-t-2xl px-6 py-4 flex items-center justify-between flex-shrink-0">
             <h2 className="text-white font-bold text-base flex items-center gap-2">
               <CreditCard className="w-5 h-5" /> Çek Kaydı — {customer.name}
             </h2>

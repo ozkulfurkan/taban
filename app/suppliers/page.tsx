@@ -112,7 +112,12 @@ export default function SuppliersPage() {
         ) : !filtered.length ? (
           <div className="text-center py-16 bg-white rounded-xl shadow-sm">
             <Truck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-400">{search ? t('suppliers', 'noResults') : t('suppliers', 'empty')}</p>
+            <p className="text-slate-400 text-sm mb-3">{search ? t('suppliers', 'noResults') : t('suppliers', 'empty')}</p>
+            {!search && (
+              <Link href="/suppliers/new" className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                <Plus className="w-4 h-4" /> Tedarikçi ekle
+              </Link>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">

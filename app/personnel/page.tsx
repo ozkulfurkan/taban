@@ -35,12 +35,18 @@ function AddEmployeeModal({ onClose, onSave }: { onClose: () => void; onSave: (e
   const [form, setForm] = useState({ name: '', department: '', role: '', salary: '', currency: 'TRY', hireDate: '', payday: '1', phone: '', email: '' });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
+  const set = (k: string, v: string) => { setForm(p => ({ ...p, [k]: v })); if (v) setFieldErrors(p => ({ ...p, [k]: '' })); };
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.department || !form.role || !form.salary) return;
+    const errs: Record<string, string> = {};
+    if (!form.name) errs.name = 'Zorunlu alan';
+    if (!form.department) errs.department = 'Zorunlu alan';
+    if (!form.role) errs.role = 'Zorunlu alan';
+    if (!form.salary) errs.salary = 'Zorunlu alan';
+    if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
     setSaving(true);
     setErr('');
     try {
@@ -59,6 +65,7 @@ function AddEmployeeModal({ onClose, onSave }: { onClose: () => void; onSave: (e
   };
 
   const inputCls = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none';
+  const errCls = 'w-full px-3 py-2 border border-red-400 ring-1 ring-red-400 rounded-lg text-sm focus:ring-2 focus:ring-red-400 outline-none';
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -70,20 +77,24 @@ function AddEmployeeModal({ onClose, onSave }: { onClose: () => void; onSave: (e
         <form onSubmit={handle} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Ad Soyad *</label>
-              <input className={inputCls} value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ahmet Yılmaz" required />
+              <label className="block text-xs font-medium text-gray-600 mb-1">Ad Soyad <span className="text-red-500">*</span></label>
+              <input className={fieldErrors.name ? errCls : inputCls} value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ahmet Yılmaz" />
+              {fieldErrors.name && <p className="mt-0.5 text-xs text-red-500">{fieldErrors.name}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Departman *</label>
-              <input className={inputCls} value={form.department} onChange={e => set('department', e.target.value)} placeholder="Üretim" required />
+              <label className="block text-xs font-medium text-gray-600 mb-1">Departman <span className="text-red-500">*</span></label>
+              <input className={fieldErrors.department ? errCls : inputCls} value={form.department} onChange={e => set('department', e.target.value)} placeholder="Üretim" />
+              {fieldErrors.department && <p className="mt-0.5 text-xs text-red-500">{fieldErrors.department}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Görev *</label>
-              <input className={inputCls} value={form.role} onChange={e => set('role', e.target.value)} placeholder="Operatör" required />
+              <label className="block text-xs font-medium text-gray-600 mb-1">Görev <span className="text-red-500">*</span></label>
+              <input className={fieldErrors.role ? errCls : inputCls} value={form.role} onChange={e => set('role', e.target.value)} placeholder="Operatör" />
+              {fieldErrors.role && <p className="mt-0.5 text-xs text-red-500">{fieldErrors.role}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Maaş *</label>
-              <input type="number" min="0" step="0.01" className={inputCls} value={form.salary} onChange={e => set('salary', e.target.value)} placeholder="25000" required />
+              <label className="block text-xs font-medium text-gray-600 mb-1">Maaş <span className="text-red-500">*</span></label>
+              <input type="number" min="0" step="0.01" className={fieldErrors.salary ? errCls : inputCls} value={form.salary} onChange={e => set('salary', e.target.value)} placeholder="25000" />
+              {fieldErrors.salary && <p className="mt-0.5 text-xs text-red-500">{fieldErrors.salary}</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Para Birimi</label>
@@ -151,7 +162,7 @@ export default function PersonnelPage() {
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 5000);
   };
 
   const fetchEmployees = useCallback(async () => {
@@ -352,9 +363,12 @@ export default function PersonnelPage() {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-all ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
-          {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-          {toast.msg}
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-all ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+          {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+          <span>{toast.msg}</span>
+          <button onClick={() => setToast(null)} className="ml-1 opacity-70 hover:opacity-100 transition-opacity">
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
     </AppShell>

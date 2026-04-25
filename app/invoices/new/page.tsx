@@ -95,7 +95,7 @@ function ItemModal({ initial, currency, products, materials, customerPrices, onC
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col">
-        <div className="bg-emerald-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+        <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold text-base">{item.description || t('newInvoice', 'product')}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
@@ -277,18 +277,18 @@ function CurrencyWarning({ invoiceCurrency, customerCurrency, onConfirm, onCance
           <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
             <AlertTriangle className="w-5 h-5 text-amber-600" />
           </div>
-          <h3 className="text-base font-semibold text-slate-800">{t('newInvoice', 'currencyMismatch')}</h3>
+          <h3 className="text-base font-semibold text-slate-800">Para Birimi Uyuşmuyor</h3>
         </div>
-        <p className="text-sm text-slate-600 mb-2">
-          <strong className="text-slate-800">{invoiceCurrency}</strong> {t('newInvoice', 'currencyMismatchDesc')} <strong className="text-slate-800">{customerCurrency}</strong>
+        <p className="text-sm text-slate-600 mb-1">
+          Bu müşteri <strong className="text-slate-800">{customerCurrency}</strong> ile çalışıyor, siz <strong className="text-slate-800">{invoiceCurrency}</strong> seçtiniz.
         </p>
-        <p className="text-xs text-slate-400 mb-5">{t('newInvoice', 'continueQuestion')}</p>
+        <p className="text-xs text-slate-400 mb-5">Devam ederseniz fatura <strong>{invoiceCurrency}</strong> olarak kaydedilir.</p>
         <div className="flex gap-3">
           <button onClick={onCancel} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
-            {t('common', 'cancel')}
+            Geri Dön
           </button>
           <button onClick={onConfirm} className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium">
-            {t('newInvoice', 'continue')}
+            {invoiceCurrency} ile Devam Et
           </button>
         </div>
       </div>
@@ -305,19 +305,28 @@ function StockConfirmModal({ deductions, onConfirm, onCancel, saving }: {
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="bg-purple-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
-          <h3 className="text-white font-semibold text-base">Hammadde Stok Düşümü Onayı</h3>
+        <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <h3 className="text-white font-semibold text-base">Stok Düşümü Onayı</h3>
           <button onClick={onCancel} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
-          <p className="text-sm text-slate-600">Fatura kaydedildiğinde aşağıdaki hammaddeler stoktan düşülecektir:</p>
+          {deductions.some(d => d.currentStock < d.kgAmount) && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
+              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-red-700 font-medium">Bazı hammaddeler yetersiz — stok eksi değere düşecek.</p>
+            </div>
+          )}
+          <p className="text-sm text-slate-600">
+            Fatura kaydedildiğinde aşağıdaki hammaddeler stoğunuzdan otomatik düşülür.
+            <span className="text-slate-400 block text-xs mt-0.5">Bu işlem geri alınamaz.</span>
+          </p>
           <div className="border border-slate-200 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Hammadde / Renk</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500">Düşüm (kg)</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500">Mevcut Stok</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500">Hammadde</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500">Düşüm</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-slate-500">Mevcut</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -325,12 +334,11 @@ function StockConfirmModal({ deductions, onConfirm, onCancel, saving }: {
                   <tr key={i} className={d.currentStock < d.kgAmount ? 'bg-red-50' : ''}>
                     <td className="px-3 py-2">
                       <p className="font-medium text-slate-700">{d.name}</p>
-                      {d.variantInfo && <p className="text-xs text-purple-600">{d.variantInfo}</p>}
+                      {d.variantInfo && <p className="text-xs text-slate-400">{d.variantInfo}</p>}
                     </td>
                     <td className="px-3 py-2 text-right font-semibold text-red-600">−{d.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</td>
                     <td className={`px-3 py-2 text-right font-medium ${d.currentStock < d.kgAmount ? 'text-red-600' : 'text-emerald-600'}`}>
                       {d.currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
-                      {d.currentStock < d.kgAmount && <span className="text-xs text-red-500 block">⚠ Yetersiz stok</span>}
                     </td>
                   </tr>
                 ))}
@@ -339,10 +347,10 @@ function StockConfirmModal({ deductions, onConfirm, onCancel, saving }: {
           </div>
           <div className="flex gap-3">
             <button onClick={onCancel} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
-              Vazgeç
+              Geri Dön
             </button>
             <button onClick={onConfirm} disabled={saving}
-              className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60">
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
               Onayla ve Kaydet
             </button>
@@ -359,6 +367,7 @@ export default function NewInvoicePage() {
   const searchParams = useSearchParams();
   const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ customerId?: string; items?: string }>({});
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
@@ -498,6 +507,7 @@ export default function NewInvoicePage() {
       setItems(prev => prev.map((it, i) => i === modal.editIndex ? item : it));
     } else {
       setItems(prev => [...prev, item]);
+      setFormErrors(p => ({ ...p, items: undefined }));
     }
     setModal({ open: false, editIndex: null });
   };
@@ -541,8 +551,11 @@ export default function NewInvoicePage() {
   };
 
   const handleSubmit = () => {
-    if (!form.customerId) return alert(t('newInvoice', 'selectCustomer'));
-    if (items.length === 0) return alert(t('newInvoice', 'noItems'));
+    const errors: { customerId?: string; items?: string } = {};
+    if (!form.customerId) errors.customerId = t('newInvoice', 'selectCustomer');
+    if (items.length === 0) errors.items = t('newInvoice', 'noItems');
+    if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+    setFormErrors({});
 
     // Check if any item has a product with parts defined
     const deductionMap = new Map<string, { name: string; variantInfo: string; kgAmount: number; currentStock: number }>();
@@ -592,8 +605,8 @@ export default function NewInvoicePage() {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={saving || items.length === 0 || !form.customerId}
-            className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+            disabled={saving}
+            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? t('newInvoice', 'saving') : t('newInvoice', 'save')}
@@ -617,11 +630,17 @@ export default function NewInvoicePage() {
                     {selectedCustomer?.name || lockedCustomerId}
                   </div>
                 ) : (
-                  <select required value={form.customerId} onChange={e => setField('customerId', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  <select required value={form.customerId}
+                    onChange={e => { setField('customerId', e.target.value); setFormErrors(p => ({ ...p, customerId: undefined })); }}
+                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white ${formErrors.customerId ? 'border-red-400 ring-1 ring-red-400' : 'border-slate-200'}`}>
                     <option value="">{t('newInvoice', 'selectCustomerPlaceholder')}</option>
                     {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
+                )}
+                {formErrors.customerId && (
+                  <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />{formErrors.customerId}
+                  </p>
                 )}
               </div>
               <div>
@@ -808,8 +827,12 @@ export default function NewInvoicePage() {
               )}
 
               {items.length === 0 && (
-                <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm">
-                  {t('newInvoice', 'emptyItemsHint')}
+                <div className={`text-center py-10 border-2 border-dashed rounded-xl text-sm ${formErrors.items ? 'border-red-300 bg-red-50 text-red-400' : 'border-slate-200 text-slate-400'}`}>
+                  {formErrors.items ? (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4" />{formErrors.items}
+                    </span>
+                  ) : t('newInvoice', 'emptyItemsHint')}
                 </div>
               )}
             </div>

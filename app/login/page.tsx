@@ -99,13 +99,7 @@ export default function LoginPage() {
         redirect: false,
       });
       if (result?.error) {
-        const statusRes = await fetch('/api/auth/check-login-status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-        const status = await statusRes.json();
-        if (status.exists && !status.emailVerified) {
+        if (result.error === 'EMAIL_NOT_VERIFIED') {
           setUnverifiedEmail(email);
         } else {
           setError('E-posta veya şifre hatalı.');
