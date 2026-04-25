@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
-import { sendMail } from '@/lib/mail';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -133,40 +132,6 @@ export async function POST(req: NextRequest) {
       },
     });
   });
-
-  // Email bildirimi — teslim makbuzu
-  const [customer, product] = await Promise.all([
-    prisma.customer.findUnique({ where: { id: customerId }, select: { name: true } }),
-    finalProductId ? prisma.product.findUnique({ where: { id: finalProductId }, select: { name: true, code: true } }) : Promise.resolve(null),
-  ]);
-
-  const adminUsers = await prisma.user.findMany({
-    where: { companyId: user.companyId, role: { in: ['ADMIN', 'COMPANY_OWNER'] } },
-    select: { email: true },
-  });
-  const adminEmails = adminUsers.map(u => u.email).filter(Boolean);
-  const sizeEntries = Object.entries(finalSizeDist).filter(([, qty]) => qty > 0);
-  const sizeHeaderCells = sizeEntries.map(([sz]) => `<th style="padding:6px 12px;border:1px solid #e2e8f0;">${sz}</th>`).join('');
-  const sizeValueCells = sizeEntries.map(([, qty]) => `<td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;">${qty}</td>`).join('');
-
-  const emailHtml = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
-    <h2 style="margin:0 0 16px;">Yeni Sipariş: ${order.orderNo}</h2>
-    <p><strong>Müşteri:</strong> ${customer?.name ?? customerId}</p>
-    <p><strong>Model:</strong> ${finalProductCode || product?.code || '—'}</p>
-    <p><strong>Toplam:</strong> ${finalTotalQty} çift</p>
-    <table style="border-collapse:collapse;width:100%;margin-top:12px;">
-      <thead><tr>${sizeHeaderCells}<th style="padding:6px 12px;border:1px solid #e2e8f0;background:#dbeafe;">Toplam</th></tr></thead>
-      <tbody><tr>${sizeValueCells}<td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;">${finalTotalQty}</td></tr></tbody>
-    </table>
-  </div>`;
-
-  if (adminEmails.length > 0) {
-    sendMail({
-      to: adminEmails,
-      subject: `Yeni Sipariş (Admin): ${order.orderNo} — ${customer?.name ?? ''}`,
-      html: emailHtml,
-    }).catch(() => {});
-  }
 
   return NextResponse.json(order, { status: 201 });
 }
