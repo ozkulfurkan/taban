@@ -60,27 +60,41 @@ export async function POST(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
   const body = await req.json();
-  const supplier = await prisma.supplier.create({
-    data: {
+  try {
+    const supplier = await prisma.supplier.create({
+      data: {
+        companyId: user.companyId,
+        name: body.name,
+        taxId: body.taxId || null,
+        email: body.email || null,
+        phone: body.phone || null,
+        address: body.address || null,
+        currency: body.currency || 'USD',
+        notes: body.notes || null,
+      },
+    });
+    await logAction({
       companyId: user.companyId,
-      name: body.name,
-      taxId: body.taxId || null,
-      email: body.email || null,
-      phone: body.phone || null,
-      address: body.address || null,
-      currency: body.currency || 'USD',
-      notes: body.notes || null,
-    },
-  });
-  await logAction({
-    companyId: user.companyId,
-    userId: user.id,
-    userName: user.name,
-    action: 'CREATE',
-    entity: 'Supplier',
-    entityId: supplier.id,
-    detail: `Tedarikçi oluşturuldu — ${supplier.name}`,
-    ip: getIp(req),
-  });
-  return NextResponse.json(supplier);
+      userId: user.id,
+      userName: user.name,
+      action: 'CREATE',
+      entity: 'Supplier',
+      entityId: supplier.id,
+      detail: `Tedarikçi oluşturuldu — ${supplier.name}`,
+      ip: getIp(req),
+    });
+    return NextResponse.json(supplier);
+  } catch (err: any) {
+    await logAction({
+      companyId: user.companyId,
+      userId: user.id,
+      userName: user.name,
+      action: 'ERROR',
+      entity: 'Supplier',
+      detail: `Tedarikçi oluşturulamadı: ${err?.message ?? 'Bilinmeyen hata'}`,
+      meta: { input: { name: body.name } },
+      ip: getIp(req),
+    });
+    return NextResponse.json({ error: 'Tedarikçi oluşturulamadı' }, { status: 500 });
+  }
 }

@@ -712,9 +712,9 @@ export default function InvoiceDetailPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {editing ? editItems.map((item, idx) => {
-                      const qty = parseFloat(item.quantity) || 0;
-                      const price = parseFloat(item.unitPrice) || 0;
-                      const disc = parseFloat(item.discount) || 0;
+                      const qty = fromPriceInput(item.quantity);
+                      const price = fromPriceInput(item.unitPrice);
+                      const disc = fromPriceInput(item.discount);
                       const tutar = qty * price;
                       const indirimTL = tutar * disc / 100;
                       const net = tutar - indirimTL;

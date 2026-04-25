@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const user = session.user as any;
   if (!user.companyId) return NextResponse.json({ logs: [], total: 0, page: 1, pages: 0 });
 
-  // Sadece admin görebilir
+  // Sadece ADMIN görebilir
   if (user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
@@ -23,8 +23,12 @@ export async function GET(req: NextRequest) {
   const action = searchParams.get('action') ?? '';
   const fromStr = searchParams.get('from');
   const toStr = searchParams.get('to');
+  const companyFilter = searchParams.get('companyId') ?? '';
 
-  const where: any = { companyId: user.companyId };
+  // ADMIN tüm şirketlerin loglarını görür; isteğe bağlı şirket filtresi
+  const where: any = {};
+  if (companyFilter) where.companyId = companyFilter;
+
   if (entity) where.entity = entity;
   if (action) where.action = action;
   if (fromStr || toStr) {
@@ -33,15 +37,17 @@ export async function GET(req: NextRequest) {
     if (toStr) where.createdAt.lte = parseDateEndOfDay(toStr) ?? undefined;
   }
 
-  const [logs, total] = await Promise.all([
+  const [logs, total, companies] = await Promise.all([
     (prisma.auditLog as any).findMany({
       where,
+      include: { company: { select: { id: true, name: true } } },
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * LIMIT,
       take: LIMIT,
     }),
     (prisma.auditLog as any).count({ where }),
+    prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
   ]);
 
-  return NextResponse.json({ logs, total, page, pages: Math.ceil(total / LIMIT) });
+  return NextResponse.json({ logs, total, page, pages: Math.ceil(total / LIMIT), isSuperAdmin: true, companies });
 }

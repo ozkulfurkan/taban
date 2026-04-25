@@ -16,6 +16,8 @@ export async function GET(req: NextRequest) {
   const customerId = searchParams.get('customerId');
   const from = searchParams.get('from');
   const to = searchParams.get('to');
+  const terminFrom = searchParams.get('terminFrom');
+  const terminTo = searchParams.get('terminTo');
 
   const orders = await prisma.soleOrder.findMany({
     where: {
@@ -26,6 +28,12 @@ export async function GET(req: NextRequest) {
         createdAt: {
           ...(from ? { gte: new Date(from) } : {}),
           ...(to ? { lte: new Date(to + 'T23:59:59') } : {}),
+        },
+      } : {}),
+      ...(terminFrom || terminTo ? {
+        requestedDeliveryDate: {
+          ...(terminFrom ? { gte: new Date(terminFrom) } : {}),
+          ...(terminTo ? { lte: new Date(terminTo + 'T23:59:59') } : {}),
         },
       } : {}),
     },
@@ -87,33 +95,43 @@ export async function POST(req: NextRequest) {
   if (finalTotalQty === 0) return NextResponse.json({ error: 'En az 1 adet girmelisiniz' }, { status: 400 });
 
   const now = new Date();
-  const orderNo = `ORD-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 9000) + 1000}`;
+  const year = now.getFullYear();
+  const sipPrefix = `SIP-${year}-`;
 
-  const order = await prisma.soleOrder.create({
-    data: {
-      companyId: user.companyId,
-      customerId,
-      orderNo,
-      productId: finalProductId,
-      productCode: finalProductCode,
-      color: isPackage ? null : (color || null),
-      material: isPackage ? null : (material || null),
-      sizeDistribution: finalSizeDist,
-      totalQuantity: finalTotalQty,
-      requestedDeliveryDate: requestedDeliveryDate ? new Date(requestedDeliveryDate) : null,
-      notes: notes || null,
-      colorPartials: isPackage ? null : (colorPartials || null),
-      orderItems: isPackage ? orderItems : undefined,
-      partVariantsData: Array.isArray(partVariantsData) && partVariantsData.length > 0 ? partVariantsData : undefined,
-      status: 'ORDER_RECEIVED',
-      statusHistory: {
-        create: { status: 'ORDER_RECEIVED', note: 'Sipariş oluşturuldu (admin)' },
+  const order = await prisma.$transaction(async (tx) => {
+    const last = await tx.soleOrder.findFirst({
+      where: { companyId: user.companyId, orderNo: { startsWith: sipPrefix } },
+      orderBy: { orderNo: 'desc' },
+    });
+    const seq = last ? parseInt(last.orderNo.split('-')[2]) + 1 : 1;
+    const orderNo = `${sipPrefix}${String(seq).padStart(4, '0')}`;
+
+    return tx.soleOrder.create({
+      data: {
+        companyId: user.companyId,
+        customerId,
+        orderNo,
+        productId: finalProductId,
+        productCode: finalProductCode,
+        color: isPackage ? null : (color || null),
+        material: isPackage ? null : (material || null),
+        sizeDistribution: finalSizeDist,
+        totalQuantity: finalTotalQty,
+        requestedDeliveryDate: requestedDeliveryDate ? new Date(requestedDeliveryDate) : null,
+        notes: notes || null,
+        colorPartials: isPackage ? null : (colorPartials || null),
+        orderItems: isPackage ? orderItems : undefined,
+        partVariantsData: Array.isArray(partVariantsData) && partVariantsData.length > 0 ? partVariantsData : undefined,
+        status: 'ORDER_RECEIVED',
+        statusHistory: {
+          create: { status: 'ORDER_RECEIVED', note: 'Sipariş oluşturuldu (admin)' },
+        },
       },
-    },
-    include: {
-      customer: { select: { id: true, name: true } },
-      product: { select: { id: true, name: true, code: true } },
-    },
+      include: {
+        customer: { select: { id: true, name: true } },
+        product: { select: { id: true, name: true, code: true } },
+      },
+    });
   });
 
   // Email bildirimi — teslim makbuzu
@@ -132,7 +150,7 @@ export async function POST(req: NextRequest) {
   const sizeValueCells = sizeEntries.map(([, qty]) => `<td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;">${qty}</td>`).join('');
 
   const emailHtml = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
-    <h2 style="margin:0 0 16px;">Yeni Sipariş: ${orderNo}</h2>
+    <h2 style="margin:0 0 16px;">Yeni Sipariş: ${order.orderNo}</h2>
     <p><strong>Müşteri:</strong> ${customer?.name ?? customerId}</p>
     <p><strong>Model:</strong> ${finalProductCode || product?.code || '—'}</p>
     <p><strong>Toplam:</strong> ${finalTotalQty} çift</p>
@@ -145,7 +163,7 @@ export async function POST(req: NextRequest) {
   if (adminEmails.length > 0) {
     sendMail({
       to: adminEmails,
-      subject: `Yeni Sipariş (Admin): ${orderNo} — ${customer?.name ?? ''}`,
+      subject: `Yeni Sipariş (Admin): ${order.orderNo} — ${customer?.name ?? ''}`,
       html: emailHtml,
     }).catch(() => {});
   }

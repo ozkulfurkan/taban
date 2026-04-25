@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
   }
 
+  try {
   const payment = await prisma.$transaction(async (tx) => {
     const p = await tx.payment.create({
       data: {
@@ -122,4 +123,17 @@ export async function POST(req: NextRequest) {
     ip: getIp(req),
   });
   return NextResponse.json(payment);
+  } catch (err: any) {
+    await logAction({
+      companyId: user.companyId,
+      userId: user.id,
+      userName: user.name,
+      action: 'ERROR',
+      entity: 'Payment',
+      detail: `Ödeme kaydedilemedi: ${err?.message ?? 'Bilinmeyen hata'}`,
+      meta: { amount, currency, method },
+      ip: getIp(req),
+    });
+    return NextResponse.json({ error: 'Ödeme kaydedilemedi' }, { status: 500 });
+  }
 }
