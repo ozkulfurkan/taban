@@ -83,7 +83,7 @@ const FILTER_OPTIONS = [
   { key: 'READY_FOR_SHIPMENT', label: 'Hazır' },
 ];
 
-export default function PendingOrdersWidget() {
+export default function PendingOrdersWidget({ embedded = false }: { embedded?: boolean }) {
   const [data, setData] = useState<WidgetData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filterKey, setFilterKey] = useState<string | null>(null);
@@ -135,13 +135,8 @@ export default function PendingOrdersWidget() {
 
   const activeFilterLabel = FILTER_OPTIONS.find(o => o.key === filterKey)?.label ?? 'Filtrele';
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100"
-    >
+  const inner = (
+    <div className="overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
         <div className="flex items-center gap-2.5">
@@ -357,6 +352,19 @@ export default function PendingOrdersWidget() {
           )}
         </>
       )}
+    </div>
+  );
+
+  if (embedded) return inner;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100"
+    >
+      {inner}
     </motion.div>
   );
 }
