@@ -67,12 +67,12 @@ export async function GET() {
       // Tüm faturalar (müşteri bazlı bakiye için)
       prisma.invoice.findMany({
         where: { companyId },
-        select: { customerId: true, total: true, isReturn: true },
+        select: { customerId: true, total: true, isReturn: true, currency: true },
       }),
       // Tüm müşteri tahsilatları
       prisma.payment.findMany({
         where: { companyId, type: 'RECEIVED' },
-        select: { customerId: true, amount: true, method: true, notes: true },
+        select: { customerId: true, amount: true, method: true, notes: true, currency: true },
       }),
       // Tedarikçiler (id + currency)
       prisma.supplier.findMany({
@@ -82,12 +82,12 @@ export async function GET() {
       // Tüm alışlar (tedarikçi bazlı borç için)
       prisma.purchase.findMany({
         where: { companyId },
-        select: { supplierId: true, total: true },
+        select: { supplierId: true, total: true, currency: true },
       }),
       // Tüm tedarikçi ödemeleri
       prisma.payment.findMany({
         where: { companyId, type: 'PAID' },
-        select: { supplierId: true, amount: true, method: true, notes: true },
+        select: { supplierId: true, amount: true, method: true, notes: true, currency: true },
       }),
       // Hesap bakiyeleri
       prisma.account.findMany({ where: { companyId } }),
@@ -127,47 +127,47 @@ export async function GET() {
     const dailyCiro = dailyInvoicesByCurrency.reduce((s, g) => s + toTry(g._sum.total ?? 0, g.currency), 0);
     const monthlyCiro = monthlyInvoicesByCurrency.reduce((s, g) => s + toTry(g._sum.total ?? 0, g.currency), 0);
 
-    // Toplam alacak: her müşterinin bakiyesi kendi para birimiyle TL'ye çevrilir
+    // Toplam alacak: her fatura ve ödeme kendi currency'siyle TL'ye çevrilir
     let totalReceivables = 0;
     for (const customer of customers) {
       const invoices = allInvoices.filter(i => i.customerId === customer.id);
       const payments = allCustomerPayments.filter(p => p.customerId === customer.id);
 
-      const normalTotal = invoices.filter(i => !i.isReturn).reduce((s, i) => s + i.total, 0);
-      const returnTotal = invoices.filter(i => i.isReturn).reduce((s, i) => s + i.total, 0);
-
-      let delta = 0;
+      let balanceTRY = 0;
+      for (const inv of invoices) {
+        const amountTRY = toTry(inv.total, inv.currency);
+        balanceTRY += inv.isReturn ? -amountTRY : amountTRY;
+      }
       for (const p of payments) {
+        const pTRY = toTry(p.amount, p.currency);
         if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
-          delta += p.amount;
+          balanceTRY += pTRY;
         } else {
-          delta -= p.amount;
+          balanceTRY -= pTRY;
         }
       }
-
-      const balance = normalTotal - returnTotal + delta;
-      totalReceivables += toTry(balance, customer.currency);
+      totalReceivables += balanceTRY;
     }
 
-    // Toplam borç: her tedarikçinin bakiyesi kendi para birimiyle TL'ye çevrilir
+    // Toplam borç: her alış ve ödeme kendi currency'siyle TL'ye çevrilir
     let totalPayables = 0;
     for (const supplier of suppliers) {
       const purchases = allPurchases.filter(p => p.supplierId === supplier.id);
       const payments = allSupplierPayments.filter(p => p.supplierId === supplier.id);
 
-      const totalPurchased = purchases.reduce((s, p) => s + p.total, 0);
-
-      let delta = 0;
+      let balanceTRY = 0;
+      for (const purchase of purchases) {
+        balanceTRY += toTry(purchase.total, purchase.currency);
+      }
       for (const p of payments) {
+        const pTRY = toTry(p.amount, p.currency);
         if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
-          delta += p.amount;
+          balanceTRY += pTRY;
         } else {
-          delta -= p.amount;
+          balanceTRY -= pTRY;
         }
       }
-
-      const balance = totalPurchased + delta;
-      totalPayables += toTry(balance, supplier.currency);
+      totalPayables += balanceTRY;
     }
 
     // Assets breakdown
