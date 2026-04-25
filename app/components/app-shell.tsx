@@ -4,8 +4,9 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import Sidebar from './sidebar';
-import { Loader2, ChevronDown, LogOut, User, Clock, AlertTriangle } from 'lucide-react';
+import { Loader2, ChevronDown, LogOut, User, Clock, AlertTriangle, LifeBuoy } from 'lucide-react';
 
 function UserMenu() {
   const { data: session } = useSession() || {};
@@ -50,6 +51,21 @@ function UserMenu() {
         </div>
       )}
     </div>
+  );
+}
+
+function AdminDestekLink() {
+  const { data: session } = useSession() || {};
+  const user = session?.user as any;
+  if (user?.role !== 'ADMIN') return null;
+  return (
+    <Link
+      href="/admin/destek"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+    >
+      <LifeBuoy className="w-4 h-4 text-blue-500" />
+      <span className="hidden sm:block">Destek Yönetimi</span>
+    </Link>
   );
 }
 
@@ -211,7 +227,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <div className="sticky top-0 z-30 bg-slate-50/80 backdrop-blur border-b border-slate-200/60">
-          <div className="max-w-[1200px] mx-auto px-4 md:px-6 lg:px-8 h-14 flex items-center justify-end">
+          <div className="max-w-[1200px] mx-auto px-4 md:px-6 lg:px-8 h-14 flex items-center justify-end gap-2">
+            <AdminDestekLink />
             <UserMenu />
           </div>
         </div>

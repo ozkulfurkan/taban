@@ -100,7 +100,6 @@ export default function Sidebar() {
         { href: '/settings', label: t('nav', 'settings'), icon: Settings },
         ...(isAdmin || isOwner ? [{ href: '/settings/users', label: t('nav', 'users'), icon: UserCog }] : []),
         ...(isAdmin ? [{ href: '/logs', label: 'Log Kayıtları', icon: ClipboardList }] : []),
-        ...(isAdmin ? [{ href: '/admin/destek', label: 'Destek Yönetimi', icon: LifeBuoy }] : []),
         ...(isAdmin ? [{ href: '/admin', label: t('nav', 'admin'), icon: Shield }] : []),
       ],
     },

@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Bug, Lightbulb, Send, Loader2, Clock,
-  User, Shield, CheckCircle2, AlertCircle, ChevronDown
+  User, Shield, CheckCircle2, AlertCircle, ChevronDown, Paperclip, Image
 } from 'lucide-react';
 import AppShell from '@/app/components/app-shell';
 
@@ -230,6 +230,49 @@ export default function TicketDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Attachments */}
+        {ticket.attachments.length > 0 && (
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center gap-2">
+              <Paperclip className="w-4 h-4 text-slate-400" />
+              <h2 className="text-sm font-semibold text-slate-700">Ekler ({ticket.attachments.length})</h2>
+            </div>
+            <div className="p-4 flex flex-wrap gap-3">
+              {ticket.attachments.map(att => {
+                const isImage = att.mimeType.startsWith('image/');
+                const url = `/api/support/tickets/${ticket.id}/attachments/${att.id}`;
+                return (
+                  <a
+                    key={att.id}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative overflow-hidden rounded-xl border border-slate-200 hover:border-blue-300 transition-colors"
+                  >
+                    {isImage ? (
+                      <img
+                        src={url}
+                        alt={att.name}
+                        className="w-40 h-28 object-cover"
+                      />
+                    ) : (
+                      <div className="w-40 h-28 flex flex-col items-center justify-center gap-2 bg-slate-50">
+                        <Paperclip className="w-6 h-6 text-slate-400" />
+                        <span className="text-xs text-slate-500 px-2 text-center truncate w-full">{att.name}</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-end p-2">
+                      <span className="text-xs text-white bg-black/50 rounded px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity truncate max-w-full">
+                        {att.name}
+                      </span>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
