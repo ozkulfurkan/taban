@@ -93,8 +93,9 @@ export async function GET() {
       prisma.account.findMany({ where: { companyId } }),
       // Ürün stok
       prisma.product.findMany({ where: { companyId }, select: { stock: true, unitPrice: true, currency: true } }),
-      // Aktif çek toplamı
-      prisma.cek.aggregate({
+      // Aktif çek toplamı (döviz bazında grupla)
+      prisma.cek.groupBy({
+        by: ['currency'],
         where: { companyId, durum: { in: ['PORTFOY', 'BANKAYA_VERILDI'] } },
         _sum: { tutar: true },
       }),
@@ -170,9 +171,14 @@ export async function GET() {
       totalPayables += balanceTRY;
     }
 
-    // Assets breakdown
-    const kasaTotal = accounts.filter(a => a.type === 'Kasa' || a.name.toLowerCase().includes('kasa')).reduce((s, a) => s + a.balance, 0);
-    const posTotal = accounts.filter(a => a.name.toLowerCase().includes('pos')).reduce((s, a) => s + a.balance, 0);
+    // Assets breakdown — her hesap kendi para birimiyle TL'ye çevrilir
+    const kasaTotal = accounts
+      .filter(a => a.type === 'Kasa' || a.name.toLowerCase().includes('kasa'))
+      .reduce((s, a) => s + toTry(a.balance, a.currency), 0);
+    const posTotal = accounts
+      .filter(a => a.name.toLowerCase().includes('pos'))
+      .reduce((s, a) => s + toTry(a.balance, a.currency), 0);
+    const cekTotalTRY = cekTotal.reduce((s, g) => s + toTry(g._sum.tutar ?? 0, g.currency), 0);
     const stokTotal = products.reduce((s, p) => s + toTry(p.stock * p.unitPrice, p.currency), 0);
 
     return NextResponse.json({
@@ -187,7 +193,7 @@ export async function GET() {
       assets: {
         kasa: kasaTotal,
         pos: posTotal,
-        cek: cekTotal._sum.tutar ?? 0,
+        cek: cekTotalTRY,
         senet: 0,
         stok: stokTotal,
         acikHesap: totalReceivables,
