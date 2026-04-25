@@ -359,6 +359,7 @@ export default function NewInvoicePage() {
   const searchParams = useSearchParams();
   const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ customerId?: string; items?: string }>({});
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
@@ -498,6 +499,7 @@ export default function NewInvoicePage() {
       setItems(prev => prev.map((it, i) => i === modal.editIndex ? item : it));
     } else {
       setItems(prev => [...prev, item]);
+      setFormErrors(p => ({ ...p, items: undefined }));
     }
     setModal({ open: false, editIndex: null });
   };
@@ -541,8 +543,11 @@ export default function NewInvoicePage() {
   };
 
   const handleSubmit = () => {
-    if (!form.customerId) return alert(t('newInvoice', 'selectCustomer'));
-    if (items.length === 0) return alert(t('newInvoice', 'noItems'));
+    const errors: { customerId?: string; items?: string } = {};
+    if (!form.customerId) errors.customerId = t('newInvoice', 'selectCustomer');
+    if (items.length === 0) errors.items = t('newInvoice', 'noItems');
+    if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+    setFormErrors({});
 
     // Check if any item has a product with parts defined
     const deductionMap = new Map<string, { name: string; variantInfo: string; kgAmount: number; currentStock: number }>();
@@ -592,7 +597,7 @@ export default function NewInvoicePage() {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={saving || items.length === 0 || !form.customerId}
+            disabled={saving}
             className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -617,11 +622,17 @@ export default function NewInvoicePage() {
                     {selectedCustomer?.name || lockedCustomerId}
                   </div>
                 ) : (
-                  <select required value={form.customerId} onChange={e => setField('customerId', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  <select required value={form.customerId}
+                    onChange={e => { setField('customerId', e.target.value); setFormErrors(p => ({ ...p, customerId: undefined })); }}
+                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white ${formErrors.customerId ? 'border-red-400 ring-1 ring-red-400' : 'border-slate-200'}`}>
                     <option value="">{t('newInvoice', 'selectCustomerPlaceholder')}</option>
                     {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
+                )}
+                {formErrors.customerId && (
+                  <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />{formErrors.customerId}
+                  </p>
                 )}
               </div>
               <div>
@@ -808,8 +819,12 @@ export default function NewInvoicePage() {
               )}
 
               {items.length === 0 && (
-                <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-sm">
-                  {t('newInvoice', 'emptyItemsHint')}
+                <div className={`text-center py-10 border-2 border-dashed rounded-xl text-sm ${formErrors.items ? 'border-red-300 bg-red-50 text-red-400' : 'border-slate-200 text-slate-400'}`}>
+                  {formErrors.items ? (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4" />{formErrors.items}
+                    </span>
+                  ) : t('newInvoice', 'emptyItemsHint')}
                 </div>
               )}
             </div>

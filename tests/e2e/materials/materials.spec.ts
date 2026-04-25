@@ -15,7 +15,7 @@ test.describe('Stok — Hammadde Yönetimi', () => {
     const materials = new MaterialsPage(page);
     await materials.goto();
     await materials.openAddModal();
-    const modalVisible = await page.locator('dialog, [role="dialog"], [class*="modal"]').first().isVisible({ timeout: 5000 }).catch(() => false);
+    const modalVisible = await page.locator('[data-testid="modal"], [role="dialog"]').first().isVisible({ timeout: 5000 }).catch(() => false);
     const inputVisible = await page.getByPlaceholder(/ad|isim|name/i).last().isVisible({ timeout: 5000 }).catch(() => false);
     expect(modalVisible || inputVisible).toBeTruthy();
     await page.screenshot({ path: 'test-results/screenshots/materials-add-modal.png' });

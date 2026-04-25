@@ -5,8 +5,8 @@ test.describe('UI / UX Kontrolleri', () => {
   test('dashboard ana layout bozuk değil', async ({ page }) => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
-    // Sidebar visible
-    const sidebar = page.locator('aside, nav').first();
+    // Sidebar visible (desktop)
+    const sidebar = page.locator('[data-testid="sidebar"]');
     await expect(sidebar).toBeVisible({ timeout: 8000 });
     // Header visible
     const header = page.locator('header, [class*="header"], .sticky').first();
@@ -112,7 +112,7 @@ test.describe('UI / UX Kontrolleri', () => {
     if (await addBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await addBtn.click();
       await page.waitForTimeout(500);
-      const modal = page.locator('dialog, [role="dialog"]').first();
+      const modal = page.locator('[data-testid="modal"], [role="dialog"]').first();
       const modalOpen = await modal.isVisible({ timeout: 5000 }).catch(() => false);
       if (modalOpen) {
         // Close with Escape

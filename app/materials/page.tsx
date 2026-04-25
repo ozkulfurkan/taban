@@ -24,6 +24,7 @@ export default function MaterialsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ name: '', category: '', supplier: '', pricePerKg: '', currency: 'USD', description: '' });
   const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState('');
 
   const fetchMaterials = useCallback(async () => {
     try {
@@ -41,10 +42,13 @@ export default function MaterialsPage() {
 
   const openNew = () => {
     setForm({ name: '', category: '', supplier: '', pricePerKg: '', currency, description: '' });
+    setNameError('');
     setModalOpen(true);
   };
 
   const handleSave = async () => {
+    if (!form.name.trim()) { setNameError('Hammadde adı zorunludur.'); return; }
+    setNameError('');
     setSaving(true);
     try {
       const res = await fetch('/api/materials', {
@@ -167,8 +171,11 @@ export default function MaterialsPage() {
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={t('materials', 'addMaterial')}>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'materialName')}</label>
-            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            <label className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'materialName')} <span className="text-red-500">*</span></label>
+            <input value={form.name}
+              onChange={(e) => { setForm({ ...form, name: e.target.value }); if (e.target.value.trim()) setNameError(''); }}
+              className={`w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${nameError ? 'border-red-400 ring-1 ring-red-400' : 'border-slate-200'}`} />
+            {nameError && <p className="mt-1 text-xs text-red-500">{nameError}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Kategori (opsiyonel)</label>

@@ -1,12 +1,12 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
   FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText,
-  UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck, LifeBuoy
+  UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck, LifeBuoy, LogOut
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -199,6 +199,17 @@ export default function Sidebar() {
         })}
       </nav>
 
+      {/* Logout — shown only in mobile drawer */}
+      <div className="px-2 pb-3 border-t border-blue-800/30 pt-2 lg:hidden">
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-all w-full"
+        >
+          <LogOut className="w-5 h-5 flex-shrink-0" />
+          <span>Çıkış Yap</span>
+        </button>
+      </div>
+
     </div>
   );
 
@@ -260,6 +271,7 @@ export default function Sidebar() {
 
       {/* Desktop sidebar */}
       <aside
+        data-testid="sidebar"
         className={`hidden lg:block h-screen bg-gradient-to-b from-blue-900 to-slate-900 transition-all duration-300 flex-shrink-0 ${
           collapsed ? 'w-[68px]' : 'w-[250px]'
         }`}

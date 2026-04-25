@@ -18,8 +18,11 @@ export class LoginPage {
     await expect(this.page).toHaveURL(/dashboard/, { timeout: 15000 });
   }
 
-  async expectError(text: string) {
-    await expect(this.page.getByText(text, { exact: false })).toBeVisible({ timeout: 8000 });
+  async expectError(text: string | RegExp) {
+    const locator = typeof text === 'string'
+      ? this.page.getByText(text, { exact: false })
+      : this.page.getByText(text);
+    await expect(locator).toBeVisible({ timeout: 12000 });
   }
 
   async expectVerificationBanner() {

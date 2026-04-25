@@ -7,7 +7,8 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { formatDate } from '@/lib/time';
 import {
   TrendingUp, TrendingDown, BarChart2, DollarSign,
-  ScrollText, ChevronRight, Loader2, AlertCircle
+  ScrollText, ChevronRight, Loader2, AlertCircle,
+  Users, Package, FileText, Layers
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -108,6 +109,13 @@ export default function DashboardPage() {
   const assets = data?.assets || {};
   const upcomingChecks: any[] = data?.upcomingChecks || [];
 
+  const isEmpty =
+    !data ||
+    ((data.totalReceivables ?? 0) === 0 &&
+     (data.totalPayables ?? 0) === 0 &&
+     (data.monthlyCiro ?? 0) === 0 &&
+     Object.values(assets).every((v: any) => v === 0));
+
   const CEK_DURUM: Record<string, string> = {
     PORTFOY: t('dashboard', 'inPortfolio'),
     BANKAYA_VERILDI: t('dashboard', 'atBank'),
@@ -123,6 +131,32 @@ export default function DashboardPage() {
           </h1>
           <p className="text-slate-500 text-sm mt-0.5">{user?.companyName ?? ''}</p>
         </div>
+
+        {/* Onboarding — shown only when account has no data */}
+        {isEmpty && (
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
+            <p className="text-sm font-semibold text-blue-800 mb-3">Hesabınız hazır! Başlamak için aşağıdaki adımları takip edin:</p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { href: '/customers', icon: Users, color: 'bg-blue-100 text-blue-600', label: 'Müşteri Ekle', desc: 'İlk müşterinizi ekleyin' },
+                { href: '/materials', icon: Layers, color: 'bg-violet-100 text-violet-600', label: 'Hammadde Ekle', desc: 'Stok takibine başlayın' },
+                { href: '/products', icon: Package, color: 'bg-emerald-100 text-emerald-600', label: 'Ürün Ekle', desc: 'Ürün kataloğunuzu oluşturun' },
+                { href: '/invoices/new', icon: FileText, color: 'bg-orange-100 text-orange-600', label: 'Fatura Oluştur', desc: 'İlk faturanızı kesin' },
+              ].map(item => (
+                <Link key={item.href} href={item.href}
+                  className="flex items-start gap-3 p-3 bg-white rounded-xl border border-blue-100 hover:border-blue-300 hover:shadow-sm transition-all">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${item.color}`}>
+                    <item.icon className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-800">{item.label}</p>
+                    <p className="text-xs text-slate-400">{item.desc}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Top KPI cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

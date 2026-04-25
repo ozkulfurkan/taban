@@ -16,7 +16,7 @@ test.describe('Ön Muhasebe — Hesaplar & Ödemeler', () => {
     await accounts.goto();
     await accounts.openAddAccountModal();
     await page.waitForTimeout(600);
-    const formVisible = await page.locator('dialog, [role="dialog"], input').first().isVisible({ timeout: 5000 }).catch(() => false);
+    const formVisible = await page.locator('[data-testid="modal"], [role="dialog"], input').first().isVisible({ timeout: 5000 }).catch(() => false);
     expect(formVisible).toBeTruthy();
     await page.screenshot({ path: 'test-results/screenshots/accounts-add.png' });
   });
