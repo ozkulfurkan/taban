@@ -15,8 +15,6 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   CANCELLED: { label: 'İptal',    color: 'bg-red-100 text-red-600' },
 };
 
-const STATUS_FILTERS = ['ALL', 'PENDING', 'PARTIAL', 'PAID', 'DRAFT', 'CANCELLED'];
-
 export default function InvoicesPage() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
@@ -24,21 +22,19 @@ export default function InvoicesPage() {
 
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const load = (status?: string) => {
+  const load = () => {
     setLoading(true);
-    const url = status && status !== 'ALL' ? `/api/invoices?status=${status}` : '/api/invoices';
-    fetch(url)
+    fetch('/api/invoices')
       .then(r => r.json())
       .then(d => setInvoices(Array.isArray(d) ? d : []))
       .catch(console.error)
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(statusFilter); }, [statusFilter]);
+  useEffect(() => { load(); }, []);
 
   const toggle = (id: string) => setExpandedId(prev => prev === id ? null : id);
 
@@ -102,18 +98,6 @@ export default function InvoicesPage() {
             </Link>
           </div>
         )}
-
-        {/* Status filters */}
-        <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                statusFilter === s ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}>
-              {s === 'ALL' ? t('invoices', 'all') : (STATUS_LABELS[s]?.label ?? s)}
-            </button>
-          ))}
-        </div>
 
         {/* Table */}
         {loading ? (

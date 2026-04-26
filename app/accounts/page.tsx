@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Plus, ChevronDown, Loader2, Pencil, Trash2, X, Save, Landmark } from 'lucide-react';
+import { Plus, ChevronDown, Loader2, Pencil, Trash2, X, Save, Landmark, CreditCard, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const ACCOUNT_TYPES = ['Kasa', 'Banka', 'POS'];
@@ -203,6 +203,9 @@ export default function AccountsPage() {
   const [modal, setModal] = useState<{ open: boolean; edit?: Account | null; typeOverride?: string }>({ open: false });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
+  const [paymentsOpen, setPaymentsOpen] = useState(false);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -216,6 +219,15 @@ export default function AccountsPage() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  const togglePayments = () => {
+    const next = !paymentsOpen;
+    setPaymentsOpen(next);
+    if (next && payments.length === 0) {
+      setPaymentsLoading(true);
+      fetch('/api/payments').then(r => r.json()).then(d => setPayments(Array.isArray(d) ? d : [])).finally(() => setPaymentsLoading(false));
+    }
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm(t('accounts', 'deleteConfirm'))) return;
@@ -291,6 +303,70 @@ export default function AccountsPage() {
             )}
           </div>
         )}
+
+        {/* Payments collapsible */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <button
+          onClick={togglePayments}
+          className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors"
+        >
+          <span className="flex items-center gap-2 font-semibold text-slate-700">
+            <CreditCard className="w-4 h-4 text-slate-400" /> Ödemeler
+          </span>
+          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${paymentsOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {paymentsOpen && (
+          <div className="border-t border-slate-100">
+            {paymentsLoading ? (
+              <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
+            ) : payments.length === 0 ? (
+              <div className="text-center py-10 text-slate-400 text-sm">Henüz ödeme yok</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      <th className="px-4 py-3 text-left">Tarih</th>
+                      <th className="px-4 py-3 text-left">Tür</th>
+                      <th className="px-4 py-3 text-left">Müşteri / Tedarikçi</th>
+                      <th className="px-4 py-3 text-left">Fatura No</th>
+                      <th className="px-4 py-3 text-left">Yöntem</th>
+                      <th className="px-4 py-3 text-right">Tutar</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {payments.map((p: any) => (
+                      <tr key={p.id} className="hover:bg-slate-50/50">
+                        <td className="px-4 py-3 text-slate-500">{new Date(p.date).toLocaleDateString('tr-TR')}</td>
+                        <td className="px-4 py-3">
+                          {p.type === 'RECEIVED' ? (
+                            <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
+                              <ArrowDownCircle className="w-3.5 h-3.5" /> Tahsilat
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-red-500 text-xs font-medium">
+                              <ArrowUpCircle className="w-3.5 h-3.5" /> Ödeme
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">{p.customer?.name ?? p.supplier?.name ?? '—'}</td>
+                        <td className="px-4 py-3 text-slate-500 text-xs">{p.invoice?.invoiceNo ?? '—'}</td>
+                        <td className="px-4 py-3 text-slate-500">{p.method}</td>
+                        <td className="px-4 py-3 text-right font-semibold">
+                          <span className={p.type === 'RECEIVED' ? 'text-green-600' : 'text-red-500'}>
+                            {p.type === 'RECEIVED' ? '+' : '-'}{p.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        </div>
       </div>
 
       {modal.open && (
