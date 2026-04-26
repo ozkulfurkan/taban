@@ -719,6 +719,7 @@ export default function CustomerDetailPage() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [showIade, setShowIade] = useState(false);
   const [showTahsilat, setShowTahsilat] = useState(false);
   const [showCek, setShowCek] = useState(false);
@@ -768,6 +769,15 @@ export default function CustomerDetailPage() {
     setCustomer((prev: any) => ({ ...prev, ...form }));
     setEditing(false);
     setSaving(false);
+  };
+
+  const handleDeleteCustomer = async () => {
+    if (Math.abs(customer.balance ?? 0) > 0.01) return;
+    if (!confirm(`"${customer.name}" adlı müşteri kalıcı olarak silinecek. Tüm geçmişi (fatura, ödeme vb.) ile birlikte silinir.\n\nEmin misiniz?`)) return;
+    setDeleting(true);
+    const res = await fetch(`/api/customers/${customer.id}`, { method: 'DELETE' });
+    setDeleting(false);
+    if (res.ok) router.push('/customers');
   };
 
   const handleDeletePayment = async (id: string, method?: string) => {
@@ -1054,6 +1064,21 @@ export default function CustomerDetailPage() {
           >
             <Download className="w-4 h-4" /> {t('customerDetail', 'accountStatement')}
           </Link>
+          {Math.abs(customer.balance ?? 0) <= 0.01 ? (
+            <button
+              onClick={handleDeleteCustomer}
+              disabled={deleting}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              Müşteriyi Sil
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-400 rounded-lg text-sm font-medium cursor-not-allowed" title="Bakiye sıfırlanmadan müşteri silinemez">
+              <Trash2 className="w-4 h-4" />
+              Müşteriyi Sil
+            </div>
+          )}
         </div>
 
         {/* Previous Sales + Previous Payments (side by side) */}
