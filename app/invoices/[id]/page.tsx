@@ -577,21 +577,14 @@ export default function InvoiceDetailPage() {
                   { label: 'Belge No', field: 'invoiceNo', type: 'text', value: invoice.invoiceNo },
                   { label: 'Tarihi', field: 'date', type: 'date', value: fmtDate(invoice.date) },
                   { label: 'Vadesi', field: 'dueDate', type: 'date', value: invoice.dueDate ? fmtDate(invoice.dueDate) : '—' },
-                  { label: 'Para Birimi', field: 'currency', type: 'select', value: invoice.currency },
+                  { label: 'Para Birimi', field: 'currency', type: 'readonly', value: invoice.currency },
                   { label: 'KDV Oranı', field: 'vatRate', type: 'number', value: `%${invoice.vatRate}` },
                 ].map(row => (
                   <div key={row.field} className="flex items-center px-4 py-2.5">
                     <span className="text-xs font-semibold text-slate-500 w-24 flex-shrink-0">{row.label}</span>
-                    {editing ? (
-                      row.type === 'select' ? (
-                        <select value={editForm[row.field] || ''} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
-                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none">
-                          {['TRY','USD','EUR'].map(c => <option key={c}>{c}</option>)}
-                        </select>
-                      ) : (
-                        <input type={row.type} value={editForm[row.field] || ''} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
-                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
-                      )
+                    {editing && row.type !== 'readonly' ? (
+                      <input type={row.type} value={editForm[row.field] || ''} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
+                        className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
                     ) : (
                       <span className="text-sm text-slate-700 font-medium">{row.value}</span>
                     )}

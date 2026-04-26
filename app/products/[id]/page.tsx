@@ -532,7 +532,7 @@ export default function ProductDetailPage() {
                     {product.stock} <span className="text-sm font-normal text-teal-600">{product.unit}</span>
                   </span>
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="space-y-2">
                   <input
                     type="number"
                     min="0"
@@ -540,24 +540,26 @@ export default function ProductDetailPage() {
                     value={stokAmt}
                     onChange={e => setStokAmt(e.target.value)}
                     placeholder="Miktar"
-                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-teal-400"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-teal-400"
                   />
-                  <button
-                    onClick={() => handleStok(1)}
-                    disabled={stokLoading || !stokAmt}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60"
-                  >
-                    {stokLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
-                    Ekle
-                  </button>
-                  <button
-                    onClick={() => handleStok(-1)}
-                    disabled={stokLoading || !stokAmt}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60"
-                  >
-                    {stokLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingDown className="w-4 h-4" />}
-                    Çıkar
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleStok(1)}
+                      disabled={stokLoading || !stokAmt}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60"
+                    >
+                      {stokLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
+                      Ekle
+                    </button>
+                    <button
+                      onClick={() => handleStok(-1)}
+                      disabled={stokLoading || !stokAmt}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60"
+                    >
+                      {stokLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingDown className="w-4 h-4" />}
+                      Çıkar
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
