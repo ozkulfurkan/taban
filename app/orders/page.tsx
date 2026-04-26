@@ -318,7 +318,7 @@ export default function OrdersPage() {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               {/* Header */}
-              <div className="grid grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide min-w-[860px]">
+              <div className="grid grid-cols-[32px_140px_1fr_110px_80px_44px] sm:grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide">
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -328,15 +328,15 @@ export default function OrdersPage() {
                 />
                 <span>Sipariş No</span>
                 <span>Müşteri</span>
-                <span>Taban</span>
-                <span>Sipariş Tarihi</span>
+                <span className="hidden sm:block">Taban</span>
+                <span className="hidden sm:block">Sipariş Tarihi</span>
                 <span>Termin</span>
                 <span className="text-right">Adet</span>
                 <span></span>
               </div>
 
               {/* Rows */}
-              <div className="divide-y divide-slate-100 min-w-[860px]">
+              <div className="divide-y divide-slate-100">
                 {orders.map((order: any) => {
                   const productCode = order.productCode || order.product?.code;
                   const productName = order.product?.name;
@@ -346,7 +346,7 @@ export default function OrdersPage() {
                     <div
                       key={order.id}
                       onClick={() => router.push(`/orders/${order.id}`)}
-                      className={`grid grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-3 border-l-4 ${STATUS_BORDER[order.status] ?? 'border-slate-300'} ${isSelected ? 'bg-blue-50/60' : 'hover:bg-slate-50/80'} cursor-pointer transition-colors`}
+                      className={`grid grid-cols-[32px_140px_1fr_110px_80px_44px] sm:grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-3 border-l-4 ${STATUS_BORDER[order.status] ?? 'border-slate-300'} ${isSelected ? 'bg-blue-50/60' : 'hover:bg-slate-50/80'} cursor-pointer transition-colors`}
                     >
                       {/* Checkbox */}
                       <input
@@ -373,14 +373,14 @@ export default function OrdersPage() {
                       </div>
 
                       {/* Taban */}
-                      <div className="flex flex-col gap-0.5 pr-2">
+                      <div className="hidden sm:flex flex-col gap-0.5 pr-2">
                         {productCode && <span className="text-xs font-semibold text-slate-500">{productCode}</span>}
                         {productName && <span className="text-xs text-slate-600 truncate">{productName}</span>}
                         {!productCode && !productName && <span className="text-xs text-slate-400">—</span>}
                       </div>
 
                       {/* Sipariş Tarihi */}
-                      <div className="text-xs text-slate-500">{fmt(order.createdAt)}</div>
+                      <div className="hidden sm:block text-xs text-slate-500">{fmt(order.createdAt)}</div>
 
                       {/* Termin */}
                       <div className={`text-xs font-medium flex items-center gap-1 ${isOverdue ? 'text-red-500' : 'text-slate-500'}`}>

@@ -271,11 +271,11 @@ export default function PersonnelPage() {
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Ad Soyad</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Departman</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Görev</th>
+                  <th className="hidden sm:table-cell text-left px-4 py-3 font-semibold text-gray-600">Departman</th>
+                  <th className="hidden sm:table-cell text-left px-4 py-3 font-semibold text-gray-600">Görev</th>
                   <th className="text-right px-4 py-3 font-semibold text-gray-600">Maaş</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Durum</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Son Ödeme</th>
+                  <th className="hidden sm:table-cell text-left px-4 py-3 font-semibold text-gray-600">Son Ödeme</th>
                   <th className="text-right px-4 py-3 font-semibold text-gray-600">Bakiye</th>
                   <th className="text-center px-4 py-3 font-semibold text-gray-600">İşlem</th>
                 </tr>
@@ -311,8 +311,8 @@ export default function PersonnelPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-600">{emp.department}</td>
-                        <td className="px-4 py-3 text-gray-600">{emp.role}</td>
+                        <td className="hidden sm:table-cell px-4 py-3 text-gray-600">{emp.department}</td>
+                        <td className="hidden sm:table-cell px-4 py-3 text-gray-600">{emp.role}</td>
                         <td className="px-4 py-3 text-right font-medium text-gray-800">{formatMoney(emp.salary, emp.currency)}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${emp.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
@@ -320,7 +320,7 @@ export default function PersonnelPage() {
                             {emp.status === 'active' ? 'Aktif' : 'Ayrıldı'}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-gray-500">
+                        <td className="hidden sm:table-cell px-4 py-3 text-gray-500">
                           <div>
                             {formatDate(emp.lastPaymentDate)}
                             {isPaydaySoon(emp.payday) && emp.status === 'active' && (

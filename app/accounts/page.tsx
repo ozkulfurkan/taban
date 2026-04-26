@@ -108,12 +108,19 @@ function AccountModal({
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-2">{t('accounts', 'labelColor')}</label>
+            <label className="block text-xs font-medium text-slate-500 mb-2">
+              {t('accounts', 'labelColor')}
+              {COLORS.find(c => c.value === form.color) && (
+                <span className="ml-2 font-normal text-slate-400">
+                  — {isEn ? COLORS.find(c => c.value === form.color)!.labelEn : COLORS.find(c => c.value === form.color)!.labelTr}
+                </span>
+              )}
+            </label>
             <div className="flex gap-2 flex-wrap">
               {COLORS.map(c => (
                 <button key={c.value} type="button" onClick={() => set('color', c.value)}
                   title={isEn ? c.labelEn : c.labelTr}
-                  className="w-8 h-8 rounded-full border-2 transition-all"
+                  className="w-10 h-10 rounded-full border-2 transition-all"
                   style={{
                     backgroundColor: c.value,
                     borderColor: form.color === c.value ? '#1e293b' : 'transparent',

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle, Info, CheckCircle, ChevronDown } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
 interface LineItem {
@@ -367,6 +367,9 @@ export default function NewInvoicePage() {
   const searchParams = useSearchParams();
   const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(() => {
+    try { return localStorage.getItem('invoice_advanced') !== 'false'; } catch { return true; }
+  });
   const [formErrors, setFormErrors] = useState<{ customerId?: string; items?: string }>({});
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -614,9 +617,9 @@ export default function NewInvoicePage() {
         </div>
 
         {/* Split Layout */}
-        <div className="flex gap-4 items-start flex-col lg:flex-row">
+        <div className="flex gap-4 items-start flex-col">
           {/* LEFT PANEL */}
-          <div className="w-full lg:w-[340px] lg:flex-shrink-0 bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="w-full bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="bg-blue-600 px-4 py-3">
               <p className="text-white font-semibold text-sm truncate">
                 {selectedCustomer?.name || t('newInvoice', 'noCustomer')}
@@ -650,26 +653,7 @@ export default function NewInvoicePage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'date')}</label>
-                <div className="flex gap-2">
-                  <input type="date" value={form.date} onChange={e => setField('date', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  <input type="time" value={form.time} onChange={e => setField('time', e.target.value)}
-                    className="w-28 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'dueDate')}</label>
-                <input type="date" value={form.dueDate} onChange={e => setField('dueDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'irsaliyeNo')}</label>
-                <input value={form.irsaliyeNo} onChange={e => setField('irsaliyeNo', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'shippingDate')}</label>
-                <input type="date" value={form.sevkTarihi} onChange={e => setField('sevkTarihi', e.target.value)}
+                <input type="date" value={form.date} onChange={e => setField('date', e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
@@ -689,11 +673,48 @@ export default function NewInvoicePage() {
                   </select>
                 )}
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'notes')}</label>
-                <textarea value={form.notes} onChange={e => setField('notes', e.target.value)} rows={3}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
-              </div>
+              {/* Advanced toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !showAdvanced;
+                  setShowAdvanced(next);
+                  try { localStorage.setItem('invoice_advanced', String(next)); } catch {}
+                }}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium py-0.5"
+              >
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                Gelişmiş Seçenekler
+              </button>
+              {showAdvanced && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Saat</label>
+                    <input type="time" value={form.time} onChange={e => setField('time', e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'dueDate')}</label>
+                    <input type="date" value={form.dueDate} onChange={e => setField('dueDate', e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'irsaliyeNo')}</label>
+                    <input value={form.irsaliyeNo} onChange={e => setField('irsaliyeNo', e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'shippingDate')}</label>
+                    <input type="date" value={form.sevkTarihi} onChange={e => setField('sevkTarihi', e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'notes')}</label>
+                    <textarea value={form.notes} onChange={e => setField('notes', e.target.value)} rows={3}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

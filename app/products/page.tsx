@@ -171,10 +171,10 @@ export default function ProductsPage() {
   };
 
   const getPortalBadge = (p: any) => {
-    if (!p.portalVisible) return null;
+    if (!p.portalVisible) return { label: 'Gizli', cls: 'bg-slate-100 text-slate-500' };
     const count = p._count?.portalCustomers ?? 0;
-    if (count === 0) return { label: 'Herkese Açık', cls: 'bg-emerald-100 text-emerald-700' };
-    return { label: `Seçili: ${count}`, cls: 'bg-blue-100 text-blue-700' };
+    if (count === 0) return { label: 'Tüm Müşteriler', cls: 'bg-emerald-100 text-emerald-700' };
+    return { label: `${count} Müşteri`, cls: 'bg-blue-100 text-blue-700' };
   };
 
   const filtered = products.filter(p => {
