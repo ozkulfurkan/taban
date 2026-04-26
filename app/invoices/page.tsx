@@ -168,7 +168,7 @@ export default function InvoicesPage() {
                         </td>
                         <td className="px-4 py-3 font-medium text-slate-800">{inv.customer?.name ?? '—'}</td>
                         <td className="px-4 py-3 text-slate-600">{inv.invoiceNo}</td>
-                        <td className="px-4 py-3 text-slate-400">—</td>
+                        <td className="px-4 py-3 text-slate-600">{inv.soleOrder?.orderNo ?? '—'}</td>
                         <td className="px-4 py-3 text-right font-semibold text-slate-800 whitespace-nowrap">
                           {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
