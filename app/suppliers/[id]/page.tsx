@@ -1315,7 +1315,10 @@ export default function SupplierDetailPage() {
   };
 
   const handleDeleteSupplier = async () => {
-    if (Math.abs(supplier.balance ?? 0) > 0.01) return;
+    if (Math.abs(supplier.balance ?? 0) > 0.01) {
+      alert(`Bu tedarikçinin ${supplier.balance?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${supplier.currency} açık bakiyesi var.\n\nSilmeden önce bakiyeyi sıfırlayın.`);
+      return;
+    }
     if (!confirm(`"${supplier.name}" adlı tedarikçi kalıcı olarak silinecek. Tüm geçmişi (alış, ödeme vb.) ile birlikte silinir.\n\nEmin misiniz?`)) return;
     setDeleting(true);
     const res = await fetch(`/api/suppliers/${supplier.id}`, { method: 'DELETE' });
@@ -1575,29 +1578,18 @@ export default function SupplierDetailPage() {
               </>
             )}
           </div>
-          <button onClick={() => setShowIade(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
-            <RotateCcw className="w-4 h-4" /> {t('modal', 'returnTitle')}
-          </button>
           <Link href={`/suppliers/${params.id}/ekstre`}
             className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
             <Download className="w-4 h-4" /> {t('supplierDetail', 'accountStatement')}
           </Link>
-          {Math.abs(supplier.balance ?? 0) <= 0.01 ? (
-            <button
-              onClick={handleDeleteSupplier}
-              disabled={deleting}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-            >
-              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-              Tedarikçiyi Sil
-            </button>
-          ) : (
-            <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-400 rounded-lg text-sm font-medium cursor-not-allowed" title="Bakiye sıfırlanmadan tedarikçi silinemez">
-              <Trash2 className="w-4 h-4" />
-              Tedarikçiyi Sil
-            </div>
-          )}
+          <button
+            onClick={handleDeleteSupplier}
+            disabled={deleting}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            Tedarikçiyi Sil
+          </button>
         </div>
 
         {/* Purchases + Payments — side by side */}
