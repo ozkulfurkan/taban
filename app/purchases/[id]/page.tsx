@@ -71,6 +71,7 @@ export default function PurchaseDetailPage() {
       });
       setNewMat({ materialId: '', kgAmount: '', pricePerKg: '', subcontractorId: '' });
       loadPurchaseMaterials();
+      load();
     } finally { setMatSaving(false); }
   };
 
@@ -84,6 +85,7 @@ export default function PurchaseDetailPage() {
         body: JSON.stringify({ entryId }),
       });
       loadPurchaseMaterials();
+      load();
     } finally { setMatDeleting(null); }
   };
 
@@ -240,14 +242,7 @@ export default function PurchaseDetailPage() {
                 {/* Para Birimi */}
                 <div className="flex items-center px-4 py-3">
                   <span className="text-xs font-semibold text-slate-400 w-20 flex-shrink-0">Para Bir.</span>
-                  {editing ? (
-                    <select value={editForm.currency || ''} onChange={e => setEditForm((p: any) => ({ ...p, currency: e.target.value }))}
-                      className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none">
-                      {['TRY', 'USD', 'EUR'].map(c => <option key={c}>{c}</option>)}
-                    </select>
-                  ) : (
-                    <span className="text-sm text-slate-700 font-medium">{purchase.currency}</span>
-                  )}
+                  <span className="text-sm text-slate-700 font-medium">{purchase.currency}</span>
                 </div>
                 {/* Açıklama/Notlar */}
                 <div className="px-4 py-3">
