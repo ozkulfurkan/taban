@@ -1269,6 +1269,7 @@ export default function SupplierDetailPage() {
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteWarning, setDeleteWarning] = useState('');
   const [showAlıs, setShowAlıs] = useState(false);
   const [showOdeme, setShowOdeme] = useState(false);
   const [showIade, setShowIade] = useState(false);
@@ -1316,7 +1317,7 @@ export default function SupplierDetailPage() {
 
   const handleDeleteSupplier = async () => {
     if (Math.abs(supplier.balance ?? 0) > 0.01) {
-      alert(`Bu tedarikçinin ${supplier.balance?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${supplier.currency} açık bakiyesi var.\n\nSilmeden önce bakiyeyi sıfırlayın.`);
+      setDeleteWarning(`Bu tedarikçinin ${supplier.balance?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${supplier.currency} açık bakiyesi var. Silmeden önce bakiyeyi sıfırlayın.`);
       return;
     }
     if (!confirm(`"${supplier.name}" adlı tedarikçi kalıcı olarak silinecek. Tüm geçmişi (alış, ödeme vb.) ile birlikte silinir.\n\nEmin misiniz?`)) return;
@@ -1541,17 +1542,17 @@ export default function SupplierDetailPage() {
         )}
 
         {/* Action buttons */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           <button onClick={() => setShowAlıs(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
-            <ShoppingBag className="w-4 h-4" /> {t('supplierDetail', 'newPurchase')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
+            <ShoppingBag className="w-3.5 h-3.5" /> {t('supplierDetail', 'newPurchase')}
           </button>
           <div className="relative">
             <button
               onClick={() => setOdemeDropdown(d => !d)}
-              className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
             >
-              <Banknote className="w-4 h-4" /> Ödeme/Tahsilat <ChevronDown className="w-3 h-3" />
+              <Banknote className="w-3.5 h-3.5" /> Ödeme/Tahsilat <ChevronDown className="w-3 h-3" />
             </button>
             {odemeDropdown && (
               <>
@@ -1579,18 +1580,40 @@ export default function SupplierDetailPage() {
             )}
           </div>
           <Link href={`/suppliers/${params.id}/ekstre`}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
-            <Download className="w-4 h-4" /> {t('supplierDetail', 'accountStatement')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
+            <Download className="w-3.5 h-3.5" /> {t('supplierDetail', 'accountStatement')}
           </Link>
           <button
             onClick={handleDeleteSupplier}
             disabled={deleting}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
           >
-            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
             Tedarikçiyi Sil
           </button>
         </div>
+
+        {/* Delete warning modal */}
+        {deleteWarning && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteWarning('')} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-800 mb-1">Tedarikçi Silinemiyor</h3>
+                  <p className="text-sm text-slate-600">{deleteWarning}</p>
+                </div>
+              </div>
+              <button onClick={() => setDeleteWarning('')}
+                className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+                Tamam
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Purchases + Payments — side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
