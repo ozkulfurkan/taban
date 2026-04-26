@@ -195,7 +195,7 @@ export default function CustomersPage() {
                 <Link key={c.id} href={`/customers/${c.id}`}
                   className="grid grid-cols-[1fr_160px_140px] items-center hover:bg-slate-50 transition-colors group">
                   <div className="flex items-center gap-2 px-3 py-2">
-                    <span className="block w-full bg-cyan-500 group-hover:bg-cyan-600 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors truncate">
+                    <span className="block w-full bg-blue-600 group-hover:bg-blue-700 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors truncate">
                       {c.name}
                     </span>
                     {c.phone && (
@@ -207,11 +207,13 @@ export default function CustomersPage() {
                   <div className="text-right pr-4 py-2">
                     <span className={`text-sm font-semibold ${c.balance > 0 ? 'text-orange-600' : 'text-slate-500'}`}>
                       {(c.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-xs font-normal ml-1 opacity-70">{c.currency}</span>
                     </span>
                   </div>
                   <div className="text-right pr-4 py-2">
                     <span className="text-sm text-slate-500">
                       {(c.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-xs font-normal ml-1 opacity-70">{c.currency}</span>
                     </span>
                   </div>
                 </Link>

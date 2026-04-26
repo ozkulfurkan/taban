@@ -102,7 +102,7 @@ export const translations = {
       empty: 'Henüz müşteri eklenmedi',
       nameTitle: 'İsim / Unvan',
       openBalance: 'Açık Bakiye',
-      totalInvoiced: 'Toplam Fatura',
+      totalInvoiced: 'Toplam Ciro',
       companyNameLabel: 'Firma / Müşteri Adı *',
       taxId: 'Vergi Kimlik No (VKN)',
       taxOffice: 'Vergi Dairesi',

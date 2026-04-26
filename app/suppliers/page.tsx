@@ -137,7 +137,7 @@ export default function SuppliersPage() {
                 >
                   {/* Name cell — full-width button */}
                   <div className="px-3 py-2">
-                    <span className="block w-full bg-cyan-500 group-hover:bg-cyan-600 text-white text-sm font-medium px-4 py-2 rounded transition-colors truncate">
+                    <span className="block w-full bg-emerald-600 group-hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded transition-colors truncate">
                       {s.name}
                     </span>
                   </div>
@@ -145,7 +145,8 @@ export default function SuppliersPage() {
                   {/* Balance */}
                   <div className="text-right pr-4 py-2">
                     <span className={`text-sm font-semibold ${s.balance > 0 ? 'text-orange-600' : 'text-slate-500'}`}>
-                      {(s.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TL
+                      {(s.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-xs font-normal ml-1 opacity-70">{s.currency}</span>
                     </span>
                   </div>
                 </Link>
