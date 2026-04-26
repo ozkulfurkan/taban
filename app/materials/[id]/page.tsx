@@ -7,7 +7,7 @@ import StatCard from '@/app/components/stat-card';
 import {
   ArrowLeft, Package, Factory, TrendingUp, Tag, Loader2, X,
   Edit2, Trash2, Layers, TrendingDown, RotateCcw, FileText,
-  Plus, CheckCircle, History,
+  Plus, CheckCircle, History, AlertTriangle,
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
@@ -64,6 +64,7 @@ export default function MaterialDetailPage() {
   const [editModal, setEditModal] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', category: '', supplier: '', pricePerKg: '', currency: 'USD', description: '' });
   const [editSaving, setEditSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const loadMaterial = useCallback(async () => {
     const res = await fetch(`/api/materials/${id}`);
@@ -144,7 +145,7 @@ export default function MaterialDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subcontractorId: sendSubId, quantity: parseFloat(sendQty), notes: sendNotes || undefined }),
       });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); alert(e.error || 'Hata'); return; }
+      if (!res.ok) { const e = await res.json().catch(() => ({})); setErrorMsg(e.error || 'Hata'); return; }
       setSendModal(false);
       setSendSubId(''); setSendQty(''); setSendNotes('');
       reload();
@@ -160,7 +161,7 @@ export default function MaterialDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subcontractorId: receiveModal.subcontractorId, quantity: parseFloat(receiveQty), notes: receiveNotes || undefined }),
       });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); alert(e.error || 'Hata'); return; }
+      if (!res.ok) { const e = await res.json().catch(() => ({})); setErrorMsg(e.error || 'Hata'); return; }
       setReceiveModal(null);
       setReceiveQty(''); setReceiveNotes('');
       reload();
@@ -183,7 +184,7 @@ export default function MaterialDetailPage() {
   const handleDelete = async () => {
     if (!confirm('Bu hammaddeyi silmek istediğinize emin misiniz?')) return;
     const res = await fetch(`/api/materials/${id}`, { method: 'DELETE' });
-    if (!res.ok) { const d = await res.json(); alert(d.error || 'Silinemedi'); return; }
+    if (!res.ok) { const d = await res.json(); setErrorMsg(d.error || 'Silinemedi'); return; }
     router.push('/materials');
   };
 
@@ -606,6 +607,26 @@ export default function MaterialDetailPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
+                <p className="text-sm text-slate-600">{errorMsg}</p>
+              </div>
+            </div>
+            <button onClick={() => setErrorMsg('')}
+              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              Tamam
+            </button>
           </div>
         </div>
       )}

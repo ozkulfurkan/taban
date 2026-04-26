@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import Link from 'next/link';
 import {
   Loader2, ChevronLeft, Pencil, Save, X, Factory, Package,
-  ArrowUpDown, Plus, CheckCircle2, Mail,
+  ArrowUpDown, Plus, CheckCircle2, Mail, AlertTriangle,
 } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -33,6 +33,7 @@ export default function SubcontractorDetailPage() {
   const [portalForm, setPortalForm] = useState({ email: '', password: '', name: '' });
   const [showPortalModal, setShowPortalModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'stock' | 'orders' | 'transfers'>('info');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const load = useCallback(() => {
     if (!params?.id) return;
@@ -68,7 +69,7 @@ export default function SubcontractorDetailPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(portalForm),
       });
       if (res.ok) { setShowPortalModal(false); load(); }
-      else { const d = await res.json(); alert(d.error); }
+      else { const d = await res.json(); setErrorMsg(d.error); }
     } finally { setPortalSaving(false); }
   };
 
@@ -301,6 +302,26 @@ export default function SubcontractorDetailPage() {
                 <button onClick={() => setShowPortalModal(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
+                <p className="text-sm text-slate-600">{errorMsg}</p>
+              </div>
+            </div>
+            <button onClick={() => setErrorMsg('')}
+              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              Tamam
+            </button>
           </div>
         </div>
       )}

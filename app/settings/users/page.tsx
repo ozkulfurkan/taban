@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useSession } from 'next-auth/react';
 import {
-  Users, Plus, Loader2, Trash2, Edit2, Key, X, Save, Eye, EyeOff, Copy, CheckCircle, Shield
+  Users, Plus, Loader2, Trash2, Edit2, Key, X, Save, Eye, EyeOff, Copy, CheckCircle, Shield, AlertTriangle
 } from 'lucide-react';
 
 const ALL_PAGES = [
@@ -325,6 +325,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const load = () => {
     setLoading(true);
@@ -341,7 +342,7 @@ export default function UsersPage() {
     if (!confirm(`"${user.name || user.email}" kullanıcısını silmek istediğinize emin misiniz?`)) return;
     const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
     const data = await res.json();
-    if (!res.ok) { alert(data.error); return; }
+    if (!res.ok) { setErrorMsg(data.error); return; }
     load();
   };
 
@@ -477,6 +478,26 @@ export default function UsersPage() {
           </ul>
         </div>
       </div>
+      {errorMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
+                <p className="text-sm text-slate-600">{errorMsg}</p>
+              </div>
+            </div>
+            <button onClick={() => setErrorMsg('')}
+              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              Tamam
+            </button>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

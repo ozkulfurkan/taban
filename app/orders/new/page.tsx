@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import SizeTable from '@/app/portal/components/size-table';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, AlertTriangle } from 'lucide-react';
 
 export default function NewOrderPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
@@ -50,8 +51,8 @@ export default function NewOrderPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.customerId) return alert('Müşteri seçin');
-    if (totalQty === 0) return alert('En az 1 adet girin');
+    if (!form.customerId) { setErrorMsg('Müşteri seçin'); return; }
+    if (totalQty === 0) { setErrorMsg('En az 1 adet girin'); return; }
 
     const partVariantsData = Object.entries(partMaterials)
       .filter(([, matId]) => matId)
@@ -76,7 +77,7 @@ export default function NewOrderPage() {
       if (data.id) {
         router.push('/orders');
       } else {
-        alert(data.error || 'Hata oluştu');
+        setErrorMsg(data.error || 'Hata oluştu');
       }
     } finally {
       setSaving(false);
@@ -188,6 +189,26 @@ export default function NewOrderPage() {
           </div>
         </div>
       </form>
+      {errorMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
+                <p className="text-sm text-slate-600">{errorMsg}</p>
+              </div>
+            </div>
+            <button onClick={() => setErrorMsg('')}
+              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              Tamam
+            </button>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

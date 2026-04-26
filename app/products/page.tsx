@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { BoxIcon, Plus, Trash2, Loader2, Search, Globe, X, Check, Upload, Download, Tag, Pencil } from 'lucide-react';
+import { BoxIcon, Plus, Trash2, Loader2, Search, Globe, X, Check, Upload, Download, Tag, Pencil, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -40,6 +40,7 @@ export default function ProductsPage() {
   const [portalCustomers, setPortalCustomers] = useState<any[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalSaving, setModalSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const loadProducts = () => {
     fetch('/api/products')
@@ -119,7 +120,7 @@ export default function ProductsPage() {
   const deleteCategory = async (id: string) => {
     const res = await fetch(`/api/product-categories/${id}`, { method: 'DELETE' });
     const data = await res.json();
-    if (!res.ok) return alert(data.error);
+    if (!res.ok) { setErrorMsg(data.error); return; }
     loadCategories();
     if (selectedCategory === id) setSelectedCategory(null);
   };
@@ -437,6 +438,26 @@ export default function ProductsPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
+                <p className="text-sm text-slate-600">{errorMsg}</p>
+              </div>
+            </div>
+            <button onClick={() => setErrorMsg('')}
+              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              Tamam
+            </button>
           </div>
         </div>
       )}
