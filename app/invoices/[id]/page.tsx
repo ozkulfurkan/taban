@@ -718,7 +718,10 @@ export default function InvoiceDetailPage() {
                         <tr key={idx} className="hover:bg-slate-50/50">
                           <td className="px-3 py-2 text-slate-400 text-xs">{idx + 1}</td>
                           <td className="px-3 py-2">
-                            <p className="font-medium text-slate-700 text-sm">{item.description}</p>
+                            {item.productId && products.find((p: any) => p.id === item.productId)?.code && (
+                              <span className="text-xs font-mono text-slate-400 mr-1">[{products.find((p: any) => p.id === item.productId)?.code}]</span>
+                            )}
+                            <p className="font-medium text-slate-700 text-sm inline">{item.description}</p>
                             {item.partVariantsData && item.partVariantsData.length > 0 && (
                               <p className="text-xs text-purple-600">
                                 {item.partVariantsData.map(pv => {
@@ -770,6 +773,9 @@ export default function InvoiceDetailPage() {
                                       ? <ChevronDown className="w-3.5 h-3.5" />
                                       : <ChevronRight className="w-3.5 h-3.5" />}
                                   </button>
+                                )}
+                                {item.product?.code && (
+                                  <span className="text-xs font-mono text-slate-400">[{item.product.code}]</span>
                                 )}
                                 <span>{item.description}</span>
                               </div>
@@ -1017,7 +1023,7 @@ async function handlePdf(invoice: any) {
     const net = tutar - indirim;
     const kdv = net * invoice.vatRate / 100;
     x = M;
-    [String(idx+1), tr(item.description).substring(0,30), String(item.quantity),
+    [String(idx+1), tr((item.product?.code ? `[${item.product.code}] ` : '') + item.description).substring(0,30), String(item.quantity),
       fmt2(item.unitPrice), fmt2(tutar), fmt2(indirim), fmt2(net), fmt2(kdv)
     ].forEach((v,i) => { doc.text(v, x+1, y); x += cols[i]; });
     doc.setDrawColor(230,230,230); doc.line(M, y+2, W-M, y+2); y += 6;
