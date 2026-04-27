@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const [invoices, payments, cekler] = await Promise.all([
     prisma.invoice.findMany({
       where: { customerId: params.id, date: { gte: from, lte: to } },
-      include: { items: { orderBy: { id: 'asc' } } },
+      include: { items: { include: { product: { select: { code: true } } }, orderBy: { id: 'asc' } } },
       orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
     }),
     prisma.payment.findMany({
