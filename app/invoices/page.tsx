@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Plus, Loader2, Minus, ShoppingCart, User, Printer, Trash2, Search } from 'lucide-react';
+import { Plus, Loader2, Minus, ShoppingCart, User, Printer, Trash2, Search, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -15,8 +15,6 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   CANCELLED: { label: 'İptal',    color: 'bg-red-100 text-red-600' },
 };
 
-const STATUS_FILTERS = ['ALL', 'PENDING', 'PARTIAL', 'PAID', 'DRAFT', 'CANCELLED'];
-
 export default function InvoicesPage() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
@@ -24,28 +22,28 @@ export default function InvoicesPage() {
 
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
-  const load = (status?: string) => {
+  const load = () => {
     setLoading(true);
-    const url = status && status !== 'ALL' ? `/api/invoices?status=${status}` : '/api/invoices';
-    fetch(url)
+    fetch('/api/invoices')
       .then(r => r.json())
       .then(d => setInvoices(Array.isArray(d) ? d : []))
       .catch(console.error)
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(statusFilter); }, [statusFilter]);
+  useEffect(() => { load(); }, []);
 
   const toggle = (id: string) => setExpandedId(prev => prev === id ? null : id);
 
   const handleDelete = async (id: string, no: string) => {
-    if (!confirm(`"${no}" silinsin mi?`)) return;
-    await fetch(`/api/invoices/${id}`, { method: 'DELETE' });
-    setInvoices(prev => prev.filter(inv => inv.id !== id));
+    setConfirmModal({ message: `"${no}" silinecek.`, onConfirm: async () => {
+      await fetch(`/api/invoices/${id}`, { method: 'DELETE' });
+      setInvoices(prev => prev.filter(inv => inv.id !== id));
+    }});
   };
 
   const filtered = invoices.filter(inv => {
@@ -103,18 +101,6 @@ export default function InvoicesPage() {
           </div>
         )}
 
-        {/* Status filters */}
-        <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                statusFilter === s ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}>
-              {s === 'ALL' ? t('invoices', 'all') : (STATUS_LABELS[s]?.label ?? s)}
-            </button>
-          ))}
-        </div>
-
         {/* Table */}
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
@@ -168,7 +154,7 @@ export default function InvoicesPage() {
                         </td>
                         <td className="px-4 py-3 font-medium text-slate-800">{inv.customer?.name ?? '—'}</td>
                         <td className="px-4 py-3 text-slate-600">{inv.invoiceNo}</td>
-                        <td className="px-4 py-3 text-slate-400">—</td>
+                        <td className="px-4 py-3 text-slate-600">{inv.soleOrder?.orderNo ?? '—'}</td>
                         <td className="px-4 py-3 text-right font-semibold text-slate-800 whitespace-nowrap">
                           {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
@@ -258,6 +244,26 @@ export default function InvoicesPage() {
           </div>
         )}
       </div>
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

@@ -199,6 +199,7 @@ export default function ReturnInvoicePage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [currencyWarning, setCurrencyWarning] = useState(false);
   const [pendingCurrency, setPendingCurrency] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
 
   const lockedCustomerId = searchParams?.get('customerId') ?? '';
@@ -276,8 +277,8 @@ export default function ReturnInvoicePage() {
   const total = subtotal + vatAmount;
 
   const handleSubmit = async () => {
-    if (!form.customerId) return alert(t('newInvoice', 'selectCustomer'));
-    if (items.length === 0) return alert(t('newInvoice', 'noItems'));
+    if (!form.customerId) { setErrorMsg(t('newInvoice', 'selectCustomer')); return; }
+    if (items.length === 0) { setErrorMsg(t('newInvoice', 'noItems')); return; }
     setSaving(true);
     try {
       const res = await fetch('/api/invoices', {
@@ -528,6 +529,26 @@ export default function ReturnInvoicePage() {
           onConfirm={() => { setField('currency', pendingCurrency); setCurrencyWarning(false); }}
           onCancel={() => { setCurrencyWarning(false); }}
         />
+      )}
+      {errorMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
+                <p className="text-sm text-slate-600">{errorMsg}</p>
+              </div>
+            </div>
+            <button onClick={() => setErrorMsg('')}
+              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              Tamam
+            </button>
+          </div>
+        </div>
       )}
     </AppShell>
   );

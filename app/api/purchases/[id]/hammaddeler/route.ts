@@ -44,6 +44,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
   if (!material) return NextResponse.json({ error: 'Hammadde bulunamadı' }, { status: 404 });
 
+  const recomputeTotal = async (tx: any) => {
+    const all = await tx.purchaseMaterial.findMany({ where: { purchaseId: params.id } });
+    const newTotal = all.reduce((s: number, m: any) => s + (m.kgAmount ?? 0) * (m.pricePerKg ?? 0), 0);
+    await tx.purchase.update({ where: { id: params.id }, data: { total: newTotal } });
+  };
+
   if (subcontractorId) {
     const sub = await prisma.subcontractor.findFirst({
       where: { id: subcontractorId, companyId: user.companyId },
@@ -67,6 +73,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       } else {
         await tx.subcontractorStock.create({ data: { subcontractorId, materialId, quantity: kg } });
       }
+      await recomputeTotal(tx);
       return created;
     });
 
@@ -83,6 +90,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }),
     prisma.material.update({ where: { id: materialId }, data: { stock: { increment: kg } } }),
   ]);
+  // Recompute total after non-transactional create
+  await prisma.$transaction(async (tx) => { await recomputeTotal(tx); });
   return NextResponse.json(entry);
 }
 
@@ -100,6 +109,12 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const purchase = await prisma.purchase.findFirst({ where: { id: params.id, companyId: user.companyId } });
   if (!purchase) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
+  const recomputeTotalAfterDelete = async (tx: any) => {
+    const all = await tx.purchaseMaterial.findMany({ where: { purchaseId: params.id } });
+    const newTotal = all.reduce((s: number, m: any) => s + (m.kgAmount ?? 0) * (m.pricePerKg ?? 0), 0);
+    await tx.purchase.update({ where: { id: params.id }, data: { total: newTotal } });
+  };
+
   if (entry.subcontractorId) {
     await prisma.$transaction(async (tx) => {
       await tx.purchaseMaterial.delete({ where: { id: entryId } });
@@ -109,12 +124,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       if (ss) {
         await tx.subcontractorStock.update({ where: { id: ss.id }, data: { quantity: { decrement: entry.kgAmount } } });
       }
+      await recomputeTotalAfterDelete(tx);
     });
   } else {
-    await prisma.$transaction([
-      prisma.purchaseMaterial.delete({ where: { id: entryId } }),
-      prisma.material.update({ where: { id: entry.materialId }, data: { stock: { decrement: entry.kgAmount } } }),
-    ]);
+    await prisma.$transaction(async (tx) => {
+      await tx.purchaseMaterial.delete({ where: { id: entryId } });
+      await tx.material.update({ where: { id: entry.materialId }, data: { stock: { decrement: entry.kgAmount } } });
+      await recomputeTotalAfterDelete(tx);
+    });
   }
 
   return NextResponse.json({ ok: true });

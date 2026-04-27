@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
-  FileText, Users, Truck, BoxIcon, Receipt, CreditCard, Package, Landmark, ScrollText,
+  FileText, Users, Truck, BoxIcon, Receipt, Package, Landmark, ScrollText,
   UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck, LifeBuoy, LogOut
 } from 'lucide-react';
 import { useState } from 'react';
@@ -71,7 +71,6 @@ export default function Sidebar() {
         { href: '/suppliers', label: t('nav', 'suppliers'), icon: Truck },
         { href: '/invoices', label: t('nav', 'sales'), icon: Receipt },
         { href: '/purchases', label: 'Alışlar', icon: Package },
-        { href: '/payments', label: t('nav', 'payments'), icon: CreditCard },
       ],
     },
     {

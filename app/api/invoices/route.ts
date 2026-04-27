@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       customer: { select: { id: true, name: true } },
       items: true,
       createdBy: { select: { name: true } },
+      soleOrder: { select: { orderNo: true } },
     },
     orderBy: { date: 'desc' },
   });
