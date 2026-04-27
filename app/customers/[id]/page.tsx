@@ -799,6 +799,7 @@ export default function CustomerDetailPage() {
       }
       load();
     }});
+  };
 
   const handleExtrePdf = async () => {
     const { default: jsPDF } = await import('jspdf');
@@ -1422,3 +1423,4 @@ export default function CustomerDetailPage() {
     </AppShell>
   );
 }
+
