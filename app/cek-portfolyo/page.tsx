@@ -9,6 +9,8 @@ import { Loader2, ChevronLeft, ChevronRight, RefreshCw, X, AlertTriangle, Upload
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
 
+type SortDir = 'asc' | 'desc';
+
 const DURUM_COLOR: Record<string, string> = {
   PORTFOY: 'bg-blue-100 text-blue-700',
   BANKAYA_VERILDI: 'bg-purple-100 text-purple-700',
@@ -238,6 +240,8 @@ export default function CekPortfoyuPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('vadesi');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ cek: any; durum: string } | null>(null);
@@ -276,18 +280,33 @@ export default function CekPortfoyuPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const qs = new URLSearchParams({ page: String(page) });
+      const qs = new URLSearchParams({ page: String(page), sortBy, sortDir });
       if (tab) qs.set('durum', tab);
       const res = await fetch(`/api/cek?${qs}`);
       setData(await res.json());
     } finally { setLoading(false); }
-  }, [tab, page]);
+  }, [tab, page, sortBy, sortDir]);
 
   useEffect(() => { load(); }, [load]);
 
   const handleTabChange = (key: string) => {
     setTab(key);
     setPage(1);
+  };
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortDir('asc');
+    }
+    setPage(1);
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortBy !== field) return <span className="text-slate-300 ml-1">↕</span>;
+    return <span className="text-teal-400 ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
   };
 
   const handleDurumChange = (cek: any, durum: string) => {
@@ -335,8 +354,14 @@ export default function CekPortfoyuPage() {
       )
     : cekler;
 
-  const totalTutar = filtered.reduce((s, c) => s + c.tutar, 0);
-  const avgVade = calcAvgVade(filtered);
+  // Summary stats from API (all matching records, not just current page)
+  const totalTutar: number = data?.totalTutar ?? 0;
+  const avgVade = (() => {
+    if (!data?.avgVadeMs) return null;
+    const avgDate = new Date(data.avgVadeMs);
+    const days = Math.round((data.avgVadeMs - Date.now()) / 86400000);
+    return { date: avgDate, days };
+  })();
 
   return (
     <AppShell>
@@ -400,36 +425,57 @@ export default function CekPortfoyuPage() {
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[900px]">
+              <table className="w-full text-sm">
+                <colgroup>
+                  <col className="w-[22%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[7%]" />
+                </colgroup>
                 <thead>
-                  <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
-                    <th className="px-3 py-2.5 text-left">{t('checks', 'debtor')}</th>
-                    <th className="px-3 py-2.5 text-left">{t('checks', 'receivedDate')}</th>
-                    <th className="px-3 py-2.5 text-left">{t('checks', 'maturity')}</th>
-                    <th className="px-3 py-2.5 text-left">{t('checks', 'bank')}</th>
-                    <th className="px-3 py-2.5 text-left">{t('checks', 'no')}</th>
-                    <th className="px-3 py-2.5 text-left">{t('checks', 'description')}</th>
-                    <th className="px-3 py-2.5 text-right">{t('checks', 'amount')}</th>
-                    <th className="px-3 py-2.5 text-center">{t('checks', 'status')}</th>
-                    <th className="px-3 py-2.5 text-center">{t('checks', 'actions')}</th>
+                  <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50 select-none">
+                    {[
+                      { label: t('checks', 'debtor'), field: 'borclu', align: 'left' },
+                      { label: t('checks', 'receivedDate'), field: 'islemTarihi', align: 'left' },
+                      { label: t('checks', 'maturity'), field: 'vadesi', align: 'left' },
+                      { label: t('checks', 'bank'), field: 'bankasi', align: 'left' },
+                      { label: t('checks', 'no'), field: 'seriNo', align: 'left' },
+                      { label: t('checks', 'description'), field: '', align: 'left' },
+                      { label: t('checks', 'amount'), field: 'tutar', align: 'right' },
+                      { label: t('checks', 'status'), field: 'durum', align: 'center' },
+                      { label: t('checks', 'actions'), field: '', align: 'center' },
+                    ].map(col => (
+                      <th
+                        key={col.label}
+                        onClick={() => col.field && handleSort(col.field)}
+                        className={`px-2 py-2.5 text-${col.align} ${col.field ? 'cursor-pointer hover:text-slate-700 hover:bg-slate-100' : ''} transition-colors`}
+                      >
+                        {col.label}{col.field && <SortIcon field={col.field} />}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map(c => (
                     <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                      <td className="px-3 py-2 font-medium text-slate-800 whitespace-nowrap">{c.borclu}</td>
-                      <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{fmtDate(c.islemTarihi)}</td>
-                      <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{fmtDate(c.vadesi)}</td>
-                      <td className="px-3 py-2 text-slate-500">{c.bankasi || '—'}</td>
-                      <td className="px-3 py-2 text-slate-600 font-medium">{c.seriNo || '—'}</td>
-                      <td className="px-3 py-2 text-slate-500 max-w-[150px] truncate">{c.aciklama || c.islem}</td>
-                      <td className="px-3 py-2 text-right font-semibold text-slate-800 whitespace-nowrap">{fmt(c.tutar)} {c.currency}</td>
-                      <td className="px-3 py-2 text-center">
+                      <td className="px-2 py-2 font-medium text-slate-800 max-w-0 truncate" title={c.borclu}>{c.borclu}</td>
+                      <td className="px-2 py-2 text-slate-500 whitespace-nowrap">{fmtDate(c.islemTarihi)}</td>
+                      <td className="px-2 py-2 text-slate-500 whitespace-nowrap">{fmtDate(c.vadesi)}</td>
+                      <td className="px-2 py-2 text-slate-500 truncate max-w-0" title={c.bankasi || ''}>{c.bankasi || '—'}</td>
+                      <td className="px-2 py-2 text-slate-600 font-medium truncate max-w-0">{c.seriNo || '—'}</td>
+                      <td className="px-2 py-2 text-slate-500 truncate max-w-0">{c.aciklama || c.islem}</td>
+                      <td className="px-2 py-2 text-right font-semibold text-slate-800 whitespace-nowrap">{fmt(c.tutar)} {c.currency}</td>
+                      <td className="px-2 py-2 text-center">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${DURUM_COLOR[c.durum] || 'bg-slate-100 text-slate-600'}`}>
                           {DURUM_LABEL[c.durum] || c.durum}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-center">
+                      <td className="px-2 py-2 text-center">
                         <button
                           onClick={(e) => {
                             if (openDropdown === c.id) {
@@ -441,7 +487,7 @@ export default function CekPortfoyuPage() {
                               setOpenDropdown(c.id);
                             }
                           }}
-                          className="px-3 py-1 bg-slate-600 hover:bg-slate-700 text-white text-xs rounded-lg"
+                          className="px-2 py-1 bg-slate-600 hover:bg-slate-700 text-white text-xs rounded-lg whitespace-nowrap"
                         >
                           {t('checks', 'actions')} ▾
                         </button>

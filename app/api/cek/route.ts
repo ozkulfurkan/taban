@@ -22,17 +22,31 @@ export async function GET(req: NextRequest) {
 
   const all = searchParams.get('all') === 'true';
 
-  const [cekler, total] = await Promise.all([
+  const SORT_FIELDS: Record<string, boolean> = {
+    vadesi: true, borclu: true, tutar: true, bankasi: true,
+    seriNo: true, islemTarihi: true, durum: true,
+  };
+  const sortBy = SORT_FIELDS[searchParams.get('sortBy') || ''] ? searchParams.get('sortBy')! : 'vadesi';
+  const sortDir = searchParams.get('sortDir') === 'desc' ? 'desc' : 'asc';
+
+  const [cekler, total, stats] = await Promise.all([
     prisma.cek.findMany({
       where,
       include: { customer: { select: { id: true, name: true } }, supplier: { select: { id: true, name: true } } },
-      orderBy: { vadesi: 'asc' },
+      orderBy: { [sortBy]: sortDir },
       ...(all ? {} : { skip: (page - 1) * limit, take: limit }),
     }),
     prisma.cek.count({ where }),
+    prisma.cek.findMany({ where, select: { tutar: true, vadesi: true } }),
   ]);
 
-  return NextResponse.json({ cekler, total, page, pages: Math.ceil(total / limit) });
+  const totalTutar = stats.reduce((s, c) => s + c.tutar, 0);
+  let avgVadeMs: number | null = null;
+  if (totalTutar > 0) {
+    avgVadeMs = stats.reduce((s, c) => s + c.tutar * new Date(c.vadesi).getTime(), 0) / totalTutar;
+  }
+
+  return NextResponse.json({ cekler, total, page, pages: Math.ceil(total / limit), totalTutar, avgVadeMs });
 }
 
 export async function POST(req: NextRequest) {
