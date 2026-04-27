@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { formatDate } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Loader2, ChevronLeft, ChevronRight, RefreshCw, X, AlertTriangle } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, RefreshCw, X, AlertTriangle, Upload, Download, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -124,6 +124,113 @@ function TahsilModal({ cek, onClose, onSaved }: { cek: any; onClose: () => void;
   );
 }
 
+function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setLoading(true);
+    setResult(null);
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const res = await fetch('/api/cek/import', { method: 'POST', body: fd });
+      const data = await res.json();
+      setResult(data);
+      if (data.created > 0) onDone();
+    } catch {
+      setResult({ created: 0, skipped: 0, errors: ['Sunucu hatası oluştu.'] });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="bg-teal-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <h3 className="text-white font-semibold flex items-center gap-2">
+            <Upload className="w-4 h-4" /> Çek İçeri Aktar
+          </h3>
+          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-slate-700">Şablon dosyası</p>
+              <p className="text-xs text-slate-400 mt-0.5">Gerekli sütunlar: Müşteri Adı, Vadesi, Çek No, Bankası, Tutar</p>
+            </div>
+            <a href="/api/cek/import/template"
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+              <Download className="w-4 h-4 text-teal-500" /> İndir
+            </a>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1.5">Excel Dosyası (.xlsx)</label>
+            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-teal-400 hover:bg-teal-50 transition-colors"
+              onClick={() => fileRef.current?.click()}>
+              {file ? (
+                <p className="text-sm font-medium text-teal-600">{file.name}</p>
+              ) : (
+                <>
+                  <Upload className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-sm text-slate-400">Dosya seçmek için tıklayın</p>
+                </>
+              )}
+            </div>
+            <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden"
+              onChange={e => setFile(e.target.files?.[0] ?? null)} />
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">
+            İçeri aktarılan çekler müşteri hesabına <strong>yansımaz</strong> ve müşteri detay sayfasında <strong>görünmez</strong>.
+          </div>
+
+          {result && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                <span className="text-green-700 font-medium">{result.created} çek başarıyla aktarıldı</span>
+              </div>
+              {result.skipped > 0 && (
+                <div className="flex items-start gap-2 text-sm">
+                  <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <span className="text-amber-700">{result.skipped} satır atlandı</span>
+                </div>
+              )}
+              {result.errors.length > 0 && (
+                <div className="bg-red-50 border border-red-100 rounded-lg p-3 max-h-32 overflow-y-auto">
+                  {result.errors.map((e, i) => (
+                    <p key={i} className="text-xs text-red-600">{e}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-1">
+            <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+              {result ? 'Kapat' : 'Vazgeç'}
+            </button>
+            {!result && (
+              <button onClick={handleUpload} disabled={!file || loading}
+                className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                Yükle
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CekPortfoyuPage() {
   const { t } = useLanguage();
   const [tab, setTab] = useState('PORTFOY');
@@ -136,6 +243,7 @@ export default function CekPortfoyuPage() {
   const [confirmModal, setConfirmModal] = useState<{ cek: any; durum: string } | null>(null);
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [tahsilCek, setTahsilCek] = useState<any>(null);
+  const [showImport, setShowImport] = useState(false);
 
   const DURUM_LABEL: Record<string, string> = {
     PORTFOY: t('checks', 'statusPortfoy'),
@@ -233,8 +341,14 @@ export default function CekPortfoyuPage() {
   return (
     <AppShell>
       <div className="space-y-5">
-        <div className="bg-teal-600 rounded-xl px-6 py-4">
+        <div className="bg-teal-600 rounded-xl px-6 py-4 flex items-center justify-between">
           <h1 className="text-white font-bold text-lg uppercase tracking-wide">{t('checks', 'title')}</h1>
+          <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            <Upload className="w-4 h-4" /> İçeri Aktar
+          </button>
         </div>
 
         {/* Tabs */}
@@ -380,6 +494,13 @@ export default function CekPortfoyuPage() {
           </>
         );
       })()}
+
+      {showImport && (
+        <ImportModal
+          onClose={() => setShowImport(false)}
+          onDone={() => { load(); }}
+        />
+      )}
 
       {tahsilCek && (
         <TahsilModal cek={tahsilCek} onClose={() => setTahsilCek(null)} onSaved={load} />
