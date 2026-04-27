@@ -1005,7 +1005,7 @@ export default function CustomerDetailPage() {
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-1.5 flex-wrap overflow-x-auto">
+        <div className="flex gap-1.5 flex-wrap">
           <Link
             href={`/invoices/new?customerId=${customer.id}`}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
