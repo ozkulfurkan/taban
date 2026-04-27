@@ -31,6 +31,7 @@ type Row = {
   isSubRow?: boolean;
   miktar?: string;
   fiyat?: number;
+  productCode?: string;
   extraInfo?: string; // çapraz döviz için
 };
 
@@ -104,6 +105,7 @@ export default function CustomerEkstrePage() {
               aciklama: item.description,
               miktar: item.quantity ? `${item.quantity.toLocaleString('tr-TR')}` : '',
               fiyat: item.unitPrice,
+              productCode: item.product?.code || undefined,
               borc: 0,
               alacak: 0,
               bakiye: balance,
@@ -221,7 +223,7 @@ export default function CustomerEkstrePage() {
         r.dueDate ? fmtDate(r.dueDate) : '',
         r.hareket,
         r.belgeNo || '',
-        r.aciklama || '',
+        (r.productCode ? `[${r.productCode}] ` : '') + (r.aciklama || ''),
         r.miktar || '',
         r.fiyat != null ? fmt(r.fiyat) : '',
         r.borc > 0 ? fmt(r.borc) : '',
@@ -273,7 +275,7 @@ export default function CustomerEkstrePage() {
       x = M;
       const vals = [
         fmtDate(r.date), r.dueDate ? fmtDate(r.dueDate) : '', tr(r.hareket||''),
-        tr(r.belgeNo||''), tr((r.aciklama||'').substring(0,25)), tr(r.miktar||''),
+        tr(r.belgeNo||''), tr(((r.productCode ? `[${r.productCode}] ` : '') + (r.aciklama||'')).substring(0,28)), tr(r.miktar||''),
         r.fiyat != null ? fmt(r.fiyat) : '',
         r.borc > 0 ? fmt(r.borc) : '', r.alacak > 0 ? fmt(r.alacak) : '',
         !r.isSubRow ? fmt(r.bakiye) : '',
@@ -405,7 +407,10 @@ export default function CustomerEkstrePage() {
                           </td>
                           <td className="px-3 py-2 font-medium text-slate-700">{r.belgeNo}</td>
                           <td className="px-3 py-2 text-slate-600 max-w-[180px]">
-                            <span className="truncate block">{r.aciklama}</span>
+                            <span className="truncate block">
+                              {r.productCode && <span className="text-xs font-mono text-slate-400 mr-1">[{r.productCode}]</span>}
+                              {r.aciklama}
+                            </span>
                             {r.extraInfo && <span className="text-xs text-blue-500 font-medium">({r.extraInfo})</span>}
                           </td>
                           <td className="px-3 py-2 text-right text-slate-500">{r.miktar}</td>
