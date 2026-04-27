@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Plus, ChevronDown, Loader2, Pencil, Trash2, X, Save, Landmark, CreditCard, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { Plus, ChevronDown, Loader2, Pencil, Trash2, X, Save, Landmark, CreditCard, ArrowDownCircle, ArrowUpCircle, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const ACCOUNT_TYPES = ['Kasa', 'Banka', 'POS'];
@@ -204,6 +204,7 @@ export default function AccountsPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
   const [paymentsOpen, setPaymentsOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
 
@@ -230,9 +231,10 @@ export default function AccountsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('accounts', 'deleteConfirm'))) return;
-    await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
-    load();
+    setConfirmModal({ message: t('accounts', 'deleteConfirm'), onConfirm: async () => {
+      await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
+      load();
+    }});
   };
 
   const openAdd = (type: string) => { setDropdownOpen(false); setModal({ open: true, edit: null, typeOverride: type }); };
@@ -378,6 +380,26 @@ export default function AccountsPage() {
           t={t}
           isEn={isEn}
         />
+      )}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
+            </div>
+          </div>
+        </div>
       )}
     </AppShell>
   );

@@ -7,7 +7,7 @@ import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import {
   Loader2, Printer, Pencil, X, CreditCard, Building2,
-  Save, ChevronLeft, Plus, Trash2, Factory,
+  Save, ChevronLeft, Plus, Trash2, Factory, AlertTriangle,
 } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -25,6 +25,7 @@ export default function PurchaseDetailPage() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [showPayForm, setShowPayForm] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
 
@@ -123,11 +124,12 @@ export default function PurchaseDetailPage() {
     } finally { setSaving(false); }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Bu alış faturası silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Uyarı: Bu alışta eklenen tüm hammadde stokları (kg) geri alınacaktır.\n\nEmin misiniz?')) return;
-    setDeleting(true);
-    await fetch(`/api/purchases/${params.id}`, { method: 'DELETE' });
-    router.back();
+  const handleDelete = () => {
+    setConfirmModal({ message: 'Bu alış faturası silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Bu alışta eklenen tüm hammadde stokları (kg) geri alınacaktır.', onConfirm: async () => {
+      setDeleting(true);
+      await fetch(`/api/purchases/${params.id}`, { method: 'DELETE' });
+      router.back();
+    }});
   };
 
   const handlePayment = async (e: React.FormEvent) => {
@@ -443,7 +445,26 @@ export default function PurchaseDetailPage() {
           </div>
         </div>
       </div>
-
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

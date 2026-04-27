@@ -326,6 +326,7 @@ export default function UsersPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -339,11 +340,12 @@ export default function UsersPage() {
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (user: User) => {
-    if (!confirm(`"${user.name || user.email}" kullanıcısını silmek istediğinize emin misiniz?`)) return;
-    const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
-    const data = await res.json();
-    if (!res.ok) { setErrorMsg(data.error); return; }
-    load();
+    setConfirmModal({ message: `"${user.name || user.email}" kullanıcısını silmek istediğinize emin misiniz?`, onConfirm: async () => {
+      const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) { setErrorMsg(data.error); return; }
+      load();
+    }});
   };
 
   const canManage = currentUser?.role === 'ADMIN' || currentUser?.role === 'COMPANY_OWNER';
@@ -478,6 +480,28 @@ export default function UsersPage() {
           </ul>
         </div>
       </div>
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)}
+                className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
+            </div>
+          </div>
+        </div>
+      )}
       {errorMsg && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />

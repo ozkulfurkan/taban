@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useId } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
-import { Plus, Trash2, Loader2, ArrowLeft, Check } from 'lucide-react';
+import { Plus, Trash2, Loader2, ArrowLeft, Check, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
 type Item = { name: string; qty: number; currency: string; unitPriceExVat: number; unitPriceInVat: number };
@@ -35,6 +35,7 @@ export default function HesaplayiciDetailPage() {
   const uid = useId();
 
   const [loading, setLoading] = useState(true);
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
   const [kurUsd, setKurUsd] = useState(0);
@@ -122,14 +123,13 @@ export default function HesaplayiciDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm(`"${name}" hesaplamayı silmek istediğinize emin misiniz?`)) return;
-    setDeleting(true);
-    try {
-      await fetch(`/api/hesaplayici/${id}`, { method: 'DELETE' });
-      router.push('/hesaplayici');
-    } finally {
-      setDeleting(false);
-    }
+    setConfirmModal({ message: `"${name}" hesaplamayı silmek istediğinize emin misiniz?`, onConfirm: async () => {
+      setDeleting(true);
+      try {
+        await fetch(`/api/hesaplayici/${id}`, { method: 'DELETE' });
+        router.push('/hesaplayici');
+      } finally { setDeleting(false); }
+    }});
   };
 
   if (loading) {
@@ -377,6 +377,26 @@ export default function HesaplayiciDetailPage() {
           </button>
         </div>
       </div>
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

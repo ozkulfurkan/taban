@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Pencil, Save, X, Phone, Mail, MapPin, Hash,
   Download, RotateCcw, Banknote, CheckCircle2, ShoppingBag, Plus, Trash2, Search, ChevronRight,
-  ChevronDown, FileText, PlusCircle,
+  ChevronDown, FileText, PlusCircle, AlertTriangle,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -1270,6 +1270,7 @@ export default function SupplierDetailPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteWarning, setDeleteWarning] = useState('');
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [showAlıs, setShowAlıs] = useState(false);
   const [showOdeme, setShowOdeme] = useState(false);
   const [showIade, setShowIade] = useState(false);
@@ -1320,11 +1321,12 @@ export default function SupplierDetailPage() {
       setDeleteWarning(`Bu tedarikçinin ${supplier.balance?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${supplier.currency} açık bakiyesi var. Silmeden önce bakiyeyi sıfırlayın.`);
       return;
     }
-    if (!confirm(`"${supplier.name}" adlı tedarikçi kalıcı olarak silinecek. Tüm geçmişi (alış, ödeme vb.) ile birlikte silinir.\n\nEmin misiniz?`)) return;
-    setDeleting(true);
-    const res = await fetch(`/api/suppliers/${supplier.id}`, { method: 'DELETE' });
-    setDeleting(false);
-    if (res.ok) router.push('/suppliers');
+    setConfirmModal({ message: `"${supplier.name}" adlı tedarikçi kalıcı olarak silinecek. Tüm geçmişi (alış, ödeme vb.) ile birlikte silinir.`, onConfirm: async () => {
+      setDeleting(true);
+      const res = await fetch(`/api/suppliers/${supplier.id}`, { method: 'DELETE' });
+      setDeleting(false);
+      if (res.ok) router.push('/suppliers');
+    }});
   };
 
   const handleDeletePayment = async (id: string, method?: string) => {
@@ -1332,13 +1334,14 @@ export default function SupplierDetailPage() {
     const msg = isCek
       ? 'Bu çek ödemesi silinecek ve çek portföye geri dönecek. Emin misiniz?'
       : 'Bu ödeme silinecek. Emin misiniz?';
-    if (!confirm(msg)) return;
-    await fetch(`/api/payments/${id}`, { method: 'DELETE' });
-    if (isCek) {
-      setCekPortfoyToast(true);
-      setTimeout(() => setCekPortfoyToast(false), 3500);
-    }
-    load();
+    setConfirmModal({ message: msg, onConfirm: async () => {
+      await fetch(`/api/payments/${id}`, { method: 'DELETE' });
+      if (isCek) {
+        setCekPortfoyToast(true);
+        setTimeout(() => setCekPortfoyToast(false), 3500);
+      }
+      load();
+    }});
   };
 
   const handleExtrePdf = async () => {
@@ -1817,6 +1820,28 @@ export default function SupplierDetailPage() {
           onClose={() => setShowBakiyeDuzelt(false)}
           onSaved={() => { setShowBakiyeDuzelt(false); load(); }}
         />
+      )}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)}
+                className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
+            </div>
+          </div>
+        </div>
       )}
     </AppShell>
   );
