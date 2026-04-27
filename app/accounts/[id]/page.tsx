@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import {
   ArrowLeft, Loader2, Pencil, TrendingDown, TrendingUp,
-  ArrowLeftRight, ChevronDown, Trash2, X, Save,
+  ArrowLeftRight, ChevronDown, Trash2, X, Save, AlertTriangle,
 } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -335,6 +335,7 @@ export default function AccountEkstrePage() {
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [transferDropdown, setTransferDropdown] = useState(false);
   const [modal, setModal] = useState<'giris' | 'cikis' | 'transfer' | 'edit' | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [transferTargetId, setTransferTargetId] = useState<string>('');
 
   const load = useCallback(async () => {
@@ -349,11 +350,12 @@ export default function AccountEkstrePage() {
   useEffect(() => { load(); }, [load]);
 
   const handleDeletePayment = async (id: string) => {
-    if (!confirm('Bu işlem silinecek. Emin misiniz?')) return;
-    setOpenRowMenu(null);
-    setMenuPos(null);
-    await fetch(`/api/payments/${id}`, { method: 'DELETE' });
-    load();
+    setConfirmModal({ message: 'Bu işlem silinecek.', onConfirm: async () => {
+      setOpenRowMenu(null);
+      setMenuPos(null);
+      await fetch(`/api/payments/${id}`, { method: 'DELETE' });
+      load();
+    }});
   };
 
   const account = data?.account;
@@ -567,6 +569,26 @@ export default function AccountEkstrePage() {
       )}
       {modal === 'transfer' && account && (
         <TransferModal sourceAccount={account} allAccounts={allAccounts} preselectedTargetId={transferTargetId} onClose={() => setModal(null)} onSaved={load} />
+      )}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
+            </div>
+          </div>
+        </div>
       )}
     </AppShell>
   );

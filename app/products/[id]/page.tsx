@@ -7,7 +7,7 @@ import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, Pencil, X,
   Package, Calculator, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Warehouse,
-  FileText, Users,
+  FileText, Users, AlertTriangle,
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 
@@ -60,6 +60,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   // New material modal
   const [showMatModal, setShowMatModal] = useState(false);
@@ -181,7 +182,7 @@ export default function ProductDetailPage() {
   const handleSave = async () => {
     // Validate: part name required
     const emptyName = editParts.find(p => !p.name.trim());
-    if (emptyName) { alert('Tüm parçalar için parça adı girilmelidir.'); return; }
+    if (emptyName) { setErrorMsg('Tüm parçalar için parça adı girilmelidir.'); return; }
     setSaving(true);
     try {
       const res = await fetch(`/api/products/${params.id}`, {
@@ -532,7 +533,7 @@ export default function ProductDetailPage() {
                     {product.stock} <span className="text-sm font-normal text-teal-600">{product.unit}</span>
                   </span>
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="space-y-2">
                   <input
                     type="number"
                     min="0"
@@ -540,24 +541,26 @@ export default function ProductDetailPage() {
                     value={stokAmt}
                     onChange={e => setStokAmt(e.target.value)}
                     placeholder="Miktar"
-                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-teal-400"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-teal-400"
                   />
-                  <button
-                    onClick={() => handleStok(1)}
-                    disabled={stokLoading || !stokAmt}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60"
-                  >
-                    {stokLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
-                    Ekle
-                  </button>
-                  <button
-                    onClick={() => handleStok(-1)}
-                    disabled={stokLoading || !stokAmt}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60"
-                  >
-                    {stokLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingDown className="w-4 h-4" />}
-                    Çıkar
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleStok(1)}
+                      disabled={stokLoading || !stokAmt}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60"
+                    >
+                      {stokLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
+                      Ekle
+                    </button>
+                    <button
+                      onClick={() => handleStok(-1)}
+                      disabled={stokLoading || !stokAmt}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60"
+                    >
+                      {stokLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingDown className="w-4 h-4" />}
+                      Çıkar
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1148,6 +1151,26 @@ export default function ProductDetailPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
+                <p className="text-sm text-slate-600">{errorMsg}</p>
+              </div>
+            </div>
+            <button onClick={() => setErrorMsg('')}
+              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              Tamam
+            </button>
           </div>
         </div>
       )}

@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Pencil, Save, X, Phone, Mail, MapPin, Hash,
   Download, RotateCcw, Banknote, CheckCircle2, ShoppingBag, Plus, Trash2, Search, ChevronRight,
-  ChevronDown, FileText, PlusCircle,
+  ChevronDown, FileText, PlusCircle, AlertTriangle,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -1268,6 +1268,9 @@ export default function SupplierDetailPage() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteWarning, setDeleteWarning] = useState('');
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [showAlıs, setShowAlıs] = useState(false);
   const [showOdeme, setShowOdeme] = useState(false);
   const [showIade, setShowIade] = useState(false);
@@ -1313,18 +1316,32 @@ export default function SupplierDetailPage() {
     setSaving(false);
   };
 
+  const handleDeleteSupplier = async () => {
+    if (Math.abs(supplier.balance ?? 0) > 0.01) {
+      setDeleteWarning(`Bu tedarikçinin ${supplier.balance?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${supplier.currency} açık bakiyesi var. Silmeden önce bakiyeyi sıfırlayın.`);
+      return;
+    }
+    setConfirmModal({ message: `"${supplier.name}" adlı tedarikçi kalıcı olarak silinecek. Tüm geçmişi (alış, ödeme vb.) ile birlikte silinir.`, onConfirm: async () => {
+      setDeleting(true);
+      const res = await fetch(`/api/suppliers/${supplier.id}`, { method: 'DELETE' });
+      setDeleting(false);
+      if (res.ok) router.push('/suppliers');
+    }});
+  };
+
   const handleDeletePayment = async (id: string, method?: string) => {
     const isCek = method === 'Çek';
     const msg = isCek
       ? 'Bu çek ödemesi silinecek ve çek portföye geri dönecek. Emin misiniz?'
       : 'Bu ödeme silinecek. Emin misiniz?';
-    if (!confirm(msg)) return;
-    await fetch(`/api/payments/${id}`, { method: 'DELETE' });
-    if (isCek) {
-      setCekPortfoyToast(true);
-      setTimeout(() => setCekPortfoyToast(false), 3500);
-    }
-    load();
+    setConfirmModal({ message: msg, onConfirm: async () => {
+      await fetch(`/api/payments/${id}`, { method: 'DELETE' });
+      if (isCek) {
+        setCekPortfoyToast(true);
+        setTimeout(() => setCekPortfoyToast(false), 3500);
+      }
+      load();
+    }});
   };
 
   const handleExtrePdf = async () => {
@@ -1528,17 +1545,17 @@ export default function SupplierDetailPage() {
         )}
 
         {/* Action buttons */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           <button onClick={() => setShowAlıs(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
-            <ShoppingBag className="w-4 h-4" /> {t('supplierDetail', 'newPurchase')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
+            <ShoppingBag className="w-3.5 h-3.5" /> {t('supplierDetail', 'newPurchase')}
           </button>
           <div className="relative">
             <button
               onClick={() => setOdemeDropdown(d => !d)}
-              className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
             >
-              <Banknote className="w-4 h-4" /> Ödeme/Tahsilat <ChevronDown className="w-3 h-3" />
+              <Banknote className="w-3.5 h-3.5" /> Ödeme/Tahsilat <ChevronDown className="w-3 h-3" />
             </button>
             {odemeDropdown && (
               <>
@@ -1565,15 +1582,41 @@ export default function SupplierDetailPage() {
               </>
             )}
           </div>
-          <button onClick={() => setShowIade(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
-            <RotateCcw className="w-4 h-4" /> {t('modal', 'returnTitle')}
-          </button>
           <Link href={`/suppliers/${params.id}/ekstre`}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm">
-            <Download className="w-4 h-4" /> {t('supplierDetail', 'accountStatement')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
+            <Download className="w-3.5 h-3.5" /> {t('supplierDetail', 'accountStatement')}
           </Link>
+          <button
+            onClick={handleDeleteSupplier}
+            disabled={deleting}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
+          >
+            {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            Tedarikçiyi Sil
+          </button>
         </div>
+
+        {/* Delete warning modal */}
+        {deleteWarning && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteWarning('')} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-800 mb-1">Tedarikçi Silinemiyor</h3>
+                  <p className="text-sm text-slate-600">{deleteWarning}</p>
+                </div>
+              </div>
+              <button onClick={() => setDeleteWarning('')}
+                className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+                Tamam
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Purchases + Payments — side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -1777,6 +1820,28 @@ export default function SupplierDetailPage() {
           onClose={() => setShowBakiyeDuzelt(false)}
           onSaved={() => { setShowBakiyeDuzelt(false); load(); }}
         />
+      )}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)}
+                className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
+            </div>
+          </div>
+        </div>
       )}
     </AppShell>
   );

@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Pencil, FileText, ShoppingCart, Download, RotateCcw,
   Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Building2, CheckCircle2, Banknote,
-  ChevronDown, PlusCircle, Trash2, CreditCard
+  ChevronDown, PlusCircle, Trash2, CreditCard, AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatDate, toDateInputValue } from '@/lib/time';
@@ -719,6 +719,9 @@ export default function CustomerDetailPage() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteWarning, setDeleteWarning] = useState('');
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [showIade, setShowIade] = useState(false);
   const [showTahsilat, setShowTahsilat] = useState(false);
   const [showCek, setShowCek] = useState(false);
@@ -770,18 +773,32 @@ export default function CustomerDetailPage() {
     setSaving(false);
   };
 
+  const handleDeleteCustomer = async () => {
+    if (Math.abs(customer.balance ?? 0) > 0.01) {
+      setDeleteWarning(`Bu müşterinin ${customer.balance?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${customer.currency} açık bakiyesi var. Silmeden önce bakiyeyi sıfırlayın.`);
+      return;
+    }
+    setConfirmModal({ message: `"${customer.name}" adlı müşteri kalıcı olarak silinecek. Tüm geçmişi (fatura, ödeme vb.) ile birlikte silinir.`, onConfirm: async () => {
+      setDeleting(true);
+      const res = await fetch(`/api/customers/${customer.id}`, { method: 'DELETE' });
+      setDeleting(false);
+      if (res.ok) router.push('/customers');
+    }});
+  };
+
   const handleDeletePayment = async (id: string, method?: string) => {
     const isCek = method === 'Çek';
     const msg = isCek
       ? 'Bu çek ödemesi silinecek ve çek portföye geri dönecek. Emin misiniz?'
       : 'Bu ödeme silinecek. Emin misiniz?';
-    if (!confirm(msg)) return;
-    await fetch(`/api/payments/${id}`, { method: 'DELETE' });
-    if (isCek) {
-      setCekPortfoyToast(true);
-      setTimeout(() => setCekPortfoyToast(false), 3500);
-    }
-    load();
+    setConfirmModal({ message: msg, onConfirm: async () => {
+      await fetch(`/api/payments/${id}`, { method: 'DELETE' });
+      if (isCek) {
+        setCekPortfoyToast(true);
+        setTimeout(() => setCekPortfoyToast(false), 3500);
+      }
+      load();
+    }});
   };
 
   const handleExtrePdf = async () => {
@@ -988,31 +1005,31 @@ export default function CustomerDetailPage() {
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-1.5 flex-wrap overflow-x-auto">
           <Link
             href={`/invoices/new?customerId=${customer.id}`}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
           >
-            <ShoppingCart className="w-4 h-4" /> {t('customerDetail', 'newSale')}
+            <ShoppingCart className="w-3.5 h-3.5" /> {t('customerDetail', 'newSale')}
           </Link>
           <Link
             href={`/quotes/new?customerId=${customer.id}`}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
           >
-            <FileText className="w-4 h-4" /> Teklif Hazırla
+            <FileText className="w-3.5 h-3.5" /> Teklif Hazırla
           </Link>
           <Link
             href={`/invoices/return?customerId=${customer.id}`}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
           >
-            <RotateCcw className="w-4 h-4" /> {t('customerDetail', 'returnInvoice')}
+            <RotateCcw className="w-3.5 h-3.5" /> {t('customerDetail', 'returnInvoice')}
           </Link>
           <div className="relative">
             <button
               onClick={() => setTahsilatDropdown(d => !d)}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
             >
-              <Banknote className="w-4 h-4" /> Tahsilat/Ödeme <ChevronDown className="w-3 h-3" />
+              <Banknote className="w-3.5 h-3.5" /> Tahsilat/Ödeme <ChevronDown className="w-3 h-3" />
             </button>
             {tahsilatDropdown && (
               <>
@@ -1043,18 +1060,42 @@ export default function CustomerDetailPage() {
               </>
             )}
           </div>
-          <button
-            onClick={() => setShowIade(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-          >
-            <RotateCcw className="w-4 h-4" /> {t('modal', 'returnTitle')}
-          </button>
           <Link href={`/customers/${params.id}/ekstre`}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
           >
-            <Download className="w-4 h-4" /> {t('customerDetail', 'accountStatement')}
+            <Download className="w-3.5 h-3.5" /> {t('customerDetail', 'accountStatement')}
           </Link>
+          <button
+            onClick={handleDeleteCustomer}
+            disabled={deleting}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
+          >
+            {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            Müşteriyi Sil
+          </button>
         </div>
+
+        {/* Delete warning modal */}
+        {deleteWarning && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteWarning('')} />
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-800 mb-1">Müşteri Silinemiyor</h3>
+                  <p className="text-sm text-slate-600">{deleteWarning}</p>
+                </div>
+              </div>
+              <button onClick={() => setDeleteWarning('')}
+                className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+                Tamam
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Previous Sales + Previous Payments (side by side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1255,9 +1296,7 @@ export default function CustomerDetailPage() {
                             <td className="px-2 py-2.5 text-center">
                               <button
                                 onClick={async () => {
-                                  if (!confirm('Bu çek kaydı silinecek ve portföyden çıkarılacak. Emin misiniz?')) return;
-                                  await fetch(`/api/cek/${row.id}`, { method: 'DELETE' });
-                                  load();
+                                  setConfirmModal({ message: 'Bu çek kaydı silinecek ve portföyden çıkarılacak.', onConfirm: async () => { await fetch(`/api/cek/${row.id}`, { method: 'DELETE' }); load(); } });
                                 }}
                                 className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -1359,6 +1398,29 @@ export default function CustomerDetailPage() {
           onSaved={() => { setShowBakiyeDuzelt(false); load(); }}
         />
       )}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)}
+                className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
+

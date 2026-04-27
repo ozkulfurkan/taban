@@ -35,6 +35,8 @@ export default function SubcontractorOrderDetailPage() {
   const [receiveForm, setReceiveForm] = useState({ receivedPairs: '', notes: '' });
   const [receiveSaving, setReceiveSaving] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   const load = useCallback(() => {
     if (!params?.id) return;
@@ -86,19 +88,20 @@ export default function SubcontractorOrderDetailPage() {
     setEmailSending(true);
     try {
       const res = await fetch(`/api/subcontractor-orders/${params.id}/send-email`, { method: 'POST' });
-      if (!res.ok) { const d = await res.json(); alert(d.error); }
+      if (!res.ok) { const d = await res.json(); setErrorMsg(d.error); }
       else load();
     } finally { setEmailSending(false); }
   };
 
   const handleCancel = async () => {
-    if (!confirm('Bu siparişi iptal etmek istediğinize emin misiniz?')) return;
-    await fetch(`/api/subcontractor-orders/${params.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'CANCELLED' }),
-    });
-    load();
+    setConfirmModal({ message: 'Bu siparişi iptal etmek istediğinize emin misiniz?', onConfirm: async () => {
+      await fetch(`/api/subcontractor-orders/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CANCELLED' }),
+      });
+      load();
+    }});
   };
 
   const handleRestore = async () => {
@@ -111,10 +114,11 @@ export default function SubcontractorOrderDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Bu sipariş kalıcı olarak silinecek. Emin misiniz?')) return;
-    const res = await fetch(`/api/subcontractor-orders/${params.id}`, { method: 'DELETE' });
-    if (res.ok) router.replace('/subcontractor-orders');
-    else { const d = await res.json(); alert(d.error); }
+    setConfirmModal({ message: 'Bu sipariş kalıcı olarak silinecek.', onConfirm: async () => {
+      const res = await fetch(`/api/subcontractor-orders/${params.id}`, { method: 'DELETE' });
+      if (res.ok) router.replace('/subcontractor-orders');
+      else { const d = await res.json(); setErrorMsg(d.error); }
+    }});
   };
 
   if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-orange-500" /></div></AppShell>;
@@ -334,6 +338,48 @@ export default function SubcontractorOrderDetailPage() {
           </div>
         </div>
       </div>
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)}
+                className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
+                <p className="text-sm text-slate-600">{errorMsg}</p>
+              </div>
+            </div>
+            <button onClick={() => setErrorMsg('')}
+              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              Tamam
+            </button>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

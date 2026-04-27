@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { formatDate } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Loader2, ChevronLeft, ChevronRight, RefreshCw, X } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, RefreshCw, X, AlertTriangle } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -134,6 +134,7 @@ export default function CekPortfoyuPage() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ cek: any; durum: string } | null>(null);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [tahsilCek, setTahsilCek] = useState<any>(null);
 
   const DURUM_LABEL: Record<string, string> = {
@@ -209,9 +210,10 @@ export default function CekPortfoyuPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('checks', 'deleteConfirm'))) return;
-    await fetch(`/api/cek/${id}`, { method: 'DELETE' });
-    load();
+    setDeleteConfirmModal({ message: t('checks', 'deleteConfirm'), onConfirm: async () => {
+      await fetch(`/api/cek/${id}`, { method: 'DELETE' });
+      load();
+    }});
   };
 
   const cekler: any[] = data?.cekler || [];
@@ -419,6 +421,26 @@ export default function CekPortfoyuPage() {
                 className="px-4 py-2 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors">
                 Evet, Portföye Al
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {deleteConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{deleteConfirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = deleteConfirmModal.onConfirm; setDeleteConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>
           </div>
         </div>

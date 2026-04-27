@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
 import Link from 'next/link';
-import { Calculator, Plus, Loader2, Trash2, ChevronRight } from 'lucide-react';
+import { Calculator, Plus, Loader2, Trash2, ChevronRight, AlertTriangle } from 'lucide-react';
 
 function rowCostTL(qty: number, price: number, currency: string, kurUsd: number, kurEur: number) {
   const m = currency === 'USD' ? kurUsd : currency === 'EUR' ? kurEur : 1;
@@ -32,6 +32,7 @@ export default function HesaplayiciPage() {
   const [calculations, setCalculations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => {
     if (user && user.companyType !== 'MATERIAL_SUPPLIER') router.replace('/dashboard');
@@ -46,14 +47,13 @@ export default function HesaplayiciPage() {
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`"${name}" hesaplamayı silmek istediğinize emin misiniz?`)) return;
-    setDeleting(id);
-    try {
-      await fetch(`/api/hesaplayici/${id}`, { method: 'DELETE' });
-      setCalculations(prev => prev.filter(c => c.id !== id));
-    } finally {
-      setDeleting(null);
-    }
+    setConfirmModal({ message: `"${name}" hesaplamayı silmek istediğinize emin misiniz?`, onConfirm: async () => {
+      setDeleting(id);
+      try {
+        await fetch(`/api/hesaplayici/${id}`, { method: 'DELETE' });
+        setCalculations(prev => prev.filter(c => c.id !== id));
+      } finally { setDeleting(null); }
+    }});
   };
 
   return (
@@ -130,6 +130,26 @@ export default function HesaplayiciPage() {
           </div>
         )}
       </div>
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
