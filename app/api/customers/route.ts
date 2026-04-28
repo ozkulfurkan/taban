@@ -13,6 +13,17 @@ export async function GET(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ customers: [], total: 0, page: 1, totalPages: 0 });
 
   const { searchParams } = req.nextUrl;
+
+  // Lightweight dropdown list: returns all customers as [{ id, name }] without pagination/balance
+  if (searchParams.get('minimal') === 'true') {
+    const all = await prisma.customer.findMany({
+      where: { companyId: user.companyId },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+    return NextResponse.json(all);
+  }
+
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
   const search = searchParams.get('search')?.trim() ?? '';
 

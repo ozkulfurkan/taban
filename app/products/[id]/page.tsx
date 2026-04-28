@@ -176,7 +176,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (!params?.id) return;
     fetch(`/api/products/${params.id}/prices`).then(r => r.json()).then(d => setProductPrices(Array.isArray(d) ? d : []));
-    fetch('/api/customers').then(r => r.json()).then(d => setAllCustomers(Array.isArray(d) ? d : []));
+    fetch('/api/customers?minimal=true').then(r => r.json()).then(d => setAllCustomers(Array.isArray(d) ? d : []));
   }, [params?.id]);
 
   const handleSave = async () => {
@@ -330,7 +330,7 @@ export default function ProductDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Geri Dön
         </button>
 
-        {!showCost && (
+        {!isMaterial && !showCost && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
             Ürün bilgilerini girdikten sonra Maliyet Hesapla butonuna tıklayın.
           </div>
@@ -338,6 +338,7 @@ export default function ProductDetailPage() {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
+          {!isMaterial && (
           <button onClick={() => {
             setShowCost(true);
             setTimeout(() => costRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
@@ -349,6 +350,7 @@ export default function ProductDetailPage() {
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md">
             <Calculator className="w-4 h-4" /> Maliyet Hesapla
           </button>
+          )}
           {!editing ? (
             <button onClick={() => setEditing(true)}
               className="flex items-center gap-2 px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium">
@@ -369,7 +371,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className={`grid grid-cols-1 ${isMaterial ? 'lg:grid-cols-[300px_1fr]' : 'lg:grid-cols-3'} gap-4`}>
 
           {/* LEFT: Product info + cost summary */}
           <div className="space-y-3">
@@ -566,7 +568,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Maliyet Özeti */}
-            {costs && (
+            {!isMaterial && costs && (
               <div ref={costRef} className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <button onClick={() => setShowCost(s => !s)}
                   className="w-full px-4 py-3 flex items-center justify-between bg-blue-600 hover:bg-blue-700 transition-colors">
@@ -605,8 +607,56 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* RIGHT: All sections */}
-          <div className="lg:col-span-2 space-y-4">
+          {/* RIGHT: stok hareketleri (isMaterial) OR cost sections (!isMaterial) */}
+          {isMaterial ? (
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden self-start">
+              <div className="bg-teal-700 px-4 py-3 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-white" />
+                <h2 className="text-white font-semibold text-sm">Stok Hareketleri</h2>
+              </div>
+              {ekstreLoading ? (
+                <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-teal-600" /></div>
+              ) : ekstre.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 text-sm">Henüz hareket kaydı yok</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
+                        <th className="px-4 py-2.5 text-left">Tarih</th>
+                        <th className="px-4 py-2.5 text-left">İşlem</th>
+                        <th className="px-4 py-2.5 text-left">Müşteri / Tedarikçi</th>
+                        <th className="px-4 py-2.5 text-left">Fatura No</th>
+                        <th className="px-4 py-2.5 text-right">Miktar</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {ekstre.map((e: any) => (
+                        <tr key={e.id} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">
+                            {new Date(e.date).toLocaleDateString('tr-TR')}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            {e.type === 'satis'
+                              ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Satış</span>
+                              : e.type === 'alis'
+                              ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">Alış</span>
+                              : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">İade</span>
+                            }
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-600 text-xs">{e.party}</td>
+                          <td className="px-4 py-2.5 text-slate-400 text-xs">{e.invoiceNo ?? '—'}</td>
+                          <td className={`px-4 py-2.5 text-right font-semibold ${e.qty > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                            {e.qty > 0 ? '+' : ''}{e.qty.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {product?.unit}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : <div className="lg:col-span-2 space-y-4">
 
             {/* ── 1. Parça / Hammadde ─────────────────────────────────────── */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -905,58 +955,9 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-          </div>
+          </div>}
         </div>
       </div>
-
-      {/* Stok Hareketleri — sadece MATERIAL_SUPPLIER */}
-      {isMaterial && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden mt-6">
-          <div className="bg-teal-700 px-4 py-3 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-white" />
-            <h2 className="text-white font-semibold text-sm">Stok Hareketleri</h2>
-          </div>
-          {ekstreLoading ? (
-            <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-teal-600" /></div>
-          ) : ekstre.length === 0 ? (
-            <div className="text-center py-10 text-slate-400 text-sm">Henüz hareket kaydı yok</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
-                    <th className="px-4 py-2.5 text-left">Tarih</th>
-                    <th className="px-4 py-2.5 text-left">İşlem</th>
-                    <th className="px-4 py-2.5 text-left">Müşteri</th>
-                    <th className="px-4 py-2.5 text-left">Fatura No</th>
-                    <th className="px-4 py-2.5 text-right">Miktar</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {ekstre.map((e: any) => (
-                    <tr key={e.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">
-                        {new Date(e.date).toLocaleDateString('tr-TR')}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        {e.type === 'satis'
-                          ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Satış</span>
-                          : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">İade</span>
-                        }
-                      </td>
-                      <td className="px-4 py-2.5 text-slate-600 text-xs">{e.party}</td>
-                      <td className="px-4 py-2.5 text-slate-400 text-xs">{e.invoiceNo ?? '—'}</td>
-                      <td className={`px-4 py-2.5 text-right font-semibold ${e.qty > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {e.qty > 0 ? '+' : ''}{e.qty.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {product?.unit}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Müşteri Özel Fiyatlar */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden mt-6">
