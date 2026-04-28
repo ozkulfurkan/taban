@@ -546,7 +546,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
     } finally { setCreatingItem(false); }
   };
 
-  const validItems = items.filter(i => parseFloat(i.qty) > 0 && fromPriceInput(i.unitPrice) > 0);
+  const validItems = items.filter(i => i.refId && parseFloat(i.qty) > 0 && fromPriceInput(i.unitPrice) > 0);
   const canSavePurchase = validItems.length > 0 && total > 0;
 
   const handle = async (e: React.FormEvent) => {

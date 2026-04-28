@@ -3,7 +3,7 @@
 import { useState, useCallback, useId } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
-import { Plus, Trash2, Loader2, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Loader2, ArrowLeft, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
 const DEFAULT_ITEMS = [
@@ -50,7 +50,19 @@ export default function NewHesaplayiciPage() {
   const [laborCur, setLaborCur] = useState('TRY');
   const [items, setItems] = useState<Item[]>(DEFAULT_ITEMS.map(i => ({ ...i })));
   const [saving, setSaving] = useState(false);
+  const [kurFetching, setKurFetching] = useState(false);
   const [error, setError] = useState('');
+
+  const fetchKurlar = async () => {
+    setKurFetching(true);
+    try {
+      const res = await fetch('/api/tcmb-rates');
+      const d = await res.json();
+      if (d.usd) setKurUsd(d.usd);
+      if (d.eur) setKurEur(d.eur);
+    } catch { setError('Kurlar alınamadı'); }
+    finally { setKurFetching(false); }
+  };
 
   const updateItem = useCallback((idx: number, field: keyof Item, value: string | number) => {
     setItems(prev => {
@@ -145,7 +157,9 @@ export default function NewHesaplayiciPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">USD Kuru (₺)</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-slate-600">USD Kuru (₺)</label>
+              </div>
               <input
                 type="number" min="0" step="0.01"
                 value={kurUsd || ''}
@@ -155,7 +169,14 @@ export default function NewHesaplayiciPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">EUR Kuru (₺)</label>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="text-xs font-medium text-slate-600">EUR Kuru (₺)</label>
+                <button type="button" onClick={fetchKurlar} disabled={kurFetching}
+                  className="ml-auto flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50">
+                  {kurFetching ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  TCMB
+                </button>
+              </div>
               <input
                 type="number" min="0" step="0.01"
                 value={kurEur || ''}

@@ -14,6 +14,13 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   });
   if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+  // Purchases
+  const purchaseItems = await (prisma.purchaseMaterial as any).findMany({
+    where: { productId: params.id, purchase: { companyId: user.companyId } },
+    include: { purchase: { select: { date: true, invoiceNo: true, supplier: { select: { name: true } } } } },
+    orderBy: { createdAt: 'desc' },
+  });
+
   // Sales
   const salesItems = await prisma.invoiceItem.findMany({
     where: { productId: params.id, invoice: { companyId: user.companyId, isReturn: false } },
@@ -31,7 +38,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   type Entry = {
     id: string;
     date: Date;
-    type: 'satis' | 'iade';
+    type: 'satis' | 'iade' | 'alis';
     party: string;
     invoiceNo: string | null;
     qty: number;
@@ -40,6 +47,19 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   };
 
   const entries: Entry[] = [];
+
+  for (const pm of purchaseItems) {
+    entries.push({
+      id: `pur-${pm.id}`,
+      date: pm.purchase.date,
+      type: 'alis',
+      party: pm.purchase.supplier?.name ?? '—',
+      invoiceNo: pm.purchase.invoiceNo,
+      qty: pm.kgAmount,
+      unitPrice: pm.pricePerKg ?? 0,
+      currency: 'USD',
+    });
+  }
 
   for (const ii of salesItems) {
     entries.push({

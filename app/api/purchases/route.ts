@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
       purchaseMaterials: {
         include: {
           material: { select: { id: true, name: true } },
+          product: { select: { id: true, name: true, code: true } },
           subcontractor: { select: { id: true, name: true } },
         },
       },
@@ -101,6 +102,15 @@ export async function POST(req: NextRequest) {
       ops.push(prisma.product.updateMany({
         where: { id: i.productId, companyId: user.companyId },
         data: { stock: { increment: qty } },
+      }));
+      ops.push((prisma.purchaseMaterial as any).create({
+        data: {
+          purchaseId: purchase.id,
+          productId: i.productId,
+          materialId: null,
+          kgAmount: qty,
+          pricePerKg: unitPrice || null,
+        },
       }));
     }
 

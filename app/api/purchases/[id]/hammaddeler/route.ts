@@ -13,10 +13,11 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   });
   if (!purchase) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const entries = await prisma.purchaseMaterial.findMany({
+  const entries = await (prisma.purchaseMaterial as any).findMany({
     where: { purchaseId: params.id },
     include: {
       material: { select: { id: true, name: true, currency: true, stock: true } },
+      product: { select: { id: true, name: true, code: true, unit: true, stock: true } },
       subcontractor: { select: { id: true, name: true } },
     },
     orderBy: { createdAt: 'asc' },
@@ -103,7 +104,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const { entryId } = await req.json();
   if (!entryId) return NextResponse.json({ error: 'entryId gerekli' }, { status: 400 });
 
-  const entry = await prisma.purchaseMaterial.findFirst({ where: { id: entryId, purchaseId: params.id } });
+  const entry = await (prisma.purchaseMaterial as any).findFirst({ where: { id: entryId, purchaseId: params.id } });
   if (!entry) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const purchase = await prisma.purchase.findFirst({ where: { id: params.id, companyId: user.companyId } });
@@ -117,7 +118,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
   if (entry.subcontractorId) {
     await prisma.$transaction(async (tx) => {
-      await tx.purchaseMaterial.delete({ where: { id: entryId } });
+      await (tx.purchaseMaterial as any).delete({ where: { id: entryId } });
       const ss = await tx.subcontractorStock.findFirst({
         where: { subcontractorId: entry.subcontractorId!, materialId: entry.materialId },
       });
@@ -126,10 +127,18 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       }
       await recomputeTotalAfterDelete(tx);
     });
+  } else if (entry.productId) {
+    await prisma.$transaction(async (tx) => {
+      await (tx.purchaseMaterial as any).delete({ where: { id: entryId } });
+      await tx.product.updateMany({ where: { id: entry.productId }, data: { stock: { decrement: entry.kgAmount } } });
+      await recomputeTotalAfterDelete(tx);
+    });
   } else {
     await prisma.$transaction(async (tx) => {
-      await tx.purchaseMaterial.delete({ where: { id: entryId } });
-      await tx.material.update({ where: { id: entry.materialId }, data: { stock: { decrement: entry.kgAmount } } });
+      await (tx.purchaseMaterial as any).delete({ where: { id: entryId } });
+      if (entry.materialId) {
+        await tx.material.update({ where: { id: entry.materialId }, data: { stock: { decrement: entry.kgAmount } } });
+      }
       await recomputeTotalAfterDelete(tx);
     });
   }

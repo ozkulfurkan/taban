@@ -243,6 +243,7 @@ model Product {
   portalCustomers     ProductPortalCustomer[]
   subcontractorOrders   SubcontractorOrder[]
   customerProductPrices CustomerProductPrice[]
+  purchaseMaterials     PurchaseMaterial[]
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 }
@@ -383,8 +384,10 @@ model PurchaseMaterial {
   id            String         @id @default(cuid())
   purchaseId    String
   purchase      Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  materialId    String
-  material      Material       @relation(fields: [materialId], references: [id])
+  materialId    String?
+  material      Material?      @relation(fields: [materialId], references: [id])
+  productId     String?
+  product       Product?       @relation(fields: [productId], references: [id])
   kgAmount      Float          @default(0)
   pricePerKg    Float?
   subcontractorId String?
