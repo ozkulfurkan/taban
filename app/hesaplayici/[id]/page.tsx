@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useId } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
-import { Plus, Trash2, Loader2, ArrowLeft, Check, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Loader2, ArrowLeft, Check, AlertTriangle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
 type Item = { name: string; qty: number; currency: string; unitPriceExVat: number; unitPriceInVat: number };
@@ -45,6 +45,18 @@ export default function HesaplayiciDetailPage() {
   const [laborCur, setLaborCur] = useState('TRY');
   const [items, setItems] = useState<Item[]>([]);
   const [saving, setSaving] = useState(false);
+  const [kurFetching, setKurFetching] = useState(false);
+
+  const fetchKurlar = async () => {
+    setKurFetching(true);
+    try {
+      const res = await fetch('/api/tcmb-rates');
+      const d = await res.json();
+      if (d.usd) setKurUsd(d.usd);
+      if (d.eur) setKurEur(d.eur);
+    } catch {}
+    finally { setKurFetching(false); }
+  };
   const [deleting, setDeleting] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -202,7 +214,14 @@ export default function HesaplayiciDetailPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">EUR Kuru (₺)</label>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="text-xs font-medium text-slate-600">EUR Kuru (₺)</label>
+                <button type="button" onClick={fetchKurlar} disabled={kurFetching}
+                  className="ml-auto flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50">
+                  {kurFetching ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  TCMB
+                </button>
+              </div>
               <input
                 type="number" min="0" step="0.01"
                 value={kurEur || ''}

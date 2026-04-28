@@ -625,7 +625,7 @@ export default function ProductDetailPage() {
                       <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
                         <th className="px-4 py-2.5 text-left">Tarih</th>
                         <th className="px-4 py-2.5 text-left">İşlem</th>
-                        <th className="px-4 py-2.5 text-left">Müşteri</th>
+                        <th className="px-4 py-2.5 text-left">Müşteri / Tedarikçi</th>
                         <th className="px-4 py-2.5 text-left">Fatura No</th>
                         <th className="px-4 py-2.5 text-right">Miktar</th>
                       </tr>
@@ -639,6 +639,8 @@ export default function ProductDetailPage() {
                           <td className="px-4 py-2.5">
                             {e.type === 'satis'
                               ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Satış</span>
+                              : e.type === 'alis'
+                              ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">Alış</span>
                               : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">İade</span>
                             }
                           </td>
