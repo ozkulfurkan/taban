@@ -176,7 +176,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (!params?.id) return;
     fetch(`/api/products/${params.id}/prices`).then(r => r.json()).then(d => setProductPrices(Array.isArray(d) ? d : []));
-    fetch('/api/customers').then(r => r.json()).then(d => setAllCustomers(Array.isArray(d) ? d : []));
+    fetch('/api/customers?minimal=true').then(r => r.json()).then(d => setAllCustomers(Array.isArray(d) ? d : []));
   }, [params?.id]);
 
   const handleSave = async () => {
@@ -330,7 +330,7 @@ export default function ProductDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Geri Dön
         </button>
 
-        {!showCost && (
+        {!isMaterial && !showCost && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
             Ürün bilgilerini girdikten sonra Maliyet Hesapla butonuna tıklayın.
           </div>
@@ -338,6 +338,7 @@ export default function ProductDetailPage() {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
+          {!isMaterial && (
           <button onClick={() => {
             setShowCost(true);
             setTimeout(() => costRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
@@ -349,6 +350,7 @@ export default function ProductDetailPage() {
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md">
             <Calculator className="w-4 h-4" /> Maliyet Hesapla
           </button>
+          )}
           {!editing ? (
             <button onClick={() => setEditing(true)}
               className="flex items-center gap-2 px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium">
@@ -369,7 +371,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className={`grid grid-cols-1 ${!isMaterial ? 'lg:grid-cols-3' : ''} gap-4`}>
 
           {/* LEFT: Product info + cost summary */}
           <div className="space-y-3">
@@ -566,7 +568,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Maliyet Özeti */}
-            {costs && (
+            {!isMaterial && costs && (
               <div ref={costRef} className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <button onClick={() => setShowCost(s => !s)}
                   className="w-full px-4 py-3 flex items-center justify-between bg-blue-600 hover:bg-blue-700 transition-colors">
@@ -605,8 +607,8 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* RIGHT: All sections */}
-          <div className="lg:col-span-2 space-y-4">
+          {/* RIGHT: All sections — hidden in hammaddeci mode */}
+          {!isMaterial && <div className="lg:col-span-2 space-y-4">
 
             {/* ── 1. Parça / Hammadde ─────────────────────────────────────── */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -905,7 +907,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-          </div>
+          </div>}
         </div>
       </div>
 

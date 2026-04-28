@@ -120,7 +120,7 @@ export default function PurchaseDetailPage() {
         body: JSON.stringify(editForm),
       });
       const updated = await res.json();
-      if (!updated?.error) { setPurchase(updated); setEditing(false); }
+      if (!updated?.error) { setPurchase(updated); }
     } finally { setSaving(false); }
   };
 
@@ -179,23 +179,10 @@ export default function PurchaseDetailPage() {
             className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium">
             <Printer className="w-4 h-4" /> Yazdır
           </button>
-          {!editing ? (
-            <button onClick={() => setEditing(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
-              <Pencil className="w-4 h-4" /> Düzenle
-            </button>
-          ) : (
-            <>
-              <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Kaydet
-              </button>
-              <button onClick={() => { setEditing(false); load(); }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium">
-                <X className="w-4 h-4" /> Vazgeç
-              </button>
-            </>
-          )}
+          <button onClick={() => setEditing(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+            <Pencil className="w-4 h-4" /> Düzenle
+          </button>
           <button onClick={handleDelete} disabled={deleting}
             className="flex items-center gap-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60">
             {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />} İptal Et
@@ -215,46 +202,26 @@ export default function PurchaseDetailPage() {
             <div className="bg-blue-700 rounded-xl px-4 py-4">
               <p className="text-white font-bold text-base">{purchase.supplier?.name}</p>
               {purchase.supplier?.taxId && <p className="text-blue-200 text-xs mt-0.5">VKN: {purchase.supplier.taxId}</p>}
-              {editing && <p className="text-blue-200 text-xs mt-1 italic">Düzenleme modu — alanları değiştirin</p>}
             </div>
 
             {/* Meta fields */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="divide-y divide-slate-100">
-                {/* Belge No */}
                 <div className="flex items-center px-4 py-3">
                   <span className="text-xs font-semibold text-slate-400 w-20 flex-shrink-0">Belge No</span>
-                  {editing ? (
-                    <input value={editForm.invoiceNo || ''} onChange={e => setEditForm((p: any) => ({ ...p, invoiceNo: e.target.value }))}
-                      className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
-                  ) : (
-                    <span className="text-sm text-slate-700 font-medium">{purchase.invoiceNo || <span className="text-slate-300 italic">—</span>}</span>
-                  )}
+                  <span className="text-sm text-slate-700 font-medium">{purchase.invoiceNo || <span className="text-slate-300 italic">—</span>}</span>
                 </div>
-                {/* Tarihi */}
                 <div className="flex items-center px-4 py-3">
                   <span className="text-xs font-semibold text-slate-400 w-20 flex-shrink-0">Tarihi</span>
-                  {editing ? (
-                    <input type="date" value={editForm.date || ''} onChange={e => setEditForm((p: any) => ({ ...p, date: e.target.value }))}
-                      className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
-                  ) : (
-                    <span className="text-sm text-slate-700 font-medium">{fmtDate(purchase.date)}</span>
-                  )}
+                  <span className="text-sm text-slate-700 font-medium">{fmtDate(purchase.date)}</span>
                 </div>
-                {/* Para Birimi */}
                 <div className="flex items-center px-4 py-3">
                   <span className="text-xs font-semibold text-slate-400 w-20 flex-shrink-0">Para Bir.</span>
                   <span className="text-sm text-slate-700 font-medium">{purchase.currency}</span>
                 </div>
-                {/* Açıklama/Notlar */}
                 <div className="px-4 py-3">
                   <span className="text-xs font-semibold text-slate-400 block mb-1">Açıklama</span>
-                  {editing ? (
-                    <textarea value={editForm.notes || ''} onChange={e => setEditForm((p: any) => ({ ...p, notes: e.target.value }))} rows={2}
-                      className="w-full px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400 resize-none" />
-                  ) : (
-                    <p className="text-sm text-slate-600">{purchase.notes || <span className="text-slate-300 italic">—</span>}</p>
-                  )}
+                  <p className="text-sm text-slate-600">{purchase.notes || <span className="text-slate-300 italic">—</span>}</p>
                 </div>
               </div>
             </div>
@@ -362,64 +329,6 @@ export default function PurchaseDetailPage() {
               </div>
             )}
 
-            {/* Add new material row — visible in edit mode */}
-            {editing && (
-              <div className="px-5 py-4 border-t border-slate-100 bg-blue-50/40">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Yeni Hammadde Ekle</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                  <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-xs text-slate-500 mb-1">Hammadde *</label>
-                    <select
-                      value={newMat.materialId}
-                      onChange={e => setNewMat(p => ({ ...p, materialId: e.target.value }))}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400 bg-white"
-                    >
-                      <option value="">— Seçin —</option>
-                      {matList.map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Miktar (kg) *</label>
-                    <input
-                      type="number" min="0" step="0.01"
-                      value={newMat.kgAmount}
-                      onChange={e => setNewMat(p => ({ ...p, kgAmount: e.target.value }))}
-                      placeholder="0.00"
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Birim Fiyat</label>
-                    <input
-                      type="number" min="0" step="0.01"
-                      value={newMat.pricePerKg}
-                      onChange={e => setNewMat(p => ({ ...p, pricePerKg: e.target.value }))}
-                      placeholder="0.00"
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Fasoncu (isteğe bağlı)</label>
-                    <select
-                      value={newMat.subcontractorId}
-                      onChange={e => setNewMat(p => ({ ...p, subcontractorId: e.target.value }))}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400 bg-white"
-                    >
-                      <option value="">— Ana Depo —</option>
-                      {subcontractorList.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <button
-                  onClick={handleAddMat}
-                  disabled={matSaving || !newMat.materialId || !newMat.kgAmount}
-                  className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  {matSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  Hammadde Ekle
-                </button>
-              </div>
-            )}
 
             {/* Totals summary */}
             <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/60">
@@ -445,6 +354,121 @@ export default function PurchaseDetailPage() {
           </div>
         </div>
       </div>
+      {/* Edit modal */}
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => { setEditing(false); load(); }} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-slate-800 rounded-t-2xl px-5 py-4 flex items-center justify-between sticky top-0 z-10">
+              <h3 className="text-white font-semibold">Alış Düzenle — {purchase.invoiceNo}</h3>
+              <button onClick={() => { setEditing(false); load(); }} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Belge No</label>
+                  <input value={editForm.invoiceNo || ''} onChange={e => setEditForm((p: any) => ({ ...p, invoiceNo: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Tarih</label>
+                  <input type="date" value={editForm.date || ''} onChange={e => setEditForm((p: any) => ({ ...p, date: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Açıklama</label>
+                  <textarea value={editForm.notes || ''} onChange={e => setEditForm((p: any) => ({ ...p, notes: e.target.value }))} rows={2}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
+                </div>
+              </div>
+
+              {/* Existing materials */}
+              {purchaseMaterials.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Mevcut Hammaddeler</p>
+                  <div className="border border-slate-200 rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 text-xs font-semibold text-slate-500 border-b">
+                          <th className="px-3 py-2 text-left">Hammadde</th>
+                          <th className="px-3 py-2 text-right">Miktar</th>
+                          <th className="px-3 py-2 text-right">Fiyat</th>
+                          <th className="w-8"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {purchaseMaterials.map((pm: any) => (
+                          <tr key={pm.id} className="hover:bg-slate-50/50">
+                            <td className="px-3 py-2 font-medium text-slate-700">{pm.material?.name}</td>
+                            <td className="px-3 py-2 text-right text-slate-600">{pm.kgAmount} kg</td>
+                            <td className="px-3 py-2 text-right text-slate-500">{pm.pricePerKg ?? '—'}</td>
+                            <td className="px-2 py-2 text-center">
+                              <button onClick={() => handleDeleteMat(pm.id)} disabled={matDeleting === pm.id}
+                                className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded">
+                                {matDeleting === pm.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Add new material */}
+              <div className="bg-blue-50/40 border border-blue-100 rounded-lg p-4">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Yeni Hammadde Ekle</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-xs text-slate-500 mb-1">Hammadde *</label>
+                    <select value={newMat.materialId} onChange={e => setNewMat(p => ({ ...p, materialId: e.target.value }))}
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400 bg-white">
+                      <option value="">— Seçin —</option>
+                      {matList.map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">Miktar (kg) *</label>
+                    <input type="number" min="0" step="0.01" value={newMat.kgAmount}
+                      onChange={e => setNewMat(p => ({ ...p, kgAmount: e.target.value }))} placeholder="0.00"
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">Birim Fiyat</label>
+                    <input type="number" min="0" step="0.01" value={newMat.pricePerKg}
+                      onChange={e => setNewMat(p => ({ ...p, pricePerKg: e.target.value }))} placeholder="0.00"
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">Fasoncu</label>
+                    <select value={newMat.subcontractorId} onChange={e => setNewMat(p => ({ ...p, subcontractorId: e.target.value }))}
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400 bg-white">
+                      <option value="">— Ana Depo —</option>
+                      {subcontractorList.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <button onClick={handleAddMat} disabled={matSaving || !newMat.materialId || !newMat.kgAmount}
+                  className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white rounded-lg text-sm font-medium">
+                  {matSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Hammadde Ekle
+                </button>
+              </div>
+
+              <div className="flex gap-3 pt-2 border-t border-slate-100">
+                <button onClick={() => { setEditing(false); load(); }}
+                  className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">Vazgeç</button>
+                <button onClick={async () => { await handleSave(); setEditing(false); }}
+                  disabled={saving}
+                  className="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Kaydet
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
