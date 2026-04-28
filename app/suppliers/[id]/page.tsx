@@ -44,6 +44,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
     exchangeRate: '',
     recordedAmount: '',
     notes: '',
+    date: toDateInputValue(),
   });
   const [accounts, setAccounts] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
@@ -122,7 +123,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
           originalAmount: isSameCurrency ? null : amt,
           originalCurrency: isSameCurrency ? null : form.paymentCurrency,
           exchangeRate: isSameCurrency ? null : (parseFloat(form.exchangeRate) ? Math.round(parseFloat(form.exchangeRate) * 10000) / 10000 : null),
-          date: nowIstanbulISO(),
+          date: form.date || nowIstanbulISO(),
           notes,
         }),
       });
@@ -184,6 +185,11 @@ function OdemeModal({ supplier, onClose, onSaved }: {
               <p className="text-xs text-blue-500">{t('modal', 'rateHint')}</p>
             </div>
           )}
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
+            <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+          </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'notes')}</label>
             <input value={form.notes} onChange={e => set('notes', e.target.value)}
