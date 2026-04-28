@@ -189,7 +189,7 @@ export default function PurchasesListPage() {
                                       <tr key={pm.id}>
                                         <td className="px-4 py-2.5 text-slate-700">
                                           <span className="text-slate-400 mr-1">{pm.kgAmount} kg</span>
-                                          {pm.material?.name}
+                                          {pm.material?.name ?? (pm.product ? `${pm.product.name}${pm.product.code ? ` [${pm.product.code}]` : ''}` : '—')}
                                           {pm.subcontractor && (
                                             <span className="ml-2 text-xs text-orange-600">→ {pm.subcontractor.name}</span>
                                           )}

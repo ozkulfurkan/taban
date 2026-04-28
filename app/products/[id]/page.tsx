@@ -371,7 +371,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Two-column layout */}
-        <div className={`grid grid-cols-1 ${!isMaterial ? 'lg:grid-cols-3' : ''} gap-4`}>
+        <div className={`grid grid-cols-1 ${isMaterial ? 'lg:grid-cols-[300px_1fr]' : 'lg:grid-cols-3'} gap-4`}>
 
           {/* LEFT: Product info + cost summary */}
           <div className="space-y-3">
@@ -607,8 +607,54 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* RIGHT: All sections — hidden in hammaddeci mode */}
-          {!isMaterial && <div className="lg:col-span-2 space-y-4">
+          {/* RIGHT: stok hareketleri (isMaterial) OR cost sections (!isMaterial) */}
+          {isMaterial ? (
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden self-start">
+              <div className="bg-teal-700 px-4 py-3 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-white" />
+                <h2 className="text-white font-semibold text-sm">Stok Hareketleri</h2>
+              </div>
+              {ekstreLoading ? (
+                <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-teal-600" /></div>
+              ) : ekstre.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 text-sm">Henüz hareket kaydı yok</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
+                        <th className="px-4 py-2.5 text-left">Tarih</th>
+                        <th className="px-4 py-2.5 text-left">İşlem</th>
+                        <th className="px-4 py-2.5 text-left">Müşteri</th>
+                        <th className="px-4 py-2.5 text-left">Fatura No</th>
+                        <th className="px-4 py-2.5 text-right">Miktar</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {ekstre.map((e: any) => (
+                        <tr key={e.id} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">
+                            {new Date(e.date).toLocaleDateString('tr-TR')}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            {e.type === 'satis'
+                              ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Satış</span>
+                              : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">İade</span>
+                            }
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-600 text-xs">{e.party}</td>
+                          <td className="px-4 py-2.5 text-slate-400 text-xs">{e.invoiceNo ?? '—'}</td>
+                          <td className={`px-4 py-2.5 text-right font-semibold ${e.qty > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                            {e.qty > 0 ? '+' : ''}{e.qty.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {product?.unit}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : <div className="lg:col-span-2 space-y-4">
 
             {/* ── 1. Parça / Hammadde ─────────────────────────────────────── */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -910,55 +956,6 @@ export default function ProductDetailPage() {
           </div>}
         </div>
       </div>
-
-      {/* Stok Hareketleri — sadece MATERIAL_SUPPLIER */}
-      {isMaterial && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden mt-6">
-          <div className="bg-teal-700 px-4 py-3 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-white" />
-            <h2 className="text-white font-semibold text-sm">Stok Hareketleri</h2>
-          </div>
-          {ekstreLoading ? (
-            <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-teal-600" /></div>
-          ) : ekstre.length === 0 ? (
-            <div className="text-center py-10 text-slate-400 text-sm">Henüz hareket kaydı yok</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
-                    <th className="px-4 py-2.5 text-left">Tarih</th>
-                    <th className="px-4 py-2.5 text-left">İşlem</th>
-                    <th className="px-4 py-2.5 text-left">Müşteri</th>
-                    <th className="px-4 py-2.5 text-left">Fatura No</th>
-                    <th className="px-4 py-2.5 text-right">Miktar</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {ekstre.map((e: any) => (
-                    <tr key={e.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">
-                        {new Date(e.date).toLocaleDateString('tr-TR')}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        {e.type === 'satis'
-                          ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Satış</span>
-                          : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">İade</span>
-                        }
-                      </td>
-                      <td className="px-4 py-2.5 text-slate-600 text-xs">{e.party}</td>
-                      <td className="px-4 py-2.5 text-slate-400 text-xs">{e.invoiceNo ?? '—'}</td>
-                      <td className={`px-4 py-2.5 text-right font-semibold ${e.qty > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {e.qty > 0 ? '+' : ''}{e.qty.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {product?.unit}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Müşteri Özel Fiyatlar */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden mt-6">

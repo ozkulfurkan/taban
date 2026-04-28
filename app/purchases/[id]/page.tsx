@@ -291,7 +291,14 @@ export default function PurchaseDetailPage() {
                         <tr key={pm.id} className="hover:bg-slate-50/50">
                           <td className="px-4 py-3 text-center text-xs text-slate-400">{idx + 1}</td>
                           <td className="px-4 py-3">
-                            <p className="font-medium text-slate-700">{pm.material?.name}</p>
+                            {pm.material ? (
+                              <p className="font-medium text-slate-700">{pm.material.name}</p>
+                            ) : pm.product ? (
+                              <div>
+                                <p className="font-medium text-slate-700">{pm.product.name}</p>
+                                {pm.product.code && <p className="text-xs font-mono text-slate-400">[{pm.product.code}]</p>}
+                              </div>
+                            ) : <span className="text-slate-300">—</span>}
                           </td>
                           <td className="px-4 py-3">
                             {pm.subcontractor ? (
@@ -399,7 +406,9 @@ export default function PurchaseDetailPage() {
                       <tbody className="divide-y divide-slate-100">
                         {purchaseMaterials.map((pm: any) => (
                           <tr key={pm.id} className="hover:bg-slate-50/50">
-                            <td className="px-3 py-2 font-medium text-slate-700">{pm.material?.name}</td>
+                            <td className="px-3 py-2 font-medium text-slate-700">
+                              {pm.material?.name ?? (pm.product ? `${pm.product.name}${pm.product.code ? ` [${pm.product.code}]` : ''}` : '—')}
+                            </td>
                             <td className="px-3 py-2 text-right text-slate-600">{pm.kgAmount} kg</td>
                             <td className="px-3 py-2 text-right text-slate-500">{pm.pricePerKg ?? '—'}</td>
                             <td className="px-2 py-2 text-center">
