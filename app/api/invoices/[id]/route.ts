@@ -59,7 +59,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   let updateData: any = {
     customerId: rest.customerId ?? existing.customerId,
     invoiceNo: rest.invoiceNo ?? existing.invoiceNo,
-    date: rest.date ? new Date(rest.date) : existing.date,
+    date: rest.date ? (() => {
+      const incoming = new Date(rest.date);
+      const orig = new Date(existing.date as Date);
+      // Preserve original time-of-day so sort order within the same day is stable
+      incoming.setUTCHours(orig.getUTCHours(), orig.getUTCMinutes(), orig.getUTCSeconds(), orig.getUTCMilliseconds());
+      return incoming;
+    })() : existing.date,
     dueDate: rest.dueDate ? new Date(rest.dueDate) : existing.dueDate,
     currency: rest.currency ?? existing.currency,
     notes: rest.notes !== undefined ? rest.notes : existing.notes,

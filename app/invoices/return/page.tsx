@@ -65,10 +65,21 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
   const discAmount = gross * disc / 100;
   const total = gross - discAmount;
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleConfirm = () => {
+    if (!item.description && !item.unitPrice) return;
+    onConfirm(item);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <form onSubmit={(e) => { e.preventDefault(); handleConfirm(); }} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div className="bg-red-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold text-base">{item.description || t('newInvoice', 'returnProductTitle')}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
@@ -147,13 +158,13 @@ function ItemModal({ initial, currency, products, onConfirm, onClose }: {
             <input value={item.notes} onChange={e => set('notes', e.target.value)} placeholder={t('newInvoice', 'enterDescription')}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-red-400 outline-none" />
           </div>
-          <button type="button" onClick={() => { if (item.description || item.unitPrice) onConfirm(item); }}
+          <button type="submit"
             disabled={!item.description && !item.unitPrice}
             className="w-full py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" /> {t('common', 'add')}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
@@ -200,7 +211,9 @@ export default function ReturnInvoicePage() {
   const [currencyWarning, setCurrencyWarning] = useState(false);
   const [pendingCurrency, setPendingCurrency] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const searchRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const lockedCustomerId = searchParams?.get('customerId') ?? '';
 
@@ -234,6 +247,15 @@ export default function ReturnInvoicePage() {
   useEffect(() => {
     if (selectedCustomer?.currency) setField('currency', selectedCustomer.currency);
   }, [form.customerId]);
+
+  useEffect(() => { setHighlightedIndex(-1); }, [productSearch]);
+
+  useEffect(() => {
+    if (highlightedIndex >= 0 && dropdownRef.current) {
+      const el = dropdownRef.current.querySelector(`[data-idx="${highlightedIndex}"]`) as HTMLElement;
+      el?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightedIndex]);
 
   const handleCurrencyChange = (val: string) => {
     if (selectedCustomer && val !== selectedCustomer.currency) {
@@ -399,17 +421,35 @@ export default function ReturnInvoicePage() {
                   onChange={e => { setProductSearch(e.target.value); setShowDropdown(true); }}
                   onFocus={() => setShowDropdown(true)}
                   onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                  onKeyDown={e => {
+                    if (e.key === 'Escape') { setShowDropdown(false); setHighlightedIndex(-1); return; }
+                    if (!showDropdown || filteredProducts.length === 0) return;
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setHighlightedIndex(i => Math.min(i + 1, filteredProducts.length - 1));
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      setHighlightedIndex(i => Math.max(i - 1, 0));
+                    } else if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (highlightedIndex >= 0) {
+                        handleProductClick(filteredProducts[highlightedIndex]);
+                        setHighlightedIndex(-1);
+                      }
+                    }
+                  }}
                   placeholder={t('newInvoice', 'searchProducts')}
                   className="w-full px-3 py-2.5 border-2 border-slate-200 focus:border-red-400 rounded-lg text-sm outline-none"
                 />
                 {showDropdown && productSearch.length >= 2 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                  <div ref={dropdownRef} className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
                     {filteredProducts.length === 0 ? (
                       <div className="px-4 py-3 text-sm text-slate-400">{t('common', 'noResults')}</div>
                     ) : (
-                      filteredProducts.map(p => (
-                        <button key={p.id} type="button" onMouseDown={() => handleProductClick(p)}
-                          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-red-500 hover:text-white text-sm transition-colors text-left">
+                      filteredProducts.map((p, idx) => (
+                        <button key={p.id} data-idx={idx} type="button" onMouseDown={() => handleProductClick(p)}
+                          onMouseEnter={() => setHighlightedIndex(idx)}
+                          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors text-left ${idx === highlightedIndex ? 'bg-red-500 text-white' : 'hover:bg-red-500 hover:text-white'}`}>
                           <span className="font-medium">{p.name}</span>
                           <span className="text-xs opacity-70 ml-2 flex-shrink-0">{p.stock} {p.unit}</span>
                         </button>

@@ -13,6 +13,7 @@ interface LineItem {
   quantity: string;
   unitPrice: string;
   discount: string;
+  vatRate: string;
   notes: string;
   partVariantsData?: Array<{ partId: string; materialId: string }>;
 }
@@ -24,9 +25,18 @@ interface ModalState {
 
 const CURRENCIES = ['USD', 'EUR', 'TRY'];
 const VAT_RATES = ['0', '1', '8', '10', '18', '20'];
-const EMPTY_ITEM: LineItem = { description: '', quantity: '1', unitPrice: '', discount: '0', notes: '' };
+const EMPTY_ITEM: LineItem = { description: '', quantity: '1', unitPrice: '', discount: '0', vatRate: '0', notes: '' };
 
 function lineTotal(item: LineItem) {
+  const qty = fromPriceInput(item.quantity);
+  const price = fromPriceInput(item.unitPrice);
+  const disc = fromPriceInput(item.discount);
+  const vat = parseFloat(item.vatRate || '0') || 0;
+  const net = qty * price * (1 - disc / 100);
+  return net * (1 + vat / 100);
+}
+
+function lineSubtotal(item: LineItem) {
   const qty = fromPriceInput(item.quantity);
   const price = fromPriceInput(item.unitPrice);
   const disc = fromPriceInput(item.discount);
@@ -40,7 +50,8 @@ function ItemModal({ initial, currency, products, materials, customerPrices, onC
   onConfirm: (item: LineItem) => void; onClose: () => void;
 }) {
   const { t } = useLanguage();
-  const [item, setItem] = useState<LineItem>({ ...initial });
+  const [item, setItem] = useState<LineItem>({ ...initial, vatRate: initial.vatRate ?? '0' });
+  const [showDiscount, setShowDiscount] = useState(() => parseFloat(initial.discount || '0') > 0);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [partMaterials, setPartMaterials] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
@@ -86,15 +97,32 @@ function ItemModal({ initial, currency, products, materials, customerPrices, onC
 
   const qty = fromPriceInput(item.quantity);
   const price = fromPriceInput(item.unitPrice);
-  const disc = fromPriceInput(item.discount);
+  const disc = showDiscount ? fromPriceInput(item.discount) : 0;
+  const vat = parseFloat(item.vatRate || '0') || 0;
   const gross = qty * price;
   const discAmount = gross * disc / 100;
-  const total = gross - discAmount;
+  const netBeforeVat = gross - discAmount;
+  const vatAmount = netBeforeVat * vat / 100;
+  const total = netBeforeVat + vatAmount;
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleConfirm = () => {
+    if (!item.description && !item.unitPrice) return;
+    const pvd = Object.entries(partMaterials)
+      .filter(([, matId]) => matId)
+      .map(([partId, materialId]) => ({ partId, materialId }));
+    onConfirm({ ...item, discount: showDiscount ? item.discount : '0', partVariantsData: pvd.length > 0 ? pvd : undefined });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col">
+      <form onSubmit={(e) => { e.preventDefault(); handleConfirm(); }} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col">
         <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold text-base">{item.description || t('newInvoice', 'product')}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
@@ -120,28 +148,33 @@ function ItemModal({ initial, currency, products, materials, customerPrices, onC
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'qty')}</label>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={item.quantity}
+              <input type="text" inputMode="decimal" value={item.quantity}
                 onChange={e => set('quantity', e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none"
               />
+              {!(selectedProduct && (selectedProduct.parts ?? []).length > 0) && selectedProduct && (
+                <p className={`text-xs mt-1 font-medium ${selectedProduct.stock <= 0 ? 'text-red-500' : 'text-green-600'}`}>
+                  Stok: {selectedProduct.stock} {selectedProduct.unit}
+                </p>
+              )}
             </div>
-            {!(selectedProduct && (selectedProduct.parts ?? []).length > 0) && (
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'stockLabel')}</label>
-                <div className={`px-3 py-2 border rounded-lg text-sm ${
-                  selectedProduct
-                    ? selectedProduct.stock <= 0
-                      ? 'bg-red-50 border-red-200 text-red-600 font-medium'
-                      : 'bg-green-50 border-green-200 text-green-700 font-medium'
-                    : 'bg-slate-50 border-slate-200 text-slate-400'
-                }`}>
-                  {selectedProduct ? `${selectedProduct.stock} ${selectedProduct.unit}` : '—'}
-                </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'unitPrice')}</label>
+              <div className="flex">
+                <input type="text" inputMode="decimal" value={item.unitPrice}
+                  onChange={e => set('unitPrice', normalizePriceInput(e.target.value))}
+                  onKeyDown={blockDot}
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0"
+                />
+                <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs font-semibold text-slate-600 flex items-center">{currency}</span>
               </div>
-            )}
+              {selectedProduct && customerPrices?.[selectedProduct.id] && (
+                <p className="text-xs text-emerald-600 mt-1">✓ Özel fiyat: {customerPrices[selectedProduct.id].unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {customerPrices[selectedProduct.id].currency}</p>
+              )}
+              {selectedProduct && !customerPrices?.[selectedProduct.id] && selectedProduct.currency !== currency && (
+                <p className="text-xs text-amber-600 mt-1">⚠ Katalog: {selectedProduct.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedProduct.currency}</p>
+              )}
+            </div>
           </div>
           {/* Per-part material selection */}
           {selectedProduct && (selectedProduct.parts ?? []).length > 0 && (
@@ -174,51 +207,33 @@ function ItemModal({ initial, currency, products, materials, customerPrices, onC
               })}
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'unitPrice')}</label>
-              <div className="flex">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={item.unitPrice}
-                  onChange={e => set('unitPrice', normalizePriceInput(e.target.value))}
-                  onKeyDown={blockDot}
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0"
-                />
-                <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs font-semibold text-slate-600 flex items-center">{currency}</span>
-              </div>
-              {selectedProduct && customerPrices?.[selectedProduct.id] && (
-                <p className="text-xs text-emerald-600 mt-1">
-                  ✓ Özel fiyat: {customerPrices[selectedProduct.id].unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {customerPrices[selectedProduct.id].currency}
-                </p>
-              )}
-              {selectedProduct && !customerPrices?.[selectedProduct.id] && selectedProduct.currency !== currency && (
-                <p className="text-xs text-amber-600 mt-1">
-                  ⚠ Katalog fiyatı: {selectedProduct.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedProduct.currency}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">{t('newInvoice', 'discount')}</label>
-              <div className="flex">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={item.discount}
+          {/* İndirim satırı */}
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5 cursor-pointer select-none flex-shrink-0">
+              <input type="checkbox" checked={showDiscount} onChange={e => { setShowDiscount(e.target.checked); if (!e.target.checked) set('discount', '0'); }}
+                className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+              <span className="text-xs font-medium text-slate-500">{t('newInvoice', 'discount')}</span>
+            </label>
+            {showDiscount && (
+              <div className="flex flex-1 min-w-0">
+                <input type="text" inputMode="decimal" value={item.discount}
                   onChange={e => set('discount', normalizePriceInput(e.target.value))}
                   onKeyDown={blockDot}
                   className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0"
                 />
                 <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs text-slate-500 flex items-center">%</span>
               </div>
-            </div>
+            )}
           </div>
+
+          {/* Özet kutu */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs text-slate-500">{t('newInvoice', 'gross')}</span>
-              <span className="text-sm text-slate-600">{gross.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
-            </div>
+            {disc > 0 && (
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-slate-500">{t('newInvoice', 'gross')}</span>
+                <span className="text-sm text-slate-600">{gross.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
+              </div>
+            )}
             {disc > 0 && (
               <div className="flex justify-between items-center mb-1">
                 <span className="text-xs text-slate-500">{t('newInvoice', 'discountPct')}{disc})</span>
@@ -227,7 +242,7 @@ function ItemModal({ initial, currency, products, materials, customerPrices, onC
             )}
             <div className="flex justify-between items-center border-t border-amber-200 pt-2 mt-1">
               <span className="text-sm font-bold text-slate-700">{t('newInvoice', 'total')}</span>
-              <span className="text-lg font-bold text-slate-800">{total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
+              <span className="text-lg font-bold text-slate-800">{netBeforeVat.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
             </div>
           </div>
           {/* Parts info */}
@@ -245,20 +260,13 @@ function ItemModal({ initial, currency, products, materials, customerPrices, onC
         </div>
         {/* Sticky footer */}
         <div className="px-5 pb-4 pt-3 border-t border-slate-100 flex-shrink-0">
-          <button type="button" onClick={() => {
-            if (item.description || item.unitPrice) {
-              const pvd = Object.entries(partMaterials)
-                .filter(([, matId]) => matId)
-                .map(([partId, materialId]) => ({ partId, materialId }));
-              onConfirm({ ...item, partVariantsData: pvd.length > 0 ? pvd : undefined });
-            }
-          }}
+          <button type="submit"
             disabled={!item.description && !item.unitPrice}
             className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" /> {t('common', 'add')}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
@@ -386,7 +394,9 @@ export default function NewInvoicePage() {
   const [currencyWarning, setCurrencyWarning] = useState(false);
   const [pendingCurrency, setPendingCurrency] = useState('');
   const [stockConfirm, setStockConfirm] = useState<{ deductions: any[] } | null>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const searchRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const lockedCustomerId = searchParams?.get('customerId') ?? '';
   const prefillProductId = searchParams?.get('productId') ?? '';
@@ -444,6 +454,7 @@ export default function NewInvoicePage() {
           unitPrice: product ? toPriceInput(product.unitPrice) : '',
           discount: '0',
           notes: '',
+          vatRate: '0',
           partVariantsData: Array.isArray(order.partVariantsData) ? order.partVariantsData : undefined,
         }]);
       })
@@ -462,6 +473,7 @@ export default function NewInvoicePage() {
       unitPrice: toPriceInput(product.unitPrice),
       discount: '0',
       notes: '',
+      vatRate: '0',
     }]);
   }, [products]);
 
@@ -472,6 +484,15 @@ export default function NewInvoicePage() {
     : [];
 
   const selectedCustomer = customers.find(c => c.id === form.customerId);
+
+  useEffect(() => { setHighlightedIndex(-1); }, [productSearch]);
+
+  useEffect(() => {
+    if (highlightedIndex >= 0 && dropdownRef.current) {
+      const el = dropdownRef.current.querySelector(`[data-idx="${highlightedIndex}"]`) as HTMLElement;
+      el?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightedIndex]);
 
   useEffect(() => {
     if (selectedCustomer?.currency) {
@@ -562,7 +583,7 @@ export default function NewInvoicePage() {
     } finally { setQuickSaving(false); }
   };
 
-  const subtotal = items.reduce((s, it) => s + lineTotal(it), 0);
+  const subtotal = items.reduce((s, it) => s + lineSubtotal(it), 0);
   const vatRate = parseFloat(form.vatRate) || 0;
   const vatAmount = subtotal * vatRate / 100;
   const total = subtotal + vatAmount;
@@ -779,20 +800,39 @@ export default function NewInvoicePage() {
                   onChange={e => { setProductSearch(e.target.value); setShowDropdown(true); }}
                   onFocus={() => setShowDropdown(true)}
                   onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                  onKeyDown={e => {
+                    if (e.key === 'Escape') { setShowDropdown(false); setHighlightedIndex(-1); return; }
+                    if (!showDropdown || filteredProducts.length === 0) return;
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setHighlightedIndex(i => Math.min(i + 1, filteredProducts.length - 1));
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      setHighlightedIndex(i => Math.max(i - 1, 0));
+                    } else if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (highlightedIndex >= 0) {
+                        handleProductClick(filteredProducts[highlightedIndex]);
+                        setHighlightedIndex(-1);
+                      }
+                    }
+                  }}
                   placeholder={t('newInvoice', 'searchProducts')}
                   className="w-full px-3 py-2.5 border-2 border-slate-200 focus:border-green-500 rounded-lg text-sm outline-none"
                 />
                 {showDropdown && productSearch.length >= 2 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                  <div ref={dropdownRef} className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
                     {filteredProducts.length === 0 ? (
                       <div className="px-4 py-3 text-sm text-slate-400">{t('common', 'noResults')}</div>
                     ) : (
-                      filteredProducts.map(p => (
+                      filteredProducts.map((p, idx) => (
                         <button
                           key={p.id}
+                          data-idx={idx}
                           type="button"
                           onMouseDown={() => handleProductClick(p)}
-                          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-blue-500 hover:text-white text-sm transition-colors text-left"
+                          onMouseEnter={() => setHighlightedIndex(idx)}
+                          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors text-left ${idx === highlightedIndex ? 'bg-blue-500 text-white' : 'hover:bg-blue-500 hover:text-white'}`}
                         >
                           <span className="font-medium">{p.name}{p.code ? <span className="ml-1.5 text-xs font-normal opacity-60">{p.code}</span> : null}</span>
                           <span className="text-xs opacity-70 ml-2 flex-shrink-0">{p.stock} {p.unit}</span>

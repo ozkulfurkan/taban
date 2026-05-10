@@ -15,13 +15,13 @@ export async function GET(req: NextRequest) {
   const where: any = { companyId: user.companyId, status: { not: 1 } };
   if (categoryId) where.categoryId = categoryId;
 
-  const suppliers = await prisma.supplier.findMany({
+  const suppliers = await (prisma as any).supplier.findMany({
     where,
     include: { _count: { select: { purchases: true } }, category: { select: { id: true, name: true } } },
     orderBy: { name: 'asc' },
   });
 
-  const result = await Promise.all(suppliers.map(async (s) => {
+  const result = await Promise.all(suppliers.map(async (s: any) => {
     const [purchases, payments] = await Promise.all([
       prisma.purchase.findMany({
         where: { supplierId: s.id },
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   try {
-    const supplier = await prisma.supplier.create({
+    const supplier = await (prisma as any).supplier.create({
       data: {
         companyId: user.companyId,
         name: body.name,
