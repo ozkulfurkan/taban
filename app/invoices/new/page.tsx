@@ -380,7 +380,7 @@ export default function NewInvoicePage() {
   const [productSearch, setProductSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [quickAdd, setQuickAdd] = useState(false);
-  const [quickForm, setQuickForm] = useState({ name: '', code: '', categoryId: '', unitPrice: '', unit: 'çift' });
+  const [quickForm, setQuickForm] = useState({ name: '', code: '', categoryId: '', unitPrice: '', unit: 'çift', currency: 'USD' });
   const [quickSaving, setQuickSaving] = useState(false);
   const [productCategories, setProductCategories] = useState<{ id: string; name: string }[]>([]);
   const [currencyWarning, setCurrencyWarning] = useState(false);
@@ -550,6 +550,7 @@ export default function NewInvoicePage() {
           categoryId: quickForm.categoryId || null,
           unitPrice: fromPriceInput(quickForm.unitPrice),
           unit: quickForm.unit,
+          currency: quickForm.currency,
         }),
       });
       const newProduct = await res.json();
@@ -983,9 +984,17 @@ export default function NewInvoicePage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Birim Fiyatı</label>
-                <input value={quickForm.unitPrice} onChange={e => setQuickForm(p => ({ ...p, unitPrice: e.target.value }))}
-                  placeholder="0,00"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <div className="flex gap-2">
+                  <input value={quickForm.unitPrice} onChange={e => setQuickForm(p => ({ ...p, unitPrice: e.target.value }))}
+                    placeholder="0,00"
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <select value={quickForm.currency} onChange={e => setQuickForm(p => ({ ...p, currency: e.target.value }))}
+                    className="w-20 px-2 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option>USD</option>
+                    <option>EUR</option>
+                    <option>TRY</option>
+                  </select>
+                </div>
               </div>
             </div>
             <div className="px-5 pb-5 flex gap-3">

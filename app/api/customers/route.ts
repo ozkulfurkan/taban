@@ -51,8 +51,8 @@ export async function GET(req: NextRequest) {
 
   const ids = customers.map(c => c.id);
 
-  // Batch: tüm fatura + ödemeleri 2 sorguda çek (N+1 yerine)
-  const [allInvoices, allPayments] = ids.length > 0
+  // Batch: fatura + ödeme + çek — 3 sorguda (N+1 yok)
+  const [allInvoices, allPayments, allCekler] = ids.length > 0
     ? await Promise.all([
         prisma.invoice.findMany({
           where: { customerId: { in: ids } },
@@ -62,8 +62,12 @@ export async function GET(req: NextRequest) {
           where: { customerId: { in: ids }, type: 'RECEIVED' },
           select: { customerId: true, amount: true, method: true, notes: true },
         }),
+        prisma.cek.findMany({
+          where: { customerId: { in: ids }, islem: 'Müşteriden Alınan Çek Kaydı' },
+          select: { customerId: true, tutar: true, customerAmount: true },
+        }),
       ])
-    : [[], []];
+    : [[], [], []];
 
   // Group by customerId
   const invoiceMap = new Map<string, typeof allInvoices>();
@@ -79,10 +83,18 @@ export async function GET(req: NextRequest) {
     list.push(pmt);
     paymentMap.set(pmt.customerId, list);
   }
+  const cekMap = new Map<string, typeof allCekler>();
+  for (const cek of allCekler) {
+    if (!cek.customerId) continue;
+    const list = cekMap.get(cek.customerId) ?? [];
+    list.push(cek);
+    cekMap.set(cek.customerId, list);
+  }
 
   const result = customers.map(c => {
     const invoices = invoiceMap.get(c.id) ?? [];
     const payments = paymentMap.get(c.id) ?? [];
+    const cekler = cekMap.get(c.id) ?? [];
 
     const totalNormal = invoices.filter(i => !i.isReturn).reduce((s, i) => s + i.total, 0);
     const totalReturn = invoices.filter(i => i.isReturn).reduce((s, i) => s + i.total, 0);
@@ -90,12 +102,17 @@ export async function GET(req: NextRequest) {
     let balanceDelta = 0;
     let totalPaid = 0;
     for (const p of payments) {
-      if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
+      if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && (p.notes as any)?.startsWith('+'))) {
         balanceDelta += p.amount;
       } else {
         balanceDelta -= p.amount;
         totalPaid += p.amount;
       }
+    }
+    for (const cek of cekler) {
+      const amt = (cek as any).customerAmount ?? cek.tutar;
+      balanceDelta -= amt;
+      totalPaid += amt;
     }
     const balance = totalNormal - totalReturn + balanceDelta;
 
