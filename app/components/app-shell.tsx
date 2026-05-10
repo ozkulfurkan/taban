@@ -6,7 +6,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Sidebar from './sidebar';
-import { Loader2, ChevronDown, LogOut, User, Clock, AlertTriangle, LifeBuoy } from 'lucide-react';
+import { Loader2, ChevronDown, LogOut, User, Clock, AlertTriangle, LifeBuoy, X, Sparkles, Wrench } from 'lucide-react';
 
 function UserMenu() {
   const { data: session } = useSession() || {};
@@ -66,6 +66,103 @@ function DestekLink() {
       <LifeBuoy className="w-4 h-4 text-blue-500" />
       <span className="hidden sm:block">Destek Merkezi</span>
     </Link>
+  );
+}
+
+// ── What's New Modal ─────────────────────────────────────────────────────────
+const WHATS_NEW_VERSION = 'whats_new_v20260510';
+
+const WHATS_NEW_FIXES = [
+  'Müşteri bakiyesi, detay sayfasındaki bakiye ile artık aynı değeri gösteriyor.',
+  'Faturaya KDV oranı girildiğinde tutar 0 olarak görünüyordu, düzeltildi.',
+  'Fatura düzenlenip kaydedilince listenin en altına düşme sorunu giderildi.',
+  'Aynı gün içinde birden fazla kayıt varsa en son eklenen artık en üstte görünüyor.',
+];
+
+const WHATS_NEW_FEATURES = [
+  'Müşteri ve tedarikçiler silindiğinde geçmiş kayıtlar artık kaybolmuyor.',
+  'Müşteri ve tedarikçilere kategori atanabiliyor, listede kategoriye göre filtrelenebiliyor.',
+  'Satış ekranında listede olmayan bir ürünü anında ekleyip faturaya dahil etme özelliği eklendi.',
+  'Satış ekranında ürün ararken yön tuşları ve Enter ile fare kullanmadan işlem yapılabiliyor.',
+];
+
+function WhatsNewModal({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[9998] flex items-center justify-center p-4"
+    >
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.93, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 8 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5 flex items-center justify-between">
+          <div>
+            <p className="text-blue-100 text-xs font-medium mb-0.5">10 Mayıs 2026</p>
+            <h2 className="text-white font-bold text-lg">Yenilikler & Düzeltmeler</h2>
+          </div>
+          <button onClick={onClose} className="text-white/70 hover:text-white transition-colors p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+          {/* Yeni özellikler */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-800">Yeni Özellikler</h3>
+            </div>
+            <ul className="space-y-2">
+              {WHATS_NEW_FEATURES.map((f, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="border-t border-slate-100" />
+
+          {/* Hata düzeltmeleri */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <Wrench className="w-3.5 h-3.5 text-amber-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-800">Hata Düzeltmeleri</h3>
+            </div>
+            <ul className="space-y-2">
+              {WHATS_NEW_FIXES.map((f, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="px-6 pb-5">
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors"
+          >
+            Anladım
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -200,6 +297,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession() || {};
   const router = useRouter();
   const { showWarning, countdown, onContinue } = useIdleLogout();
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      try {
+        if (!localStorage.getItem(WHATS_NEW_VERSION)) setShowWhatsNew(true);
+      } catch {}
+    }
+  }, [status]);
+
+  const closeWhatsNew = () => {
+    try { localStorage.setItem(WHATS_NEW_VERSION, '1'); } catch {}
+    setShowWhatsNew(false);
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -220,6 +331,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       <AnimatePresence>
+        {showWhatsNew && <WhatsNewModal onClose={closeWhatsNew} />}
         {showWarning && (
           <IdleWarningModal countdown={countdown} onContinue={onContinue} />
         )}
