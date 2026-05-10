@@ -4,15 +4,20 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
   if (!user.companyId) return NextResponse.json([]);
 
+  const { searchParams } = req.nextUrl;
+  const categoryId = searchParams.get('categoryId');
+  const where: any = { companyId: user.companyId, status: { not: 1 } };
+  if (categoryId) where.categoryId = categoryId;
+
   const suppliers = await prisma.supplier.findMany({
-    where: { companyId: user.companyId },
-    include: { _count: { select: { purchases: true } } },
+    where,
+    include: { _count: { select: { purchases: true } }, category: { select: { id: true, name: true } } },
     orderBy: { name: 'asc' },
   });
 
@@ -71,6 +76,7 @@ export async function POST(req: NextRequest) {
         address: body.address || null,
         currency: body.currency || 'USD',
         notes: body.notes || null,
+        categoryId: body.categoryId || null,
       },
     });
     await logAction({
