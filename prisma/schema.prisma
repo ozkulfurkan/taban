@@ -286,6 +286,7 @@ model Customer {
   address    String?
   currency   String    @default("TRY")
   notes      String?
+  status     Int       @default(0)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   invoices              Invoice[]
@@ -307,6 +308,7 @@ model Supplier {
   address   String?
   currency  String     @default("USD")
   notes     String?
+  status    Int        @default(0)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   purchases Purchase[]

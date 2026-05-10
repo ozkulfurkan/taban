@@ -103,7 +103,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       where: { id: params.id, companyId: user.companyId },
       select: { name: true },
     });
-    await prisma.supplier.deleteMany({ where: { id: params.id, companyId: user.companyId } });
+    if (!supplier) return NextResponse.json({ error: 'Tedarikçi bulunamadı' }, { status: 404 });
+    await prisma.supplier.updateMany({
+      where: { id: params.id, companyId: user.companyId },
+      data: { status: 1 },
+    });
     await logAction({
       companyId: user.companyId,
       userId: user.id,
@@ -111,7 +115,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       action: 'DELETE',
       entity: 'Supplier',
       entityId: params.id,
-      detail: `Tedarikçi silindi — ${supplier?.name ?? params.id}`,
+      detail: `Tedarikçi silindi (soft) — ${supplier.name}`,
       ip: getIp(req),
     });
     return NextResponse.json({ ok: true });

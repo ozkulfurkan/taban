@@ -11,7 +11,7 @@ export async function GET() {
   if (!user.companyId) return NextResponse.json([]);
 
   const suppliers = await prisma.supplier.findMany({
-    where: { companyId: user.companyId },
+    where: { companyId: user.companyId, status: { not: 1 } },
     include: { _count: { select: { purchases: true } } },
     orderBy: { name: 'asc' },
   });

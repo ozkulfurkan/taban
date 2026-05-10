@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   // Lightweight dropdown list: returns all customers as [{ id, name }] without pagination/balance
   if (searchParams.get('minimal') === 'true') {
     const all = await prisma.customer.findMany({
-      where: { companyId: user.companyId },
+      where: { companyId: user.companyId, status: { not: 1 } },
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     });
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
   const search = searchParams.get('search')?.trim() ?? '';
 
-  const where: any = { companyId: user.companyId };
+  const where: any = { companyId: user.companyId, status: { not: 1 } };
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
