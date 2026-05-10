@@ -584,12 +584,8 @@ export default function NewInvoicePage() {
   };
 
   const subtotal = items.reduce((s, it) => s + lineSubtotal(it), 0);
-  const vatAmount = items.reduce((s, it) => {
-    const net = lineSubtotal(it);
-    const vat = parseFloat(it.vatRate || '0') || 0;
-    return s + net * vat / 100;
-  }, 0);
   const vatRate = parseFloat(form.vatRate) || 0;
+  const vatAmount = subtotal * vatRate / 100;
   const total = subtotal + vatAmount;
 
   const performSave = async () => {

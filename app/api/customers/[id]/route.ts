@@ -14,13 +14,13 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       where: { id: params.id, companyId: user.companyId },
       include: {
         invoices: {
-          orderBy: { date: 'desc' },
+          orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
           include: {
             items: { include: { product: { select: { code: true } } } },
             createdBy: { select: { name: true } },
           },
         },
-        payments: { orderBy: { date: 'desc' }, select: { amount: true, method: true, notes: true, id: true, date: true, currency: true } },
+        payments: { orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], select: { amount: true, method: true, notes: true, id: true, date: true, currency: true } },
       },
     }),
     prisma.cek.findMany({
