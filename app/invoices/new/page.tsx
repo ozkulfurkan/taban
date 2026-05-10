@@ -379,6 +379,10 @@ export default function NewInvoicePage() {
   const [draftItem, setDraftItem] = useState<LineItem>(EMPTY_ITEM);
   const [productSearch, setProductSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [quickAdd, setQuickAdd] = useState(false);
+  const [quickForm, setQuickForm] = useState({ name: '', code: '', categoryId: '', unitPrice: '', unit: 'çift', currency: 'USD' });
+  const [quickSaving, setQuickSaving] = useState(false);
+  const [productCategories, setProductCategories] = useState<{ id: string; name: string }[]>([]);
   const [currencyWarning, setCurrencyWarning] = useState(false);
   const [pendingCurrency, setPendingCurrency] = useState('');
   const [stockConfirm, setStockConfirm] = useState<{ deductions: any[] } | null>(null);
@@ -523,6 +527,39 @@ export default function NewInvoicePage() {
     setProductSearch('');
     setShowDropdown(false);
     openNewModal({ productId: product.id, description: product.name, unitPrice: toPriceInput(product.unitPrice) });
+  };
+
+  const openQuickAdd = () => {
+    if (productCategories.length === 0) {
+      fetch('/api/product-categories').then(r => r.json()).then(d => setProductCategories(Array.isArray(d) ? d : []));
+    }
+    setQuickForm({ name: '', code: '', categoryId: '', unitPrice: '', unit: 'çift', currency: 'USD' });
+    setQuickAdd(true);
+  };
+
+  const handleQuickSave = async () => {
+    if (!quickForm.name.trim()) return;
+    setQuickSaving(true);
+    try {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: quickForm.name.trim(),
+          code: quickForm.code.trim() || null,
+          categoryId: quickForm.categoryId || null,
+          unitPrice: fromPriceInput(quickForm.unitPrice),
+          unit: quickForm.unit,
+          currency: quickForm.currency,
+        }),
+      });
+      const newProduct = await res.json();
+      if (newProduct.id) {
+        setProducts(prev => [...prev, newProduct]);
+        setQuickAdd(false);
+        handleProductClick(newProduct);
+      }
+    } finally { setQuickSaving(false); }
   };
 
   const subtotal = items.reduce((s, it) => s + lineTotal(it), 0);
@@ -771,10 +808,16 @@ export default function NewInvoicePage() {
                 )}
               </div>
 
-              <button type="button" onClick={() => openNewModal()}
-                className="flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium">
-                <Plus className="w-4 h-4" /> {t('newInvoice', 'manualAddItem')}
-              </button>
+              <div className="flex items-center gap-4 flex-wrap">
+                <button type="button" onClick={() => openNewModal()}
+                  className="flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+                  <Plus className="w-4 h-4" /> {t('newInvoice', 'manualAddItem')}
+                </button>
+                <button type="button" onClick={openQuickAdd}
+                  className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <Plus className="w-4 h-4" /> Listede Olmayan Ürün Ekle
+                </button>
+              </div>
 
               {/* Items table */}
               {items.length > 0 && (
@@ -900,6 +943,71 @@ export default function NewInvoicePage() {
           onCancel={() => setStockConfirm(null)}
           saving={saving}
         />
+      )}
+
+      {/* Quick Add Product Modal */}
+      {quickAdd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setQuickAdd(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+              <h3 className="text-white font-semibold text-sm">Yeni Ürün Kaydı</h3>
+              <button onClick={() => setQuickAdd(false)} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Ürün Adı *</label>
+                <input autoFocus value={quickForm.name} onChange={e => setQuickForm(p => ({ ...p, name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Ürün Kodu</label>
+                  <input value={quickForm.code} onChange={e => setQuickForm(p => ({ ...p, code: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Birimi</label>
+                  <select value={quickForm.unit} onChange={e => setQuickForm(p => ({ ...p, unit: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    {['çift', 'adet', 'kg', 'm', 'm²', 'lt', 'paket'].map(u => <option key={u}>{u}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Kategori</label>
+                <select value={quickForm.categoryId} onChange={e => setQuickForm(p => ({ ...p, categoryId: e.target.value }))}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  <option value="">— Kategori seçin —</option>
+                  {productCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Birim Fiyatı</label>
+                <div className="flex gap-2">
+                  <input value={quickForm.unitPrice} onChange={e => setQuickForm(p => ({ ...p, unitPrice: e.target.value }))}
+                    placeholder="0,00"
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <select value={quickForm.currency} onChange={e => setQuickForm(p => ({ ...p, currency: e.target.value }))}
+                    className="w-20 px-2 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option>USD</option>
+                    <option>EUR</option>
+                    <option>TRY</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="px-5 pb-5 flex gap-3">
+              <button type="button" onClick={() => setQuickAdd(false)}
+                className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">Vazgeç</button>
+              <button type="button" onClick={handleQuickSave} disabled={quickSaving || !quickForm.name.trim()}
+                className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                {quickSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                Kaydet ve Ekle
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </AppShell>
   );

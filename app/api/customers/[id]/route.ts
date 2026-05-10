@@ -126,7 +126,12 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       where: { id: params.id, companyId: user.companyId },
       select: { name: true },
     });
-    await prisma.customer.deleteMany({ where: { id: params.id, companyId: user.companyId } });
+    if (!customer) return NextResponse.json({ error: 'Müşteri bulunamadı' }, { status: 404 });
+
+    await prisma.customer.updateMany({
+      where: { id: params.id, companyId: user.companyId },
+      data: { status: 1 },
+    });
     await logAction({
       companyId: user.companyId,
       userId: user.id,
@@ -134,7 +139,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       action: 'DELETE',
       entity: 'Customer',
       entityId: params.id,
-      detail: `Müşteri silindi — ${customer?.name ?? params.id}`,
+      detail: `Müşteri silindi (soft) — ${customer.name}`,
       ip: getIp(req),
     });
     return NextResponse.json({ ok: true });
