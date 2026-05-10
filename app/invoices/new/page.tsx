@@ -105,10 +105,24 @@ function ItemModal({ initial, currency, products, materials, customerPrices, onC
   const vatAmount = netBeforeVat * vat / 100;
   const total = netBeforeVat + vatAmount;
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleConfirm = () => {
+    if (!item.description && !item.unitPrice) return;
+    const pvd = Object.entries(partMaterials)
+      .filter(([, matId]) => matId)
+      .map(([partId, materialId]) => ({ partId, materialId }));
+    onConfirm({ ...item, discount: showDiscount ? item.discount : '0', partVariantsData: pvd.length > 0 ? pvd : undefined });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col">
+      <form onSubmit={(e) => { e.preventDefault(); handleConfirm(); }} className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col">
         <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold text-base">{item.description || t('newInvoice', 'product')}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
@@ -259,20 +273,13 @@ function ItemModal({ initial, currency, products, materials, customerPrices, onC
         </div>
         {/* Sticky footer */}
         <div className="px-5 pb-4 pt-3 border-t border-slate-100 flex-shrink-0">
-          <button type="button" onClick={() => {
-            if (item.description || item.unitPrice) {
-              const pvd = Object.entries(partMaterials)
-                .filter(([, matId]) => matId)
-                .map(([partId, materialId]) => ({ partId, materialId }));
-              onConfirm({ ...item, discount: showDiscount ? item.discount : '0', partVariantsData: pvd.length > 0 ? pvd : undefined });
-            }
-          }}
+          <button type="submit"
             disabled={!item.description && !item.unitPrice}
             className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" /> {t('common', 'add')}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
@@ -400,7 +407,9 @@ export default function NewInvoicePage() {
   const [currencyWarning, setCurrencyWarning] = useState(false);
   const [pendingCurrency, setPendingCurrency] = useState('');
   const [stockConfirm, setStockConfirm] = useState<{ deductions: any[] } | null>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const searchRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const lockedCustomerId = searchParams?.get('customerId') ?? '';
   const prefillProductId = searchParams?.get('productId') ?? '';
@@ -488,6 +497,15 @@ export default function NewInvoicePage() {
     : [];
 
   const selectedCustomer = customers.find(c => c.id === form.customerId);
+
+  useEffect(() => { setHighlightedIndex(-1); }, [productSearch]);
+
+  useEffect(() => {
+    if (highlightedIndex >= 0 && dropdownRef.current) {
+      const el = dropdownRef.current.querySelector(`[data-idx="${highlightedIndex}"]`) as HTMLElement;
+      el?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightedIndex]);
 
   useEffect(() => {
     if (selectedCustomer?.currency) {
@@ -799,20 +817,39 @@ export default function NewInvoicePage() {
                   onChange={e => { setProductSearch(e.target.value); setShowDropdown(true); }}
                   onFocus={() => setShowDropdown(true)}
                   onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                  onKeyDown={e => {
+                    if (e.key === 'Escape') { setShowDropdown(false); setHighlightedIndex(-1); return; }
+                    if (!showDropdown || filteredProducts.length === 0) return;
+                    if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      setHighlightedIndex(i => Math.min(i + 1, filteredProducts.length - 1));
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      setHighlightedIndex(i => Math.max(i - 1, 0));
+                    } else if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (highlightedIndex >= 0) {
+                        handleProductClick(filteredProducts[highlightedIndex]);
+                        setHighlightedIndex(-1);
+                      }
+                    }
+                  }}
                   placeholder={t('newInvoice', 'searchProducts')}
                   className="w-full px-3 py-2.5 border-2 border-slate-200 focus:border-green-500 rounded-lg text-sm outline-none"
                 />
                 {showDropdown && productSearch.length >= 2 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                  <div ref={dropdownRef} className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
                     {filteredProducts.length === 0 ? (
                       <div className="px-4 py-3 text-sm text-slate-400">{t('common', 'noResults')}</div>
                     ) : (
-                      filteredProducts.map(p => (
+                      filteredProducts.map((p, idx) => (
                         <button
                           key={p.id}
+                          data-idx={idx}
                           type="button"
                           onMouseDown={() => handleProductClick(p)}
-                          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-blue-500 hover:text-white text-sm transition-colors text-left"
+                          onMouseEnter={() => setHighlightedIndex(idx)}
+                          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors text-left ${idx === highlightedIndex ? 'bg-blue-500 text-white' : 'hover:bg-blue-500 hover:text-white'}`}
                         >
                           <span className="font-medium">{p.name}{p.code ? <span className="ml-1.5 text-xs font-normal opacity-60">{p.code}</span> : null}</span>
                           <span className="text-xs opacity-70 ml-2 flex-shrink-0">{p.stock} {p.unit}</span>
