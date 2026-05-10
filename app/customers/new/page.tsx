@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus } from 'lucide-react';
 
 const CURRENCIES = ['TRY', 'USD', 'EUR'];
 
@@ -13,15 +13,47 @@ export default function NewCustomerPage() {
   const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: '', taxId: '', taxOffice: '', email: '', phone: '', address: '', currency: 'TRY', notes: '' });
+  const [categoryId, setCategoryId] = useState('');
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [showAddCat, setShowAddCat] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [savingCat, setSavingCat] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/customer-categories').then(r => r.json()).then(d => setCategories(Array.isArray(d) ? d : []));
+  }, []);
 
   const set = (field: string, val: string) => setForm(prev => ({ ...prev, [field]: val }));
+
+  const addCategory = async () => {
+    if (!newCatName.trim()) return;
+    setSavingCat(true);
+    try {
+      const res = await fetch('/api/customer-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCatName.trim() }),
+      });
+      const cat = await res.json();
+      if (cat.id) {
+        setCategories(prev => [...prev, cat].sort((a, b) => a.name.localeCompare(b.name)));
+        setCategoryId(cat.id);
+        setNewCatName('');
+        setShowAddCat(false);
+      }
+    } finally { setSavingCat(false); }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
     setSaving(true);
     try {
-      const res = await fetch('/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+      const res = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, categoryId: categoryId || null }),
+      });
       const data = await res.json();
       if (data.id) router.push(`/customers/${data.id}`);
     } catch (e) { console.error(e); }
@@ -52,6 +84,36 @@ export default function NewCustomerPage() {
               </select>
               <p className="text-xs text-slate-400 mt-1">{t('customers', 'currencyHint')}</p>
             </div>
+
+            {/* Kategori */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-slate-600 mb-1">Kategori</label>
+              <div className="flex gap-2">
+                <select value={categoryId} onChange={e => setCategoryId(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  <option value="">— Kategori seçin (isteğe bağlı) —</option>
+                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <button type="button" onClick={() => setShowAddCat(v => !v)}
+                  title="Yeni kategori ekle"
+                  className="px-3 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors">
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              {showAddCat && (
+                <div className="mt-2 flex gap-2">
+                  <input autoFocus value={newCatName} onChange={e => setNewCatName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } }}
+                    placeholder="Kategori adı"
+                    className="flex-1 px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <button type="button" onClick={addCategory} disabled={savingCat || !newCatName.trim()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 flex items-center gap-1">
+                    {savingCat ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Ekle'}
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">{t('customers', 'taxId')}</label>
               <input value={form.taxId} onChange={e => set('taxId', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />

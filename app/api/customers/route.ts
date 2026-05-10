@@ -35,6 +35,8 @@ export async function GET(req: NextRequest) {
       { email: { contains: search, mode: 'insensitive' } },
     ];
   }
+  const categoryId = searchParams.get('categoryId');
+  if (categoryId) where.categoryId = categoryId;
 
   const [customers, total] = await Promise.all([
     prisma.customer.findMany({
@@ -42,6 +44,7 @@ export async function GET(req: NextRequest) {
       orderBy: { name: 'asc' },
       skip: (page - 1) * LIMIT,
       take: LIMIT,
+      include: { category: { select: { id: true, name: true } } },
     }),
     prisma.customer.count({ where }),
   ]);
@@ -126,6 +129,7 @@ export async function POST(req: NextRequest) {
         address: body.address || null,
         currency: body.currency || 'TRY',
         notes: body.notes || null,
+        categoryId: body.categoryId || null,
       },
     });
     await logAction({

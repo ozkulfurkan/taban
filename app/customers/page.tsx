@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Users, Plus, Loader2, Search, Upload, Download, X, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Plus, Loader2, Search, Upload, Download, X, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import Link from 'next/link';
 
 function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
@@ -117,6 +117,13 @@ export default function CustomersPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [showImport, setShowImport] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [onlyWithBalance, setOnlyWithBalance] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/customer-categories').then(r => r.json()).then(d => setCategories(Array.isArray(d) ? d : []));
+  }, []);
 
   // Debounce search
   useEffect(() => {
@@ -127,9 +134,13 @@ export default function CustomersPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const loadCustomers = (p = page, s = debouncedSearch) => {
+  useEffect(() => { setPage(1); }, [categoryFilter]);
+
+  const loadCustomers = (p = page, s = debouncedSearch, cat = categoryFilter) => {
     setLoading(true);
-    fetch(`/api/customers?page=${p}&search=${encodeURIComponent(s)}`)
+    const params = new URLSearchParams({ page: String(p), search: s });
+    if (cat) params.set('categoryId', cat);
+    fetch(`/api/customers?${params}`)
       .then(r => r.json())
       .then(d => {
         setCustomers(Array.isArray(d.customers) ? d.customers : []);
@@ -140,7 +151,9 @@ export default function CustomersPage() {
       .finally(() => { setLoading(false); setHasLoaded(true); });
   };
 
-  useEffect(() => { loadCustomers(page, debouncedSearch); }, [page, debouncedSearch]);
+  useEffect(() => { loadCustomers(page, debouncedSearch, categoryFilter); }, [page, debouncedSearch, categoryFilter]);
+
+  const displayed = onlyWithBalance ? customers.filter(c => (c.balance ?? 0) > 0) : customers;
 
   return (
     <AppShell>
@@ -163,12 +176,29 @@ export default function CustomersPage() {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder={t('customers', 'searchPlaceholder')}
-            className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm" />
+        {/* Search + Filters */}
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder={t('customers', 'searchPlaceholder')}
+              className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm" />
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <Filter className="w-3.5 h-3.5 text-slate-400" />
+              <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+                className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none text-slate-600">
+                <option value="">Tüm Kategoriler</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" checked={onlyWithBalance} onChange={e => setOnlyWithBalance(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <span className="text-sm text-slate-600">Bakiyesi olanları göster</span>
+            </label>
+          </div>
         </div>
 
         {/* Table */}
@@ -194,7 +224,7 @@ export default function CustomersPage() {
                   <span className="text-right pr-1">{t('customers', 'totalInvoiced')}</span>
                 </div>
                 <div className="divide-y divide-slate-100">
-                  {customers.map(c => (
+                  {displayed.map(c => (
                     <Link key={c.id} href={`/customers/${c.id}`}
                       className="grid grid-cols-[1fr_160px_140px] items-center hover:bg-slate-50 transition-colors group">
                       <div className="flex items-center gap-2 px-3 py-2">
