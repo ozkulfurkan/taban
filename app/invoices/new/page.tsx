@@ -533,7 +533,7 @@ export default function NewInvoicePage() {
     if (productCategories.length === 0) {
       fetch('/api/product-categories').then(r => r.json()).then(d => setProductCategories(Array.isArray(d) ? d : []));
     }
-    setQuickForm({ name: '', code: '', categoryId: '', unitPrice: '', unit: 'çift' });
+    setQuickForm({ name: '', code: '', categoryId: '', unitPrice: '', unit: 'çift', currency: 'USD' });
     setQuickAdd(true);
   };
 
