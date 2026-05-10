@@ -128,7 +128,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     });
     if (!customer) return NextResponse.json({ error: 'Müşteri bulunamadı' }, { status: 404 });
 
-    await prisma.customer.updateMany({
+    await (prisma as any).customer.updateMany({
       where: { id: params.id, companyId: user.companyId },
       data: { status: 1 },
     });
