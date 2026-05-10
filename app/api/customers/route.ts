@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   // Lightweight dropdown list: returns all customers as [{ id, name }] without pagination/balance
   if (searchParams.get('minimal') === 'true') {
-    const all = await prisma.customer.findMany({
+    const all = await (prisma as any).customer.findMany({
       where: { companyId: user.companyId, status: { not: 1 } },
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
@@ -39,17 +39,17 @@ export async function GET(req: NextRequest) {
   if (categoryId) where.categoryId = categoryId;
 
   const [customers, total] = await Promise.all([
-    prisma.customer.findMany({
+    (prisma as any).customer.findMany({
       where,
       orderBy: { name: 'asc' },
       skip: (page - 1) * LIMIT,
       take: LIMIT,
       include: { category: { select: { id: true, name: true } } },
     }),
-    prisma.customer.count({ where }),
+    (prisma as any).customer.count({ where }),
   ]);
 
-  const ids = customers.map(c => c.id);
+  const ids = customers.map((c: any) => c.id);
 
   // Batch: fatura + ödeme + çek — 3 sorguda (N+1 yok)
   const [allInvoices, allPayments, allCekler] = ids.length > 0
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
     cekMap.set(cek.customerId, list);
   }
 
-  const result = customers.map(c => {
+  const result = customers.map((c: any) => {
     const invoices = invoiceMap.get(c.id) ?? [];
     const payments = paymentMap.get(c.id) ?? [];
     const cekler = cekMap.get(c.id) ?? [];
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   try {
-    const customer = await prisma.customer.create({
+    const customer = await (prisma as any).customer.create({
       data: {
         companyId: user.companyId,
         name: body.name,
