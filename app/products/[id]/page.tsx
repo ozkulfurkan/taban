@@ -730,7 +730,9 @@ export default function ProductDetailPage() {
                               ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Satış</span>
                               : e.type === 'alis'
                               ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">Alış</span>
-                              : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">İade</span>
+                              : e.type === 'iade'
+                              ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">İade</span>
+                              : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">Üretim</span>
                             }
                           </td>
                           <td className="px-4 py-2.5 text-slate-600 text-xs">{e.party}</td>
