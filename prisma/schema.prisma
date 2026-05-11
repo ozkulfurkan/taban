@@ -106,6 +106,8 @@ model Company {
   customerProductPrices CustomerProductPrice[]
   materialCalculations  MaterialCalculation[]
   supportTickets        SupportTicket[]
+  barcodeSettings         BarcodeSettings?
+  productStockAdjustments ProductStockAdjustment[]
 }
 
 model User {
@@ -235,6 +237,8 @@ model Product {
   ciftPerKoli      Float              @default(0)
   koliFiyati       Float              @default(0)
   koliCurrency     String             @default("USD")
+  renk             String?
+  shore            String?
   portalVisible    Boolean            @default(false)
   categoryId       String?
   category         ProductCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -246,6 +250,7 @@ model Product {
   subcontractorOrders   SubcontractorOrder[]
   customerProductPrices CustomerProductPrice[]
   purchaseMaterials     PurchaseMaterial[]
+  stockAdjustments      ProductStockAdjustment[]
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 }
@@ -985,4 +990,48 @@ model TicketAttachment {
   mimeType  String
   data      Bytes
   createdAt DateTime      @default(now())
+}
+
+model BarcodeSettings {
+  id               String  @id @default(cuid())
+  companyId        String  @unique
+  company          Company @relation(fields: [companyId], references: [id])
+  labelWidth       Int     @default(100)
+  labelHeight      Int     @default(100)
+  labelPadding     Int     @default(3)
+  companyFontSize  Int     @default(7)
+  productFontSize  Int     @default(9)
+  detailsFontSize  Int     @default(6)
+  barcodeFontSize  Int     @default(6)
+  dateFontSize     Int     @default(6)
+  barcodeHeight     Int     @default(35)
+  defaultQtyPerPack String  @default("1")
+  defaultQtyUnit    String  @default("adet")
+
+  @@index([companyId])
+}
+
+model BarcodeSequence {
+  id         String @id @default(cuid())
+  companyId  String
+  date       String
+  lastNumber Int    @default(0)
+
+  @@unique([companyId, date])
+  @@index([companyId])
+}
+
+model ProductStockAdjustment {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  delta     Float
+  type      String   // 'manuel_ekle' | 'manuel_cikar' | 'barkod_yazdir'
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([companyId])
 }
