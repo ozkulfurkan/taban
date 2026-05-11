@@ -140,6 +140,8 @@ export default function SettingsPage() {
   const [barcodeFontSize, setBarcodeFontSize] = useState('6');
   const [dateFontSize, setDateFontSize] = useState('6');
   const [barcodeHeight, setBarcodeHeight] = useState('35');
+  const [defaultQtyPerPack, setDefaultQtyPerPack] = useState('1');
+  const [defaultQtyUnit, setDefaultQtyUnit] = useState('adet');
   const [barcodeSaving, setBarcodeSaving] = useState(false);
   const [barcodeSuccess, setBarcodeSuccess] = useState(false);
   const [showTemplateSettings, setShowTemplateSettings] = useState(false);
@@ -158,6 +160,8 @@ export default function SettingsPage() {
           setBarcodeFontSize(String(d.barcodeFontSize ?? 6));
           setDateFontSize(String(d.dateFontSize ?? 6));
           setBarcodeHeight(String(d.barcodeHeight ?? 35));
+          setDefaultQtyPerPack(d.defaultQtyPerPack ?? '1');
+          setDefaultQtyUnit(d.defaultQtyUnit ?? 'adet');
         }
       })
       .catch(console.error);
@@ -180,6 +184,8 @@ export default function SettingsPage() {
           barcodeFontSize: parseInt(barcodeFontSize) || 6,
           dateFontSize: parseInt(dateFontSize) || 6,
           barcodeHeight: parseInt(barcodeHeight) || 35,
+          defaultQtyPerPack: defaultQtyPerPack || '1',
+          defaultQtyUnit: defaultQtyUnit || 'adet',
         }),
       });
       if (res.ok) {
@@ -486,7 +492,27 @@ export default function SettingsPage() {
             </button>
 
             {showTemplateSettings && (
-              <div className="space-y-3 pl-1">
+              <div className="space-y-4 pl-1">
+                {/* Varsayılan paket bilgileri */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Varsayılan Paket Miktarı</label>
+                    <input type="text" inputMode="decimal" value={defaultQtyPerPack}
+                      onChange={e => setDefaultQtyPerPack(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Varsayılan Birim</label>
+                    <select value={defaultQtyUnit} onChange={e => setDefaultQtyUnit(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none bg-white">
+                      <option value="adet">adet</option>
+                      <option value="çift">çift</option>
+                      <option value="kg">kg</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Font boyutları */}
                 <p className="text-xs text-slate-400">Yazı boyutları pt cinsindendir. Barkod çubuğu yüksekliği piksel cinsinden.</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[

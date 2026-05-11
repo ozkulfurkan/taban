@@ -192,44 +192,49 @@ export default function ProductDetailPage() {
     fetch('/api/customers?minimal=true').then(r => r.json()).then(d => setAllCustomers(Array.isArray(d) ? d : []));
   }, [params?.id]);
 
+  const makeBarcodeNumbers = (count: number): string[] => {
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const yy = String(now.getFullYear()).slice(-2);
+    const prefix = `${mm}${dd}-${yy}`;
+    return Array.from({ length: count }, (_, i) => `${prefix}-${String(i + 1).padStart(3, '0')}`);
+  };
+
   const handleBarcodeOpen = async () => {
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const yyyy = today.getFullYear();
-    const [settingsRes, seqRes] = await Promise.all([
-      fetch('/api/settings/barcode').then(r => r.json()),
-      fetch('/api/barcode/next-sequence?count=1').then(r => r.json()),
-    ]);
-    setBarcodeSettings(settingsRes && !settingsRes.error ? settingsRes : {});
-    setBarcodeNumbers(seqRes.numbers ?? []);
+    const settingsRes = await fetch('/api/settings/barcode').then(r => r.json());
+    const s = settingsRes && !settingsRes.error ? settingsRes : {};
+    setBarcodeSettings(s);
+    setBarcodeNumbers(makeBarcodeNumbers(1));
     setBarcodeForm({
       companyName: company?.name || '',
       productName: product?.name || '',
       logoUrl: company?.logoUrl || '',
       date: `${dd}/${mm}/${yyyy}`,
       shore: product?.shore || '',
-      qtyPerPack: '1',
-      qtyUnit: 'adet',
+      qtyPerPack: s.defaultQtyPerPack ?? '1',
+      qtyUnit: s.defaultQtyUnit ?? 'adet',
       labelCount: '1',
       addToStock: true,
     });
     setShowBarcode(true);
   };
 
-  const handleBarcodeLabelCountChange = async (val: string) => {
+  const handleBarcodeLabelCountChange = (val: string) => {
     setBarcodeForm(f => ({ ...f, labelCount: val }));
     const count = Math.max(1, parseInt(val) || 1);
-    const res = await fetch(`/api/barcode/next-sequence?count=${count}`).then(r => r.json());
-    setBarcodeNumbers(res.numbers ?? []);
+    setBarcodeNumbers(makeBarcodeNumbers(count));
   };
 
   const handlePrint = async () => {
     setBarcodeLoading(true);
     try {
       const count = Math.max(1, parseInt(barcodeForm.labelCount) || 1);
-      const seqRes = await fetch(`/api/barcode/next-sequence?count=${count}`).then(r => r.json());
-      const numbers: string[] = seqRes.numbers ?? [];
+      const numbers = makeBarcodeNumbers(count);
       if (barcodeForm.addToStock) {
         const qty = parseFloat(barcodeForm.qtyPerPack.replace(',', '.')) * count;
         await fetch('/api/barcode/stock-entry', {

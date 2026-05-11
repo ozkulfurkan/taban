@@ -1004,7 +1004,9 @@ model BarcodeSettings {
   detailsFontSize  Int     @default(6)
   barcodeFontSize  Int     @default(6)
   dateFontSize     Int     @default(6)
-  barcodeHeight    Int     @default(35)
+  barcodeHeight     Int     @default(35)
+  defaultQtyPerPack String  @default("1")
+  defaultQtyUnit    String  @default("adet")
 
   @@index([companyId])
 }

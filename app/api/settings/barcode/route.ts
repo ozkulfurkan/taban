@@ -7,6 +7,7 @@ const DEFAULTS = {
   labelWidth: 100, labelHeight: 60, labelPadding: 3,
   companyFontSize: 7, productFontSize: 9, detailsFontSize: 6,
   barcodeFontSize: 6, dateFontSize: 6, barcodeHeight: 35,
+  defaultQtyPerPack: '1', defaultQtyUnit: 'adet',
 };
 
 export async function GET() {
@@ -44,6 +45,8 @@ export async function POST(req: NextRequest) {
     barcodeFontSize: n('barcodeFontSize', 6),
     dateFontSize: n('dateFontSize', 6),
     barcodeHeight: n('barcodeHeight', 35),
+    defaultQtyPerPack: String(body.defaultQtyPerPack ?? '1') || '1',
+    defaultQtyUnit: String(body.defaultQtyUnit ?? 'adet') || 'adet',
   };
 
   const settings = await (prisma as any).barcodeSettings.upsert({
