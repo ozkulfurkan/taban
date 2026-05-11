@@ -788,7 +788,12 @@ export default function CustomerDetailPage() {
       setDeleting(true);
       const res = await fetch(`/api/customers/${customer.id}`, { method: 'DELETE' });
       setDeleting(false);
-      if (res.ok) router.push('/customers');
+      if (res.ok) {
+        router.push('/customers');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setDeleteWarning(data.error ?? 'Müşteri silinemedi.');
+      }
     }});
   };
 

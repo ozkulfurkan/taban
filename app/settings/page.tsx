@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Settings, Save, Loader2, Globe, DollarSign, User, Building2, CreditCard, Plus, Trash2, Image, RefreshCw } from 'lucide-react';
+import { Settings, Save, Loader2, Globe, DollarSign, User, Building2, CreditCard, Plus, Trash2, Image, RefreshCw, QrCode, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface BankEntry {
@@ -128,6 +128,72 @@ export default function SettingsPage() {
     const reader = new FileReader();
     reader.onload = (ev) => setLogoUrl(ev.target?.result as string);
     reader.readAsDataURL(file);
+  };
+
+  // Barcode settings
+  const [labelWidth, setLabelWidth] = useState('100');
+  const [labelHeight, setLabelHeight] = useState('60');
+  const [labelPadding, setLabelPadding] = useState('3');
+  const [companyFontSize, setCompanyFontSize] = useState('7');
+  const [productFontSize, setProductFontSize] = useState('9');
+  const [detailsFontSize, setDetailsFontSize] = useState('6');
+  const [barcodeFontSize, setBarcodeFontSize] = useState('6');
+  const [dateFontSize, setDateFontSize] = useState('6');
+  const [barcodeHeight, setBarcodeHeight] = useState('35');
+  const [defaultQtyPerPack, setDefaultQtyPerPack] = useState('1');
+  const [defaultQtyUnit, setDefaultQtyUnit] = useState('adet');
+  const [barcodeSaving, setBarcodeSaving] = useState(false);
+  const [barcodeSuccess, setBarcodeSuccess] = useState(false);
+  const [showTemplateSettings, setShowTemplateSettings] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/settings/barcode')
+      .then(r => r.json())
+      .then(d => {
+        if (d && !d.error) {
+          setLabelWidth(String(d.labelWidth ?? 100));
+          setLabelHeight(String(d.labelHeight ?? 60));
+          setLabelPadding(String(d.labelPadding ?? 3));
+          setCompanyFontSize(String(d.companyFontSize ?? 7));
+          setProductFontSize(String(d.productFontSize ?? 9));
+          setDetailsFontSize(String(d.detailsFontSize ?? 6));
+          setBarcodeFontSize(String(d.barcodeFontSize ?? 6));
+          setDateFontSize(String(d.dateFontSize ?? 6));
+          setBarcodeHeight(String(d.barcodeHeight ?? 35));
+          setDefaultQtyPerPack(d.defaultQtyPerPack ?? '1');
+          setDefaultQtyUnit(d.defaultQtyUnit ?? 'adet');
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleSaveBarcode = async () => {
+    setBarcodeSaving(true);
+    setBarcodeSuccess(false);
+    try {
+      const res = await fetch('/api/settings/barcode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          labelWidth: parseInt(labelWidth) || 100,
+          labelHeight: parseInt(labelHeight) || 60,
+          labelPadding: parseInt(labelPadding) || 3,
+          companyFontSize: parseInt(companyFontSize) || 7,
+          productFontSize: parseInt(productFontSize) || 9,
+          detailsFontSize: parseInt(detailsFontSize) || 6,
+          barcodeFontSize: parseInt(barcodeFontSize) || 6,
+          dateFontSize: parseInt(dateFontSize) || 6,
+          barcodeHeight: parseInt(barcodeHeight) || 35,
+          defaultQtyPerPack: defaultQtyPerPack || '1',
+          defaultQtyUnit: defaultQtyUnit || 'adet',
+        }),
+      });
+      if (res.ok) {
+        setBarcodeSuccess(true);
+        setTimeout(() => setBarcodeSuccess(false), 3000);
+      }
+    } catch (e) { console.error(e); }
+    finally { setBarcodeSaving(false); }
   };
 
   const addBank = () => setBanks([...banks, { bankName: '', iban: '', accountName: '' }]);
@@ -387,6 +453,95 @@ export default function SettingsPage() {
                 {t('common', 'save')}
               </button>
             )}
+          </motion.div>
+        )}
+
+        {/* Barkod Ayarları */}
+        {canEditCompany && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-white rounded-xl shadow-sm p-6 space-y-5">
+            <div className="flex items-center gap-3 pb-4 border-b">
+              <QrCode className="w-5 h-5 text-purple-600" />
+              <div>
+                <h2 className="text-lg font-semibold text-slate-800">Barkod Ayarları</h2>
+                <p className="text-xs text-slate-500">Yazdırılacak etiketin boyutu ve şablonu</p>
+              </div>
+            </div>
+
+            {/* Etiket boyutları */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Genişlik (mm)', val: labelWidth, set: setLabelWidth },
+                { label: 'Yükseklik (mm)', val: labelHeight, set: setLabelHeight },
+                { label: 'Kenar Boşluğu (mm)', val: labelPadding, set: setLabelPadding },
+              ].map(({ label, val, set }) => (
+                <div key={label}>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
+                  <input type="number" min="0" max="300" value={val} onChange={e => set(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+                </div>
+              ))}
+            </div>
+
+            {/* Şablon ayarları toggle */}
+            <button
+              onClick={() => setShowTemplateSettings(s => !s)}
+              className="w-full flex items-center justify-between px-4 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 transition-colors"
+            >
+              <span>Barkod Şablon Ayarları</span>
+              {showTemplateSettings ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+
+            {showTemplateSettings && (
+              <div className="space-y-4 pl-1">
+                {/* Varsayılan paket bilgileri */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Varsayılan Paket Miktarı</label>
+                    <input type="text" inputMode="decimal" value={defaultQtyPerPack}
+                      onChange={e => setDefaultQtyPerPack(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Varsayılan Birim</label>
+                    <select value={defaultQtyUnit} onChange={e => setDefaultQtyUnit(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none bg-white">
+                      <option value="adet">adet</option>
+                      <option value="çift">çift</option>
+                      <option value="kg">kg</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Font boyutları */}
+                <p className="text-xs text-slate-400">Yazı boyutları pt cinsindendir. Barkod çubuğu yüksekliği piksel cinsinden.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: 'Firma Adı (pt)', val: companyFontSize, set: setCompanyFontSize },
+                    { label: 'Ürün Adı (pt)', val: productFontSize, set: setProductFontSize },
+                    { label: 'Detay Satırı (pt)', val: detailsFontSize, set: setDetailsFontSize },
+                    { label: 'Barkod No (pt)', val: barcodeFontSize, set: setBarcodeFontSize },
+                    { label: 'Tarih (pt)', val: dateFontSize, set: setDateFontSize },
+                    { label: 'Barkod Yüksekliği (px)', val: barcodeHeight, set: setBarcodeHeight },
+                  ].map(({ label, val, set }) => (
+                    <div key={label}>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
+                      <input type="number" min="1" max="72" value={val} onChange={e => set(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {barcodeSuccess && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm text-center">
+                ✓ Barkod ayarları kaydedildi
+              </motion.div>
+            )}
+            <button onClick={handleSaveBarcode} disabled={barcodeSaving} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
+              {barcodeSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              Kaydet
+            </button>
           </motion.div>
         )}
       </div>
