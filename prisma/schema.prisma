@@ -106,6 +106,7 @@ model Company {
   customerProductPrices CustomerProductPrice[]
   materialCalculations  MaterialCalculation[]
   supportTickets        SupportTicket[]
+  barcodeSettings       BarcodeSettings?
 }
 
 model User {
@@ -235,6 +236,8 @@ model Product {
   ciftPerKoli      Float              @default(0)
   koliFiyati       Float              @default(0)
   koliCurrency     String             @default("USD")
+  renk             String?
+  shore            String?
   portalVisible    Boolean            @default(false)
   categoryId       String?
   category         ProductCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -985,4 +988,24 @@ model TicketAttachment {
   mimeType  String
   data      Bytes
   createdAt DateTime      @default(now())
+}
+
+model BarcodeSettings {
+  id          String  @id @default(cuid())
+  companyId   String  @unique
+  company     Company @relation(fields: [companyId], references: [id])
+  labelWidth  Int     @default(100)
+  labelHeight Int     @default(100)
+
+  @@index([companyId])
+}
+
+model BarcodeSequence {
+  id         String @id @default(cuid())
+  companyId  String
+  date       String
+  lastNumber Int    @default(0)
+
+  @@unique([companyId, date])
+  @@index([companyId])
 }

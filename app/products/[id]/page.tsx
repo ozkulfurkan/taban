@@ -7,9 +7,10 @@ import AppShell from '@/app/components/app-shell';
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, Pencil, X,
   Package, Calculator, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Warehouse,
-  FileText, Users, AlertTriangle,
+  FileText, Users, AlertTriangle, QrCode,
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
+import { buildPrintHtml } from '@/lib/barcode-print';
 
 const ALL_UNITS = ['çift', 'adet', 'kg', 'ton', 'lt', 'metre', 'paket'];
 
@@ -86,6 +87,16 @@ export default function ProductDetailPage() {
   const [ppForm, setPpForm] = useState({ customerId: '', unitPrice: '', currency: 'TRY' });
   const [ppSaving, setPpSaving] = useState(false);
 
+  // Barkod
+  const [showBarcode, setShowBarcode] = useState(false);
+  const [barcodeSettings, setBarcodeSettings] = useState({ labelWidth: 100, labelHeight: 100 });
+  const [barcodeForm, setBarcodeForm] = useState({
+    companyName: '', productName: '', logoUrl: '', date: '', shore: '', renk: '',
+    qtyPerPack: '1', qtyUnit: 'adet', labelCount: '1', addToStock: true,
+  });
+  const [barcodeNumbers, setBarcodeNumbers] = useState<string[]>([]);
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
+
   const handleStok = async (sign: 1 | -1) => {
     const amt = parseFloat(stokAmt);
     if (!amt || amt <= 0) return;
@@ -131,6 +142,8 @@ export default function ProductDetailPage() {
           stock: String(prod.stock ?? ''),
           notes: prod.notes || '',
           categoryId: prod.categoryId || '',
+          renk: prod.renk || '',
+          shore: prod.shore || '',
           laborCostPerPair: toPriceInput(prod.laborCostPerPair ?? '0'),
           laborCurrency: prod.laborCurrency || 'USD',
           ciftPerKoli: String(prod.ciftPerKoli ?? '0'),
@@ -178,6 +191,61 @@ export default function ProductDetailPage() {
     fetch(`/api/products/${params.id}/prices`).then(r => r.json()).then(d => setProductPrices(Array.isArray(d) ? d : []));
     fetch('/api/customers?minimal=true').then(r => r.json()).then(d => setAllCustomers(Array.isArray(d) ? d : []));
   }, [params?.id]);
+
+  const handleBarcodeOpen = async () => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    const [settingsRes, seqRes] = await Promise.all([
+      fetch('/api/settings/barcode').then(r => r.json()),
+      fetch('/api/barcode/next-sequence?count=1').then(r => r.json()),
+    ]);
+    setBarcodeSettings({ labelWidth: settingsRes.labelWidth ?? 100, labelHeight: settingsRes.labelHeight ?? 100 });
+    setBarcodeNumbers(seqRes.numbers ?? []);
+    setBarcodeForm({
+      companyName: company?.name || '',
+      productName: product?.name || '',
+      logoUrl: company?.logoUrl || '',
+      date: `${dd}/${mm}/${yyyy}`,
+      shore: product?.shore || '',
+      renk: product?.renk || '',
+      qtyPerPack: '1',
+      qtyUnit: 'adet',
+      labelCount: '1',
+      addToStock: true,
+    });
+    setShowBarcode(true);
+  };
+
+  const handleBarcodeLabelCountChange = async (val: string) => {
+    setBarcodeForm(f => ({ ...f, labelCount: val }));
+    const count = Math.max(1, parseInt(val) || 1);
+    const res = await fetch(`/api/barcode/next-sequence?count=${count}`).then(r => r.json());
+    setBarcodeNumbers(res.numbers ?? []);
+  };
+
+  const handlePrint = async () => {
+    setBarcodeLoading(true);
+    try {
+      const count = Math.max(1, parseInt(barcodeForm.labelCount) || 1);
+      const seqRes = await fetch(`/api/barcode/next-sequence?count=${count}`).then(r => r.json());
+      const numbers: string[] = seqRes.numbers ?? [];
+      if (barcodeForm.addToStock) {
+        const qty = parseFloat(barcodeForm.qtyPerPack.replace(',', '.')) * count;
+        await fetch('/api/barcode/stock-entry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: params.id, quantity: qty }),
+        });
+        load();
+      }
+      const html = buildPrintHtml(numbers, barcodeForm, barcodeSettings);
+      const win = window.open('', '_blank');
+      if (win) { win.document.write(html); win.document.close(); }
+      setShowBarcode(false);
+    } finally { setBarcodeLoading(false); }
+  };
 
   const handleSave = async () => {
     // Validate: part name required
@@ -338,6 +406,10 @@ export default function ProductDetailPage() {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
+          <button onClick={handleBarcodeOpen}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold shadow-md">
+            <QrCode className="w-4 h-4" /> Barkod Yazdır
+          </button>
           {!isMaterial && (
           <button onClick={() => {
             setShowCost(true);
@@ -440,6 +512,24 @@ export default function ProductDetailPage() {
                     </select>
                   ) : (
                     <p className="text-sm text-slate-600">{product.category?.name || <span className="text-slate-300 italic">—</span>}</p>
+                  )}
+                </div>
+                <div className="px-4 py-2.5 flex items-center">
+                  <span className="text-xs font-semibold text-slate-500 w-24 flex-shrink-0">Renk</span>
+                  {editing ? (
+                    <input type="text" value={editForm.renk} onChange={e => setEditForm((p: any) => ({ ...p, renk: e.target.value }))}
+                      className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
+                  ) : (
+                    <span className="text-sm text-slate-700">{product.renk || <span className="text-slate-300 italic">—</span>}</span>
+                  )}
+                </div>
+                <div className="px-4 py-2.5 flex items-center">
+                  <span className="text-xs font-semibold text-slate-500 w-24 flex-shrink-0">Shore</span>
+                  {editing ? (
+                    <input type="text" value={editForm.shore} onChange={e => setEditForm((p: any) => ({ ...p, shore: e.target.value }))}
+                      className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
+                  ) : (
+                    <span className="text-sm text-slate-700">{product.shore || <span className="text-slate-300 italic">—</span>}</span>
                   )}
                 </div>
                 <div className="px-4 py-2.5">
@@ -1040,6 +1130,105 @@ export default function ProductDetailPage() {
           </table>
         )}
       </div>
+
+      {/* Barkod Yazdır Modal */}
+      {showBarcode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowBarcode(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="bg-purple-600 px-5 py-4 flex items-center justify-between">
+              <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                <QrCode className="w-4 h-4" /> Barkod Etiket Yazdır
+              </h3>
+              <button onClick={() => setShowBarcode(false)} className="text-white/80 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 space-y-3 max-h-[80vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Firma Adı</label>
+                  <input type="text" value={barcodeForm.companyName}
+                    onChange={e => setBarcodeForm(f => ({ ...f, companyName: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Ürün Adı</label>
+                  <input type="text" value={barcodeForm.productName}
+                    onChange={e => setBarcodeForm(f => ({ ...f, productName: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Renk</label>
+                  <input type="text" value={barcodeForm.renk}
+                    onChange={e => setBarcodeForm(f => ({ ...f, renk: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Shore</label>
+                  <input type="text" value={barcodeForm.shore}
+                    onChange={e => setBarcodeForm(f => ({ ...f, shore: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
+                <input type="text" value={barcodeForm.date}
+                  onChange={e => setBarcodeForm(f => ({ ...f, date: e.target.value }))}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Paket Miktarı</label>
+                  <input type="text" inputMode="decimal" value={barcodeForm.qtyPerPack}
+                    onChange={e => setBarcodeForm(f => ({ ...f, qtyPerPack: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Birim</label>
+                  <select value={barcodeForm.qtyUnit} onChange={e => setBarcodeForm(f => ({ ...f, qtyUnit: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-purple-400">
+                    <option value="adet">adet</option>
+                    <option value="çift">çift</option>
+                    <option value="kg">kg</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Kaç Etiket</label>
+                <input type="number" min="1" value={barcodeForm.labelCount}
+                  onChange={e => handleBarcodeLabelCountChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+              </div>
+              {barcodeNumbers.length > 0 && (
+                <div className="bg-purple-50 rounded-xl px-4 py-3 text-xs text-purple-700">
+                  <span className="font-medium">Barkod numaraları: </span>
+                  {barcodeNumbers[0]}
+                  {barcodeNumbers.length > 1 && ` → ${barcodeNumbers[barcodeNumbers.length - 1]}`}
+                </div>
+              )}
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" checked={barcodeForm.addToStock}
+                  onChange={e => setBarcodeForm(f => ({ ...f, addToStock: e.target.checked }))}
+                  className="w-4 h-4 rounded accent-purple-600" />
+                <span className="text-sm text-slate-600">Stoklara ekle</span>
+              </label>
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => setShowBarcode(false)}
+                  className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                  Vazgeç
+                </button>
+                <button onClick={handlePrint} disabled={barcodeLoading}
+                  className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                  {barcodeLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />} Yazdır
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Price Warning Modal */}
       {priceWarning && (

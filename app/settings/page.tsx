@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Settings, Save, Loader2, Globe, DollarSign, User, Building2, CreditCard, Plus, Trash2, Image, RefreshCw } from 'lucide-react';
+import { Settings, Save, Loader2, Globe, DollarSign, User, Building2, CreditCard, Plus, Trash2, Image, RefreshCw, QrCode } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface BankEntry {
@@ -128,6 +128,41 @@ export default function SettingsPage() {
     const reader = new FileReader();
     reader.onload = (ev) => setLogoUrl(ev.target?.result as string);
     reader.readAsDataURL(file);
+  };
+
+  // Barcode settings
+  const [labelWidth, setLabelWidth] = useState('100');
+  const [labelHeight, setLabelHeight] = useState('100');
+  const [barcodeSaving, setBarcodeSaving] = useState(false);
+  const [barcodeSuccess, setBarcodeSuccess] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/settings/barcode')
+      .then(r => r.json())
+      .then(d => {
+        if (d && !d.error) {
+          setLabelWidth(String(d.labelWidth ?? 100));
+          setLabelHeight(String(d.labelHeight ?? 100));
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleSaveBarcode = async () => {
+    setBarcodeSaving(true);
+    setBarcodeSuccess(false);
+    try {
+      const res = await fetch('/api/settings/barcode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ labelWidth: parseInt(labelWidth) || 100, labelHeight: parseInt(labelHeight) || 100 }),
+      });
+      if (res.ok) {
+        setBarcodeSuccess(true);
+        setTimeout(() => setBarcodeSuccess(false), 3000);
+      }
+    } catch (e) { console.error(e); }
+    finally { setBarcodeSaving(false); }
   };
 
   const addBank = () => setBanks([...banks, { bankName: '', iban: '', accountName: '' }]);
@@ -387,6 +422,52 @@ export default function SettingsPage() {
                 {t('common', 'save')}
               </button>
             )}
+          </motion.div>
+        )}
+
+        {/* Barkod Ayarları */}
+        {canEditCompany && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-white rounded-xl shadow-sm p-6 space-y-5">
+            <div className="flex items-center gap-3 pb-4 border-b">
+              <QrCode className="w-5 h-5 text-purple-600" />
+              <div>
+                <h2 className="text-lg font-semibold text-slate-800">Barkod Ayarları</h2>
+                <p className="text-xs text-slate-500">Yazdırılacak etiketin boyutları</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Etiket Genişliği (mm)</label>
+                <input
+                  type="number"
+                  min="20"
+                  max="300"
+                  value={labelWidth}
+                  onChange={e => setLabelWidth(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Etiket Yüksekliği (mm)</label>
+                <input
+                  type="number"
+                  min="20"
+                  max="300"
+                  value={labelHeight}
+                  onChange={e => setLabelHeight(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+              </div>
+            </div>
+            {barcodeSuccess && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm text-center">
+                ✓ Barkod ayarları kaydedildi
+              </motion.div>
+            )}
+            <button onClick={handleSaveBarcode} disabled={barcodeSaving} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
+              {barcodeSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              Kaydet
+            </button>
           </motion.div>
         )}
       </div>
