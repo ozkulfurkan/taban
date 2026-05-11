@@ -35,15 +35,22 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     orderBy: { invoice: { date: 'desc' } },
   });
 
+  // Stok ayarlamaları (manuel + barkod)
+  const stockAdjs = await (prisma as any).productStockAdjustment.findMany({
+    where: { productId: params.id, companyId: user.companyId },
+    orderBy: { createdAt: 'desc' },
+  });
+
   type Entry = {
     id: string;
     date: Date;
-    type: 'satis' | 'iade' | 'alis';
+    type: 'satis' | 'iade' | 'alis' | 'stok_ayar';
     party: string;
     invoiceNo: string | null;
     qty: number;
     unitPrice: number;
     currency: string;
+    notes?: string | null;
   };
 
   const entries: Entry[] = [];
@@ -84,6 +91,25 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       qty: ii.quantity,
       unitPrice: ii.unitPrice,
       currency: (ii as any).invoice.currency,
+    });
+  }
+
+  for (const adj of stockAdjs) {
+    const typeLabel: Record<string, string> = {
+      barkod_yazdir: 'Barkod Yazdırma',
+      manuel_ekle: 'Manuel Ekleme',
+      manuel_cikar: 'Manuel Çıkarma',
+    };
+    entries.push({
+      id: `adj-${adj.id}`,
+      date: adj.createdAt,
+      type: 'stok_ayar',
+      party: typeLabel[adj.type] ?? adj.type,
+      invoiceNo: null,
+      qty: adj.delta,
+      unitPrice: 0,
+      currency: product.currency,
+      notes: adj.notes,
     });
   }
 

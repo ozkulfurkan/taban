@@ -4,23 +4,47 @@ export interface BarcodePrintForm {
   logoUrl: string;
   date: string;
   shore: string;
-  renk: string;
   qtyPerPack: string;
   qtyUnit: string;
 }
 
+export interface BarcodeTemplateSettings {
+  labelWidth: number;
+  labelHeight: number;
+  labelPadding: number;
+  companyFontSize: number;
+  productFontSize: number;
+  detailsFontSize: number;
+  barcodeFontSize: number;
+  dateFontSize: number;
+  barcodeHeight: number;
+}
+
+export const DEFAULT_TEMPLATE: BarcodeTemplateSettings = {
+  labelWidth: 100,
+  labelHeight: 60,
+  labelPadding: 3,
+  companyFontSize: 7,
+  productFontSize: 9,
+  detailsFontSize: 6,
+  barcodeFontSize: 6,
+  dateFontSize: 6,
+  barcodeHeight: 35,
+};
+
 export function buildPrintHtml(
   numbers: string[],
   form: BarcodePrintForm,
-  settings: { labelWidth: number; labelHeight: number }
+  settings: Partial<BarcodeTemplateSettings>
 ): string {
-  const W = settings.labelWidth;
-  const H = settings.labelHeight;
+  const s: BarcodeTemplateSettings = { ...DEFAULT_TEMPLATE, ...settings };
+  const W = s.labelWidth;
+  const H = s.labelHeight;
+  const P = s.labelPadding;
 
   const labelsHtml = numbers.map((num, i) => {
     const isLast = i === numbers.length - 1;
     const details = [
-      form.renk ? `Renk: ${form.renk}` : '',
       form.shore ? `Shore: ${form.shore}` : '',
       `${form.qtyPerPack} ${form.qtyUnit}`,
     ].filter(Boolean).join('&nbsp;&nbsp;|&nbsp;&nbsp;');
@@ -54,16 +78,16 @@ body { font-family: Arial, Helvetica, sans-serif; background: #fff; }
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 3mm;
+  padding: ${P}mm;
   overflow: hidden;
 }
 .logo { max-height: 12mm; max-width: ${W * 0.4}mm; object-fit: contain; }
-.company { font-size: 7pt; font-weight: bold; text-align: center; }
-.product { font-size: 9pt; font-weight: bold; text-align: center; }
-.details { font-size: 6.5pt; text-align: center; color: #333; }
-.barcode { max-width: ${W - 8}mm; }
-.barcode-num { font-size: 6.5pt; letter-spacing: 0.5px; font-family: monospace; }
-.date { font-size: 6pt; color: #666; }
+.company { font-size: ${s.companyFontSize}pt; font-weight: bold; text-align: center; }
+.product { font-size: ${s.productFontSize}pt; font-weight: bold; text-align: center; }
+.details { font-size: ${s.detailsFontSize}pt; text-align: center; color: #333; }
+.barcode { max-width: ${W - P * 2}mm; }
+.barcode-num { font-size: ${s.barcodeFontSize}pt; letter-spacing: 0.5px; font-family: monospace; }
+.date { font-size: ${s.dateFontSize}pt; color: #666; }
 </style>
 </head>
 <body>
@@ -76,7 +100,7 @@ window.onload = function() {
       format: 'CODE128',
       displayValue: false,
       width: 1.5,
-      height: 35,
+      height: ${s.barcodeHeight},
       margin: 0
     });
   });

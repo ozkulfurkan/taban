@@ -106,7 +106,8 @@ model Company {
   customerProductPrices CustomerProductPrice[]
   materialCalculations  MaterialCalculation[]
   supportTickets        SupportTicket[]
-  barcodeSettings       BarcodeSettings?
+  barcodeSettings         BarcodeSettings?
+  productStockAdjustments ProductStockAdjustment[]
 }
 
 model User {
@@ -249,6 +250,7 @@ model Product {
   subcontractorOrders   SubcontractorOrder[]
   customerProductPrices CustomerProductPrice[]
   purchaseMaterials     PurchaseMaterial[]
+  stockAdjustments      ProductStockAdjustment[]
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 }
@@ -991,11 +993,18 @@ model TicketAttachment {
 }
 
 model BarcodeSettings {
-  id          String  @id @default(cuid())
-  companyId   String  @unique
-  company     Company @relation(fields: [companyId], references: [id])
-  labelWidth  Int     @default(100)
-  labelHeight Int     @default(100)
+  id               String  @id @default(cuid())
+  companyId        String  @unique
+  company          Company @relation(fields: [companyId], references: [id])
+  labelWidth       Int     @default(100)
+  labelHeight      Int     @default(100)
+  labelPadding     Int     @default(3)
+  companyFontSize  Int     @default(7)
+  productFontSize  Int     @default(9)
+  detailsFontSize  Int     @default(6)
+  barcodeFontSize  Int     @default(6)
+  dateFontSize     Int     @default(6)
+  barcodeHeight    Int     @default(35)
 
   @@index([companyId])
 }
@@ -1007,5 +1016,20 @@ model BarcodeSequence {
   lastNumber Int    @default(0)
 
   @@unique([companyId, date])
+  @@index([companyId])
+}
+
+model ProductStockAdjustment {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  delta     Float
+  type      String   // 'manuel_ekle' | 'manuel_cikar' | 'barkod_yazdir'
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([productId])
   @@index([companyId])
 }

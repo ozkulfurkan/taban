@@ -10,7 +10,7 @@ import {
   FileText, Users, AlertTriangle, QrCode,
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
-import { buildPrintHtml } from '@/lib/barcode-print';
+import { buildPrintHtml, type BarcodeTemplateSettings } from '@/lib/barcode-print';
 
 const ALL_UNITS = ['çift', 'adet', 'kg', 'ton', 'lt', 'metre', 'paket'];
 
@@ -89,9 +89,9 @@ export default function ProductDetailPage() {
 
   // Barkod
   const [showBarcode, setShowBarcode] = useState(false);
-  const [barcodeSettings, setBarcodeSettings] = useState({ labelWidth: 100, labelHeight: 100 });
+  const [barcodeSettings, setBarcodeSettings] = useState<Partial<BarcodeTemplateSettings>>({});
   const [barcodeForm, setBarcodeForm] = useState({
-    companyName: '', productName: '', logoUrl: '', date: '', shore: '', renk: '',
+    companyName: '', productName: '', logoUrl: '', date: '', shore: '',
     qtyPerPack: '1', qtyUnit: 'adet', labelCount: '1', addToStock: true,
   });
   const [barcodeNumbers, setBarcodeNumbers] = useState<string[]>([]);
@@ -201,7 +201,7 @@ export default function ProductDetailPage() {
       fetch('/api/settings/barcode').then(r => r.json()),
       fetch('/api/barcode/next-sequence?count=1').then(r => r.json()),
     ]);
-    setBarcodeSettings({ labelWidth: settingsRes.labelWidth ?? 100, labelHeight: settingsRes.labelHeight ?? 100 });
+    setBarcodeSettings(settingsRes && !settingsRes.error ? settingsRes : {});
     setBarcodeNumbers(seqRes.numbers ?? []);
     setBarcodeForm({
       companyName: company?.name || '',
@@ -209,7 +209,6 @@ export default function ProductDetailPage() {
       logoUrl: company?.logoUrl || '',
       date: `${dd}/${mm}/${yyyy}`,
       shore: product?.shore || '',
-      renk: product?.renk || '',
       qtyPerPack: '1',
       qtyUnit: 'adet',
       labelCount: '1',
@@ -1159,19 +1158,11 @@ export default function ProductDetailPage() {
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Renk</label>
-                  <input type="text" value={barcodeForm.renk}
-                    onChange={e => setBarcodeForm(f => ({ ...f, renk: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Shore</label>
-                  <input type="text" value={barcodeForm.shore}
-                    onChange={e => setBarcodeForm(f => ({ ...f, shore: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Shore</label>
+                <input type="text" value={barcodeForm.shore}
+                  onChange={e => setBarcodeForm(f => ({ ...f, shore: e.target.value }))}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Tarih</label>

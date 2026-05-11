@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   const user = session.user as any;
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
-  const { productId, quantity } = await req.json();
+  const { productId, quantity, notes } = await req.json();
   if (!productId || !quantity || quantity <= 0) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
   }
@@ -19,11 +19,22 @@ export async function POST(req: NextRequest) {
   });
   if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const updated = await prisma.product.update({
-    where: { id: productId },
-    data: { stock: { increment: Number(quantity) } },
-    select: { stock: true },
-  });
+  const [updated] = await prisma.$transaction([
+    prisma.product.update({
+      where: { id: productId },
+      data: { stock: { increment: Number(quantity) } },
+      select: { stock: true },
+    }),
+    (prisma as any).productStockAdjustment.create({
+      data: {
+        companyId: user.companyId,
+        productId,
+        delta: Number(quantity),
+        type: 'barkod_yazdir',
+        notes: notes ?? null,
+      },
+    }),
+  ]);
 
   return NextResponse.json({ stock: updated.stock });
 }
