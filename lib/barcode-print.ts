@@ -1,6 +1,7 @@
 export interface BarcodePrintForm {
   companyName: string;
   productName: string;
+  productCode?: string;
   logoUrl: string;
   date: string;
   shore: string;
@@ -53,7 +54,7 @@ export function buildPrintHtml(
 <div class="label" style="page-break-after:${isLast ? 'avoid' : 'always'}">
   ${form.logoUrl ? `<img src="${form.logoUrl}" class="logo" alt="" />` : ''}
   <div class="company">${form.companyName}</div>
-  <div class="product">${form.productName}</div>
+  <div class="product">${form.productCode ? `<span class="product-code">${form.productCode}</span>` : ''}${form.productName}</div>
   ${details ? `<div class="details">${details}</div>` : ''}
   <svg class="barcode" id="bc${i}"></svg>
   <div class="barcode-num">${num}</div>
@@ -83,7 +84,8 @@ body { font-family: Arial, Helvetica, sans-serif; background: #fff; }
 }
 .logo { max-height: 12mm; max-width: ${W * 0.4}mm; object-fit: contain; }
 .company { font-size: ${s.companyFontSize}pt; font-weight: bold; text-align: center; }
-.product { font-size: ${s.productFontSize}pt; font-weight: bold; text-align: center; }
+.product { font-size: ${s.productFontSize}pt; font-weight: bold; text-align: center; display: flex; align-items: center; justify-content: center; gap: 3px; }
+.product-code { font-size: ${Math.round(s.productFontSize * 0.75)}pt; font-weight: normal; color: #555; }
 .details { font-size: ${s.detailsFontSize}pt; text-align: center; color: #333; }
 .barcode { max-width: ${W - P * 2}mm; }
 .barcode-num { font-size: ${s.barcodeFontSize}pt; letter-spacing: 0.5px; font-family: monospace; }

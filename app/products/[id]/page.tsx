@@ -91,7 +91,7 @@ export default function ProductDetailPage() {
   const [showBarcode, setShowBarcode] = useState(false);
   const [barcodeSettings, setBarcodeSettings] = useState<Partial<BarcodeTemplateSettings>>({});
   const [barcodeForm, setBarcodeForm] = useState({
-    companyName: '', productName: '', logoUrl: '', date: '', shore: '',
+    companyName: '', productName: '', productCode: '', logoUrl: '', date: '', shore: '',
     qtyPerPack: '1', qtyUnit: 'adet', labelCount: '1', addToStock: true,
   });
   const [barcodeNumbers, setBarcodeNumbers] = useState<string[]>([]);
@@ -213,6 +213,7 @@ export default function ProductDetailPage() {
     setBarcodeForm({
       companyName: company?.name || '',
       productName: product?.name || '',
+      productCode: product?.code || '',
       logoUrl: company?.logoUrl || '',
       date: `${dd}/${mm}/${yyyy}`,
       shore: product?.shore || '',
