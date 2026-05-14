@@ -15,6 +15,7 @@ export interface BarcodeTemplateSettings {
   labelPadding: number;
   companyFontSize: number;
   productFontSize: number;
+  productCodeFontSize: number;
   detailsFontSize: number;
   barcodeFontSize: number;
   dateFontSize: number;
@@ -27,6 +28,7 @@ export const DEFAULT_TEMPLATE: BarcodeTemplateSettings = {
   labelPadding: 3,
   companyFontSize: 7,
   productFontSize: 9,
+  productCodeFontSize: 7,
   detailsFontSize: 6,
   barcodeFontSize: 6,
   dateFontSize: 6,
@@ -54,7 +56,8 @@ export function buildPrintHtml(
 <div class="label" style="page-break-after:${isLast ? 'avoid' : 'always'}">
   ${form.logoUrl ? `<img src="${form.logoUrl}" class="logo" alt="" />` : ''}
   <div class="company">${form.companyName}</div>
-  <div class="product">${form.productCode ? `<span class="product-code">${form.productCode}</span>` : ''}${form.productName}</div>
+  ${form.productCode ? `<div class="product-code">${form.productCode}</div>` : ''}
+  <div class="product">${form.productName}</div>
   ${details ? `<div class="details">${details}</div>` : ''}
   <svg class="barcode" id="bc${i}"></svg>
   <div class="barcode-num">${num}</div>
@@ -84,8 +87,8 @@ body { font-family: Arial, Helvetica, sans-serif; background: #fff; }
 }
 .logo { max-height: 12mm; max-width: ${W * 0.4}mm; object-fit: contain; }
 .company { font-size: ${s.companyFontSize}pt; font-weight: bold; text-align: center; }
-.product { font-size: ${s.productFontSize}pt; font-weight: bold; text-align: center; display: flex; align-items: center; justify-content: center; gap: 3px; }
-.product-code { font-size: ${Math.round(s.productFontSize * 0.75)}pt; font-weight: normal; color: #555; }
+.product { font-size: ${s.productFontSize}pt; font-weight: bold; text-align: center; }
+.product-code { font-size: ${s.productCodeFontSize}pt; font-weight: bold; text-align: center; }
 .details { font-size: ${s.detailsFontSize}pt; text-align: center; color: #333; }
 .barcode { max-width: ${W - P * 2}mm; }
 .barcode-num { font-size: ${s.barcodeFontSize}pt; letter-spacing: 0.5px; font-family: monospace; }

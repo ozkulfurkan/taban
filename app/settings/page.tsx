@@ -136,6 +136,7 @@ export default function SettingsPage() {
   const [labelPadding, setLabelPadding] = useState('3');
   const [companyFontSize, setCompanyFontSize] = useState('7');
   const [productFontSize, setProductFontSize] = useState('9');
+  const [productCodeFontSize, setProductCodeFontSize] = useState('7');
   const [detailsFontSize, setDetailsFontSize] = useState('6');
   const [barcodeFontSize, setBarcodeFontSize] = useState('6');
   const [dateFontSize, setDateFontSize] = useState('6');
@@ -156,6 +157,7 @@ export default function SettingsPage() {
           setLabelPadding(String(d.labelPadding ?? 3));
           setCompanyFontSize(String(d.companyFontSize ?? 7));
           setProductFontSize(String(d.productFontSize ?? 9));
+          setProductCodeFontSize(String(d.productCodeFontSize ?? 7));
           setDetailsFontSize(String(d.detailsFontSize ?? 6));
           setBarcodeFontSize(String(d.barcodeFontSize ?? 6));
           setDateFontSize(String(d.dateFontSize ?? 6));
@@ -180,6 +182,7 @@ export default function SettingsPage() {
           labelPadding: parseInt(labelPadding) || 3,
           companyFontSize: parseInt(companyFontSize) || 7,
           productFontSize: parseInt(productFontSize) || 9,
+          productCodeFontSize: parseInt(productCodeFontSize) || 7,
           detailsFontSize: parseInt(detailsFontSize) || 6,
           barcodeFontSize: parseInt(barcodeFontSize) || 6,
           dateFontSize: parseInt(dateFontSize) || 6,
@@ -518,6 +521,7 @@ export default function SettingsPage() {
                   {[
                     { label: 'Firma Adı (pt)', val: companyFontSize, set: setCompanyFontSize },
                     { label: 'Ürün Adı (pt)', val: productFontSize, set: setProductFontSize },
+                    { label: 'Ürün Kodu (pt)', val: productCodeFontSize, set: setProductCodeFontSize },
                     { label: 'Detay Satırı (pt)', val: detailsFontSize, set: setDetailsFontSize },
                     { label: 'Barkod No (pt)', val: barcodeFontSize, set: setBarcodeFontSize },
                     { label: 'Tarih (pt)', val: dateFontSize, set: setDateFontSize },

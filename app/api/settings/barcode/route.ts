@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 const DEFAULTS = {
   labelWidth: 100, labelHeight: 60, labelPadding: 3,
-  companyFontSize: 7, productFontSize: 9, detailsFontSize: 6,
+  companyFontSize: 7, productFontSize: 9, productCodeFontSize: 7, detailsFontSize: 6,
   barcodeFontSize: 6, dateFontSize: 6, barcodeHeight: 35,
   defaultQtyPerPack: '1', defaultQtyUnit: 'adet',
 };
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
     labelPadding: n('labelPadding', 3),
     companyFontSize: n('companyFontSize', 7),
     productFontSize: n('productFontSize', 9),
+    productCodeFontSize: n('productCodeFontSize', 7),
     detailsFontSize: n('detailsFontSize', 6),
     barcodeFontSize: n('barcodeFontSize', 6),
     dateFontSize: n('dateFontSize', 6),
