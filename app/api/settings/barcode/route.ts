@@ -16,11 +16,14 @@ export async function GET() {
   const user = session.user as any;
   if (!user.companyId) return NextResponse.json(DEFAULTS);
 
-  const settings = await (prisma as any).barcodeSettings.findUnique({
-    where: { companyId: user.companyId },
-  });
-
-  return NextResponse.json(settings ?? DEFAULTS);
+  try {
+    const settings = await (prisma as any).barcodeSettings.findUnique({
+      where: { companyId: user.companyId },
+    });
+    return NextResponse.json(settings ? { ...DEFAULTS, ...settings } : DEFAULTS);
+  } catch {
+    return NextResponse.json(DEFAULTS);
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -50,11 +53,28 @@ export async function POST(req: NextRequest) {
     defaultQtyUnit: String(body.defaultQtyUnit ?? 'adet') || 'adet',
   };
 
-  const settings = await (prisma as any).barcodeSettings.upsert({
-    where: { companyId: user.companyId },
-    update: data,
-    create: { companyId: user.companyId, ...data },
-  });
-
-  return NextResponse.json(settings);
+  try {
+    const settings = await (prisma as any).barcodeSettings.upsert({
+      where: { companyId: user.companyId },
+      update: data,
+      create: { companyId: user.companyId, ...data },
+    });
+    return NextResponse.json(settings);
+  } catch {
+    // Migration henüz çalışmamış olabilir, raw SQL ile dene
+    try {
+      await (prisma as any).$executeRawUnsafe(
+        `ALTER TABLE "BarcodeSettings" ADD COLUMN IF NOT EXISTS "productCodeFontSize" INTEGER NOT NULL DEFAULT 7`
+      );
+      const settings = await (prisma as any).barcodeSettings.upsert({
+        where: { companyId: user.companyId },
+        update: data,
+        create: { companyId: user.companyId, ...data },
+      });
+      return NextResponse.json(settings);
+    } catch (e2) {
+      console.error('BarcodeSettings upsert failed:', e2);
+      return NextResponse.json({ error: 'Save failed' }, { status: 500 });
+    }
+  }
 }
