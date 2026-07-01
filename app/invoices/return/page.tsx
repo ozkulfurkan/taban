@@ -218,7 +218,7 @@ export default function ReturnInvoicePage() {
 
   useEffect(() => {
     if (selectedCustomer?.currency) setField('currency', selectedCustomer.currency);
-  }, [form.customerId]);
+  }, [form.customerId, selectedCustomer?.currency]);
 
   useEffect(() => { setHighlightedIndex(-1); }, [productSearch]);
 
@@ -516,7 +516,7 @@ export default function ReturnInvoicePage() {
       {modal.open && (
         <ItemModal
           initial={draftItem}
-          currency={form.currency}
+          currency={selectedCustomer?.currency || form.currency}
           products={products}
           onConfirm={handleModalConfirm}
           onClose={() => setModal({ open: false, editIndex: null })}
