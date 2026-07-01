@@ -230,7 +230,7 @@ function IadeModal({ supplier, onClose, onSaved }: {
         body: JSON.stringify({
           supplierId: supplier.id,
           amount: form.amount,
-          currency: 'TRY',
+          currency: supplier.currency,
           date: nowIstanbulISO(),
           method: form.method,
           notes: form.notes,
