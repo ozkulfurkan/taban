@@ -56,7 +56,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     totalPaid += amt;
   }
 
-  const balance = totalNormalInvoiced - totalReturnInvoiced + balanceDelta;
+  const balance = totalNormalInvoiced + totalReturnInvoiced + balanceDelta;
 
   return NextResponse.json({
     ...customer,
