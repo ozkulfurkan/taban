@@ -801,8 +801,9 @@ function AlışModal({ supplier, onClose, onSaved }: {
 // ── Tedarikçi Çek Ödeme ────────────────────────────────────────────────────
 const BANKS = [
   'Akbank', 'Garanti BBVA', 'İş Bankası', 'Yapı Kredi', 'Ziraat Bankası',
-  'Halkbank', 'VakıfBank', 'DenizBank', 'QNB Finansbank', 'Fibabanka',
-  'TEB', 'HSBC', 'ING', 'Şekerbank', 'Kuveyt Türk', 'Albaraka Türk', 'Diğer',
+  'Halkbank', 'VakıfBank', 'DenizBank', 'QNB Finansbank', 'Türkiye Finansbank',
+  'Fibabanka', 'TEB', 'HSBC', 'ING', 'Şekerbank', 'Odeabank',
+  'Kuveyt Türk', 'Albaraka Türk', 'Ziraat Katılım', 'Vakıf Katılım', 'Diğer',
 ];
 const fmtC = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
