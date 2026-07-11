@@ -310,9 +310,9 @@ export default function InvoiceDetailPage() {
           setEditItems((d.items || []).map((i: any) => ({
             productId: i.productId || undefined,
             description: i.description,
-            quantity: String(i.quantity),
-            unitPrice: String(i.unitPrice),
-            discount: String(i.discount ?? 0),
+            quantity: toPriceInput(i.quantity),
+            unitPrice: toPriceInput(i.unitPrice),
+            discount: toPriceInput(i.discount ?? 0),
             notes: i.notes || '',
             partVariantsData: Array.isArray(i.partVariantsData) && i.partVariantsData.length > 0
               ? i.partVariantsData
@@ -332,9 +332,9 @@ export default function InvoiceDetailPage() {
 
   // Compute preview totals from editItems
   const previewTotals = editItems.reduce((acc, i) => {
-    const qty = parseFloat(i.quantity) || 0;
-    const price = parseFloat(i.unitPrice) || 0;
-    const disc = parseFloat(i.discount) || 0;
+    const qty = fromPriceInput(i.quantity);
+    const price = fromPriceInput(i.unitPrice);
+    const disc = fromPriceInput(i.discount);
     const tutar = qty * price;
     const indirimTL = tutar * disc / 100;
     const net = tutar - indirimTL;
@@ -361,9 +361,9 @@ export default function InvoiceDetailPage() {
           items: editItems.map(i => ({
             productId: i.productId || null,
             description: i.description,
-            quantity: parseFloat(i.quantity) || 0,
-            unitPrice: parseFloat(i.unitPrice) || 0,
-            discount: parseFloat(i.discount) || 0,
+            quantity: fromPriceInput(i.quantity),
+            unitPrice: fromPriceInput(i.unitPrice),
+            discount: fromPriceInput(i.discount),
             notes: i.notes || null,
             partVariantsData: i.partVariantsData || null,
           })),

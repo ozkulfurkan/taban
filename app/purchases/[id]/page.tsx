@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
+import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import {
   Loader2, Printer, Pencil, X, CreditCard, Building2,
   Save, ChevronLeft, Plus, Trash2, Factory, AlertTriangle,
@@ -41,6 +42,8 @@ export default function PurchaseDetailPage() {
   const [newMat, setNewMat] = useState({ materialId: '', kgAmount: '', pricePerKg: '', subcontractorId: '' });
   const [matSaving, setMatSaving] = useState(false);
   const [matDeleting, setMatDeleting] = useState<string | null>(null);
+  const [priceEdits, setPriceEdits] = useState<Record<string, string>>({});
+  const [priceUpdating, setPriceUpdating] = useState<string | null>(null);
 
 
   const loadPurchaseMaterials = useCallback(() => {
@@ -65,8 +68,8 @@ export default function PurchaseDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           materialId: newMat.materialId,
-          kgAmount: parseFloat(newMat.kgAmount),
-          pricePerKg: newMat.pricePerKg ? parseFloat(newMat.pricePerKg) : null,
+          kgAmount: fromPriceInput(newMat.kgAmount),
+          pricePerKg: newMat.pricePerKg ? fromPriceInput(newMat.pricePerKg) : null,
           subcontractorId: newMat.subcontractorId || null,
         }),
       });
@@ -76,6 +79,20 @@ export default function PurchaseDetailPage() {
     } finally { setMatSaving(false); }
   };
 
+
+  const handleUpdatePrice = async (entryId: string, value: string) => {
+    setPriceUpdating(entryId);
+    try {
+      await fetch(`/api/purchases/${params.id}/hammaddeler`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entryId, pricePerKg: fromPriceInput(value) }),
+      });
+      setPriceEdits(p => { const n = { ...p }; delete n[entryId]; return n; });
+      loadPurchaseMaterials();
+      load();
+    } finally { setPriceUpdating(null); }
+  };
 
   const handleDeleteMat = async (entryId: string) => {
     setMatDeleting(entryId);
@@ -404,21 +421,37 @@ export default function PurchaseDetailPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {purchaseMaterials.map((pm: any) => (
-                          <tr key={pm.id} className="hover:bg-slate-50/50">
-                            <td className="px-3 py-2 font-medium text-slate-700">
-                              {pm.material?.name ?? (pm.product ? `${pm.product.name}${pm.product.code ? ` [${pm.product.code}]` : ''}` : '—')}
-                            </td>
-                            <td className="px-3 py-2 text-right text-slate-600">{pm.kgAmount} kg</td>
-                            <td className="px-3 py-2 text-right text-slate-500">{pm.pricePerKg ?? '—'}</td>
-                            <td className="px-2 py-2 text-center">
-                              <button onClick={() => handleDeleteMat(pm.id)} disabled={matDeleting === pm.id}
-                                className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded">
-                                {matDeleting === pm.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {purchaseMaterials.map((pm: any) => {
+                          const priceVal = priceEdits[pm.id] ?? toPriceInput(pm.pricePerKg ?? '');
+                          const isDirty = priceEdits[pm.id] !== undefined;
+                          return (
+                            <tr key={pm.id} className="hover:bg-slate-50/50">
+                              <td className="px-3 py-2 font-medium text-slate-700">
+                                {pm.material?.name ?? (pm.product ? `${pm.product.name}${pm.product.code ? ` [${pm.product.code}]` : ''}` : '—')}
+                              </td>
+                              <td className="px-3 py-2 text-right text-slate-600">{pm.kgAmount} kg</td>
+                              <td className="px-3 py-2 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <input
+                                    type="text" inputMode="decimal"
+                                    value={priceVal}
+                                    onChange={e => setPriceEdits(p => ({ ...p, [pm.id]: normalizePriceInput(e.target.value) }))}
+                                    onKeyDown={blockDot}
+                                    onBlur={() => { if (isDirty) handleUpdatePrice(pm.id, priceVal); }}
+                                    className={`w-24 px-2 py-1 border rounded text-sm text-right outline-none focus:ring-1 focus:ring-teal-400 ${isDirty ? 'border-teal-400 bg-teal-50' : 'border-slate-200'}`}
+                                  />
+                                  {priceUpdating === pm.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-600" />}
+                                </div>
+                              </td>
+                              <td className="px-2 py-2 text-center">
+                                <button onClick={() => handleDeleteMat(pm.id)} disabled={matDeleting === pm.id}
+                                  className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded">
+                                  {matDeleting === pm.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -439,14 +472,16 @@ export default function PurchaseDetailPage() {
                   </div>
                   <div>
                     <label className="block text-xs text-slate-500 mb-1">Miktar (kg) *</label>
-                    <input type="number" min="0" step="0.01" value={newMat.kgAmount}
-                      onChange={e => setNewMat(p => ({ ...p, kgAmount: e.target.value }))} placeholder="0.00"
+                    <input type="text" inputMode="decimal" value={newMat.kgAmount}
+                      onChange={e => setNewMat(p => ({ ...p, kgAmount: normalizePriceInput(e.target.value) }))}
+                      onKeyDown={blockDot} placeholder="0,00"
                       className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
                   </div>
                   <div>
                     <label className="block text-xs text-slate-500 mb-1">Birim Fiyat</label>
-                    <input type="number" min="0" step="0.01" value={newMat.pricePerKg}
-                      onChange={e => setNewMat(p => ({ ...p, pricePerKg: e.target.value }))} placeholder="0.00"
+                    <input type="text" inputMode="decimal" value={newMat.pricePerKg}
+                      onChange={e => setNewMat(p => ({ ...p, pricePerKg: normalizePriceInput(e.target.value) }))}
+                      onKeyDown={blockDot} placeholder="0,00"
                       className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
                   </div>
                   <div>
@@ -467,7 +502,12 @@ export default function PurchaseDetailPage() {
               <div className="flex gap-3 pt-2 border-t border-slate-100">
                 <button onClick={() => { setEditing(false); load(); }}
                   className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">Vazgeç</button>
-                <button onClick={async () => { await handleSave(); setEditing(false); }}
+                <button onClick={async () => {
+                  for (const [entryId, val] of Object.entries(priceEdits)) {
+                    await handleUpdatePrice(entryId, val);
+                  }
+                  await handleSave(); setEditing(false);
+                }}
                   disabled={saving}
                   className="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Kaydet
