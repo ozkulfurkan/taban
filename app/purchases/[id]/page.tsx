@@ -42,6 +42,8 @@ export default function PurchaseDetailPage() {
   const [newMat, setNewMat] = useState({ materialId: '', kgAmount: '', pricePerKg: '', subcontractorId: '' });
   const [matSaving, setMatSaving] = useState(false);
   const [matDeleting, setMatDeleting] = useState<string | null>(null);
+  const [priceEdits, setPriceEdits] = useState<Record<string, string>>({});
+  const [priceUpdating, setPriceUpdating] = useState<string | null>(null);
 
 
   const loadPurchaseMaterials = useCallback(() => {
@@ -77,6 +79,20 @@ export default function PurchaseDetailPage() {
     } finally { setMatSaving(false); }
   };
 
+
+  const handleUpdatePrice = async (entryId: string, value: string) => {
+    setPriceUpdating(entryId);
+    try {
+      await fetch(`/api/purchases/${params.id}/hammaddeler`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entryId, pricePerKg: fromPriceInput(value) }),
+      });
+      setPriceEdits(p => { const n = { ...p }; delete n[entryId]; return n; });
+      loadPurchaseMaterials();
+      load();
+    } finally { setPriceUpdating(null); }
+  };
 
   const handleDeleteMat = async (entryId: string) => {
     setMatDeleting(entryId);
@@ -405,21 +421,44 @@ export default function PurchaseDetailPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {purchaseMaterials.map((pm: any) => (
-                          <tr key={pm.id} className="hover:bg-slate-50/50">
-                            <td className="px-3 py-2 font-medium text-slate-700">
-                              {pm.material?.name ?? (pm.product ? `${pm.product.name}${pm.product.code ? ` [${pm.product.code}]` : ''}` : '—')}
-                            </td>
-                            <td className="px-3 py-2 text-right text-slate-600">{pm.kgAmount} kg</td>
-                            <td className="px-3 py-2 text-right text-slate-500">{pm.pricePerKg ?? '—'}</td>
-                            <td className="px-2 py-2 text-center">
-                              <button onClick={() => handleDeleteMat(pm.id)} disabled={matDeleting === pm.id}
-                                className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded">
-                                {matDeleting === pm.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {purchaseMaterials.map((pm: any) => {
+                          const priceVal = priceEdits[pm.id] ?? toPriceInput(pm.pricePerKg ?? '');
+                          const isDirty = priceEdits[pm.id] !== undefined;
+                          return (
+                            <tr key={pm.id} className="hover:bg-slate-50/50">
+                              <td className="px-3 py-2 font-medium text-slate-700">
+                                {pm.material?.name ?? (pm.product ? `${pm.product.name}${pm.product.code ? ` [${pm.product.code}]` : ''}` : '—')}
+                              </td>
+                              <td className="px-3 py-2 text-right text-slate-600">{pm.kgAmount} kg</td>
+                              <td className="px-3 py-2 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <input
+                                    type="text" inputMode="decimal"
+                                    value={priceVal}
+                                    onChange={e => setPriceEdits(p => ({ ...p, [pm.id]: normalizePriceInput(e.target.value) }))}
+                                    onKeyDown={blockDot}
+                                    className="w-24 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-teal-400"
+                                  />
+                                  {isDirty && (
+                                    <button
+                                      onClick={() => handleUpdatePrice(pm.id, priceVal)}
+                                      disabled={priceUpdating === pm.id}
+                                      className="px-2 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded text-xs font-medium disabled:opacity-50"
+                                    >
+                                      {priceUpdating === pm.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-2 py-2 text-center">
+                                <button onClick={() => handleDeleteMat(pm.id)} disabled={matDeleting === pm.id}
+                                  className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded">
+                                  {matDeleting === pm.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

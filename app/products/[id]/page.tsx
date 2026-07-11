@@ -216,7 +216,7 @@ export default function ProductDetailPage() {
       productCode: product?.code || '',
       logoUrl: company?.logoUrl || '',
       date: `${dd}/${mm}/${yyyy}`,
-      shore: product?.shore || '',
+      shore: product?.shore || '65±2',
       qtyPerPack: s.defaultQtyPerPack ?? '1',
       qtyUnit: s.defaultQtyUnit ?? 'adet',
       labelCount: '1',

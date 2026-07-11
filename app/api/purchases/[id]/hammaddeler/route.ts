@@ -96,6 +96,32 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json(entry);
 }
 
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = session.user as any;
+
+  const purchase = await prisma.purchase.findFirst({
+    where: { id: params.id, companyId: user.companyId },
+  });
+  if (!purchase) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  const { entryId, pricePerKg } = await req.json();
+  if (!entryId) return NextResponse.json({ error: 'entryId gerekli' }, { status: 400 });
+
+  await prisma.$transaction(async (tx) => {
+    await (tx.purchaseMaterial as any).update({
+      where: { id: entryId },
+      data: { pricePerKg: pricePerKg != null ? parseFloat(pricePerKg) : null },
+    });
+    const all = await (tx.purchaseMaterial as any).findMany({ where: { purchaseId: params.id } });
+    const newTotal = all.reduce((s: number, m: any) => s + (m.kgAmount ?? 0) * (m.pricePerKg ?? 0), 0);
+    await tx.purchase.update({ where: { id: params.id }, data: { total: newTotal } });
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
