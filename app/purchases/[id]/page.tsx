@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
+import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import {
   Loader2, Printer, Pencil, X, CreditCard, Building2,
   Save, ChevronLeft, Plus, Trash2, Factory, AlertTriangle,
@@ -65,8 +66,8 @@ export default function PurchaseDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           materialId: newMat.materialId,
-          kgAmount: parseFloat(newMat.kgAmount),
-          pricePerKg: newMat.pricePerKg ? parseFloat(newMat.pricePerKg) : null,
+          kgAmount: fromPriceInput(newMat.kgAmount),
+          pricePerKg: newMat.pricePerKg ? fromPriceInput(newMat.pricePerKg) : null,
           subcontractorId: newMat.subcontractorId || null,
         }),
       });
@@ -439,14 +440,16 @@ export default function PurchaseDetailPage() {
                   </div>
                   <div>
                     <label className="block text-xs text-slate-500 mb-1">Miktar (kg) *</label>
-                    <input type="number" min="0" step="0.01" value={newMat.kgAmount}
-                      onChange={e => setNewMat(p => ({ ...p, kgAmount: e.target.value }))} placeholder="0.00"
+                    <input type="text" inputMode="decimal" value={newMat.kgAmount}
+                      onChange={e => setNewMat(p => ({ ...p, kgAmount: normalizePriceInput(e.target.value) }))}
+                      onKeyDown={blockDot} placeholder="0,00"
                       className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
                   </div>
                   <div>
                     <label className="block text-xs text-slate-500 mb-1">Birim Fiyat</label>
-                    <input type="number" min="0" step="0.01" value={newMat.pricePerKg}
-                      onChange={e => setNewMat(p => ({ ...p, pricePerKg: e.target.value }))} placeholder="0.00"
+                    <input type="text" inputMode="decimal" value={newMat.pricePerKg}
+                      onChange={e => setNewMat(p => ({ ...p, pricePerKg: normalizePriceInput(e.target.value) }))}
+                      onKeyDown={blockDot} placeholder="0,00"
                       className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
                   </div>
                   <div>
