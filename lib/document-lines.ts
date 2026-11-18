@@ -3,7 +3,10 @@
 import { fromPriceInput, toPriceInput } from './price-input';
 import { round2 } from './money';
 
-export type DocKind = 'sale' | 'return' | 'purchase';
+export type DocKind = 'sale' | 'return' | 'purchase' | 'purchaseReturn';
+
+// Alış ve tedarikçiye iade aynı kalem modelini kullanır (hammadde ya da ürün, KDV/iskonto yok)
+export const isPurchaseKind = (k: DocKind) => k === 'purchase' || k === 'purchaseReturn';
 export type LineType = 'product' | 'material' | 'free';
 
 export interface DocLine {
@@ -103,8 +106,8 @@ export function lineProblem(kind: DocKind, l: DocLine, index: number): string | 
   const n = index + 1;
   if (!(fromPriceInput(l.quantity) > 0)) return `${n}. kalem: miktar 0'dan büyük olmalı`;
   if (!(fromPriceInput(l.unitPrice) >= 0)) return `${n}. kalem: birim fiyat geçersiz`;
-  if (kind === 'purchase' && !(l.productId || l.materialId)) return `${n}. kalem: ürün ya da hammadde seçin`;
-  if (kind !== 'purchase' && !l.description.trim()) return `${n}. kalem: açıklama girin`;
+  if (isPurchaseKind(kind) && !(l.productId || l.materialId)) return `${n}. kalem: ürün ya da hammadde seçin`;
+  if (!isPurchaseKind(kind) && !l.description.trim()) return `${n}. kalem: açıklama girin`;
   const d = fromPriceInput(l.discount || '0');
   if (d < 0 || d > 100) return `${n}. kalem: iskonto 0-100 arasında olmalı`;
   return null;

@@ -4,13 +4,14 @@ import { useCallback } from 'react';
 import { useLanguage } from '@/lib/i18n/language-context';
 
 // Belge türüne göre vurgu rengi. Tailwind sınıfları tam yazılmalı (derlemede taranır).
-export type Accent = 'blue' | 'red' | 'indigo';
+export type Accent = 'blue' | 'red' | 'indigo' | 'amber';
 
 export const ACCENTS: Record<Accent, {
   head: string; solid: string; solidHover: string; ring: string; text: string; soft: string; border: string;
 }> = {
   blue: { head: 'bg-blue-600', solid: 'bg-blue-600', solidHover: 'hover:bg-blue-700', ring: 'focus:ring-blue-500', text: 'text-blue-600', soft: 'bg-blue-50', border: 'focus:border-blue-500' },
   red: { head: 'bg-red-600', solid: 'bg-red-600', solidHover: 'hover:bg-red-700', ring: 'focus:ring-red-500', text: 'text-red-600', soft: 'bg-red-50', border: 'focus:border-red-500' },
+  amber: { head: 'bg-amber-600', solid: 'bg-amber-600', solidHover: 'hover:bg-amber-700', ring: 'focus:ring-amber-500', text: 'text-amber-700', soft: 'bg-amber-50', border: 'focus:border-amber-500' },
   indigo: { head: 'bg-indigo-600', solid: 'bg-indigo-600', solidHover: 'hover:bg-indigo-700', ring: 'focus:ring-indigo-500', text: 'text-indigo-600', soft: 'bg-indigo-50', border: 'focus:border-indigo-500' },
 };
 
@@ -19,7 +20,7 @@ const TR = {
   noCustomer: 'Müşteri seçilmedi', noSupplier: 'Tedarikçi seçilmedi',
   docNo: 'Belge No', autoNo: 'Otomatik oluşturulur', date: 'Tarih', time: 'Saat', currency: 'Para Birimi',
   partyCurrency: '(cari para birimi)', dueDate: 'Vade Tarihi', waybillNo: 'İrsaliye No', shipDate: 'Sevk Tarihi',
-  notes: 'Notlar', advanced: 'Gelişmiş Seçenekler', depot: 'Hedef Depo', mainDepot: 'Ana Depo',
+  notes: 'Notlar', advanced: 'Gelişmiş Seçenekler', depot: 'Hedef Depo', depotReturn: 'Çıkış Deposu', mainDepot: 'Ana Depo',
   lines: 'Kalemler', searchProducts: 'Ürün adı, kodu veya barkod ile arayın', searchProductsMaterials: 'Hammadde veya ürün arayın',
   typeMore: 'En az iki harf yazın...', noResults: 'Sonuç bulunamadı', manualLine: 'Elle Kalem Ekle', quickAddProduct: 'Listede Olmayan Ürün Ekle',
   quickAddItem: 'Listede Olmayan Ekle', emptyLines: 'Yukarıdan arayarak ya da "Elle Kalem Ekle" ile kalem ekleyin',
@@ -46,7 +47,7 @@ const EN: Record<Key, string> = {
   noCustomer: 'No customer selected', noSupplier: 'No supplier selected',
   docNo: 'Document No', autoNo: 'Auto-generated', date: 'Date', time: 'Time', currency: 'Currency',
   partyCurrency: '(account currency)', dueDate: 'Due Date', waybillNo: 'Waybill No', shipDate: 'Shipping Date',
-  notes: 'Notes', advanced: 'Advanced Options', depot: 'Target Warehouse', mainDepot: 'Main Warehouse',
+  notes: 'Notes', advanced: 'Advanced Options', depot: 'Target Warehouse', depotReturn: 'Source Warehouse', mainDepot: 'Main Warehouse',
   lines: 'Items', searchProducts: 'Search by product name, code or barcode', searchProductsMaterials: 'Search raw materials or products',
   typeMore: 'Type at least two characters...', noResults: 'No results', manualLine: 'Add Item Manually', quickAddProduct: 'Add Product Not in List',
   quickAddItem: 'Add New Item', emptyLines: 'Search above or use "Add Item Manually"',

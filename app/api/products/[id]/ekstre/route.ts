@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   // Purchases
   const purchaseItems = await (prisma.purchaseMaterial as any).findMany({
     where: { productId: params.id, purchase: { companyId: user.companyId } },
-    include: { purchase: { select: { date: true, invoiceNo: true, supplier: { select: { name: true } } } } },
+    include: { purchase: { select: { date: true, invoiceNo: true, isReturn: true, supplier: { select: { name: true } } } } },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -44,7 +44,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   type Entry = {
     id: string;
     date: Date;
-    type: 'satis' | 'iade' | 'alis' | 'stok_ayar';
+    type: 'satis' | 'iade' | 'alis' | 'alis_iade' | 'stok_ayar';
     party: string;
     invoiceNo: string | null;
     qty: number;
@@ -59,10 +59,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     entries.push({
       id: `pur-${pm.id}`,
       date: pm.purchase.date,
-      type: 'alis',
+      type: pm.purchase.isReturn ? 'alis_iade' : 'alis',
       party: pm.purchase.supplier?.name ?? '—',
       invoiceNo: pm.purchase.invoiceNo,
-      qty: pm.kgAmount,
+      qty: pm.purchase.isReturn ? -pm.kgAmount : pm.kgAmount,
       unitPrice: pm.pricePerKg ?? 0,
       currency: 'USD',
     });

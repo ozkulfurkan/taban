@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const { supplierId, invoiceNo, date, total, notes, items = [] } = body;
+  const isReturn = body.isReturn === true; // tedarikçiye mal iadesi
   const foreign = await rejectForeignRefs(user.companyId, {
     supplier: supplierId,
     product: (items as any[]).map(i => i?.productId),
@@ -74,13 +75,16 @@ export async function POST(req: NextRequest) {
     if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
     lines = v.lines;
     computedTotal = v.total;
+  } else if (isReturn) {
+    return NextResponse.json({ error: 'İade için en az bir kalem girin' }, { status: 400 });
   } else {
     const n = parseAmount(total);
     computedTotal = round2(Number.isFinite(n) ? n : 0);
   }
   if (!(computedTotal > 0)) return NextResponse.json({ error: 'Alış toplamı 0 olamaz' }, { status: 400 });
 
-  const alfPrefix = `ALF-${documentYear(parseDateInput(date) ?? new Date())}-`;
+  // Alış ALF-, alış iadesi ALI- ile numaralanır
+  const alfPrefix = `${isReturn ? 'ALI' : 'ALF'}-${documentYear(parseDateInput(date) ?? new Date())}-`;
   const manualNo = typeof invoiceNo === 'string' && invoiceNo.trim() ? invoiceNo.trim() : null;
   if (manualNo && await prisma.purchase.findFirst({ where: { companyId: user.companyId, invoiceNo: manualNo }, select: { id: true } })) {
     return NextResponse.json({ error: `${manualNo} numaralı alış zaten var` }, { status: 409 });
@@ -98,10 +102,11 @@ export async function POST(req: NextRequest) {
         currency: currency || 'TRY',
         total: computedTotal,
         notes: notes || null,
+        isReturn,
       },
     });
-    // Kalemler ve stok artışları aynı işlemde: biri başarısız olursa alış da oluşmaz
-    await applyPurchaseLines(tx, user.companyId, created.id, lines);
+    // Kalemler ve stok değişimi aynı işlemde: biri başarısız olursa alış da oluşmaz
+    await applyPurchaseLines(tx, user.companyId, created.id, lines, isReturn ? -1 : 1);
     return created;
   });
 
@@ -112,11 +117,22 @@ export async function POST(req: NextRequest) {
     action: 'CREATE',
     entity: 'Purchase',
     entityId: purchase.id,
-    detail: `Alış kaydedildi — ${purchase.invoiceNo ?? purchase.id} ${computedTotal} ${purchase.currency}`,
+    detail: `${isReturn ? 'Alış iadesi' : 'Alış'} kaydedildi — ${purchase.invoiceNo ?? purchase.id} ${computedTotal} ${purchase.currency}`,
     meta: { total: computedTotal, currency: purchase.currency },
     ip: getIp(req),
   });
-  return NextResponse.json(purchase, { status: 201 });
+  // İade stoğu eksiye düşürebilir (engellenmez) ama kullanıcı uyarılır
+  let stockWarnings: any[] = [];
+  if (isReturn) {
+    const pIds = lines.map(l => l.productId).filter(Boolean) as string[];
+    const mIds = lines.filter(l => l.materialId && !l.subcontractorId).map(l => l.materialId) as string[];
+    const [ps, ms] = await Promise.all([
+      pIds.length ? prisma.product.findMany({ where: { id: { in: pIds }, companyId: user.companyId, stock: { lt: 0 } }, select: { id: true, name: true, stock: true, unit: true } }) : [],
+      mIds.length ? prisma.material.findMany({ where: { id: { in: mIds }, companyId: user.companyId, stock: { lt: 0 } }, select: { id: true, name: true, stock: true } }) : [],
+    ]);
+    stockWarnings = [...ps, ...ms.map(m => ({ ...m, unit: 'kg' }))];
+  }
+  return NextResponse.json({ ...purchase, stockWarnings }, { status: 201 });
   } catch (err: any) {
     await logAction({
       companyId: user.companyId,

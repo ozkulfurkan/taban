@@ -74,6 +74,9 @@ export function invoiceBalanceEffect(inv: { total: number; isReturn?: boolean | 
   return inv.isReturn ? -amount : amount;
 }
 
+// Alışın tedarikçi borcuna etkisi: alış artırır, alış iadesi azaltır.
+export const purchaseBalanceEffect = invoiceBalanceEffect;
+
 /** Ödemenin müşteri bakiyesine etkisi (borç fişi ve "+" bakiye düzeltmesi borcu artırır). */
 export function paymentBalanceEffect(p: { amount: number; method?: string | null; notes?: string | null }): number {
   const increasesDebt = p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && !!p.notes?.startsWith('+'));

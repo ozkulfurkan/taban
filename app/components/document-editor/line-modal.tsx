@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { X, Plus, Check, Info } from 'lucide-react';
 import { toPriceInput, fromPriceInput, normalizePriceInput, blockDot } from '@/lib/price-input';
 import { stockTextClass, fmtQty } from '@/lib/stock-display';
-import { type DocKind, type DocLine, type LineType, lineGross, lineNet } from '@/lib/document-lines';
+import { type DocKind, type DocLine, type LineType, lineGross, lineNet, isPurchaseKind } from '@/lib/document-lines';
 import { ACCENTS, type Accent, useDocText } from './shared';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -27,7 +27,7 @@ export default function LineModal({
 }) {
   const tx = useDocText();
   const a = ACCENTS[accent];
-  const isPurchase = kind === 'purchase';
+  const isPurchase = isPurchaseKind(kind);
   const [line, setLine] = useState<DocLine>({ ...initial });
   const [showDiscount, setShowDiscount] = useState(() => fromPriceInput(initial.discount || '0') > 0);
   const [partMaterials, setPartMaterials] = useState<Record<string, string>>(() => {
@@ -59,7 +59,7 @@ export default function LineModal({
 
   const priceFor = (type: LineType, ref: any): string => {
     if (type === 'material') return ref.currency === currency || !ref.currency ? toPriceInput(ref.pricePerKg ?? '') : '';
-    const special = kind !== 'purchase' ? customerPrices?.[ref.id] : undefined;
+    const special = !isPurchase ? customerPrices?.[ref.id] : undefined;
     if (special) return toPriceInput(special.unitPrice);
     return ref.currency === currency ? toPriceInput(ref.unitPrice ?? '') : '';
   };
@@ -179,7 +179,7 @@ export default function LineModal({
                   className={`flex-1 min-w-0 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right outline-none focus:ring-2 ${a.ring}`} />
                 <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs font-semibold text-slate-600 flex items-center">{currency}</span>
               </div>
-              {product && kind !== 'purchase' && customerPrices?.[product.id] && (
+              {product && !isPurchase && customerPrices?.[product.id] && (
                 <p className="text-xs text-emerald-600 mt-1">✓ {tx('specialPrice')}: {fmt(customerPrices[product.id].unitPrice)} {customerPrices[product.id].currency}</p>
               )}
               {(product || material) && !(product && customerPrices?.[product.id]) && (product ?? material).currency && (product ?? material).currency !== currency && (

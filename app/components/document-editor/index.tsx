@@ -8,7 +8,7 @@ import { fmtQty } from '@/lib/stock-display';
 import { fromPriceInput, toPriceInput } from '@/lib/price-input';
 import { CURRENCIES } from '@/lib/money';
 import { useLeaveGuard } from '@/lib/use-leave-guard';
-import { type DocKind, type DocLine, docTotals, emptyLine, lineNet, lineProblem } from '@/lib/document-lines';
+import { type DocKind, type DocLine, docTotals, emptyLine, lineNet, lineProblem, isPurchaseKind } from '@/lib/document-lines';
 import StickySaveBar from '@/app/components/sticky-save-bar';
 import BackLink from '@/app/components/back-link';
 import LineModal from './line-modal';
@@ -34,7 +34,7 @@ export type DocTotals = ReturnType<typeof docTotals>;
 export type SubmitResult = { ok: true; redirect: string } | { ok: false; error: string };
 
 const VAT_RATES = ['0', '1', '8', '10', '18', '20'];
-const ACCENT_BY_KIND: Record<DocKind, Accent> = { sale: 'blue', return: 'red', purchase: 'indigo' };
+const ACCENT_BY_KIND: Record<DocKind, Accent> = { sale: 'blue', return: 'red', purchase: 'indigo', purchaseReturn: 'amber' };
 
 function today() {
   const now = new Date();
@@ -71,13 +71,13 @@ export default function DocumentEditor({
   const tx = useDocText();
   const accent = ACCENT_BY_KIND[kind];
   const a = ACCENTS[accent];
-  const isPurchase = kind === 'purchase';
+  const isPurchase = isPurchaseKind(kind);
 
   const [header, setHeader] = useState<DocHeader>(() => {
     const t = today();
     return {
       partyId: lockedPartyId ?? '', invoiceNo: '', date: t.date, time: t.time, dueDate: '', irsaliyeNo: '',
-      sevkTarihi: kind === 'purchase' ? '' : t.date, currency: 'USD', vatRate: '0', notes: '', subcontractorId: '',
+      sevkTarihi: isPurchaseKind(kind) ? '' : t.date, currency: 'USD', vatRate: '0', notes: '', subcontractorId: '',
       ...initialHeader,
     };
   });
@@ -303,7 +303,7 @@ export default function DocumentEditor({
             </div>
             {isPurchase && subcontractors.length > 0 && (
               <div>
-                <label className={label} htmlFor="doc-depot">{tx('depot')}</label>
+                <label className={label} htmlFor="doc-depot">{kind === 'purchaseReturn' ? tx('depotReturn') : tx('depot')}</label>
                 <select id="doc-depot" value={header.subcontractorId} onChange={e => setField('subcontractorId', e.target.value)} className={`${input} bg-white`}>
                   <option value="">{tx('mainDepot')}</option>
                   {subcontractors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -507,7 +507,7 @@ export default function DocumentEditor({
         summaryValue={`${fmtMoney(totals.total)} ${header.currency}`}
         onSave={handleSave}
         saving={saving}
-        tone={kind === 'return' ? 'danger' : kind === 'purchase' ? 'indigo' : 'primary'}
+        tone={kind === 'return' ? 'danger' : kind === 'purchase' ? 'indigo' : kind === 'purchaseReturn' ? 'amber' : 'primary'}
         saveLabel={saveLabel}
         savingLabel={tx('saving')}
       />
@@ -544,7 +544,7 @@ function LineName({ l, kind, products, tx }: { l: DocLine; kind: DocKind; produc
   return (
     <div className="min-w-0">
       <p className="font-medium text-slate-800 truncate">
-        {kind === 'purchase' && (
+        {isPurchaseKind(kind) && (
           <span className={`mr-1.5 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded align-middle ${l.itemType === 'material' ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'}`}>
             {l.itemType === 'material' ? tx('material') : tx('product')}
           </span>

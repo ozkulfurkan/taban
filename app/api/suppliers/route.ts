@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { purchaseBalanceEffect, round2 } from '@/lib/money';
 import { logAction, getIp } from '@/lib/audit-logger';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { partyInputError } from '@/lib/party-input';
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
     const [purchases, payments] = await Promise.all([
       prisma.purchase.findMany({
         where: { supplierId: s.id },
-        select: { total: true },
+        select: { total: true, isReturn: true },
       }),
       prisma.payment.findMany({
         where: { supplierId: s.id, type: 'PAID' },
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    const totalPurchased = purchases.reduce((s, p) => s + p.total, 0);
+    const totalPurchased = round2(purchases.reduce((s, p) => s + purchaseBalanceEffect(p), 0));
 
     let balanceDelta = 0;
     let totalPaid = 0;

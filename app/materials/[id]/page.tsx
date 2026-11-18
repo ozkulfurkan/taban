@@ -14,6 +14,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', EUR: '€', TRY: '�
 
 function typeBadge(type: string, kgAmount: number) {
   if (type === 'alis') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold"><TrendingUp className="w-3 h-3" /> Alış</span>;
+  if (type === 'alis_iade') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold"><RotateCcw className="w-3 h-3" /> Alış İadesi</span>;
   if (type === 'satis') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold"><TrendingDown className="w-3 h-3" /> Satış</span>;
   if (type === 'iade') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold"><RotateCcw className="w-3 h-3" /> İade</span>;
   if (type === 'fason_transfer') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold"><Factory className="w-3 h-3" /> {kgAmount < 0 ? 'Fason Gönderim' : 'Fason İade'}</span>;

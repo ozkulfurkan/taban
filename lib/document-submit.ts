@@ -32,7 +32,7 @@ export function saveInvoice(method: 'POST' | 'PUT', url: string, h: DocHeader, i
   });
 }
 
-export function savePurchase(method: 'POST' | 'PUT', url: string, h: DocHeader, items: unknown[] | undefined) {
+export function savePurchase(method: 'POST' | 'PUT', url: string, h: DocHeader, items: unknown[] | undefined, extra: Record<string, unknown> = {}) {
   return send(method, url, {
     supplierId: h.partyId,
     invoiceNo: h.invoiceNo.trim() || undefined,
@@ -40,6 +40,7 @@ export function savePurchase(method: 'POST' | 'PUT', url: string, h: DocHeader, 
     currency: h.currency,
     notes: h.notes,
     ...(items ? { items } : {}),
+    ...extra,
   });
 }
 

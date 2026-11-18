@@ -33,8 +33,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }),
   ]);
 
-  const totalDebit = purchases.reduce((s, p) => s + p.total, 0);
-  const totalCredit = payments.reduce((s, p) => s + p.amount, 0);
+  // Alış borç, alış iadesi alacak tarafına yazılır
+  const totalDebit = purchases.filter(p => !p.isReturn).reduce((s, p) => s + p.total, 0);
+  const totalCredit = payments.reduce((s, p) => s + p.amount, 0)
+    + purchases.filter(p => p.isReturn).reduce((s, p) => s + Math.abs(p.total), 0);
 
   return NextResponse.json({
     supplier,

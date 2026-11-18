@@ -208,80 +208,6 @@ function OdemeModal({ supplier, onClose, onSaved }: {
   );
 }
 
-// ── IadeModal ──────────────────────────────────────────────────────────────
-function IadeModal({ supplier, onClose, onSaved }: {
-  supplier: any; onClose: () => void; onSaved: () => void;
-}) {
-  const { t } = useLanguage();
-  const [form, setForm] = useState({
-    amount: '', method: 'Nakit', notes: 'İade',
-  });
-  const [saving, setSaving] = useState(false);
-
-  const handle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.amount || parseFloat(form.amount) <= 0) return;
-    setSaving(true);
-    try {
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: supplier.id,
-          amount: form.amount,
-          currency: supplier.currency,
-          date: nowIstanbulISO(),
-          method: form.method,
-          notes: form.notes,
-        }),
-      });
-      onSaved();
-      onClose();
-    } catch (err) { console.error(err); }
-    finally { setSaving(false); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="bg-amber-500 rounded-t-2xl px-5 py-4 flex items-center justify-between">
-          <h3 className="text-white font-semibold">{t('modal', 'returnTitle')}</h3>
-          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
-        </div>
-        <form onSubmit={handle} className="p-5 space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')}</label>
-            <DecimalInput required step="0.01" min="0.01" value={form.amount}
-              onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('supplierDetail', 'method')}</label>
-            <select value={form.method} onChange={e => setForm(p => ({ ...p, method: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white">
-              {METHODS.map(m => <option key={m}>{m}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'notes')}</label>
-            <input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
-          </div>
-          <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">{t('common', 'cancel')}</button>
-            <button type="submit" disabled={saving}
-              className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} {t('common', 'save')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 // ── BorcAlacakFisModal ─────────────────────────────────────────────────────
 function BorcAlacakFisModal({ supplier, onClose, onSaved }: { supplier: any; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({
@@ -929,7 +855,6 @@ export default function SupplierDetailPage() {
   const [deleteWarning, setDeleteWarning] = useState('');
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [showOdeme, setShowOdeme] = useState(false);
-  const [showIade, setShowIade] = useState(false);
   const [showBorcFis, setShowBorcFis] = useState(false);
   const [showBakiyeDuzelt, setShowBakiyeDuzelt] = useState(false);
   const [showTedarikciCek, setShowTedarikciCek] = useState(false);
@@ -1034,10 +959,10 @@ export default function SupplierDetailPage() {
     const txns: any[] = [
       ...(supplier.purchases || []).map((p: any) => ({
         date: p.date,
-        label: `Alis: ${p.invoiceNo || 'Faturasiz'}`,
-        debit: p.total,
-        credit: 0,
-        status: STATUS_LABEL[p.status],
+        label: `${p.isReturn ? 'Alis Iadesi' : 'Alis'}: ${p.invoiceNo || 'Faturasiz'}`,
+        debit: p.isReturn ? 0 : p.total,
+        credit: p.isReturn ? Math.abs(p.total) : 0,
+        status: p.isReturn ? 'Iade' : STATUS_LABEL[p.status],
       })),
       ...(supplier.payments || []).map((p: any) => ({
         date: p.date,
@@ -1210,6 +1135,10 @@ export default function SupplierDetailPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
             <ShoppingBag className="w-3.5 h-3.5" /> {t('supplierDetail', 'newPurchase')}
           </Link>
+          <Link href={`/purchases/return?supplierId=${supplier.id}`}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors">
+            <RotateCcw className="w-3.5 h-3.5 text-amber-600" /> İade
+          </Link>
           <div className="relative">
             <button
               onClick={() => setOdemeDropdown(d => !d)}
@@ -1296,8 +1225,8 @@ export default function SupplierDetailPage() {
                   {supplier.purchases.slice(0, purchasesShown).map((p: any) => {
                     const isOpen = expandedPurchaseId === p.id;
                     const remaining = p.total - p.paidAmount;
-                    const statusLabel = remaining <= 0 ? 'Faturalaşmış' : remaining < p.total ? 'Kısmi' : 'Bekliyor';
-                    const statusColor = remaining <= 0 ? 'text-emerald-600' : remaining < p.total ? 'text-blue-600' : 'text-orange-500';
+                    const statusLabel = p.isReturn ? 'İade' : remaining <= 0 ? 'Faturalaşmış' : remaining < p.total ? 'Kısmi' : 'Bekliyor';
+                    const statusColor = p.isReturn ? 'text-amber-600' : remaining <= 0 ? 'text-emerald-600' : remaining < p.total ? 'text-blue-600' : 'text-orange-500';
                     return (
                       <>
                         <tr key={p.id}
@@ -1311,9 +1240,12 @@ export default function SupplierDetailPage() {
                           <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap">
                             {new Date(p.date).toLocaleDateString('tr-TR')}
                           </td>
-                          <td className="px-4 py-2.5 font-medium text-teal-600">{p.invoiceNo || '—'}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold text-slate-800 whitespace-nowrap">
-                            {p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          <td className="px-4 py-2.5 font-medium text-teal-600 whitespace-nowrap">
+                            {p.invoiceNo || '—'}
+                            {p.isReturn && <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-semibold uppercase align-middle">İade</span>}
+                          </td>
+                          <td className={`px-4 py-2.5 text-right font-semibold whitespace-nowrap ${p.isReturn ? 'text-amber-700' : 'text-slate-800'}`}>
+                            {p.isReturn ? '−' : ''}{p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
                           </td>
                         </tr>
@@ -1434,9 +1366,6 @@ export default function SupplierDetailPage() {
         </div>{/* end grid */}
       </div>
 
-      {showIade && (
-        <IadeModal supplier={supplier} onClose={() => setShowIade(false)} onSaved={load} />
-      )}
       {showOdeme && (
         <OdemeModal
           supplier={supplier}

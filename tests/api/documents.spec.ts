@@ -150,3 +150,73 @@ test('fatura irsaliye no ve sevk tarihi kaydedilir ve düzenlenir', async () => 
   expect(saved.irsaliyeNo).toBe('IRS-2');
   expect(saved.sevkTarihi).not.toBeNull();
 });
+
+test.describe('tedarikçiye mal iadesi', () => {
+  test('iade stoğu düşürür, borcu azaltır; liste, detay ve ekstre aynı bakiyeyi verir', async () => {
+    const s = await supplier();
+    const m = await material(0);
+    const p = await product(0);
+    await A.owner.post('/api/purchases', { data: { supplierId: s, items: [{ materialId: m, qty: 10, unitPrice: 5 }, { productId: p, qty: 6, unitPrice: 10 }] } });
+
+    const r = await A.owner.post('/api/purchases', {
+      data: { supplierId: s, isReturn: true, items: [{ materialId: m, qty: 4, unitPrice: 5 }, { productId: p, qty: 1, unitPrice: 10 }] },
+    });
+    expect(r.status(), await r.text()).toBe(201);
+    const ret = await r.json();
+    expect(ret.isReturn).toBe(true);
+    expect(ret.total).toBe(30);
+    expect(ret.invoiceNo).toMatch(/^ALI-\d{4}-/);
+    expect(await materialStock(m)).toBe(6);
+    expect(await productStock(p)).toBe(5);
+
+    const detail = await (await A.owner.get(`/api/suppliers/${s}`)).json();
+    expect(detail.totalPurchased).toBe(80); // 110 alış − 30 iade
+    expect(detail.balance).toBe(80);
+    const list = await (await A.owner.get('/api/suppliers')).json();
+    expect((Array.isArray(list) ? list : list.suppliers).find((x: any) => x.id === s).balance).toBe(80);
+    const ekstre = await (await A.owner.get(`/api/suppliers/${s}/ekstre`)).json();
+    expect(ekstre.totalDebit).toBe(110);
+    expect(ekstre.totalCredit).toBe(30);
+    expect(ekstre.balance).toBe(80);
+
+    const mat = await (await A.owner.get(`/api/materials/${m}/ekstre`)).json();
+    const rows = Array.isArray(mat) ? mat : mat.entries ?? mat.items ?? [];
+    expect(rows.some((e: any) => e.type === 'alis_iade' && e.kgAmount === -4)).toBe(true);
+  });
+
+  test('iade düzenlenince stok farkı düzelir, silinince stok geri gelir', async () => {
+    const s = await supplier();
+    const m = await material(20);
+    const ret = await (await A.owner.post('/api/purchases', { data: { supplierId: s, isReturn: true, items: [{ materialId: m, qty: 5, unitPrice: 1 }] } })).json();
+    expect(await materialStock(m)).toBe(15);
+
+    const put = await A.owner.put(`/api/purchases/${ret.id}`, { data: { items: [{ materialId: m, qty: 8, unitPrice: 1 }] } });
+    expect(put.status(), await put.text()).toBe(200);
+    expect(await materialStock(m)).toBe(12);
+    expect((await prisma.purchase.findUnique({ where: { id: ret.id } }))!.total).toBe(8);
+
+    expect((await A.owner.delete(`/api/purchases/${ret.id}`)).status()).toBe(200);
+    expect(await materialStock(m)).toBe(20);
+  });
+
+  test('fasoncu deposundan iade; stok eksiye düşebilir ve uyarı döner', async () => {
+    const s = await supplier();
+    const m = await material(2);
+    const sub = await (await A.owner.post('/api/subcontractors', { data: { name: uniq('Fasoncu') } })).json();
+    await A.owner.post('/api/purchases', { data: { supplierId: s, items: [{ materialId: m, subcontractorId: sub.id, qty: 10, unitPrice: 1 }] } });
+    await A.owner.post('/api/purchases', { data: { supplierId: s, isReturn: true, items: [{ materialId: m, subcontractorId: sub.id, qty: 3, unitPrice: 1 }] } });
+    expect((await prisma.subcontractorStock.findFirst({ where: { subcontractorId: sub.id, materialId: m } }))!.quantity).toBe(7);
+
+    const r = await (await A.owner.post('/api/purchases', { data: { supplierId: s, isReturn: true, items: [{ materialId: m, qty: 5, unitPrice: 1 }] } })).json();
+    expect(await materialStock(m)).toBe(-3);
+    expect(r.stockWarnings.map((w: any) => w.id)).toContain(m);
+  });
+
+  test('iade kalemsiz olamaz; başka firmanın hammaddesiyle iade reddedilir', async () => {
+    const s = await supplier();
+    expect((await A.owner.post('/api/purchases', { data: { supplierId: s, isReturn: true, total: 50 } })).status()).toBe(400);
+    const foreignMat = await (await B.owner.post('/api/materials', { data: { name: uniq('Yabancı'), pricePerKg: 1, currency: 'USD' } })).json();
+    const r = await A.owner.post('/api/purchases', { data: { supplierId: s, isReturn: true, items: [{ materialId: foreignMat.id, qty: 1, unitPrice: 1 }] } });
+    expect([400, 403, 404]).toContain(r.status());
+  });
+});
