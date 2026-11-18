@@ -5,6 +5,7 @@ import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Truck, Plus, Loader2, Search, Upload, Download, Filter } from 'lucide-react';
 import Link from 'next/link';
+import { matchesText } from '@/lib/search';
 
 export default function SuppliersPage() {
   const { t } = useLanguage();
@@ -42,7 +43,7 @@ export default function SuppliersPage() {
       if (onlyWithBalance && !((s.balance ?? 0) > 0)) return false;
       if (debouncedSearch.trim()) {
         const q = debouncedSearch.toLowerCase();
-        if (!s.name?.toLowerCase().includes(q) && !s.email?.toLowerCase().includes(q) && !s.phone?.includes(debouncedSearch)) return false;
+        if (!matchesText(s.name, q) && !matchesText(s.email, q) && !s.phone?.includes(debouncedSearch)) return false;
       }
       return true;
     }),

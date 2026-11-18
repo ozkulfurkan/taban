@@ -65,8 +65,12 @@ export function pageKeyFor(pathname: string): string | null {
   return hit ? hit[1] : null;
 }
 
+// Sadece platform yöneticisinin (ADMIN) görebileceği sayfalar
+const ADMIN_ONLY_PAGES = ['/admin', '/logs'];
+
 export function canSeePage(user: AccessUser | null | undefined, pathname: string) {
   if (!user || user.type === 'portal') return false;
+  if (ADMIN_ONLY_PAGES.some(p => matchPrefix(pathname, p))) return user.role === 'ADMIN';
   if (hasFullAccess(user)) return true;
   const key = pageKeyFor(pathname);
   if (!key) return true;

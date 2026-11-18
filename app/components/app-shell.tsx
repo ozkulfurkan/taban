@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -299,13 +299,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { showWarning, countdown, onContinue } = useIdleLogout();
   const [showWhatsNew, setShowWhatsNew] = useState(false);
 
+  // "Yenilikler" sadece ana sayfada ve bir kez gösterilir; başka bir sayfaya
+  // (örn. bağlantıyla açılan bir fatura) gelen kullanıcının işinin önüne geçmez.
+  const pathname = usePathname();
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === 'authenticated' && pathname === '/dashboard') {
       try {
         if (!localStorage.getItem(WHATS_NEW_VERSION)) setShowWhatsNew(true);
       } catch {}
     }
-  }, [status]);
+  }, [status, pathname]);
 
   const closeWhatsNew = () => {
     try { localStorage.setItem(WHATS_NEW_VERSION, '1'); } catch {}

@@ -6,6 +6,7 @@ import { logAction, getIp } from '@/lib/audit-logger';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { customerBalance } from '@/lib/money';
 import { partyInputError } from '@/lib/party-input';
+import { idsMatching, findSameName } from '@/lib/search-db';
 
 const LIMIT = 50;
 
@@ -32,10 +33,11 @@ export async function GET(req: NextRequest) {
 
   const where: any = { companyId: user.companyId, status: { not: 1 } };
   if (search) {
+    // Ad ve e-postada Türkçe karakterden bağımsız arama ("isik" → "IŞIK")
+    const ids = await idsMatching('Customer', user.companyId, search);
     where.OR = [
-      { name: { contains: search, mode: 'insensitive' } },
+      { id: { in: ids } },
       { phone: { contains: search } },
-      { email: { contains: search, mode: 'insensitive' } },
     ];
   }
   const categoryId = searchParams.get('categoryId');
@@ -121,6 +123,17 @@ export async function POST(req: NextRequest) {
   const inputError = partyInputError(body);
   if (inputError) return NextResponse.json({ error: inputError }, { status: 400 });
   body.name = body.name.trim();
+  // Aynı adlı kayıt varsa önce kullanıcıya sor (engellemez; onaylanırsa allowDuplicate ile gelir)
+  if (!body.allowDuplicate) {
+    const existing = await findSameName('Customer', user.companyId, body.name);
+    if (existing) {
+      return NextResponse.json({
+        error: `"${existing.name}" adında bir müşteri zaten var.`,
+        code: 'DUPLICATE_NAME',
+        existing,
+      }, { status: 409 });
+    }
+  }
   const foreign = await rejectForeignRefs(user.companyId, { customerCategory: body?.categoryId });
   if (foreign) return foreign;
   try {

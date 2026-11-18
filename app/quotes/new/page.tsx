@@ -8,6 +8,7 @@ import {
   Plus, Trash2, Loader2, FileText, ArrowLeft,
   Banknote, CreditCard, Calendar, X
 } from 'lucide-react';
+import { matchesText } from '@/lib/search';
 
 function tr(text: string): string {
   return String(text ?? '')
@@ -377,7 +378,7 @@ function QuoteForm() {
               />
               {showCustomerDrop && customer.firmName.length > 0 && (() => {
                 const q = customer.firmName.toLowerCase();
-                const filtered = customers.filter(c => c.name?.toLowerCase().includes(q));
+                const filtered = customers.filter(c => matchesText(c.name, q));
                 if (!filtered.length) return null;
                 return (
                   <ul className="absolute z-30 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
@@ -692,7 +693,7 @@ function QuoteForm() {
                   {products
                     .filter(p => {
                       const q = productSearch.toLowerCase();
-                      return !q || p.name?.toLowerCase().includes(q) || p.code?.toLowerCase().includes(q);
+                      return !q || matchesText(p.name, q) || matchesText(p.code, q);
                     })
                     .map(prod => (
                       <li key={prod.id}>

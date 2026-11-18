@@ -122,3 +122,13 @@ test('documentYear: İstanbul saatine göre yıl', () => {
   assert.equal(documentYear(new Date('2026-12-31T22:30:00Z')), 2027);
   assert.equal(documentYear(new Date('2026-12-31T20:00:00Z')), 2026);
 });
+
+import { foldTr, matchesText } from '../../lib/search';
+
+test('Türkçe karakterden bağımsız arama', () => {
+  for (const q of ['ışık', 'Işık', 'IŞIK', 'isik', 'ISIK']) assert.ok(matchesText('IŞIK Ayakkabı', q), q);
+  for (const q of ['istanbul', 'İSTANBUL', 'İstanbul']) assert.ok(matchesText('İstanbul Taban', q), q);
+  assert.equal(foldTr('ÇİĞDEM Göğüş Şükrü Öztürk'), 'cigdem gogus sukru ozturk');
+  assert.ok(!matchesText('Ayakkabı', 'terlik'));
+  assert.ok(matchesText(null, ''));
+});

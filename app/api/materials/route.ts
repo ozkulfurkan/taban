@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthSession, unauthorized, badRequest } from '@/lib/helpers';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { idsMatching } from '@/lib/search-db';
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
       where.companyId = session.user.companyId;
     }
     if (search) {
-      where.name = { contains: search, mode: 'insensitive' };
+      where.id = { in: await idsMatching('Material', where.companyId ?? null, search) };
     }
 
     const materials = await prisma.material.findMany({

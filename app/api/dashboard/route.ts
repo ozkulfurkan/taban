@@ -124,7 +124,22 @@ export async function GET() {
     const cekTotalTRY = cekTotal.reduce((s, g) => s + toTry(g._sum.tutar ?? 0, g.currency), 0);
     const stokTotal = sumTry(stockSums);
 
+    // Satış stoğu eksiye düşürebilir; eksi stoktaki kalemler ana sayfada uyarı olarak gösterilir
+    const [negativeMaterials, negativeProducts] = await Promise.all([
+      prisma.material.findMany({
+        where: { companyId, stock: { lt: 0 } },
+        select: { id: true, name: true, stock: true },
+        orderBy: { stock: 'asc' }, take: 10,
+      }),
+      prisma.product.findMany({
+        where: { companyId, stock: { lt: 0 } },
+        select: { id: true, name: true, code: true, stock: true, unit: true },
+        orderBy: { stock: 'asc' }, take: 10,
+      }),
+    ]);
+
     return NextResponse.json({
+      negativeStock: { materials: negativeMaterials, products: negativeProducts },
       materialCount,
       calcCount,
       avgCost,

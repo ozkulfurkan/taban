@@ -5,6 +5,7 @@ import AppShell from '@/app/components/app-shell';
 import { Plus, Loader2, ShoppingCart, Building2, Printer, Trash2, Package, Search, X, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { matchesText } from '@/lib/search';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   DRAFT:     { label: 'Taslak',    color: 'bg-slate-100 text-slate-600' },
@@ -46,8 +47,8 @@ export default function PurchasesListPage() {
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       return (
-        p.invoiceNo?.toLowerCase().includes(q) ||
-        p.supplier?.name?.toLowerCase().includes(q)
+        matchesText(p.invoiceNo, q) ||
+        matchesText(p.supplier?.name, q)
       );
     }
     return true;

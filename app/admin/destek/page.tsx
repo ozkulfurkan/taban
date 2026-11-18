@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
+import { matchesText } from '@/lib/search';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -98,9 +99,9 @@ export default function AdminDestekPage() {
     if (filterPriority && t.priority !== filterPriority) return false;
     if (filterCompany && t.company.id !== filterCompany) return false;
     if (filterModule && t.module !== filterModule) return false;
-    if (search && !t.title.toLowerCase().includes(search.toLowerCase()) &&
-        !t.ticketNo.toLowerCase().includes(search.toLowerCase()) &&
-        !(t.user.name ?? '').toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !matchesText(t.title, search.toLowerCase()) &&
+        !matchesText(t.ticketNo, search.toLowerCase()) &&
+        !matchesText((t.user.name ?? ''), search.toLowerCase())) return false;
     return true;
   });
 

@@ -8,6 +8,7 @@ import {
   ArrowLeft, Loader2, Pencil, TrendingDown, TrendingUp,
   ArrowLeftRight, ChevronDown, Trash2, X, Save, AlertTriangle,
 } from 'lucide-react';
+import { matchesText } from '@/lib/search';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -389,10 +390,10 @@ export default function AccountEkstrePage() {
 
   const filtered = search
     ? displayRows.filter(r =>
-        r.method?.toLowerCase().includes(search.toLowerCase()) ||
-        r.notes?.toLowerCase().includes(search.toLowerCase()) ||
-        r.customer?.name?.toLowerCase().includes(search.toLowerCase()) ||
-        r.supplier?.name?.toLowerCase().includes(search.toLowerCase())
+        matchesText(r.method, search.toLowerCase()) ||
+        matchesText(r.notes, search.toLowerCase()) ||
+        matchesText(r.customer?.name, search.toLowerCase()) ||
+        matchesText(r.supplier?.name, search.toLowerCase())
       )
     : displayRows;
 

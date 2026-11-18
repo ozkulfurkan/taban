@@ -6,6 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle, Info, CheckCircle, ChevronDown } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
+import { matchesText } from '@/lib/search';
 
 interface LineItem {
   productId?: string;
@@ -503,7 +504,7 @@ export default function NewInvoicePage() {
   const setField = (field: string, val: string) => setForm(p => ({ ...p, [field]: val }));
 
   const filteredProducts = productSearch.length >= 2
-    ? products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()) || (p.code && p.code.toLowerCase().includes(productSearch.toLowerCase())))
+    ? products.filter(p => matchesText(p.name, productSearch.toLowerCase()) || (p.code && matchesText(p.code, productSearch.toLowerCase())))
     : [];
 
   const selectedCustomer = customers.find(c => c.id === form.customerId);
