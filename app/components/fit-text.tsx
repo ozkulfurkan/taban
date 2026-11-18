@@ -33,7 +33,17 @@ export default function FitText({
     fit();
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
     ro?.observe(el);
-    return () => ro?.disconnect();
+    // Web fontu sonradan yüklenince metin genişler ama kutu boyu değişmez
+    // (ResizeObserver tetiklenmez); font yüklenince yeniden sığdır.
+    const fonts = typeof document !== 'undefined' ? document.fonts : undefined;
+    let alive = true;
+    fonts?.ready.then(() => { if (alive) fit(); });
+    fonts?.addEventListener?.('loadingdone', fit);
+    return () => {
+      alive = false;
+      ro?.disconnect();
+      fonts?.removeEventListener?.('loadingdone', fit);
+    };
   }, [children, minPx]);
 
   return (

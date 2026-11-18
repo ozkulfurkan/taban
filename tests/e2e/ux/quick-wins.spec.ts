@@ -16,8 +16,8 @@ test('büyük tutar müşteri kartına sığar, silme menünün içindedir', asy
   await page.goto(`/customers/${c.id}`);
   const amount = page.getByTitle('9.999.999.900.000,00').first();
   await expect(amount).toBeVisible();
-  const fits = await amount.evaluate(el => el.scrollWidth <= el.clientWidth + 1);
-  expect(fits, 'tutar kutudan taşmamalı').toBe(true);
+  await page.evaluate(() => document.fonts.ready);
+  await expect.poll(() => amount.evaluate(el => el.scrollWidth <= el.clientWidth + 1), { message: 'tutar kutudan taşmamalı' }).toBe(true);
   // Sayfa yatay kaymamalı
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 
