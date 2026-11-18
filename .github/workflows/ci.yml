@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: taban_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Sadece CI veritabanı için; gerçek ortam bilgisi değildir
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/taban_ci
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/taban_ci
+      NEXTAUTH_SECRET: ci-only-secret-not-used-anywhere-else
+      NEXTAUTH_URL: http://localhost:3000
+      PGTZ: UTC
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bağımlılıkları kur
+        run: npm ci
+
+      - name: Veritabanı şeması (migration geçmişi boş veritabanında çalışmalı)
+        run: npm run db:deploy
+
+      - name: Migration'lar şemayla aynı mı
+        run: |
+          diff=$(npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script | grep -v '^--' | grep -v '^\s*$' || true)
+          if [ -n "$diff" ]; then echo "schema.prisma ile migration'lar uyuşmuyor; yeni migration ekleyin:"; echo "$diff"; exit 1; fi
+
+      - name: Test verisi
+        run: npm run db:seed:test
+
+      - name: Tip kontrolü
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Birim testleri
+        run: npm run test:unit
+
+      - name: Derleme
+        run: npm run build
+
+      - name: Playwright tarayıcısı
+        run: npx playwright install --with-deps chromium
+
+      - name: Uygulamayı başlat
+        run: |
+          npm run start > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3000/login && exit 0; sleep 1; done
+          cat server.log; exit 1
+
+      - name: API, güvenlik ve uçtan uca testler
+        run: npx playwright test --reporter=list
+
+      - name: Test raporu
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+            server.log
+          retention-days: 7

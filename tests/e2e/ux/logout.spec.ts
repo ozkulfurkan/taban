@@ -44,7 +44,8 @@ test.describe('Auth — Oturum Yönetimi', () => {
   });
 
   test('oturum yokken korumalı sayfaya erişim → login yönlendirmesi', async ({ browser }) => {
-    const context = await browser.newContext(); // fresh, no auth
+    // Projenin varsayılan oturumu (storageState) yeni bağlama da geçtiği için açıkça boşaltılır
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const page = await context.newPage();
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/login/, { timeout: 15000 });

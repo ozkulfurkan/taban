@@ -90,7 +90,7 @@ export default function SuppliersPage() {
               className="flex items-center gap-2 px-3 py-2 border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
             >
               {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              Excel'den İçe Aktar
+              Excel&apos;den İçe Aktar
             </button>
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
             <Link

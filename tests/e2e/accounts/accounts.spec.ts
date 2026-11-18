@@ -11,13 +11,10 @@ test.describe('Ön Muhasebe — Hesaplar & Ödemeler', () => {
     await page.screenshot({ path: 'test-results/screenshots/accounts-list.png' });
   });
 
-  test('hesap ekleme butonu çalışıyor', async ({ page }) => {
+  test('hesap ekleme menüsü ve penceresi açılıyor', async ({ page }) => {
     const accounts = new AccountsPage(page);
     await accounts.goto();
-    await accounts.openAddAccountModal();
-    await page.waitForTimeout(600);
-    const formVisible = await page.locator('[data-testid="modal"], [role="dialog"], input').first().isVisible({ timeout: 5000 }).catch(() => false);
-    expect(formVisible).toBeTruthy();
+    await accounts.openAddAccountModal('Banka');
     await page.screenshot({ path: 'test-results/screenshots/accounts-add.png' });
   });
 
@@ -25,8 +22,8 @@ test.describe('Ön Muhasebe — Hesaplar & Ödemeler', () => {
     const accounts = new AccountsPage(page);
     const name = `Test Kasa ${randomSuffix()}`;
     await accounts.goto();
-    await accounts.openAddAccountModal();
-    await accounts.fillAccountForm(name, 'Kasa');
+    await accounts.openAddAccountModal('Kasa');
+    await accounts.fillAccountForm(name);
     await accounts.saveAccount();
     await accounts.expectAccountInList(name);
     await page.screenshot({ path: 'test-results/screenshots/accounts-created.png' });
@@ -54,13 +51,17 @@ test.describe('Ön Muhasebe — Hesaplar & Ödemeler', () => {
     await page.screenshot({ path: 'test-results/screenshots/payments-list.png' });
   });
 
-  test('ödeme ekleme butonu mevcut', async ({ page }) => {
+  // Ödemeler sayfasında ekleme düğmesi yok: ödemeler müşteri/tedarikçi sayfasından girilir
+  test('ödemeler sayfası ödemenin nereden ekleneceğini gösteriyor', async ({ page }) => {
     await page.goto('/payments');
     await page.waitForLoadState('networkidle');
-    const addBtn = page.getByRole('button', { name: /ekle|yeni|add|ödeme/i }).first();
-    const visible = await addBtn.isVisible({ timeout: 5000 }).catch(() => false);
-    expect(visible).toBeTruthy();
-    await page.screenshot({ path: 'test-results/screenshots/payments-add-button.png' });
+    const hasRows = await page.locator('tbody tr').count();
+    if (hasRows === 0) {
+      await expect(page.getByRole('link', { name: /müşteri/i }).last()).toBeVisible();
+      await expect(page.getByRole('link', { name: /tedarikçi/i }).last()).toBeVisible();
+    } else {
+      await expect(page.getByText(/toplam tahsilat|total received/i)).toBeVisible();
+    }
   });
 
   test('müşteriler sayfası yükleniyor', async ({ page }) => {
