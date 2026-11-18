@@ -5,8 +5,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PortalShell from '../../components/portal-shell';
 import SizeTable from '../../components/size-table';
-import { Loader2, ArrowLeft, Send } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 import { usePortalText } from '@/lib/i18n/portal';
+import BackLink from '@/app/components/back-link';
 
 type ColorPartial = { name: string; color: string };
 
@@ -82,7 +83,7 @@ export default function NewOrderPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || tp('Hata oluştu')); return; }
-      router.push(`/portal/orders/${data.id}`);
+      router.replace(`/portal/orders/${data.id}`);
     } finally { setLoading(false); }
   };
 
@@ -90,9 +91,7 @@ export default function NewOrderPage() {
     <PortalShell>
       <div className="max-w-2xl mx-auto space-y-5">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
-          </button>
+          <BackLink variant="icon" href="/portal/orders" label="Siparişlerim" />
           <h1 className="text-xl font-bold text-slate-800">{tp('Yeni Sipariş')}</h1>
         </div>
 

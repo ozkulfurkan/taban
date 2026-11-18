@@ -8,10 +8,9 @@ import { formatDate, toDateInputValue } from '@/lib/time';
 
 import { postPayment } from '@/lib/post-payment';
 import { parseAmount } from '@/lib/money';
-import {
-  Loader2, Printer, Pencil, X, CreditCard, User, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers, AlertTriangle,
-} from 'lucide-react';
+import { Loader2, Printer, Pencil, X, CreditCard, User, Package, CheckCircle, ChevronDown, ChevronRight, Layers, AlertTriangle } from 'lucide-react';
 import DecimalInput from '@/app/components/decimal-input';
+import BackLink from '@/app/components/back-link';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -97,7 +96,7 @@ export default function InvoiceDetailPage() {
     setConfirmModal({ message: 'Bu fatura silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Bu faturaya bağlı tüm stok hareketleri (ürün ve hammadde stokları) geri alınacaktır.', onConfirm: async () => {
       setDeleting(true);
       await fetch(`/api/invoices/${params.id}`, { method: 'DELETE' });
-      router.back();
+      router.replace(`/customers/${invoice.customerId}`);
     }});
   };
 
@@ -143,9 +142,7 @@ export default function InvoiceDetailPage() {
       <div className="space-y-4 max-w-6xl">
 
         {/* Back */}
-        <button onClick={() => router.back()} className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 text-sm">
-          <ChevronLeft className="w-4 h-4" /> Geri Dön
-        </button>
+        <BackLink href={`/customers/${invoice.customerId}`} prefix="Müşteri" label={invoice.customer?.name ?? ''} />
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">

@@ -1,15 +1,13 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import {
-  Plus, Trash2, Loader2, FileText, ArrowLeft,
-  Banknote, CreditCard, Calendar, X
-} from 'lucide-react';
+import { Plus, Trash2, Loader2, FileText, Banknote, CreditCard, Calendar, X } from 'lucide-react';
 import { matchesText } from '@/lib/search';
 import DecimalInput from '@/app/components/decimal-input';
+import BackLink from '@/app/components/back-link';
 
 function tr(text: string): string {
   return String(text ?? '')
@@ -39,7 +37,6 @@ const newRow = (birimFiyat = ''): RowEntry => ({
 
 function QuoteForm() {
   const { formatCurrency } = useLanguage();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const calcId = searchParams.get('calcId');
   const customerId = searchParams.get('customerId');
@@ -335,9 +332,7 @@ function QuoteForm() {
       <div className="space-y-6 max-w-full">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
-          </button>
+          <BackLink variant="icon" href={customerId ? `/customers/${customerId}` : "/customers"} label="Müşteri" />
           <div>
             <h1 className="text-2xl font-bold text-slate-800">Teklif Oluştur</h1>
             {calcName && <p className="text-slate-500 text-sm">{calcName}</p>}

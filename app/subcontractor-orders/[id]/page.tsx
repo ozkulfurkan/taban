@@ -6,10 +6,8 @@ import AppShell from '@/app/components/app-shell';
 import SizeTable from '@/app/portal/components/size-table';
 import Link from 'next/link';
 import DecimalInput from '@/app/components/decimal-input';
-import {
-  Loader2, ChevronLeft, Factory, Send, Package, ArrowRight,
-  AlertTriangle, CheckCircle2, Mail, X, RotateCcw, Trash2,
-} from 'lucide-react';
+import BackLink from '@/app/components/back-link';
+import { Loader2, Factory, Send, Package, ArrowRight, AlertTriangle, CheckCircle2, Mail, X, RotateCcw, Trash2 } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Bekliyor', MATERIAL_SENT: 'Hammadde Gönderildi',
@@ -131,9 +129,7 @@ export default function SubcontractorOrderDetailPage() {
     <AppShell>
       <div className="space-y-4 max-w-6xl">
         <div className="flex flex-wrap gap-2 items-center">
-          <button onClick={() => router.back()} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium">
-            <ChevronLeft className="w-4 h-4" /> Geri
-          </button>
+          <BackLink href="/subcontractor-orders" label="Fason Siparişleri" />
           <button onClick={handleSendEmail} disabled={emailSending}
             className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
             {emailSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}

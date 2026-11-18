@@ -1,13 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import Link from 'next/link';
-import {
-  Loader2, ChevronLeft, Pencil, Save, X, Factory, Package,
-  ArrowUpDown, Plus, CheckCircle2, Mail, AlertTriangle,
-} from 'lucide-react';
+import BackLink from '@/app/components/back-link';
+import { Loader2, Pencil, Save, X, Factory, ArrowUpDown, Plus, CheckCircle2, Mail, AlertTriangle } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Bekliyor', MATERIAL_SENT: 'Hammadde Gönderildi',
@@ -23,7 +21,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function SubcontractorDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -87,9 +84,7 @@ export default function SubcontractorDetailPage() {
     <AppShell>
       <div className="space-y-4 max-w-5xl">
         <div className="flex flex-wrap gap-2 items-center">
-          <button onClick={() => router.back()} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium">
-            <ChevronLeft className="w-4 h-4" /> Geri
-          </button>
+          <BackLink href="/subcontractors" label="Fasoncular" />
           {!editing ? (
             <button onClick={() => setEditing(true)} className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
               <Pencil className="w-4 h-4" /> Düzenle

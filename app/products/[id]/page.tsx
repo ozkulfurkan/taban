@@ -1,17 +1,14 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
-import {
-  ArrowLeft, Loader2, Save, Plus, Trash2, Pencil, X,
-  Package, Calculator, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Warehouse,
-  FileText, Users, AlertTriangle, QrCode,
-} from 'lucide-react';
+import { Loader2, Save, Plus, Trash2, Pencil, X, Package, Calculator, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Warehouse, FileText, Users, AlertTriangle, QrCode } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { buildPrintHtml, type BarcodeTemplateSettings } from '@/lib/barcode-print';
 import DecimalInput from '@/app/components/decimal-input';
+import BackLink from '@/app/components/back-link';
 
 const ALL_UNITS = ['çift', 'adet', 'kg', 'ton', 'lt', 'metre', 'paket'];
 
@@ -47,7 +44,6 @@ function emptyExtra() { return { name: '', amount: '', currency: 'USD' }; }
 
 export default function ProductDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const costRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
@@ -402,9 +398,7 @@ export default function ProductDetailPage() {
       <div className="space-y-4 max-w-6xl">
 
         {/* Back */}
-        <button onClick={() => router.back()} className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 text-sm">
-          <ArrowLeft className="w-4 h-4" /> Geri Dön
-        </button>
+        <BackLink href="/products" label="Ürünler" />
 
         {!isMaterial && !showCost && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">

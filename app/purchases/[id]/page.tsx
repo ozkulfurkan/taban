@@ -7,9 +7,8 @@ import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { postPayment } from '@/lib/post-payment';
 import { parseAmount } from '@/lib/money';
-import {
-  Loader2, Printer, Pencil, X, Building2, ChevronLeft, Factory, AlertTriangle,
-} from 'lucide-react';
+import BackLink from '@/app/components/back-link';
+import { Loader2, Printer, Pencil, X, Building2, Factory, AlertTriangle } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -65,7 +64,7 @@ export default function PurchaseDetailPage() {
     setConfirmModal({ message: 'Bu alış faturası silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Bu alışla eklenen hammadde ve ürün stokları geri alınacaktır.', onConfirm: async () => {
       setDeleting(true);
       await fetch(`/api/purchases/${params.id}`, { method: 'DELETE' });
-      router.back();
+      router.replace(`/suppliers/${purchase.supplierId}`);
     }});
   };
 
@@ -106,12 +105,10 @@ export default function PurchaseDetailPage() {
     <AppShell>
       <div className="space-y-3 max-w-6xl">
 
+        <BackLink href={`/suppliers/${purchase.supplierId}`} prefix="Tedarikçi" label={purchase.supplier?.name ?? ''} />
+
         {/* Action bar */}
         <div className="flex flex-wrap gap-2 items-center">
-          <button onClick={() => router.back()}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium">
-            <ChevronLeft className="w-4 h-4" /> Geri
-          </button>
           <button onClick={() => handlePdf(purchase)}
             className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium">
             <Printer className="w-4 h-4" /> Yazdır

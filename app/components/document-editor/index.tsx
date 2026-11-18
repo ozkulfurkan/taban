@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Pencil, Trash2, AlertTriangle, X, ChevronDown, Info } from 'lucide-react';
+import { Plus, Pencil, Trash2, AlertTriangle, X, ChevronDown, Info } from 'lucide-react';
 import { matchesText } from '@/lib/search';
 import { fmtQty } from '@/lib/stock-display';
 import { fromPriceInput, toPriceInput } from '@/lib/price-input';
@@ -10,6 +10,7 @@ import { CURRENCIES } from '@/lib/money';
 import { useLeaveGuard } from '@/lib/use-leave-guard';
 import { type DocKind, type DocLine, docTotals, emptyLine, lineNet, lineProblem } from '@/lib/document-lines';
 import StickySaveBar from '@/app/components/sticky-save-bar';
+import BackLink from '@/app/components/back-link';
 import LineModal from './line-modal';
 import QuickAddModal from './quick-add-modal';
 import StockConfirm, { stockImpact, type Deduction, type Shortage } from './stock-confirm';
@@ -100,14 +101,17 @@ export default function DocumentEditor({
     try { return localStorage.getItem('doc_editor_advanced') !== 'false'; } catch { return true; }
   });
   const prefilled = useRef(false);
+  const initialPartyId = initialHeader?.partyId;
 
   // Listeler
   useEffect(() => {
     const partyUrl = isPurchase ? '/api/suppliers' : '/api/customers';
     fetch(partyUrl).then(r => r.json()).then(async d => {
       const list = asList(d);
-      if (lockedPartyId && !list.some(p => p.id === lockedPartyId)) {
-        const one = await fetch(`${partyUrl}/${lockedPartyId}`).then(r => r.json()).catch(() => null);
+      // Liste sayfalı olabilir: kilitli ya da düzenlenen belgenin carisi listede yoksa ayrıca getir
+      const needed = lockedPartyId || initialPartyId;
+      if (needed && !list.some(p => p.id === needed)) {
+        const one = await fetch(`${partyUrl}/${needed}`).then(r => r.json()).catch(() => null);
         if (one?.id) list.unshift({ id: one.id, name: one.name, currency: one.currency });
       }
       setParties(list);
@@ -115,7 +119,7 @@ export default function DocumentEditor({
     fetch('/api/products').then(r => r.json()).then(d => setProducts(asList(d))).catch(() => {});
     fetch('/api/materials').then(r => r.json()).then(d => setMaterials(asList(d))).catch(() => {});
     if (isPurchase) fetch('/api/subcontractors').then(r => r.json()).then(d => setSubcontractors(asList(d))).catch(() => {});
-  }, [isPurchase, lockedPartyId]);
+  }, [isPurchase, lockedPartyId, initialPartyId]);
 
   useEffect(() => {
     if (prefilled.current || !prefillLines || products.length === 0) return;
@@ -142,7 +146,7 @@ export default function DocumentEditor({
   const vatRate = isPurchase ? 0 : parseFloat(header.vatRate) || 0;
   const totals = useMemo(() => docTotals(lines, vatRate), [lines, vatRate]);
 
-  const { guard, leave } = useLeaveGuard(!saving && (touched || (mode === 'new' && lines.length > 0)));
+  const { guard } = useLeaveGuard(!saving && (touched || (mode === 'new' && lines.length > 0)));
 
   // Arama: satışta ürünler, alışta hammadde + ürün
   const results = useMemo(() => {
@@ -195,7 +199,7 @@ export default function DocumentEditor({
     setSaveError('');
     try {
       const r = await onSubmit(header, lines, totals);
-      if (r.ok) { router.push(r.redirect); return; }
+      if (r.ok) { router.replace(r.redirect); return; } // düzenleme ekranı geçmişte kalmasın
       setStock(null);
       setSaveError(r.error);
       window.scrollTo?.({ top: 0, behavior: 'smooth' });
@@ -234,11 +238,13 @@ export default function DocumentEditor({
         </div>
       )}
 
-      <div className="flex items-center gap-3">
-        <button onClick={() => leave(() => router.back())}
-          className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium">
-          <ArrowLeft className="w-4 h-4" /> {tx('back')}
-        </button>
+      <div className="space-y-1 min-w-0">
+        {/* Geri: tarayıcı geçmişi yerine sabit olarak carinin sayfası (yoksa liste) */}
+        <BackLink
+          href={header.partyId ? `${isPurchase ? '/suppliers' : '/customers'}/${header.partyId}` : isPurchase ? '/purchases' : '/invoices'}
+          prefix={header.partyId ? (isPurchase ? tx('supplier') : tx('customer')) : undefined}
+          label={header.partyId ? party?.name ?? '…' : isPurchase ? tx('purchasesList') : tx('salesList')}
+        />
         <h1 className="text-lg font-bold text-slate-800 truncate">{title}</h1>
       </div>
 

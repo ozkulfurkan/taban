@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import SizeTable from '@/app/portal/components/size-table';
-import { ArrowLeft, Loader2, Save, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, AlertTriangle } from 'lucide-react';
+import BackLink from '@/app/components/back-link';
 
 export default function NewOrderPage() {
   const router = useRouter();
@@ -75,7 +76,7 @@ export default function NewOrderPage() {
       });
       const data = await res.json();
       if (data.id) {
-        router.push('/orders');
+        router.replace('/orders');
       } else {
         setErrorMsg(data.error || 'Hata oluştu');
       }
@@ -92,9 +93,7 @@ export default function NewOrderPage() {
         {/* Header */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-slate-600" />
-            </button>
+            <BackLink variant="icon" href="/orders" label="Siparişler" />
             <h1 className="text-xl font-bold text-slate-800">Yeni Sipariş</h1>
           </div>
           <button type="submit" disabled={saving || totalQty === 0 || !form.customerId}

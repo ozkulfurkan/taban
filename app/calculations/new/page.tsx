@@ -154,7 +154,7 @@ function NewCalculationForm() {
       });
       if (res.ok) {
         const data = await res.json();
-        router.push(`/calculations/${data.id}`);
+        router.replace(`/calculations/${data.id}`);
       }
     } catch (e) {
       console.error(e);

@@ -6,8 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import PortalShell from '../../components/portal-shell';
 import OrderStepper from '../../components/order-stepper';
 import SizeTable from '../../components/size-table';
-import { ArrowLeft, Loader2, RefreshCw, Truck } from 'lucide-react';
+import { Loader2, RefreshCw, Truck } from 'lucide-react';
 import { usePortalText } from '@/lib/i18n/portal';
+import BackLink from '@/app/components/back-link';
 
 export default function PortalOrderDetailPage() {
   const { tp } = usePortalText();
@@ -47,9 +48,7 @@ export default function PortalOrderDetailPage() {
       <div className="max-w-2xl mx-auto space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors">
-              <ArrowLeft className="w-5 h-5 text-slate-600" />
-            </button>
+            <BackLink variant="icon" href="/portal/orders" label="Siparişlerim" />
             <div>
               <h1 className="text-xl font-bold text-slate-800">{order.orderNo}</h1>
               <p className="text-xs text-slate-400">{new Date(order.createdAt).toLocaleDateString('tr-TR')}</p>

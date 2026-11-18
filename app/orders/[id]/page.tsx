@@ -6,10 +6,8 @@ import AppShell from '@/app/components/app-shell';
 import OrderStepper from '@/app/portal/components/order-stepper';
 import SizeTable from '@/app/portal/components/size-table';
 import Link from 'next/link';
-import {
-  ArrowLeft, Loader2, Save, Truck, ShoppingCart, Printer, X,
-  Factory, CheckCircle, AlertTriangle, Package,
-} from 'lucide-react';
+import BackLink from '@/app/components/back-link';
+import { Loader2, Save, Truck, ShoppingCart, Printer, X, Factory, CheckCircle, AlertTriangle, Package } from 'lucide-react';
 
 const ALL_STATUSES = [
   { key: 'ORDER_RECEIVED', label: 'Bekliyor' },
@@ -142,7 +140,7 @@ export default function OrderDetailPage() {
   const handleCancel = async () => {
     setConfirmModal({ message: 'Siparişi iptal etmek istediğinizden emin misiniz?', onConfirm: async () => {
       await fetch(`/api/orders/${params?.id}`, { method: 'DELETE' });
-      router.push('/orders');
+      router.replace('/orders');
     }});
   };
 
@@ -164,9 +162,7 @@ export default function OrderDetailPage() {
       <div className="max-w-5xl mx-auto space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3 flex-wrap">
-          <button onClick={() => router.back()} className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
-          </button>
+          <BackLink variant="icon" href="/orders" label="Siparişler" />
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-slate-800">{order.orderNo}</h1>
             <p className="text-xs text-slate-400">

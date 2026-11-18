@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { ArrowLeft, FileDown, Loader2, Package, Wrench, Paintbrush, TrendingUp, Pencil, Copy, FileText } from 'lucide-react';
+import { FileDown, Loader2, Package, Wrench, Paintbrush, TrendingUp, Pencil, Copy, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import BackLink from '@/app/components/back-link';
 
 function tr(text: string): string {
   return String(text ?? '')
@@ -21,7 +22,6 @@ function tr(text: string): string {
 export default function CalculationDetailPage() {
   const { t, formatCurrency } = useLanguage();
   const params = useParams();
-  const router = useRouter();
   const [calc, setCalc] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -90,9 +90,7 @@ export default function CalculationDetailPage() {
       <div className="space-y-6 max-w-4xl">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-              <ArrowLeft className="w-5 h-5 text-slate-600" />
-            </button>
+            <BackLink variant="icon" href="/calculations" label="Maliyet Hesaplamaları" />
             <div>
               <h1 className="text-2xl font-bold text-slate-800">{calc.name ?? ''}</h1>
               <p className="text-slate-500 text-sm">{calc.createdAt ? new Date(calc.createdAt).toLocaleDateString() : ''} • {calc.user?.name ?? ''}</p>
