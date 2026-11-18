@@ -1,0 +1,43 @@
+name: Mobile
+
+on:
+  pull_request:
+    paths: ['mobile/**', 'lib/**', '.github/workflows/mobile.yml']
+  push:
+    branches: [main]
+    paths: ['mobile/**', 'lib/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - name: Tip kontrolü
+        run: npm run typecheck
+      - name: Lint
+        run: npx expo lint
+      - name: Birim testleri
+        run: npm test
+      # Metro paketleri: ortak ../lib modüllerinin ve tüm ekranların iOS/Android'de derlendiğini doğrular
+      - name: iOS ve Android paketi
+        run: npx expo export --platform ios --platform android --output-dir /tmp/expo-dist
+        env:
+          EXPO_OFFLINE: '1'
+          CI: '1'
