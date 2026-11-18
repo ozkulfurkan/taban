@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
 import { rejectForeignRefs } from '@/lib/tenant';
+import { parseDateInput } from '@/lib/time';
+import { validateInvoiceInput } from '@/lib/invoice-input';
 
 async function getInvoice(id: string, companyId: string) {
   return prisma.invoice.findFirst({
@@ -63,33 +65,50 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   });
   if (foreign) return foreign;
 
+  let input: Extract<ReturnType<typeof validateInvoiceInput>, { ok: true }> | null = null;
+  if (items) {
+    const v = validateInvoiceInput({ ...rest, items }, { defaultVatRate: existing.vatRate });
+    if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
+    input = v;
+  } else if (rest.date && !parseDateInput(rest.date)) {
+    return NextResponse.json({ error: 'Fatura tarihi geçersiz' }, { status: 400 });
+  }
+
+  const newInvoiceNo = typeof rest.invoiceNo === 'string' && rest.invoiceNo.trim() ? rest.invoiceNo.trim() : existing.invoiceNo;
+  if (newInvoiceNo !== existing.invoiceNo &&
+      await prisma.invoice.findFirst({ where: { companyId: user.companyId, invoiceNo: newInvoiceNo, NOT: { id: existing.id } }, select: { id: true } })) {
+    return NextResponse.json({ error: `${newInvoiceNo} numaralı fatura zaten var` }, { status: 409 });
+  }
+
   let updateData: any = {
     customerId: rest.customerId ?? existing.customerId,
-    invoiceNo: rest.invoiceNo ?? existing.invoiceNo,
+    invoiceNo: newInvoiceNo,
     date: rest.date ? (() => {
-      const incoming = new Date(rest.date);
+      const incoming = parseDateInput(rest.date)!;
       const orig = new Date(existing.date as Date);
-      // Preserve original time-of-day so sort order within the same day is stable
-      incoming.setUTCHours(orig.getUTCHours(), orig.getUTCMinutes(), orig.getUTCSeconds(), orig.getUTCMilliseconds());
+      // Aynı gün içindeki sıralama bozulmasın diye orijinal saat korunur
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(rest.date))) {
+        const istDay = new Date(incoming.getTime() + 3 * 60 * 60 * 1000);
+        const origIst = new Date(orig.getTime() + 3 * 60 * 60 * 1000);
+        istDay.setUTCHours(origIst.getUTCHours(), origIst.getUTCMinutes(), origIst.getUTCSeconds(), origIst.getUTCMilliseconds());
+        return new Date(istDay.getTime() - 3 * 60 * 60 * 1000);
+      }
       return incoming;
     })() : existing.date,
-    dueDate: rest.dueDate ? new Date(rest.dueDate) : existing.dueDate,
+    dueDate: rest.dueDate ? parseDateInput(rest.dueDate) : existing.dueDate,
     currency: rest.currency ?? existing.currency,
     notes: rest.notes !== undefined ? rest.notes : existing.notes,
     status: rest.status ?? existing.status,
   };
 
-  if (items) {
-    const subtotal = items.reduce((s: number, i: any) => {
-      const qty = parseFloat(i.quantity) || 0;
-      const price = parseFloat(i.unitPrice) || 0;
-      const disc = parseFloat(i.discount) || 0;
-      return s + qty * price * (1 - disc / 100);
-    }, 0);
-    const vatRate = parseFloat(rest.vatRate) ?? existing.vatRate;
-    const vatAmount = subtotal * vatRate / 100;
-    const total = subtotal + vatAmount;
+  if (input) {
+    // Tutarlar pozitif saklanır (iade faturasında da); ödeme durumu yeni toplama göre güncellenir
+    const { subtotal, vatRate, vatAmount, total } = input;
     updateData = { ...updateData, subtotal, vatRate, vatAmount, total };
+    if (!rest.status && !['CANCELLED', 'DRAFT'].includes(existing.status)) {
+      const paid = existing.paidAmount;
+      updateData.status = paid <= 0 ? 'PENDING' : paid < total - 0.005 ? 'PARTIAL' : 'PAID';
+    }
   }
 
   const invoice = await prisma.$transaction(async (tx) => {
@@ -112,31 +131,32 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         }
       }
 
+      // Ürün stoğu: eski kalemlerin etkisini geri al, yenilerini uygula
+      // (satış stoğu düşürür, iade artırır)
+      const dir = existing.isReturn ? 1 : -1;
+      const stockDelta = new Map<string, number>();
+      for (const old of existing.items) {
+        if (old.productId) stockDelta.set(old.productId, (stockDelta.get(old.productId) ?? 0) - dir * old.quantity);
+      }
+      for (const line of input!.lines) {
+        if (line.productId) stockDelta.set(line.productId, (stockDelta.get(line.productId) ?? 0) + dir * line.quantity);
+      }
+      for (const [productId, delta] of Array.from(stockDelta.entries())) {
+        if (Math.abs(delta) < 1e-9) continue;
+        await tx.product.updateMany({
+          where: { id: productId, companyId: user.companyId },
+          data: { stock: { increment: delta } },
+        });
+      }
+
       await tx.invoiceItem.deleteMany({ where: { invoiceId: params.id } });
       await tx.invoiceItem.createMany({
-        data: items.map((i: any) => {
-          const qty = parseFloat(i.quantity) || 0;
-          const price = parseFloat(i.unitPrice) || 0;
-          const disc = parseFloat(i.discount) || 0;
-          return {
-            invoiceId: params.id,
-            productId: i.productId || null,
-            description: i.description,
-            quantity: qty,
-            unitPrice: price,
-            discount: disc,
-            total: qty * price * (1 - disc / 100),
-            notes: i.notes || null,
-            partVariantsData: Array.isArray(i.partVariantsData) && i.partVariantsData.length > 0
-              ? i.partVariantsData
-              : undefined,
-          };
-        }),
+        data: input!.lines.map(line => ({ ...line, invoiceId: params.id })),
       });
 
       // Yeni hammadde stoğunu düş (stok daha önce düşüldüyse, sadece SOLE_MANUFACTURER)
       if (existing.stockDeducted && !existing.isReturn && user.companyType !== 'MATERIAL_SUPPLIER') {
-        const newProductItems = items.filter((i: any) => i.productId);
+        const newProductItems = input!.lines.filter((i): i is typeof i & { productId: string } => !!i.productId);
         if (newProductItems.length > 0) {
           const seen = new Set<string>();
           const uniqueIds: string[] = [];
@@ -147,7 +167,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           });
           const materialMap = new Map<string, number>();
           for (const item of newProductItems) {
-            const qty = parseFloat(item.quantity) || 0;
+            const qty = item.quantity;
             const product = products.find((p: any) => p.id === item.productId);
             if (!product) continue;
             const pvData: Array<{ partId: string; materialId: string }> =

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -58,17 +59,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Konu ve açıklama zorunludur' }, { status: 400 });
     }
 
-    const now = new Date();
-    const year = now.getFullYear();
-    const prefix = `TKT-${year}-`;
+    const prefix = `TKT-${documentYear()}-`;
 
     const ticket = await prisma.$transaction(async (tx) => {
-      const last = await tx.supportTicket.findFirst({
-        where: { companyId: user.companyId, ticketNo: { startsWith: prefix } },
-        orderBy: { ticketNo: 'desc' },
-      });
-      const seq = last ? parseInt(last.ticketNo.split('-')[2]) + 1 : 1;
-      const ticketNo = `${prefix}${String(seq).padStart(4, '0')}`;
+      const ticketNo = await nextDocumentNumber('ticket', user.companyId, prefix, { db: tx });
 
       const t = await tx.supportTicket.create({
         data: {

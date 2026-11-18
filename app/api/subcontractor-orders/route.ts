@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { rejectForeignRefs } from '@/lib/tenant';
+import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -55,13 +56,7 @@ export async function POST(req: NextRequest) {
   );
 
   // Auto-generate orderNo: FAS-YYYY-NNN
-  const year = new Date().getFullYear();
-  const last = await prisma.subcontractorOrder.findFirst({
-    where: { companyId: user.companyId, orderNo: { startsWith: `FAS-${year}-` } },
-    orderBy: { orderNo: 'desc' },
-  });
-  const seq = last ? parseInt(last.orderNo.split('-')[2]) + 1 : 1;
-  const orderNo = `FAS-${year}-${String(seq).padStart(3, '0')}`;
+  const orderNo = await nextDocumentNumber('subcontractorOrder', user.companyId, `FAS-${documentYear()}-`, { pad: 3 });
 
   const order = await prisma.subcontractorOrder.create({
     data: {

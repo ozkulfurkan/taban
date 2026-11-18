@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { rejectForeignRefs } from '@/lib/tenant';
+import { parseAmount } from '@/lib/money';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -43,6 +44,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   });
   if (foreign) return foreign;
 
+  // Stok: form yüklendiğindeki değer (stockLoaded) geldiyse sadece kullanıcının yaptığı
+  // değişiklik uygulanır; aradaki fatura/stok hareketleri ezilmez.
+  const newStock = productFields.stock === undefined || productFields.stock === '' ? NaN : parseAmount(productFields.stock);
+  const loadedStock = productFields.stockLoaded === undefined ? NaN : parseAmount(productFields.stockLoaded);
+  const stockChange = !Number.isFinite(newStock)
+    ? {}
+    : Number.isFinite(loadedStock)
+      ? (Math.abs(newStock - loadedStock) > 1e-9 ? { stock: { increment: newStock - loadedStock } } : {})
+      : { stock: newStock };
+
   await prisma.$transaction(async (tx) => {
     await tx.product.updateMany({
       where: { id: params.id, companyId: user.companyId },
@@ -53,7 +64,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         unit: productFields.unit || 'çift',
         unitPrice: parseFloat(productFields.unitPrice) || 0,
         currency: productFields.currency || 'USD',
-        stock: parseFloat(productFields.stock) || 0,
+        ...stockChange,
         notes: productFields.notes || null,
         categoryId: productFields.categoryId || null,
         sizes: Array.isArray(productFields.sizes) ? productFields.sizes : [],
