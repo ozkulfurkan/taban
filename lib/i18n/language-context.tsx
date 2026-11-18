@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { translations, Language } from './translations';
 
 interface LanguageContextType {
@@ -19,16 +20,37 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>('tr');
   const [currency, setCurrency] = useState<string>('USD');
 
+  // Dil önceliği: hesaptaki dil (Ayarlar) → bu tarayıcıda seçilen → tarayıcı dili.
+  // Hesap dili her cihazda geçerli olsun diye oturumdan okunur; portal kullanıcılarının
+  // hesabında dil yoktur, onlar için tarayıcı dili kullanılır (yabancı müşteriler İngilizce görür).
+  const { data: session } = useSession() || {};
+  const accountLanguage = (session?.user as any)?.language;
+
   useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('app-language') : null;
+    let stored: string | null = null;
+    try { stored = localStorage.getItem('app-language'); } catch {}
     if (stored === 'en' || stored === 'tr') setLanguage(stored);
-    const storedCur = typeof window !== 'undefined' ? localStorage.getItem('app-currency') : null;
+    else if (typeof navigator !== 'undefined' && !navigator.language?.toLowerCase().startsWith('tr')) setLanguage('en');
+    let storedCur: string | null = null;
+    try { storedCur = localStorage.getItem('app-currency'); } catch {}
     if (storedCur) setCurrency(storedCur);
   }, []);
 
+  useEffect(() => {
+    if (accountLanguage === 'tr' || accountLanguage === 'en') {
+      setLanguage(accountLanguage);
+      try { localStorage.setItem('app-language', accountLanguage); } catch {}
+    }
+  }, [accountLanguage]);
+
+  // <html lang> dile göre: büyük harfe çevirme Türkçe kurala göre yapılmasın ("COMMERCİAL")
+  useEffect(() => {
+    if (typeof document !== 'undefined') document.documentElement.lang = language;
+  }, [language]);
+
   const handleSetLanguage = useCallback((lang: Language) => {
     setLanguage(lang);
-    if (typeof window !== 'undefined') localStorage.setItem('app-language', lang);
+    try { localStorage.setItem('app-language', lang); } catch {}
   }, []);
 
   const handleSetCurrency = useCallback((c: string) => {

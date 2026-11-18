@@ -11,6 +11,12 @@ export async function PUT(req: NextRequest) {
 
     const body = await req.json();
     const { name, language, currency } = body ?? {};
+    if (language !== undefined && !['tr', 'en'].includes(language)) {
+      return NextResponse.json({ error: 'Dil tr veya en olmalı' }, { status: 400 });
+    }
+    if (currency !== undefined && !['TRY', 'USD', 'EUR'].includes(currency)) {
+      return NextResponse.json({ error: 'Para birimi TRY, USD veya EUR olmalı' }, { status: 400 });
+    }
 
     const updated = await prisma.user.update({
       where: { id: session.user.id },

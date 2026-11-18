@@ -1,4 +1,5 @@
 'use client';
+import { usePortalText } from '@/lib/i18n/portal';
 
 const STEPS = [
   { key: 'ORDER_RECEIVED', label: 'Sipariş Alındı' },
@@ -11,6 +12,7 @@ const STEPS = [
 ];
 
 export default function OrderStepper({ status }: { status: string }) {
+  const { tp } = usePortalText();
   const currentIdx = STEPS.findIndex(s => s.key === status);
 
   return (
@@ -35,7 +37,7 @@ export default function OrderStepper({ status }: { status: string }) {
                 </div>
                 <span className={`mt-1.5 text-xs font-medium whitespace-nowrap ${
                   active ? 'text-blue-600' : done ? 'text-slate-600' : 'text-slate-400'
-                }`}>{step.label}</span>
+                }`}>{tp(step.label)}</span>
               </div>
               {i < STEPS.length - 1 && (
                 <div className={`h-0.5 w-10 mx-1 mb-5 transition-all ${i < currentIdx ? 'bg-blue-600' : 'bg-slate-200'}`} />

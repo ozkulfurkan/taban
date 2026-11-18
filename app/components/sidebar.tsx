@@ -35,8 +35,8 @@ export default function Sidebar() {
       links: [
         { href: '/dashboard', label: t('nav', 'home'), icon: LayoutDashboard },
         ...(isMaterial
-          ? [{ href: '/hesaplayici', label: 'Hesaplayıcı', icon: Calculator, special: true }]
-          : [{ href: '/products/new?from=maliyet', label: 'Maliyet Hesaplama', icon: Calculator, special: true }]
+          ? [{ href: '/hesaplayici', label: t('nav', 'calculator'), icon: Calculator, special: true }]
+          : [{ href: '/products/new?from=maliyet', label: t('nav', 'costCalc'), icon: Calculator, special: true }]
         ),
       ],
     },
@@ -46,11 +46,11 @@ export default function Sidebar() {
         { href: '/customers', label: t('nav', 'customers'), icon: Users },
         { href: '/suppliers', label: t('nav', 'suppliers'), icon: Truck },
         { href: '/invoices', label: t('nav', 'sales'), icon: Receipt },
-        { href: '/purchases', label: 'Alışlar', icon: Package },
+        { href: '/purchases', label: t('nav', 'purchases'), icon: Package },
       ],
     },
     {
-      title: 'Stok & Hesaplar',
+      title: t('nav', 'stockAccounts'),
       links: [
         { href: '/products', label: t('nav', 'products'), icon: BoxIcon },
         ...(!isMaterial ? [{ href: '/materials', label: t('nav', 'rawMaterials'), icon: Package }] : []),
@@ -59,13 +59,13 @@ export default function Sidebar() {
       ],
     },
     {
-      title: 'Operasyonlar',
+      title: t('nav', 'operations'),
       links: [
-        ...(!isMaterial ? [{ href: '/orders', label: 'Siparişler', icon: ClipboardList }] : []),
-        ...(!isMaterial ? [{ href: '/subcontractors', label: 'Fasoncular', icon: Factory }] : []),
-        ...(!isMaterial ? [{ href: '/subcontractor-orders', label: 'Fason Siparişleri', icon: Factory }] : []),
-        { href: '/personnel', label: 'Personel Takip', icon: UserCheck },
-        ...(isAdmin || isOwner ? [{ href: '/portal-admin', label: 'Müşteri Portalı', icon: Globe }] : []),
+        ...(!isMaterial ? [{ href: '/orders', label: t('nav', 'orders'), icon: ClipboardList }] : []),
+        ...(!isMaterial ? [{ href: '/subcontractors', label: t('nav', 'subcontractors'), icon: Factory }] : []),
+        ...(!isMaterial ? [{ href: '/subcontractor-orders', label: t('nav', 'subcontractorOrders'), icon: Factory }] : []),
+        { href: '/personnel', label: t('nav', 'personnel'), icon: UserCheck },
+        ...(isAdmin || isOwner ? [{ href: '/portal-admin', label: t('nav', 'customerPortal'), icon: Globe }] : []),
       ],
     },
     {
@@ -73,8 +73,8 @@ export default function Sidebar() {
       links: [
         { href: '/settings', label: t('nav', 'settings'), icon: Settings },
         ...(isAdmin || isOwner ? [{ href: '/settings/users', label: t('nav', 'users'), icon: UserCog }] : []),
-        ...(isAdmin ? [{ href: '/logs', label: 'Log Kayıtları', icon: ClipboardList }] : []),
-        ...(isAdmin ? [{ href: '/admin/destek', label: 'Destek Yönetimi', icon: LifeBuoy }] : []),
+        ...(isAdmin ? [{ href: '/logs', label: t('nav', 'logs'), icon: ClipboardList }] : []),
+        ...(isAdmin ? [{ href: '/admin/destek', label: t('nav', 'supportAdmin'), icon: LifeBuoy }] : []),
         ...(isAdmin ? [{ href: '/admin', label: t('nav', 'admin'), icon: Shield }] : []),
       ],
     },
@@ -87,10 +87,10 @@ export default function Sidebar() {
   };
 
   const bottomTabs = [
-    { href: '/dashboard', label: 'Ana Sayfa', icon: LayoutDashboard },
-    { href: '/customers', label: 'Ticari', icon: Users },
-    { href: '/products', label: 'Stok', icon: BoxIcon },
-    { href: '/accounts', label: 'Hesaplar', icon: Landmark },
+    { href: '/dashboard', label: t('nav', 'home'), icon: LayoutDashboard },
+    { href: '/customers', label: t('nav', 'commercial'), icon: Users },
+    { href: '/products', label: t('nav', 'mobileStock'), icon: BoxIcon },
+    { href: '/accounts', label: t('nav', 'mobileAccounts'), icon: Landmark },
   ];
 
   const NavLink = ({ link }: { link: LinkItem }) => {
@@ -212,7 +212,7 @@ export default function Sidebar() {
           className="flex-1 flex flex-col items-center py-2 gap-0.5 text-xs text-blue-300/60 hover:text-blue-200 transition-colors"
         >
           <Menu className="w-5 h-5" />
-          <span>Menü</span>
+          <span>{t('nav', 'menu')}</span>
         </button>
       </nav>
 

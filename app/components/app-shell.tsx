@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Sidebar from './sidebar';
 import { Loader2, ChevronDown, LogOut, User, Clock, AlertTriangle, LifeBuoy, X, Sparkles, Wrench } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 function UserMenu() {
   const { data: session } = useSession() || {};
@@ -56,6 +57,7 @@ function UserMenu() {
 
 function DestekLink() {
   const { data: session } = useSession() || {};
+  const { t } = useLanguage();
   const user = session?.user as any;
   if (!user || user.role === 'ADMIN') return null;
   return (
@@ -64,7 +66,7 @@ function DestekLink() {
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
     >
       <LifeBuoy className="w-4 h-4 text-blue-500" />
-      <span className="hidden sm:block">Destek Merkezi</span>
+      <span className="hidden sm:block">{t('nav', 'supportCenter')}</span>
     </Link>
   );
 }
