@@ -11,6 +11,7 @@ import FitText from '@/app/components/fit-text';
 import MoreMenu from '@/app/components/more-menu';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
+import { totalsByCurrency } from '@/lib/cek';
 
 function nowIstanbulISO(): string {
   const now = new Date();
@@ -580,7 +581,6 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
   const [showTanim, setShowTanim] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const totalTutar = checks.reduce((s, c) => s + parseFloat(c.tutar), 0);
   const avgVade = calcAvgVade(checks);
 
   const handleSave = async () => {
@@ -677,7 +677,7 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
                 </table>
                 {/* Totals */}
                 <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-wrap gap-6 text-sm">
-                  <div><span className="text-slate-500 font-medium">Toplam Tutar: </span><span className="font-bold">{fmt(totalTutar)} TL</span></div>
+                  <div><span className="text-slate-500 font-medium">Toplam Tutar: </span><span className="font-bold">{totalsByCurrency(checks.map(c => ({ tutar: parseFloat(c.tutar) || 0, currency: c.currency }))).map(x => `${fmt(x.total)} ${x.currency}`).join(' + ')}</span></div>
                   {avgVade && (
                     <div>
                       <span className="text-slate-500 font-medium">Ortalama Vade: </span>

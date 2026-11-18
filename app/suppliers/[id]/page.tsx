@@ -14,6 +14,7 @@ import MoreMenu from '@/app/components/more-menu';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
 import { convertAmount, type Rates } from '@/lib/fx';
+import { totalsByCurrency } from '@/lib/cek';
 
 function nowIstanbulISO(): string {
   const now = new Date();
@@ -811,7 +812,7 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
                 </table>
                 {/* Summary */}
                 <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-wrap gap-6 text-sm">
-                  <div><span className="text-slate-500 font-medium">Toplam Tutar: </span><span className="font-bold">{fmtC(totalTutar)} TL</span></div>
+                  <div><span className="text-slate-500 font-medium">Toplam Tutar: </span><span className="font-bold">{totalsByCurrency(allChecks).map(x => `${fmtC(x.total)} ${x.currency}`).join(' + ')}</span></div>
                   {avgVade && (
                     <div><span className="text-slate-500 font-medium">Ortalama Vade: </span>
                       <span className="font-bold">{fmtDateC(avgVade.date)} ({avgVade.days} gün)</span></div>
@@ -1139,7 +1140,7 @@ export default function SupplierDetailPage() {
               </div>
               <p className="text-lg font-bold text-slate-800">Ödeme Tamamlandı</p>
               <p className="text-slate-600 text-sm">
-                <span className="font-semibold">{successAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TRY</span> ödendi
+                <span className="font-semibold">{successAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {supplier.currency || 'TRY'}</span> ödendi
               </p>
               <button onClick={() => setSuccessAmount(null)}
                 className="mt-1 px-6 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium">
