@@ -17,7 +17,13 @@ test('büyük tutar müşteri kartına sığar, silme menünün içindedir', asy
   const amount = page.getByTitle('9.999.999.900.000,00').first();
   await expect(amount).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
-  await expect.poll(() => amount.evaluate(el => el.scrollWidth <= el.clientWidth + 1), { message: 'tutar kutudan taşmamalı' }).toBe(true);
+  // Ölçüm bilgisi hata mesajında görünsün (ortam farklarını teşhis için)
+  const measure = () => amount.evaluate(el => {
+    const cs = getComputedStyle(el);
+    return { scroll: el.scrollWidth, client: el.clientWidth, fontSize: cs.fontSize, font: cs.fontFamily.slice(0, 40), fontsLoaded: document.fonts.status };
+  });
+  await expect.poll(async () => { const m = await measure(); return m.scroll <= m.client + 1 ? 'sığıyor' : JSON.stringify(m); },
+    { message: 'tutar kutudan taşmamalı' }).toBe('sığıyor');
   // Sayfa yatay kaymamalı
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 
