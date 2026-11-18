@@ -7,6 +7,7 @@ import { parseAmount, round2 } from '@/lib/money';
 import { logAction, getIp } from '@/lib/audit-logger';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
+import { validatePurchaseLines, applyPurchaseLines, type PurchaseLine } from '@/lib/purchase-lines';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -65,28 +66,30 @@ export async function POST(req: NextRequest) {
     currency = supplier.currency;
   }
 
-  const parseNum = (v: any) => { const n = parseAmount(v); return Number.isFinite(n) ? n : 0; };
-  for (let k = 0; k < items.length; k++) {
-    const q = parseAmount(items[k]?.qty), u = parseAmount(items[k]?.unitPrice);
-    if (!(q > 0)) return NextResponse.json({ error: `${k + 1}. kalem: miktar 0'dan büyük olmalı` }, { status: 400 });
-    if (!(u >= 0)) return NextResponse.json({ error: `${k + 1}. kalem: birim fiyat geçersiz` }, { status: 400 });
+  // Kalemli alış: toplam kalemlerden hesaplanır. Kalemsiz (eski kullanım) sadece toplam.
+  let lines: PurchaseLine[] = [];
+  let computedTotal: number;
+  if (Array.isArray(items) && items.length > 0) {
+    const v = validatePurchaseLines(items);
+    if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
+    lines = v.lines;
+    computedTotal = v.total;
+  } else {
+    const n = parseAmount(total);
+    computedTotal = round2(Number.isFinite(n) ? n : 0);
   }
-
-  const computedTotal = round2(items.length > 0
-    ? items.reduce((s: number, i: any) => s + round2(parseNum(i.qty) * parseNum(i.unitPrice)), 0)
-    : parseNum(total));
-
-  if (computedTotal <= 0) return NextResponse.json({ error: 'Invalid total' }, { status: 400 });
+  if (!(computedTotal > 0)) return NextResponse.json({ error: 'Alış toplamı 0 olamaz' }, { status: 400 });
 
   const alfPrefix = `ALF-${documentYear(parseDateInput(date) ?? new Date())}-`;
+  const manualNo = typeof invoiceNo === 'string' && invoiceNo.trim() ? invoiceNo.trim() : null;
+  if (manualNo && await prisma.purchase.findFirst({ where: { companyId: user.companyId, invoiceNo: manualNo }, select: { id: true } })) {
+    return NextResponse.json({ error: `${manualNo} numaralı alış zaten var` }, { status: 409 });
+  }
 
   try {
   const purchase = await prisma.$transaction(async (tx) => {
-    let resolvedInvoiceNo = invoiceNo as string | undefined;
-    if (!resolvedInvoiceNo) {
-      resolvedInvoiceNo = await nextDocumentNumber('purchase', user.companyId, alfPrefix, { db: tx });
-    }
-    return tx.purchase.create({
+    const resolvedInvoiceNo = manualNo ?? await nextDocumentNumber('purchase', user.companyId, alfPrefix, { db: tx });
+    const created = await tx.purchase.create({
       data: {
         companyId: user.companyId,
         supplierId,
@@ -97,71 +100,10 @@ export async function POST(req: NextRequest) {
         notes: notes || null,
       },
     });
+    // Kalemler ve stok artışları aynı işlemde: biri başarısız olursa alış da oluşmaz
+    await applyPurchaseLines(tx, user.companyId, created.id, lines);
+    return created;
   });
-
-  // Handle items: update product/material stock and create PurchaseMaterial records
-  const ops: Promise<any>[] = [];
-
-  for (const i of items) {
-    const qty = parseNum(i.qty);
-    const unitPrice = parseNum(i.unitPrice);
-
-    if (i.productId) {
-      ops.push(prisma.product.updateMany({
-        where: { id: i.productId, companyId: user.companyId },
-        data: { stock: { increment: qty } },
-      }));
-      ops.push((prisma.purchaseMaterial as any).create({
-        data: {
-          purchaseId: purchase.id,
-          productId: i.productId,
-          materialId: null,
-          kgAmount: qty,
-          pricePerKg: unitPrice || null,
-        },
-      }));
-    }
-
-    if (i.materialId) {
-      ops.push(prisma.purchaseMaterial.create({
-        data: {
-          purchaseId: purchase.id,
-          materialId: i.materialId,
-          subcontractorId: i.subcontractorId || null,
-          kgAmount: qty,
-          pricePerKg: unitPrice || null,
-        },
-      }));
-
-      if (i.subcontractorId) {
-        // Fasoncu deposuna yönlendir: SubcontractorStock upsert
-        ops.push(
-          prisma.subcontractorStock.findFirst({
-            where: { subcontractorId: i.subcontractorId, materialId: i.materialId },
-          }).then(existing => {
-            if (existing) {
-              return prisma.subcontractorStock.update({
-                where: { id: existing.id },
-                data: { quantity: { increment: qty } },
-              });
-            }
-            return prisma.subcontractorStock.create({
-              data: { subcontractorId: i.subcontractorId, materialId: i.materialId, quantity: qty },
-            });
-          })
-        );
-      } else {
-        ops.push(prisma.material.updateMany({
-          where: { id: i.materialId, companyId: user.companyId },
-          data: { stock: { increment: qty } },
-        }));
-      }
-    }
-  }
-
-  if (ops.length > 0) {
-    await Promise.all(ops);
-  }
 
   await logAction({
     companyId: user.companyId,
@@ -170,7 +112,7 @@ export async function POST(req: NextRequest) {
     action: 'CREATE',
     entity: 'Purchase',
     entityId: purchase.id,
-    detail: `Alış kaydedildi — ${invoiceNo ?? purchase.id} ${computedTotal} ${purchase.currency}`,
+    detail: `Alış kaydedildi — ${purchase.invoiceNo ?? purchase.id} ${computedTotal} ${purchase.currency}`,
     meta: { total: computedTotal, currency: purchase.currency },
     ip: getIp(req),
   });

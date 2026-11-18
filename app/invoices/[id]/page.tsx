@@ -5,222 +5,18 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
-import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
+
 import { postPayment } from '@/lib/post-payment';
 import { parseAmount } from '@/lib/money';
 import {
-  Loader2, Printer, Pencil, X, CreditCard, User,
-  Plus, Trash2, Save, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers, Search, AlertTriangle,
+  Loader2, Printer, Pencil, X, CreditCard, User, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers, AlertTriangle,
 } from 'lucide-react';
-import { matchesText } from '@/lib/search';
 import DecimalInput from '@/app/components/decimal-input';
-
-interface EditLineItem {
-  productId?: string;
-  description: string;
-  quantity: string;
-  unitPrice: string;
-  discount: string;
-  notes: string;
-  partVariantsData?: Array<{ partId: string; materialId: string }>;
-}
-
-function ItemModal({ initial, currency, products, materials, onConfirm, onClose }: {
-  initial: EditLineItem; currency: string; products: any[]; materials: any[];
-  onConfirm: (item: EditLineItem) => void; onClose: () => void;
-}) {
-  const [item, setItem] = useState<EditLineItem>({ ...initial });
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [partMaterials, setPartMaterials] = useState<Record<string, string>>(() => {
-    const map: Record<string, string> = {};
-    if (initial.partVariantsData) {
-      for (const pv of initial.partVariantsData) map[pv.partId] = pv.materialId;
-    }
-    return map;
-  });
-  const set = (field: keyof EditLineItem, val: string) => setItem(p => ({ ...p, [field]: val }));
-
-  const handleProductSelect = (productId: string) => {
-    if (!productId) { setSelectedProduct(null); setPartMaterials({}); return; }
-    const p = products.find((p: any) => p.id === productId);
-    if (!p) return;
-    setSelectedProduct(p);
-    const unitPrice = p.currency === currency ? toPriceInput(p.unitPrice) : '';
-    setItem(prev => ({ ...prev, productId: p.id, description: p.name, unitPrice }));
-    const defaults: Record<string, string> = {};
-    for (const part of (p.parts ?? [])) {
-      if (part.materialId) defaults[part.id] = part.materialId;
-    }
-    setPartMaterials(defaults);
-  };
-
-  useEffect(() => {
-    if (initial.productId && !selectedProduct) {
-      const p = products.find((p: any) => p.id === initial.productId);
-      if (p) {
-        setSelectedProduct(p);
-        if (!initial.partVariantsData || initial.partVariantsData.length === 0) {
-          const defaults: Record<string, string> = {};
-          for (const part of (p.parts ?? [])) {
-            if (part.materialId) defaults[part.id] = part.materialId;
-          }
-          setPartMaterials(defaults);
-        }
-      }
-    }
-  }, []);
-
-  const qty = fromPriceInput(item.quantity);
-  const price = fromPriceInput(item.unitPrice);
-  const disc = fromPriceInput(item.discount);
-  const gross = qty * price;
-  const discAmount = gross * disc / 100;
-  const total = gross - discAmount;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col">
-        <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
-          <h3 className="text-white font-semibold text-base">{item.description || 'Ürün / Hizmet'}</h3>
-          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
-        </div>
-        <div className="p-5 space-y-4 overflow-y-auto flex-1">
-          {products.length > 0 && (
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ürün Kataloğundan Seç</label>
-              <select value={item.productId ?? ''} onChange={e => handleProductSelect(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
-                <option value="">Manuel Giriş</option>
-                {products.map(p => <option key={p.id} value={p.id}>{p.code ? `[${p.code}] ${p.name}` : p.name}</option>)}
-              </select>
-            </div>
-          )}
-          {!item.productId && (
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ürün Adı</label>
-              <input value={item.description} onChange={e => set('description', e.target.value)} placeholder="Açıklama girin"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Miktar</label>
-              <input type="text" inputMode="decimal" value={item.quantity}
-                onChange={e => set('quantity', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none" />
-            </div>
-            {!(selectedProduct && (selectedProduct.parts ?? []).length > 0) && (
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Stok</label>
-                <div className={`px-3 py-2 border rounded-lg text-sm ${
-                  selectedProduct
-                    ? selectedProduct.stock <= 0
-                      ? 'bg-red-50 border-red-200 text-red-600 font-medium'
-                      : 'bg-green-50 border-green-200 text-green-700 font-medium'
-                    : 'bg-slate-50 border-slate-200 text-slate-400'
-                }`}>
-                  {selectedProduct ? `${selectedProduct.stock} ${selectedProduct.unit}` : '—'}
-                </div>
-              </div>
-            )}
-          </div>
-          {selectedProduct && (selectedProduct.parts ?? []).length > 0 && (
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-600">Hammadde Seçimi</label>
-              {(selectedProduct.parts as any[]).map((part: any) => {
-                const selectedMatId = partMaterials[part.id] ?? '';
-                const selectedMat = materials.find(m => m.id === selectedMatId);
-                const stock = selectedMat?.stock ?? part.material?.stock ?? null;
-                return (
-                  <div key={part.id} className="flex items-center gap-2">
-                    <span className="w-24 flex-shrink-0 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1.5 rounded-lg text-center truncate">{part.name}</span>
-                    <select
-                      value={selectedMatId}
-                      onChange={e => setPartMaterials(prev => ({ ...prev, [part.id]: e.target.value }))}
-                      className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
-                    >
-                      <option value="">— Seç —</option>
-                      {materials.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                    </select>
-                    <div className={`w-24 flex-shrink-0 px-2 py-1.5 border rounded-lg text-xs text-right ${
-                      stock === null ? 'bg-slate-50 border-slate-200 text-slate-400' :
-                      stock <= 0 ? 'bg-red-50 border-red-200 text-red-600 font-medium' :
-                      'bg-green-50 border-green-200 text-green-700 font-medium'
-                    }`}>
-                      {stock !== null ? `${stock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : '—'}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Birim Fiyat</label>
-              <div className="flex">
-                <input type="text" inputMode="decimal" value={item.unitPrice}
-                  onChange={e => set('unitPrice', normalizePriceInput(e.target.value))}
-                  onKeyDown={blockDot}
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0" />
-                <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs font-semibold text-slate-600 flex items-center">{currency}</span>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">İndirim (%)</label>
-              <div className="flex">
-                <input type="text" inputMode="decimal" value={item.discount}
-                  onChange={e => set('discount', normalizePriceInput(e.target.value))}
-                  onKeyDown={blockDot}
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-l-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none min-w-0" />
-                <span className="px-2 py-2 bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-xs text-slate-500 flex items-center">%</span>
-              </div>
-            </div>
-          </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs text-slate-500">Brüt</span>
-              <span className="text-sm text-slate-600">{gross.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
-            </div>
-            <div className="flex justify-between items-center border-t border-amber-200 pt-2 mt-1">
-              <span className="text-sm font-bold text-slate-700">TOPLAM</span>
-              <span className="text-lg font-bold text-slate-800">{total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama (isteğe bağlı)</label>
-            <input value={item.notes} onChange={e => set('notes', e.target.value)} placeholder="Açıklama girin"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
-          </div>
-        </div>
-        <div className="px-5 pb-4 pt-3 border-t border-slate-100 flex-shrink-0">
-          <button type="button" onClick={() => {
-            if (item.description || item.unitPrice) {
-              const pvd = Object.entries(partMaterials)
-                .filter(([, matId]) => matId)
-                .map(([partId, materialId]) => ({ partId, materialId }));
-              onConfirm({ ...item, partVariantsData: pvd.length > 0 ? pvd : undefined });
-            }
-          }}
-            disabled={!item.description && !item.unitPrice}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
-            <CheckCircle className="w-4 h-4" /> Güncelle
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
-const toInput = (d: string | Date | null) => toDateInputValue(d);
 
 const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı', 'POS'];
-
-function emptyItem(): EditLineItem {
-  return { description: '', quantity: '1', unitPrice: '', discount: '0', notes: '' };
-}
 
 export default function InvoiceDetailPage() {
   const params = useParams();
@@ -228,23 +24,10 @@ export default function InvoiceDetailPage() {
 
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [showPayForm, setShowPayForm] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
-
-  const [products, setProducts] = useState<any[]>([]);
-  const [materials, setMaterials] = useState<any[]>([]);
-  const [productSearch, setProductSearch] = useState('');
-  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const [itemModal, setItemModal] = useState<{ open: boolean; editIndex: number | null }>({ open: false, editIndex: null });
-  const [draftItem, setDraftItem] = useState<EditLineItem>(emptyItem());
-
-  // Edit form state
-  const [editForm, setEditForm] = useState<any>({});
-  const [editItems, setEditItems] = useState<EditLineItem[]>([]);
 
   // Payment form state
   const [payForm, setPayForm] = useState({
@@ -303,85 +86,12 @@ export default function InvoiceDetailPage() {
       .then(d => {
         if (!d?.error) {
           setInvoice(d);
-          setEditForm({
-            invoiceNo: d.invoiceNo || '',
-            date: toInput(d.date),
-            dueDate: toInput(d.dueDate),
-            currency: d.currency || 'TRY',
-            vatRate: String(d.vatRate ?? 0),
-            notes: d.notes || '',
-          });
-          setEditItems((d.items || []).map((i: any) => ({
-            productId: i.productId || undefined,
-            description: i.description,
-            quantity: toPriceInput(i.quantity),
-            unitPrice: toPriceInput(i.unitPrice),
-            discount: toPriceInput(i.discount ?? 0),
-            notes: i.notes || '',
-            partVariantsData: Array.isArray(i.partVariantsData) && i.partVariantsData.length > 0
-              ? i.partVariantsData
-              : undefined,
-          })));
         }
       })
       .finally(() => setLoading(false));
   }, [params?.id]);
 
   useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    fetch('/api/products').then(r => r.json()).then(d => setProducts(Array.isArray(d) ? d : [])).catch(() => {});
-    fetch('/api/materials').then(r => r.json()).then(d => setMaterials(Array.isArray(d) ? d : [])).catch(() => {});
-  }, []);
-
-  // Compute preview totals from editItems
-  const previewTotals = editItems.reduce((acc, i) => {
-    const qty = fromPriceInput(i.quantity);
-    const price = fromPriceInput(i.unitPrice);
-    const disc = fromPriceInput(i.discount);
-    const tutar = qty * price;
-    const indirimTL = tutar * disc / 100;
-    const net = tutar - indirimTL;
-    return {
-      totalQty: acc.totalQty + qty,
-      brut: acc.brut + tutar,
-      indirim: acc.indirim + indirimTL,
-      net: acc.net + net,
-    };
-  }, { totalQty: 0, brut: 0, indirim: 0, net: 0 });
-  const vatRate = parseFloat(editForm.vatRate) || (invoice?.vatRate ?? 0);
-  const kdvAmount = previewTotals.net * vatRate / 100;
-  const toplam = previewTotals.net + kdvAmount;
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/invoices/${params.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...editForm,
-          vatRate: parseFloat(editForm.vatRate) || 0,
-          items: editItems.map(i => ({
-            productId: i.productId || null,
-            description: i.description,
-            quantity: fromPriceInput(i.quantity),
-            unitPrice: fromPriceInput(i.unitPrice),
-            discount: fromPriceInput(i.discount),
-            notes: i.notes || null,
-            partVariantsData: i.partVariantsData || null,
-          })),
-        }),
-      });
-      const updated = await res.json();
-      if (!res.ok) {
-        window.alert(updated?.error || 'Fatura kaydedilemedi');
-        return;
-      }
-      setInvoice(updated);
-      setEditing(false);
-    } finally { setSaving(false); }
-  };
 
   const handleDelete = () => {
     setConfirmModal({ message: 'Bu fatura silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Bu faturaya bağlı tüm stok hareketleri (ürün ve hammadde stokları) geri alınacaktır.', onConfirm: async () => {
@@ -415,38 +125,6 @@ export default function InvoiceDetailPage() {
     } finally { setPayLoading(false); }
   };
 
-  const addItem = () => {
-    setDraftItem(emptyItem());
-    setItemModal({ open: true, editIndex: null });
-  };
-
-  const filteredSearchProducts = productSearch.length >= 2
-    ? products.filter(p =>
-        matchesText(p.name, productSearch.toLowerCase()) ||
-        (p.code && matchesText(p.code, productSearch.toLowerCase()))
-      )
-    : [];
-
-  const handleSearchProductClick = (product: any) => {
-    setProductSearch('');
-    setShowSearchDropdown(false);
-    setDraftItem({ ...emptyItem(), productId: product.id, description: product.name, unitPrice: toPriceInput(product.unitPrice) });
-    setItemModal({ open: true, editIndex: null });
-  };
-  const openEditItemModal = (idx: number) => {
-    setDraftItem({ ...editItems[idx] });
-    setItemModal({ open: true, editIndex: idx });
-  };
-  const handleItemModalConfirm = (item: EditLineItem) => {
-    if (itemModal.editIndex !== null) {
-      setEditItems(prev => prev.map((it, i) => i === itemModal.editIndex ? item : it));
-    } else {
-      setEditItems(prev => [...prev, item]);
-    }
-    setItemModal({ open: false, editIndex: null });
-  };
-  const removeItem = (i: number) => setEditItems(p => p.filter((_, idx) => idx !== i));
-
   if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div></AppShell>;
   if (!invoice) return <AppShell><div className="text-center py-16 text-slate-400">Fatura bulunamadı</div></AppShell>;
 
@@ -477,23 +155,10 @@ export default function InvoiceDetailPage() {
             className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium">
             <Printer className="w-4 h-4" /> Yazdır
           </button>
-          {!editing ? (
-            <button onClick={() => setEditing(true)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium">
-              <Pencil className="w-4 h-4" /> Düzenle
-            </button>
-          ) : (
-            <>
-              <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Kaydet
-              </button>
-              <button onClick={() => { setEditing(false); load(); }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium">
-                <X className="w-4 h-4" /> Vazgeç
-              </button>
-            </>
-          )}
+          <Link href={`/invoices/${invoice.id}/edit`}
+            className="flex items-center gap-2 px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 text-white rounded-lg text-sm font-medium">
+            <Pencil className="w-4 h-4" /> Düzenle
+          </Link>
           <button onClick={handleDelete} disabled={deleting}
             className="flex items-center gap-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60">
             <X className="w-4 h-4" /> İptal Et
@@ -577,11 +242,6 @@ export default function InvoiceDetailPage() {
 
             {/* Invoice meta card */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              {editing && (
-                <div className="bg-amber-50 px-4 py-2 border-b border-amber-100">
-                  <p className="text-xs text-amber-600 font-medium">Düzenleme modu aktif</p>
-                </div>
-              )}
               <div className="divide-y divide-slate-100">
                 {[
                   { label: 'Belge No', field: 'invoiceNo', type: 'text', value: invoice.invoiceNo },
@@ -589,26 +249,18 @@ export default function InvoiceDetailPage() {
                   { label: 'Vadesi', field: 'dueDate', type: 'date', value: invoice.dueDate ? fmtDate(invoice.dueDate) : '—' },
                   { label: 'Para Birimi', field: 'currency', type: 'readonly', value: invoice.currency },
                   { label: 'KDV Oranı', field: 'vatRate', type: 'number', value: `%${invoice.vatRate}` },
+                  ...(invoice.irsaliyeNo ? [{ label: 'İrsaliye No', field: 'irsaliyeNo', type: 'text', value: invoice.irsaliyeNo }] : []),
+                  ...(invoice.sevkTarihi ? [{ label: 'Sevk Tarihi', field: 'sevkTarihi', type: 'date', value: fmtDate(invoice.sevkTarihi) }] : []),
                 ].map(row => (
                   <div key={row.field} className="flex items-center px-4 py-2.5">
                     <span className="text-xs font-semibold text-slate-500 w-24 flex-shrink-0">{row.label}</span>
-                    {editing && row.type !== 'readonly' ? (
-                      <input type={row.type} value={editForm[row.field] || ''} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
-                        className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
-                    ) : (
-                      <span className="text-sm text-slate-700 font-medium">{row.value}</span>
-                    )}
+                    <span className="text-sm text-slate-700 font-medium">{row.value}</span>
                   </div>
                 ))}
                 {/* Notes */}
                 <div className="px-4 py-2.5">
                   <span className="text-xs font-semibold text-slate-500 block mb-1">Açıklama</span>
-                  {editing ? (
-                    <textarea value={editForm.notes || ''} onChange={e => setEditForm((p: any) => ({ ...p, notes: e.target.value }))} rows={2}
-                      className="w-full px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400 resize-none" />
-                  ) : (
-                    <p className="text-sm text-slate-600">{invoice.notes || <span className="text-slate-300 italic">—</span>}</p>
-                  )}
+                  <p className="text-sm text-slate-600">{invoice.notes || <span className="text-slate-300 italic">—</span>}</p>
                 </div>
               </div>
             </div>
@@ -644,58 +296,7 @@ export default function InvoiceDetailPage() {
               {/* Header */}
               <div className="bg-green-600 px-4 py-3 flex items-center justify-between">
                 <h2 className="text-white font-bold text-sm uppercase tracking-wide">Ürün / Hizmetler</h2>
-                {editing && (
-                  <button onClick={addItem}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-medium">
-                    <Plus className="w-3.5 h-3.5" /> Manuel Ekle
-                  </button>
-                )}
               </div>
-
-              {/* Product search box — only in edit mode */}
-              {editing && (
-                <div className="px-4 py-3 border-b border-slate-100 relative">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="text"
-                      value={productSearch}
-                      onChange={e => { setProductSearch(e.target.value); setShowSearchDropdown(true); }}
-                      onFocus={() => setShowSearchDropdown(true)}
-                      onBlur={() => setTimeout(() => setShowSearchDropdown(false), 150)}
-                      placeholder="Ürün isminden veya kodundan arayın..."
-                      className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none"
-                    />
-                    {showSearchDropdown && productSearch.length >= 2 && (
-                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-                        {filteredSearchProducts.length === 0 ? (
-                          <div className="px-4 py-3 text-sm text-slate-400">Sonuç bulunamadı</div>
-                        ) : (
-                          filteredSearchProducts.map(p => (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onMouseDown={() => handleSearchProductClick(p)}
-                              className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-green-500 hover:text-white text-sm transition-colors text-left"
-                            >
-                              <span className="font-medium">
-                                {p.name}
-                                {p.code && <span className="ml-2 text-xs opacity-60">{p.code}</span>}
-                              </span>
-                              <span className="text-xs opacity-70 ml-2 flex-shrink-0">{p.stock} {p.unit}</span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    )}
-                    {showSearchDropdown && productSearch.length > 0 && productSearch.length < 2 && (
-                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-md z-20">
-                        <div className="px-4 py-3 text-sm text-slate-400">En az 2 karakter girin</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* Items table */}
               <div className="overflow-x-auto">
@@ -710,54 +311,10 @@ export default function InvoiceDetailPage() {
                       <th className="px-3 py-2.5 text-right">İndirim</th>
                       <th className="px-3 py-2.5 text-right">Net</th>
                       <th className="px-3 py-2.5 text-right">KDV</th>
-                      {editing && <th className="w-8"></th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {editing ? editItems.map((item, idx) => {
-                      const qty = fromPriceInput(item.quantity);
-                      const price = fromPriceInput(item.unitPrice);
-                      const disc = fromPriceInput(item.discount);
-                      const tutar = qty * price;
-                      const indirimTL = tutar * disc / 100;
-                      const net = tutar - indirimTL;
-                      const kdv = net * vatRate / 100;
-                      return (
-                        <tr key={idx} className="hover:bg-slate-50/50">
-                          <td className="px-3 py-2 text-slate-400 text-xs">{idx + 1}</td>
-                          <td className="px-3 py-2">
-                            {item.productId && products.find((p: any) => p.id === item.productId)?.code && (
-                              <span className="text-xs font-mono text-slate-400 mr-1">[{products.find((p: any) => p.id === item.productId)?.code}]</span>
-                            )}
-                            <p className="font-medium text-slate-700 text-sm inline">{item.description}</p>
-                            {item.partVariantsData && item.partVariantsData.length > 0 && (
-                              <p className="text-xs text-purple-600">
-                                {item.partVariantsData.map(pv => {
-                                  const mat = materials.find(m => m.id === pv.materialId);
-                                  return mat?.name;
-                                }).filter(Boolean).join(', ')}
-                              </p>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 text-right text-slate-600 text-sm">{qty.toLocaleString('tr-TR')}</td>
-                          <td className="px-3 py-2 text-right text-slate-600 text-sm">{fmt(price)}</td>
-                          <td className="px-3 py-2 text-right text-slate-600">{fmt(tutar)}</td>
-                          <td className="px-3 py-2 text-right text-slate-500 text-sm">{disc > 0 ? `%${disc}` : '—'}</td>
-                          <td className="px-3 py-2 text-right text-slate-700 font-medium">{fmt(net)}</td>
-                          <td className="px-3 py-2 text-right text-slate-500">{fmt(kdv)}</td>
-                          <td className="px-3 py-2">
-                            <div className="flex items-center gap-1 justify-end">
-                              <button onClick={() => openEditItemModal(idx)} className="p-1 text-slate-400 hover:text-blue-600" title="Düzenle">
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={() => removeItem(idx)} className="p-1 text-red-400 hover:text-red-600" title="Sil">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    }) : (invoice.items || []).map((item: any, idx: number) => {
+                    {(invoice.items || []).map((item: any, idx: number) => {
                       const tutar = item.quantity * item.unitPrice;
                       const indirimTL = tutar * (item.discount ?? 0) / 100;
                       const net = tutar - indirimTL;
@@ -834,8 +391,8 @@ export default function InvoiceDetailPage() {
                 <div className="flex justify-end">
                   <div className="w-64 space-y-1.5 text-sm">
                     {(() => {
-                      const t = editing ? previewTotals : displayTotals;
-                      const vr = editing ? vatRate : invoice.vatRate;
+                      const t = displayTotals;
+                      const vr = invoice.vatRate;
                       const kdv = t.net * vr / 100;
                       const total = t.net + kdv;
                       return (
@@ -846,23 +403,23 @@ export default function InvoiceDetailPage() {
                           </div>
                           <div className="flex justify-between text-slate-600">
                             <span>Brüt Toplam</span>
-                            <span>{fmt(t.brut)} {editForm.currency || invoice.currency}</span>
+                            <span>{fmt(t.brut)} {invoice.currency}</span>
                           </div>
                           <div className="flex justify-between text-slate-500">
                             <span>İndirim</span>
-                            <span>{fmt(t.indirim)} {editForm.currency || invoice.currency}</span>
+                            <span>{fmt(t.indirim)} {invoice.currency}</span>
                           </div>
                           <div className="flex justify-between text-slate-600">
                             <span>Net Toplam</span>
-                            <span>{fmt(t.net)} {editForm.currency || invoice.currency}</span>
+                            <span>{fmt(t.net)} {invoice.currency}</span>
                           </div>
                           <div className="flex justify-between text-slate-600">
                             <span>KDV (%{vr})</span>
-                            <span>{fmt(kdv)} {editForm.currency || invoice.currency}</span>
+                            <span>{fmt(kdv)} {invoice.currency}</span>
                           </div>
                           <div className="flex justify-between font-bold text-slate-800 text-base pt-2 border-t">
                             <span>TOPLAM</span>
-                            <span>{fmt(editing ? total : invoice.total)} {editForm.currency || invoice.currency}</span>
+                            <span>{fmt(invoice.total)} {invoice.currency}</span>
                           </div>
                         </>
                       );
@@ -875,17 +432,6 @@ export default function InvoiceDetailPage() {
         </div>
       </div>
 
-      {/* Kalem Düzenleme Modalı */}
-      {itemModal.open && (
-        <ItemModal
-          initial={draftItem}
-          currency={editForm.currency || invoice?.currency || 'USD'}
-          products={products}
-          materials={materials}
-          onConfirm={handleItemModalConfirm}
-          onClose={() => setItemModal({ open: false, editIndex: null })}
-        />
-      )}
 
       {/* Stok Düşümü Modalı */}
       {showStokModal && (

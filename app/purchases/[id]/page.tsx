@@ -5,17 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
-import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { postPayment } from '@/lib/post-payment';
 import { parseAmount } from '@/lib/money';
 import {
-  Loader2, Printer, Pencil, X, CreditCard, Building2,
-  Save, ChevronLeft, Plus, Trash2, Factory, AlertTriangle,
+  Loader2, Printer, Pencil, X, Building2, ChevronLeft, Factory, AlertTriangle,
 } from 'lucide-react';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
-const toInput = (d: string | Date | null) => toDateInputValue(d);
 
 const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı', 'POS'];
 
@@ -25,27 +22,17 @@ export default function PurchaseDetailPage() {
 
   const [purchase, setPurchase] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [showPayForm, setShowPayForm] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
 
-  const [editForm, setEditForm] = useState<any>({});
   const [payForm, setPayForm] = useState({
     amount: '', method: 'Nakit', date: toDateInputValue(), notes: '',
   });
 
   // Hammadde girişleri
   const [purchaseMaterials, setPurchaseMaterials] = useState<any[]>([]);
-  const [matList, setMatList] = useState<any[]>([]);
-  const [subcontractorList, setSubcontractorList] = useState<any[]>([]);
-  const [newMat, setNewMat] = useState({ materialId: '', kgAmount: '', pricePerKg: '', subcontractorId: '' });
-  const [matSaving, setMatSaving] = useState(false);
-  const [matDeleting, setMatDeleting] = useState<string | null>(null);
-  const [priceEdits, setPriceEdits] = useState<Record<string, string>>({});
-  const [priceUpdating, setPriceUpdating] = useState<string | null>(null);
 
 
   const loadPurchaseMaterials = useCallback(() => {
@@ -56,58 +43,8 @@ export default function PurchaseDetailPage() {
   }, [params?.id]);
 
   useEffect(() => {
-    fetch('/api/materials?includeVariants=true').then(r => r.json()).then(d => { if (Array.isArray(d)) setMatList(d); });
-    fetch('/api/subcontractors').then(r => r.json()).then(d => { if (Array.isArray(d)) setSubcontractorList(d); });
     loadPurchaseMaterials();
   }, [loadPurchaseMaterials]);
-
-  const handleAddMat = async () => {
-    if (!newMat.materialId || !newMat.kgAmount) return;
-    setMatSaving(true);
-    try {
-      await fetch(`/api/purchases/${params.id}/hammaddeler`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          materialId: newMat.materialId,
-          kgAmount: fromPriceInput(newMat.kgAmount),
-          pricePerKg: newMat.pricePerKg ? fromPriceInput(newMat.pricePerKg) : null,
-          subcontractorId: newMat.subcontractorId || null,
-        }),
-      });
-      setNewMat({ materialId: '', kgAmount: '', pricePerKg: '', subcontractorId: '' });
-      loadPurchaseMaterials();
-      load();
-    } finally { setMatSaving(false); }
-  };
-
-
-  const handleUpdatePrice = async (entryId: string, value: string) => {
-    setPriceUpdating(entryId);
-    try {
-      await fetch(`/api/purchases/${params.id}/hammaddeler`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryId, pricePerKg: fromPriceInput(value) }),
-      });
-      setPriceEdits(p => { const n = { ...p }; delete n[entryId]; return n; });
-      loadPurchaseMaterials();
-      load();
-    } finally { setPriceUpdating(null); }
-  };
-
-  const handleDeleteMat = async (entryId: string) => {
-    setMatDeleting(entryId);
-    try {
-      await fetch(`/api/purchases/${params.id}/hammaddeler`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryId }),
-      });
-      loadPurchaseMaterials();
-      load();
-    } finally { setMatDeleting(null); }
-  };
 
   const load = useCallback(() => {
     if (!params?.id) return;
@@ -117,12 +54,6 @@ export default function PurchaseDetailPage() {
       .then(d => {
         if (!d?.error) {
           setPurchase(d);
-          setEditForm({
-            invoiceNo: d.invoiceNo || '',
-            date: toInput(d.date),
-            currency: d.currency || 'TRY',
-            notes: d.notes || '',
-          });
         }
       })
       .finally(() => setLoading(false));
@@ -130,21 +61,8 @@ export default function PurchaseDetailPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/purchases/${params.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
-      });
-      const updated = await res.json();
-      if (!updated?.error) { setPurchase(updated); }
-    } finally { setSaving(false); }
-  };
-
   const handleDelete = () => {
-    setConfirmModal({ message: 'Bu alış faturası silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Bu alışta eklenen tüm hammadde stokları (kg) geri alınacaktır.', onConfirm: async () => {
+    setConfirmModal({ message: 'Bu alış faturası silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Bu alışla eklenen hammadde ve ürün stokları geri alınacaktır.', onConfirm: async () => {
       setDeleting(true);
       await fetch(`/api/purchases/${params.id}`, { method: 'DELETE' });
       router.back();
@@ -198,10 +116,10 @@ export default function PurchaseDetailPage() {
             className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium">
             <Printer className="w-4 h-4" /> Yazdır
           </button>
-          <button onClick={() => setEditing(true)}
+          <Link href={`/purchases/${purchase.id}/edit`}
             className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
             <Pencil className="w-4 h-4" /> Düzenle
-          </button>
+          </Link>
           <button onClick={handleDelete} disabled={deleting}
             className="flex items-center gap-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-60">
             {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />} İptal Et
@@ -288,7 +206,7 @@ export default function PurchaseDetailPage() {
 
             {/* Items table */}
             {purchaseMaterials.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-sm italic">Henüz hammadde girişi yok</div>
+              <div className="text-center py-12 text-slate-400 text-sm italic">Bu alışta kalem yok. Eklemek için Düzenle düğmesini kullanın.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -300,7 +218,6 @@ export default function PurchaseDetailPage() {
                       <th className="px-4 py-3 text-right">Miktar</th>
                       <th className="px-4 py-3 text-right">Fiyat</th>
                       <th className="px-4 py-3 text-right">Tutar</th>
-                      <th className="px-4 py-3 w-8"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -341,12 +258,6 @@ export default function PurchaseDetailPage() {
                           <td className="px-4 py-3 text-right font-semibold text-slate-700">
                             {tutar > 0 ? tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : <span className="text-slate-300">—</span>}
                           </td>
-                          <td className="px-2 py-3 text-center">
-                            <button onClick={() => handleDeleteMat(pm.id)} disabled={matDeleting === pm.id}
-                              className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-all">
-                              {matDeleting === pm.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                            </button>
-                          </td>
                         </tr>
                       );
                     })}
@@ -380,145 +291,6 @@ export default function PurchaseDetailPage() {
           </div>
         </div>
       </div>
-      {/* Edit modal */}
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => { setEditing(false); load(); }} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="bg-slate-800 rounded-t-2xl px-5 py-4 flex items-center justify-between sticky top-0 z-10">
-              <h3 className="text-white font-semibold">Alış Düzenle — {purchase.invoiceNo}</h3>
-              <button onClick={() => { setEditing(false); load(); }} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Belge No</label>
-                  <input value={editForm.invoiceNo || ''} onChange={e => setEditForm((p: any) => ({ ...p, invoiceNo: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Tarih</label>
-                  <input type="date" value={editForm.date || ''} onChange={e => setEditForm((p: any) => ({ ...p, date: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400" />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Açıklama</label>
-                  <textarea value={editForm.notes || ''} onChange={e => setEditForm((p: any) => ({ ...p, notes: e.target.value }))} rows={2}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400 resize-none" />
-                </div>
-              </div>
-
-              {/* Existing materials */}
-              {purchaseMaterials.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Mevcut Hammaddeler</p>
-                  <div className="border border-slate-200 rounded-lg overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-slate-50 text-xs font-semibold text-slate-500 border-b">
-                          <th className="px-3 py-2 text-left">Hammadde</th>
-                          <th className="px-3 py-2 text-right">Miktar</th>
-                          <th className="px-3 py-2 text-right">Fiyat</th>
-                          <th className="w-8"></th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {purchaseMaterials.map((pm: any) => {
-                          const priceVal = priceEdits[pm.id] ?? toPriceInput(pm.pricePerKg ?? '');
-                          const isDirty = priceEdits[pm.id] !== undefined;
-                          return (
-                            <tr key={pm.id} className="hover:bg-slate-50/50">
-                              <td className="px-3 py-2 font-medium text-slate-700">
-                                {pm.material?.name ?? (pm.product ? `${pm.product.name}${pm.product.code ? ` [${pm.product.code}]` : ''}` : '—')}
-                              </td>
-                              <td className="px-3 py-2 text-right text-slate-600">{pm.kgAmount} kg</td>
-                              <td className="px-3 py-2 text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <input
-                                    type="text" inputMode="decimal"
-                                    value={priceVal}
-                                    onChange={e => setPriceEdits(p => ({ ...p, [pm.id]: normalizePriceInput(e.target.value) }))}
-                                    onKeyDown={blockDot}
-                                    onBlur={() => { if (isDirty) handleUpdatePrice(pm.id, priceVal); }}
-                                    className={`w-24 px-2 py-1 border rounded text-sm text-right outline-none focus:ring-1 focus:ring-teal-400 ${isDirty ? 'border-teal-400 bg-teal-50' : 'border-slate-200'}`}
-                                  />
-                                  {priceUpdating === pm.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-600" />}
-                                </div>
-                              </td>
-                              <td className="px-2 py-2 text-center">
-                                <button onClick={() => handleDeleteMat(pm.id)} disabled={matDeleting === pm.id}
-                                  className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded">
-                                  {matDeleting === pm.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* Add new material */}
-              <div className="bg-blue-50/40 border border-blue-100 rounded-lg p-4">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Yeni Hammadde Ekle</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                  <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-xs text-slate-500 mb-1">Hammadde *</label>
-                    <select value={newMat.materialId} onChange={e => setNewMat(p => ({ ...p, materialId: e.target.value }))}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400 bg-white">
-                      <option value="">— Seçin —</option>
-                      {matList.map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Miktar (kg) *</label>
-                    <input type="text" inputMode="decimal" value={newMat.kgAmount}
-                      onChange={e => setNewMat(p => ({ ...p, kgAmount: normalizePriceInput(e.target.value) }))}
-                      onKeyDown={blockDot} placeholder="0,00"
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Birim Fiyat</label>
-                    <input type="text" inputMode="decimal" value={newMat.pricePerKg}
-                      onChange={e => setNewMat(p => ({ ...p, pricePerKg: normalizePriceInput(e.target.value) }))}
-                      onKeyDown={blockDot} placeholder="0,00"
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Fasoncu</label>
-                    <select value={newMat.subcontractorId} onChange={e => setNewMat(p => ({ ...p, subcontractorId: e.target.value }))}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-teal-400 bg-white">
-                      <option value="">— Ana Depo —</option>
-                      {subcontractorList.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <button onClick={handleAddMat} disabled={matSaving || !newMat.materialId || !newMat.kgAmount}
-                  className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white rounded-lg text-sm font-medium">
-                  {matSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Hammadde Ekle
-                </button>
-              </div>
-
-              <div className="flex gap-3 pt-2 border-t border-slate-100">
-                <button onClick={() => { setEditing(false); load(); }}
-                  className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">Vazgeç</button>
-                <button onClick={async () => {
-                  for (const [entryId, val] of Object.entries(priceEdits)) {
-                    await handleUpdatePrice(entryId, val);
-                  }
-                  await handleSave(); setEditing(false);
-                }}
-                  disabled={saving}
-                  className="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Kaydet
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

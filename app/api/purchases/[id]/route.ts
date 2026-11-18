@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { parseDateInput } from '@/lib/time';
+import { rejectForeignRefs } from '@/lib/tenant';
+import { logAction, getIp } from '@/lib/audit-logger';
+import { validatePurchaseLines, applyPurchaseLines, reversePurchaseLines, purchaseStatus } from '@/lib/purchase-lines';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -13,6 +17,13 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     include: {
       supplier: { select: { id: true, name: true, phone: true, email: true, taxId: true } },
       payments: { orderBy: { date: 'desc' } },
+      purchaseMaterials: {
+        orderBy: { createdAt: 'asc' },
+        include: {
+          material: { select: { id: true, name: true, stock: true } },
+          product: { select: { id: true, name: true, code: true, unit: true, stock: true } },
+        },
+      },
     },
   });
 
@@ -20,25 +31,68 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   return NextResponse.json(purchase);
 }
 
+// Alış düzenleme. items gönderilirse kalemler tamamen değişir: eski kalemlerin
+// stok etkisi geri alınır, yenileri uygulanır, toplam ve ödeme durumu yeniden hesaplanır.
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
 
-  const body = await req.json();
-  const { invoiceNo, date, currency, notes } = body;
+  const existing = await prisma.purchase.findFirst({ where: { id: params.id, companyId: user.companyId } });
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const updated = await prisma.purchase.updateMany({
-    where: { id: params.id, companyId: user.companyId },
-    data: {
-      ...(invoiceNo !== undefined && { invoiceNo }),
-      ...(date && { date: new Date(date) }),
-      ...(currency && { currency }),
-      ...(notes !== undefined && { notes }),
-    },
+  const body = await req.json();
+  const { invoiceNo, date, notes, items } = body;
+
+  let validated: Extract<ReturnType<typeof validatePurchaseLines>, { ok: true }> | null = null;
+  if (items !== undefined) {
+    const foreign = await rejectForeignRefs(user.companyId, {
+      product: Array.isArray(items) ? items.map((i: any) => i?.productId) : [],
+      material: Array.isArray(items) ? items.map((i: any) => i?.materialId) : [],
+      subcontractor: Array.isArray(items) ? items.map((i: any) => i?.subcontractorId) : [],
+    });
+    if (foreign) return foreign;
+    const v = validatePurchaseLines(items);
+    if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
+    validated = v;
+  }
+
+  let newDate: Date | undefined;
+  if (date) {
+    const d = parseDateInput(date);
+    if (!d) return NextResponse.json({ error: 'Alış tarihi geçersiz' }, { status: 400 });
+    newDate = d;
+  }
+  const newNo = typeof invoiceNo === 'string' && invoiceNo.trim() ? invoiceNo.trim() : undefined;
+  if (newNo && newNo !== existing.invoiceNo && await prisma.purchase.findFirst({ where: { companyId: user.companyId, invoiceNo: newNo }, select: { id: true } })) {
+    return NextResponse.json({ error: `${newNo} numaralı alış zaten var` }, { status: 409 });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    if (validated) {
+      await reversePurchaseLines(tx, user.companyId, existing.id);
+      await applyPurchaseLines(tx, user.companyId, existing.id, validated.lines);
+    }
+    await tx.purchase.update({
+      where: { id: existing.id },
+      data: {
+        ...(newNo !== undefined && { invoiceNo: newNo }),
+        ...(newDate && { date: newDate }),
+        ...(notes !== undefined && { notes: notes || null }),
+        ...(validated && { total: validated.total, status: purchaseStatus(existing.paidAmount, validated.total) as any }),
+      },
+    });
   });
 
-  if (updated.count === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (validated) {
+    await logAction({
+      companyId: user.companyId, userId: user.id, userName: user.name,
+      action: 'UPDATE', entity: 'Purchase', entityId: existing.id,
+      detail: `Alış düzenlendi — ${newNo ?? existing.invoiceNo ?? existing.id}`,
+      meta: { oldTotal: existing.total, total: validated.total, currency: existing.currency },
+      ip: getIp(req),
+    });
+  }
 
   const purchase = await prisma.purchase.findFirst({
     where: { id: params.id, companyId: user.companyId },
@@ -60,33 +114,14 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     where: { id: params.id, companyId: user.companyId },
     include: {
       payments: true,
-      purchaseMaterials: true,
     },
   });
 
   if (!purchase) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   await prisma.$transaction(async (tx) => {
-    // ── Stok geri al: alışta eklenen kg'ları düş ──
-    for (const pm of (purchase as any).purchaseMaterials) {
-      if (pm.subcontractorId) {
-        // Fasoncu stoğundan düş
-        const ss = await tx.subcontractorStock.findFirst({
-          where: { subcontractorId: pm.subcontractorId, materialId: pm.materialId },
-        });
-        if (ss) {
-          await tx.subcontractorStock.update({
-            where: { id: ss.id },
-            data: { quantity: { decrement: pm.kgAmount } },
-          });
-        }
-      } else if (pm.materialId) {
-        await tx.material.updateMany({
-          where: { id: pm.materialId, companyId: user.companyId },
-          data: { stock: { decrement: pm.kgAmount } },
-        });
-      }
-    }
+    // Stok geri al (ürün, ana depo ve fasoncu deposu) ve kalemleri sil
+    await reversePurchaseLines(tx, user.companyId, params.id);
 
     // Reverse account balances for all payments
     for (const payment of purchase.payments) {
@@ -111,7 +146,6 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
         });
       }
     }
-    await tx.purchaseMaterial.deleteMany({ where: { purchaseId: params.id } });
     await tx.payment.deleteMany({ where: { purchaseId: params.id } });
     await tx.purchase.delete({ where: { id: params.id } });
   });
