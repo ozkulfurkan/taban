@@ -51,6 +51,8 @@ export default function SupplierEkstrePage() {
   useEffect(() => { load(); }, []);
 
   // Build merged row array
+  // Cari döviz cinsi (USD/EUR carilerde TL yazılmasın)
+  const cur: string = data?.supplier?.currency || 'TRY';
   const rows: Row[] = [];
   if (data && !data.error) {
     let balance = 0;
@@ -147,7 +149,7 @@ export default function SupplierEkstrePage() {
   const handleExcel = () => {
     if (!data) return;
     const BOM = '\uFEFF';
-    const header = 'Tarih;Hareket;Belge No;Açıklama;Borç;Alacak;Bakiye\n';
+    const header = 'Tarih;Hareket;Belge No;Açıklama;Borç (' + cur + ');Alacak (' + cur + ');Bakiye (' + cur + ')\n';
     const lines = rows.map(r =>
       [fmtDate(r.date), r.hareket, r.belgeNo || '', r.aciklama || '',
        r.borc > 0 ? fmt(r.borc) : '', r.alacak > 0 ? fmt(r.alacak) : '', fmt(r.bakiye)].join(';')
@@ -182,7 +184,7 @@ export default function SupplierEkstrePage() {
 
     doc.setTextColor(30,30,30); doc.setFontSize(8); doc.setFont('helvetica','bold');
     const cols = [22,20,28,70,28,28,28];
-    const headers = ['Tarih','Hareket','Belge No','Aciklama','Borc','Alacak','Bakiye'];
+    const headers = ['Tarih','Hareket','Belge No','Aciklama',`Borc ${cur}`,`Alacak ${cur}`,`Bakiye ${cur}`];
     let x = M;
     doc.setFillColor(241,245,249); doc.rect(M, y-4, W-2*M, 7, 'F');
     headers.forEach((h, i) => { doc.text(h, x+1, y); x += cols[i]; });
@@ -200,7 +202,7 @@ export default function SupplierEkstrePage() {
 
     y += 4;
     doc.setFont('helvetica','bold');
-    doc.text(`Toplam Borc: ${fmt(totalBorc)}  |  Toplam Alacak: ${fmt(totalAlacak)}  |  Bakiye: ${fmt(lastBalance)}`, M, y);
+    doc.text(`Toplam Borc: ${fmt(totalBorc)} ${cur}  |  Toplam Alacak: ${fmt(totalAlacak)} ${cur}  |  Bakiye: ${fmt(lastBalance)} ${cur}`, M, y);
     doc.save(`${tr(data.supplier?.name||'ekstre')}_hesap_ekstresi.pdf`);
   };
 
@@ -241,15 +243,15 @@ export default function SupplierEkstrePage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="rounded-xl p-4 text-white bg-red-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">Toplam Borç</p>
-                <FitText className="text-2xl font-bold">{fmt(totalBorc)}</FitText>
+                <FitText className="text-2xl font-bold">{`${fmt(totalBorc)} ${cur}`}</FitText>
               </div>
               <div className="rounded-xl p-4 text-white bg-blue-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">Toplam Alacak</p>
-                <FitText className="text-2xl font-bold">{fmt(totalAlacak)}</FitText>
+                <FitText className="text-2xl font-bold">{`${fmt(totalAlacak)} ${cur}`}</FitText>
               </div>
               <div className="rounded-xl p-4 text-white bg-emerald-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">Bakiye</p>
-                <FitText className="text-2xl font-bold">{fmt(lastBalance)}</FitText>
+                <FitText className="text-2xl font-bold">{`${fmt(lastBalance)} ${cur}`}</FitText>
               </div>
             </div>
 
@@ -309,7 +311,7 @@ export default function SupplierEkstrePage() {
                             {r.alacak > 0 ? fmt(r.alacak) : ''}
                           </td>
                           <td className="px-3 py-2 text-right font-bold text-slate-800 whitespace-nowrap">
-                            {fmt(r.bakiye)} TL
+                            {fmt(r.bakiye)} {cur}
                           </td>
                         </tr>
                       ))}
@@ -319,7 +321,7 @@ export default function SupplierEkstrePage() {
                         <td colSpan={4} className="px-3 py-3 text-slate-600">TOPLAM</td>
                         <td className="px-3 py-3 text-right text-red-600">{fmt(totalBorc)}</td>
                         <td className="px-3 py-3 text-right text-teal-600">{fmt(totalAlacak)}</td>
-                        <td className="px-3 py-3 text-right text-slate-800">{fmt(lastBalance)}</td>
+                        <td className="px-3 py-3 text-right text-slate-800">{`${fmt(lastBalance)} ${cur}`}</td>
                       </tr>
                     </tfoot>
                   </table>

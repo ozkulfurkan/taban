@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const supplier = await prisma.supplier.findFirst({
     where: { id: params.id, companyId: user.companyId },
-    select: { id: true, name: true },
+    select: { id: true, name: true, currency: true },
   });
   if (!supplier) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
