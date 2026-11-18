@@ -108,7 +108,7 @@ export default function NewHesaplayiciPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Kayıt hatası'); return; }
-      router.push(`/hesaplayici/${data.id}`);
+      router.replace(`/hesaplayici/${data.id}`);
     } catch {
       setError('Bağlantı hatası');
     } finally {

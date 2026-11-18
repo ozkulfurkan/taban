@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import DecimalInput from '@/app/components/decimal-input';
+import BackLink from '@/app/components/back-link';
+import Link from 'next/link';
 
 const CURRENCIES = ['USD', 'EUR', 'TRY'];
 
@@ -56,7 +58,7 @@ export default function NewProductPage() {
         }),
       });
       const data = await res.json();
-      if (data.id) router.push('/products/' + data.id + '?edit=true');
+      if (data.id) router.replace('/products/' + data.id + '?edit=true');
     } catch (e) { console.error(e); }
     finally { setSaving(false); }
   };
@@ -65,9 +67,7 @@ export default function NewProductPage() {
     <AppShell>
       <div className="max-w-2xl space-y-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
-          </button>
+          <BackLink variant="icon" href="/products" label="Ürünler" />
           <h1 className="text-2xl font-bold text-slate-800">Yeni Ürün</h1>
         </div>
 
@@ -124,7 +124,7 @@ export default function NewProductPage() {
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => router.back()} className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">İptal</button>
+            <Link href="/products" className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors inline-flex items-center justify-center">İptal</Link>
             <button type="submit" disabled={saving} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />} Kaydet
             </button>

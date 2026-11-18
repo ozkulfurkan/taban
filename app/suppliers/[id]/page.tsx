@@ -3,11 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
-import {
-  ArrowLeft, Loader2, Pencil, Save, X, Phone, Mail, MapPin, Hash,
-  Download, RotateCcw, Banknote, CheckCircle2, ShoppingBag, Plus, Trash2, Search, ChevronRight,
-  ChevronDown, FileText, PlusCircle, AlertTriangle,
-} from 'lucide-react';
+import { Loader2, Pencil, Save, X, Phone, Mail, MapPin, Hash, Download, RotateCcw, Banknote, CheckCircle2, ShoppingBag, Plus, Trash2, Search, ChevronDown, FileText, PlusCircle, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { formatDate, toDateInputValue } from '@/lib/time';
@@ -16,6 +12,7 @@ import { matchesText } from '@/lib/search';
 import FitText from '@/app/components/fit-text';
 import MoreMenu from '@/app/components/more-menu';
 import DecimalInput from '@/app/components/decimal-input';
+import BackLink from '@/app/components/back-link';
 
 function nowIstanbulISO(): string {
   const now = new Date();
@@ -987,7 +984,7 @@ export default function SupplierDetailPage() {
       const res = await fetch(`/api/suppliers/${supplier.id}`, { method: 'DELETE' });
       setDeleting(false);
       if (res.ok) {
-        router.push('/suppliers');
+        router.replace('/suppliers');
       } else {
         const data = await res.json().catch(() => ({}));
         setDeleteWarning(data.error ?? 'Tedarikçi silinemedi.');
@@ -1091,10 +1088,7 @@ export default function SupplierDetailPage() {
     <AppShell>
       <div className="space-y-5 max-w-4xl">
         {/* Back */}
-        <button onClick={() => router.back()}
-          className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors text-sm">
-          <ArrowLeft className="w-4 h-4" /> Tedarikçiler
-        </button>
+        <BackLink href="/suppliers" label="Tedarikçiler" />
 
         {/* Header card */}
         <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-5 flex items-start gap-4">

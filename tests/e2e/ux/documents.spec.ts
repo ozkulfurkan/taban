@@ -23,7 +23,7 @@ async function expectSameLayout(page: Page) {
   await expect(page.getByRole('region', { name: 'Kalemler' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Elle Kalem Ekle' })).toBeVisible();
   await expect(page.getByText('Genel Toplam').last()).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Geri$/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /(Müşteri|Tedarikçi): .* sayfasına dön/ })).toBeVisible();
 }
 
 async function addFromSearch(page: Page, text: string, qty: string) {

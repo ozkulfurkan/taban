@@ -1,15 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
-import {
-  ArrowLeft, Loader2, Pencil, TrendingDown, TrendingUp,
-  ArrowLeftRight, ChevronDown, Trash2, X, Save, AlertTriangle,
-} from 'lucide-react';
+import { Loader2, Pencil, TrendingDown, TrendingUp, ArrowLeftRight, ChevronDown, Trash2, X, Save, AlertTriangle } from 'lucide-react';
 import { matchesText } from '@/lib/search';
 import DecimalInput from '@/app/components/decimal-input';
+import BackLink from '@/app/components/back-link';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -329,7 +327,6 @@ function EditAccountModal({
 // ── Ana Sayfa ─────────────────────────────────────────────────────────────────
 export default function AccountEkstrePage() {
   const params = useParams();
-  const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -401,10 +398,7 @@ export default function AccountEkstrePage() {
   return (
     <AppShell>
       <div className="space-y-4">
-        <button onClick={() => router.back()}
-          className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Geri Dön
-        </button>
+        <BackLink href="/accounts" label="Hesaplarım" />
 
         {/* Header */}
         {account && (

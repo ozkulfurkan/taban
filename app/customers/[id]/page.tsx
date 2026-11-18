@@ -3,17 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
-import {
-  ArrowLeft, Loader2, Pencil, FileText, ShoppingCart, Download, RotateCcw,
-  Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Building2, CheckCircle2, Banknote,
-  ChevronDown, PlusCircle, Trash2, CreditCard, AlertTriangle
-} from 'lucide-react';
+import { Loader2, Pencil, FileText, ShoppingCart, Download, RotateCcw, Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Building2, CheckCircle2, Banknote, ChevronDown, PlusCircle, Trash2, CreditCard, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
 import FitText from '@/app/components/fit-text';
 import MoreMenu from '@/app/components/more-menu';
 import DecimalInput from '@/app/components/decimal-input';
+import BackLink from '@/app/components/back-link';
 
 function nowIstanbulISO(): string {
   const now = new Date();
@@ -795,7 +792,7 @@ export default function CustomerDetailPage() {
       const res = await fetch(`/api/customers/${customer.id}`, { method: 'DELETE' });
       setDeleting(false);
       if (res.ok) {
-        router.push('/customers');
+        router.replace('/customers');
       } else {
         const data = await res.json().catch(() => ({}));
         setDeleteWarning(data.error ?? 'Müşteri silinemedi.');
@@ -890,9 +887,7 @@ export default function CustomerDetailPage() {
     <AppShell>
       <div className="space-y-5 max-w-4xl">
         {/* Back */}
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors text-sm">
-          <ArrowLeft className="w-4 h-4" /> Müşteriler
-        </button>
+        <BackLink href="/customers" label="Müşteriler" />
 
         {/* Customer Info Card (BizimHesap style) */}
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-start gap-4">

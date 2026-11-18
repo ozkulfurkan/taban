@@ -4,14 +4,11 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import StatCard from '@/app/components/stat-card';
-import {
-  ArrowLeft, Package, Factory, TrendingUp, Tag, Loader2, X,
-  Edit2, Trash2, Layers, TrendingDown, RotateCcw, FileText,
-  Plus, CheckCircle, History, AlertTriangle,
-} from 'lucide-react';
+import { Package, Factory, TrendingUp, Tag, Loader2, X, Edit2, Trash2, Layers, TrendingDown, RotateCcw, FileText, Plus, CheckCircle, History, AlertTriangle } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { stockTextClass } from '@/lib/stock-display';
 import DecimalInput from '@/app/components/decimal-input';
+import BackLink from '@/app/components/back-link';
 
 const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', EUR: '€', TRY: '₺' };
 
@@ -188,7 +185,7 @@ export default function MaterialDetailPage() {
     setConfirmModal({ message: 'Bu hammaddeyi silmek istediğinize emin misiniz?', onConfirm: async () => {
       const res = await fetch(`/api/materials/${id}`, { method: 'DELETE' });
       if (!res.ok) { const d = await res.json(); setErrorMsg(d.error || 'Silinemedi'); return; }
-      router.push('/materials');
+      router.replace('/materials');
     }});
   };
 
@@ -223,10 +220,7 @@ export default function MaterialDetailPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.back()}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-            </button>
+            <BackLink variant="icon" href="/materials" label="Hammaddeler" />
             <div>
               <h1 className="text-xl font-bold text-slate-800">{material.name}</h1>
               <div className="flex items-center gap-2 mt-0.5">

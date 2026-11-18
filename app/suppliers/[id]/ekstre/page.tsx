@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
-import { ArrowLeft, Loader2, FileSpreadsheet, FileDown, RefreshCw } from 'lucide-react';
+import { Loader2, FileSpreadsheet, FileDown, RefreshCw } from 'lucide-react';
 import { matchesText } from '@/lib/search';
 import FitText from '@/app/components/fit-text';
+import BackLink from '@/app/components/back-link';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -33,7 +34,6 @@ type Row = {
 
 export default function SupplierEkstrePage() {
   const params = useParams();
-  const router = useRouter();
   const [from, setFrom] = useState(defaultFrom());
   const [to, setTo] = useState(defaultTo());
   const [data, setData] = useState<any>(null);
@@ -194,10 +194,7 @@ export default function SupplierEkstrePage() {
   return (
     <AppShell>
       <div className="space-y-5 max-w-6xl">
-        <button onClick={() => router.back()}
-          className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Geri Dön
-        </button>
+        <BackLink href={`/suppliers/${params.id}`} prefix="Tedarikçi" label={data?.supplier?.name ?? ''} />
 
         {/* Header */}
         <div className="bg-teal-600 rounded-xl px-6 py-4">

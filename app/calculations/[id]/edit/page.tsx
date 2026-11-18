@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Calculator, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Paintbrush, Wrench, ArrowLeft } from 'lucide-react';
+import { Calculator, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Paintbrush, Wrench } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DecimalInput from '@/app/components/decimal-input';
+import BackLink from '@/app/components/back-link';
 
 interface PartForm {
   partName: string;
@@ -142,7 +143,7 @@ export default function EditCalculationPage() {
         body: JSON.stringify(body),
       });
       if (res.ok) {
-        router.push(`/calculations/${id}`);
+        router.replace(`/calculations/${id}`);
       }
     } catch (e) {
       console.error(e);
@@ -172,9 +173,7 @@ export default function EditCalculationPage() {
     <AppShell>
       <div className="space-y-6 max-w-4xl">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
-          </button>
+          <BackLink variant="icon" href={`/calculations/${params.id}`} label="Hesaplama" />
           <div>
             <h1 className="text-2xl font-bold text-slate-800">{t('calculation', 'editCalculation')}</h1>
             <p className="text-slate-500 text-sm">{t('calculation', 'title')}</p>

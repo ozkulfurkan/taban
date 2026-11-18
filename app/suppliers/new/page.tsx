@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { ArrowLeft, Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
+import BackLink from '@/app/components/back-link';
+import Link from 'next/link';
 
 export default function NewSupplierPage() {
   const router = useRouter();
@@ -61,12 +63,12 @@ export default function NewSupplierPage() {
         const createAnyway = window.confirm(
           `${data.error}\n\nYine de yeni bir tedarikçi kaydı açılsın mı?\n(İptal'e basarsanız mevcut kayıt açılır.)`,
         );
-        if (!createAnyway) { router.push(`/suppliers/${data.existing.id}`); return; }
+        if (!createAnyway) { router.replace(`/suppliers/${data.existing.id}`); return; }
         res = await send({ allowDuplicate: true });
         data = await res.json();
       }
       if (!res.ok || !data?.id) { setSaveError(data?.error || 'Kayıt oluşturulamadı'); return; }
-      router.push(`/suppliers/${data.id}`);
+      router.replace(`/suppliers/${data.id}`);
     } catch (e) { console.error(e); }
     finally { setSaving(false); }
   };
@@ -75,9 +77,7 @@ export default function NewSupplierPage() {
     <AppShell>
       <div className="max-w-2xl space-y-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
-          </button>
+          <BackLink variant="icon" href="/suppliers" label="Tedarikçiler" />
           <h1 className="text-2xl font-bold text-slate-800">{t('suppliers', 'newSupplierTitle')}</h1>
         </div>
 
@@ -152,7 +152,7 @@ export default function NewSupplierPage() {
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => router.back()} className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">{t('common', 'cancel')}</button>
+            <Link href="/suppliers" className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors inline-flex items-center justify-center">{t('common', 'cancel')}</Link>
             <button type="submit" disabled={saving} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
               {t('common', 'save')}

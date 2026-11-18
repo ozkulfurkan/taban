@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import SizeTable from '@/app/portal/components/size-table';
 import { ChevronLeft, ChevronRight, Loader2, Factory, CheckCircle2, Package } from 'lucide-react';
+import BackLink from '@/app/components/back-link';
 
 const STEPS = ['Fasoncu & Ürün', 'Numara Dağılımı', 'Hammadde Gereksinimi', 'Termin & Notlar'];
 
@@ -112,7 +113,7 @@ export default function NewSubcontractorOrderPage() {
       });
       await res.json();
       if (res.ok) {
-        router.push(`/subcontractors/${form.subcontractorId}`);
+        router.replace(`/subcontractors/${form.subcontractorId}`);
       }
     } finally { setSaving(false); }
   };
@@ -127,9 +128,7 @@ export default function NewSubcontractorOrderPage() {
     <AppShell>
       <div className="max-w-3xl space-y-4">
         <div className="flex items-center gap-2">
-          <button onClick={() => router.back()} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium">
-            <ChevronLeft className="w-4 h-4" /> Geri
-          </button>
+          <BackLink href="/subcontractor-orders" label="Fason Siparişleri" />
           <div className="flex items-center gap-2">
             <Factory className="w-5 h-5 text-orange-600" />
             <h1 className="text-lg font-bold text-slate-800">Yeni Fason Sipariş</h1>
