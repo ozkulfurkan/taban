@@ -20,9 +20,13 @@ export default defineConfig({
     timezoneId: 'Europe/Istanbul',
     actionTimeout: 15000,
     navigationTimeout: 30000,
+    // Önceden kurulu bir Chromium kullanmak için (örn. CI imajı): PW_CHROMIUM_PATH=/yol/chromium
+    ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}),
   },
   projects: [
     { name: 'setup', testMatch: '**/auth.setup.ts' },
+    // Tarayıcısız API güvenlik testleri (firma ayrımı, roller, oturum)
+    { name: 'security', testMatch: '**/security/*.spec.ts' },
     {
       name: 'chromium',
       use: {
@@ -30,7 +34,7 @@ export default defineConfig({
         storageState: 'tests/.auth/user.json',
       },
       dependencies: ['setup'],
-      testIgnore: '**/auth.setup.ts',
+      testIgnore: ['**/auth.setup.ts', '**/security/**'],
     },
   ],
   outputDir: 'test-results',

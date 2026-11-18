@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 async function getPortalSession() {
   const session = await getServerSession(authOptions);
@@ -35,6 +36,10 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const { productId, productCode, color, material, sizeDistribution, requestedDeliveryDate, notes, colorPartials, orderItems } = body;
+  const foreign = await rejectForeignRefs(user.companyId, {
+    product: [productId, ...(Array.isArray(orderItems) ? orderItems.map((i: any) => i?.productId) : [])],
+  });
+  if (foreign) return foreign;
 
   // --- Package order (multi-item) ---
   const isPackage = Array.isArray(orderItems) && orderItems.length > 0;

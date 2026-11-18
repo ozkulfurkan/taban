@@ -2,10 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { sendMail } from '@/lib/mail';
+import { LIMITS, clientIp, normEmail, isLimited, recordAttempt } from '@/lib/login-throttle';
 
 export async function POST(req: NextRequest) {
   const { email } = await req.json();
   if (!email) return NextResponse.json({ error: 'E-posta zorunlu' }, { status: 400 });
+
+  const acctKey = `reset:${normEmail(email)}`;
+  const ipKey = `reset-ip:${clientIp(req.headers)}`;
+  if ((await isLimited(acctKey, LIMITS.resetPerAccount)) || (await isLimited(ipKey, LIMITS.resetPerIp))) {
+    return NextResponse.json(
+      { error: 'Çok fazla istek gönderildi. Lütfen 15 dakika sonra tekrar deneyin.' },
+      { status: 429 }
+    );
+  }
+  await recordAttempt(acctKey, ipKey);
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
@@ -20,7 +31,8 @@ export async function POST(req: NextRequest) {
     data: { resetToken: token, resetTokenExpiry: expiry },
   });
 
-  const baseUrl = req.headers.get('origin') || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  // E-postadaki bağlantı istek başlığından değil, sabit adresten üretilir (başlık sahteciliğine karşı)
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
   const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
   let previewUrl: string | null = null;

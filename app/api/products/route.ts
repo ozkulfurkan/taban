@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -39,6 +40,8 @@ export async function POST(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
   const body = await req.json();
+  const foreign = await rejectForeignRefs(user.companyId, { productCategory: body?.categoryId });
+  if (foreign) return foreign;
   const product = await prisma.product.create({
     data: {
       companyId: user.companyId,

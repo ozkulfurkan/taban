@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -61,6 +62,11 @@ export async function POST(req: NextRequest) {
   } = body;
 
   if (!customerId) return NextResponse.json({ error: 'customerId gerekli' }, { status: 400 });
+  const foreign = await rejectForeignRefs(user.companyId, {
+    customer: customerId,
+    product: [productId, ...(Array.isArray(orderItems) ? orderItems.map((i: any) => i?.productId) : [])],
+  });
+  if (foreign) return foreign;
 
   const isPackage = Array.isArray(orderItems) && orderItems.length > 0;
 

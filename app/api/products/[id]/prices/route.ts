@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -23,6 +24,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { customerId, unitPrice, currency } = await req.json();
+  const foreign = await rejectForeignRefs(user.companyId, { product: params.id, customer: customerId });
+  if (foreign) return foreign;
   if (!customerId || unitPrice == null) return NextResponse.json({ error: 'Eksik alan' }, { status: 400 });
 
   const price = await prisma.customerProductPrice.upsert({

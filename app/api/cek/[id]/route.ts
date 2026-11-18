@@ -3,19 +3,24 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { rejectForeignRefs, pick } from '@/lib/tenant';
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
 
-  const { removeSupplierPayment, removePayment, ...body } = await req.json();
+  const { removeSupplierPayment, removePayment, ...raw } = await req.json();
+  // Sadece arayüzün değiştirdiği alanlar yazılabilir (companyId vb. alanların taşınmasını önler)
+  const body: any = pick(raw, ['durum', 'paymentId', 'supplierId', 'islemTarihi', 'aciklama']);
+  const foreign = await rejectForeignRefs(user.companyId, { supplier: body.supplierId, payment: body.paymentId });
+  if (foreign) return foreign;
 
   if (removePayment) {
     // Reverting ODENDI → PORTFOY: delete linked payment and restore kasa balance
     const cek = await prisma.cek.findFirst({ where: { id: params.id, companyId: user.companyId } });
     if (cek?.paymentId) {
-      const payment = await prisma.payment.findUnique({ where: { id: cek.paymentId } });
+      const payment = await prisma.payment.findFirst({ where: { id: cek.paymentId, companyId: user.companyId } });
       if (payment) {
         await prisma.payment.delete({ where: { id: cek.paymentId } });
         if (payment.accountId) {

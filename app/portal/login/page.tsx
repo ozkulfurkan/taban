@@ -29,6 +29,8 @@ export default function PortalLoginPage() {
       });
       if (result?.error === 'EMAIL_NOT_VERIFIED') {
         setError('E-posta adresiniz doğrulanmamış. Doğrulama maili gönderildi, lütfen gelen kutunuzu kontrol edin.');
+      } else if (result?.error === 'TOO_MANY_ATTEMPTS') {
+        setError('Çok fazla hatalı deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin veya şifrenizi sıfırlayın.');
       } else if (result?.error === 'ACCOUNT_INACTIVE') {
         setError('Hesabınız pasif durumda. Lütfen firma sahibi ile iletişime geçin.');
       } else if (result?.error) {

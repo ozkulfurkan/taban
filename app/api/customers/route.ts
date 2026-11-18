@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 const LIMIT = 50;
 
@@ -134,6 +135,8 @@ export async function POST(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
   const body = await req.json();
+  const foreign = await rejectForeignRefs(user.companyId, { customerCategory: body?.categoryId });
+  if (foreign) return foreign;
   try {
     const customer = await (prisma as any).customer.create({
       data: {

@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { passwordError } from '@/lib/password';
+import { canAssignRole } from '@/lib/access';
 
 function canManage(role: string) {
   return role === 'ADMIN' || role === 'COMPANY_OWNER';
@@ -37,6 +39,12 @@ export async function POST(req: NextRequest) {
   if (!email || !password) {
     return NextResponse.json({ error: 'Email ve şifre zorunlu' }, { status: 400 });
   }
+  const pwErr = passwordError(password);
+  if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
+  const newRole = role || 'EDITOR';
+  if (!canAssignRole(user.role, newRole)) {
+    return NextResponse.json({ error: 'Bu rol atanamaz' }, { status: 403 });
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return NextResponse.json({ error: 'Bu e-posta zaten kullanımda' }, { status: 409 });
@@ -48,7 +56,7 @@ export async function POST(req: NextRequest) {
       name,
       email,
       password: hashed,
-      role: role || 'EDITOR',
+      role: newRole,
       allowedPages: allowedPages || [],
       companyId: user.companyId,
     },

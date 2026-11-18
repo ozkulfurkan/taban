@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { parseDateInputOrNow, parseDateInput } from '@/lib/time';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -56,6 +57,8 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const { customerId, supplierId, borclu, islem, aciklama, islemTarihi, vadesi, tutar, currency, seriNo, bankasi, customerAmount, customerCurrency } = body;
+  const foreign = await rejectForeignRefs(user.companyId, { customer: customerId, supplier: supplierId });
+  if (foreign) return foreign;
 
   const cek = await (prisma.cek.create as any)({
     data: {

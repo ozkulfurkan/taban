@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     const partsData: any[] = [];
 
     for (const part of (parts ?? [])) {
-      const mat = await prisma.material.findUnique({ where: { id: part.materialId } });
+      const mat = await prisma.material.findFirst({ where: { id: part.materialId, companyId } });
       if (!mat) continue;
       const netW = calcNetWeight(part.grossWeight ?? 0, part.wasteRate ?? 0);
       const cost = calcMaterialCost(netW, mat.pricePerKg);

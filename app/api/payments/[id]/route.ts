@@ -54,15 +54,15 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     if (payment.accountId) {
       const reversalAmount = payment.originalAmount ?? payment.amount;
       const isIncoming = payment.type === 'RECEIVED';
-      await tx.account.update({
-        where: { id: payment.accountId },
+      await tx.account.updateMany({
+        where: { id: payment.accountId, companyId: user.companyId },
         data: { balance: { increment: isIncoming ? -reversalAmount : reversalAmount } },
       });
     }
 
     // Fatura ödeme tutarını geri al
     if (payment.invoiceId) {
-      const invoice = await tx.invoice.findUnique({ where: { id: payment.invoiceId } });
+      const invoice = await tx.invoice.findFirst({ where: { id: payment.invoiceId, companyId: user.companyId } });
       if (invoice) {
         const newPaid = Math.max(0, invoice.paidAmount - payment.amount);
         const status = newPaid <= 0 ? 'PENDING' : newPaid < invoice.total ? 'PARTIAL' : 'PAID';
@@ -72,7 +72,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
 
     // Alış ödeme tutarını geri al
     if (payment.purchaseId) {
-      const purchase = await tx.purchase.findUnique({ where: { id: payment.purchaseId } });
+      const purchase = await tx.purchase.findFirst({ where: { id: payment.purchaseId, companyId: user.companyId } });
       if (purchase) {
         const newPaid = Math.max(0, purchase.paidAmount - payment.amount);
         const status = newPaid <= 0 ? 'PENDING' : newPaid < purchase.total ? 'PARTIAL' : 'PAID';

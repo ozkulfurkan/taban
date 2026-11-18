@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -35,6 +36,8 @@ export async function POST(req: NextRequest) {
   if (user.role === 'VIEWER') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { subcontractorId, productId, soleOrderId, sizeDistribution, dueDate, notes, shippingAddress } = await req.json();
+  const foreign = await rejectForeignRefs(user.companyId, { subcontractor: subcontractorId, product: productId, soleOrder: soleOrderId });
+  if (foreign) return foreign;
 
   if (!subcontractorId) return NextResponse.json({ error: 'Fasoncu seçilmedi' }, { status: 400 });
   if (!sizeDistribution || typeof sizeDistribution !== 'object') {

@@ -1,10 +1,20 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import { canSeePage, checkApiAccess } from '@/lib/access';
 
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token as any;
     const { pathname } = req.nextUrl;
+
+    // API istekleri: rol, portal ayrımı ve hassas sayfa izinleri
+    if (pathname.startsWith('/api/')) {
+      const decision = checkApiAccess(token, req.method, pathname);
+      if (!decision.ok) {
+        return NextResponse.json({ error: decision.error }, { status: decision.status });
+      }
+      return NextResponse.next();
+    }
 
     // Portal users must not access main app routes
     if (token?.type === 'portal') {
@@ -42,6 +52,10 @@ export default withAuth(
       if (isPortalCustomerRoute) {
         return NextResponse.redirect(new URL('/dashboard', req.url));
       }
+      // Sayfa izinleri (menüde gizlenen sayfaya adresle girilmesini engeller)
+      if (!canSeePage(token, pathname)) {
+        return NextResponse.redirect(new URL('/yetkisiz', req.url));
+      }
     }
 
     return NextResponse.next();
@@ -54,6 +68,8 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
         if (pathname === '/portal/fason/login') return true;
+        // API'lerde oturum kontrolünü route yapar (giriş, kayıt, cron gibi açık uç noktalar var)
+        if (pathname.startsWith('/api/')) return true;
         return !!token;
       },
     },
@@ -97,5 +113,7 @@ export const config = {
     '/hesaplayici',
     '/logs/:path*',
     '/logs',
+    '/yetkisiz',
+    '/api/:path*',
   ],
 };

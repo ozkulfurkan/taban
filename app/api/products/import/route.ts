@@ -7,6 +7,8 @@ import * as XLSX from 'xlsx';
 const VALID_CURRENCIES = ['TRY', 'USD', 'EUR'];
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   // Şablon Excel indir
   const wb = XLSX.utils.book_new();
   const data = [

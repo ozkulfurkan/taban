@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
+import { getAuthSession, unauthorized } from '@/lib/helpers';
 import * as XLSX from 'xlsx';
 
 export async function GET() {
+  const session = await getAuthSession();
+  if (!session?.user) return unauthorized();
   const headers = ['Müşteri Adı', 'Vadesi', 'Çek No', 'Bankası', 'Tutar', 'Para Birimi'];
 
   const example = [

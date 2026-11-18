@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 // GET: faturadaki ürünlere göre hammadde kullanımını hesapla
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
@@ -77,6 +78,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (invoice.stockDeducted) return NextResponse.json({ error: 'Stok düşümü zaten yapıldı' }, { status: 400 });
 
   const { adjustments } = await req.json() as { adjustments: { materialId: string; kgAmount: number }[] };
+  const foreign = await rejectForeignRefs(user.companyId, { material: (adjustments ?? []).map(a => a?.materialId) });
+  if (foreign) return foreign;
 
   await prisma.$transaction(async (tx) => {
     for (const adj of adjustments) {

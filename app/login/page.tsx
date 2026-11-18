@@ -99,7 +99,9 @@ export default function LoginPage() {
         redirect: false,
       });
       if (result?.error) {
-        if (result.error === 'EMAIL_NOT_VERIFIED') {
+        if (result.error === 'TOO_MANY_ATTEMPTS') {
+          setError('Çok fazla hatalı deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin veya şifrenizi sıfırlayın.');
+        } else if (result.error === 'EMAIL_NOT_VERIFIED') {
           setUnverifiedEmail(email);
         } else {
           setError('E-posta veya şifre hatalı.');

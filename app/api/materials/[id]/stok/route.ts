@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 // POST: stok güncelle
 // subcontractorId yoksa → ana depo
@@ -27,6 +28,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     subcontractorId?: string;
   };
   const { type, notes, subcontractorId } = body;
+  const foreign = await rejectForeignRefs(user.companyId, { subcontractor: subcontractorId });
+  if (foreign) return foreign;
 
   if (subcontractorId) {
     // ── Fasoncu stok güncellemesi ──────────────────────────────────────────

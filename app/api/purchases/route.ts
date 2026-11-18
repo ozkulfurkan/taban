@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { parseDateInputOrNow } from '@/lib/time';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -36,6 +37,13 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const { supplierId, invoiceNo, date, total, notes, items = [] } = body;
+  const foreign = await rejectForeignRefs(user.companyId, {
+    supplier: supplierId,
+    product: (items as any[]).map(i => i?.productId),
+    material: (items as any[]).map(i => i?.materialId),
+    subcontractor: (items as any[]).map(i => i?.subcontractorId),
+  });
+  if (foreign) return foreign;
   let { currency } = body;
 
   if (!supplierId) return NextResponse.json({ error: 'supplierId required' }, { status: 400 });

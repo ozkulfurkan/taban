@@ -1,6 +1,7 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
+import { canSeePage } from '@/lib/access';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -25,34 +26,9 @@ export default function Sidebar() {
   const user = session?.user as any;
   const isAdmin = user?.role === 'ADMIN';
   const isOwner = user?.role === 'COMPANY_OWNER';
-  const hasFullAccess = isAdmin || isOwner;
-  const allowedPages: string[] = user?.allowedPages ?? [];
   const isMaterial = user?.companyType === 'MATERIAL_SUPPLIER';
 
-  const PAGE_KEY: Record<string, string> = {
-    '/dashboard': 'dashboard',
-    '/customers': 'customers',
-    '/suppliers': 'suppliers',
-    '/invoices': 'invoices',
-    '/payments': 'payments',
-    '/products': 'products',
-    '/materials': 'materials',
-    '/accounts': 'accounts',
-    '/cek-portfolyo': 'cek-portfolyo',
-    '/calculations': 'calculations',
-    '/settings': 'settings',
-    '/subcontractors': 'fason',
-    '/subcontractor-orders': 'fason',
-    '/personnel': 'personnel',
-    '/orders': 'orders',
-  };
-
-  const canSee = (href: string) => {
-    if (hasFullAccess) return true;
-    const key = Object.entries(PAGE_KEY).find(([prefix]) => href.startsWith(prefix))?.[1];
-    if (!key) return true;
-    return allowedPages.includes(key);
-  };
+  const canSee = (href: string) => canSeePage(user, href.split('?')[0]);
 
   const sections: Section[] = [
     {

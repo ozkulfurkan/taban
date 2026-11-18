@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -32,6 +33,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const body = await req.json();
   const { parts, extraCosts, ...productFields } = body;
+
+  // Ürün bu firmaya ait değilse parça/ekstra maliyet işlemlerine hiç girme
+  const owned = await prisma.product.findFirst({ where: { id: params.id, companyId: user.companyId }, select: { id: true } });
+  if (!owned) return NextResponse.json({ error: 'Ürün bulunamadı' }, { status: 404 });
+  const foreign = await rejectForeignRefs(user.companyId, {
+    productCategory: productFields.categoryId,
+    material: Array.isArray(parts) ? parts.map((p: any) => p?.materialId) : [],
+  });
+  if (foreign) return foreign;
 
   await prisma.$transaction(async (tx) => {
     await tx.product.updateMany({

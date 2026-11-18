@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { passwordError } from '@/lib/password';
 
 export async function POST(req: NextRequest) {
   const { token, newPassword } = await req.json();
@@ -8,9 +9,8 @@ export async function POST(req: NextRequest) {
   if (!token || !newPassword) {
     return NextResponse.json({ error: 'Token ve yeni şifre zorunlu' }, { status: 400 });
   }
-  if (newPassword.length < 6) {
-    return NextResponse.json({ error: 'Şifre en az 6 karakter olmalı' }, { status: 400 });
-  }
+  const pwErr = passwordError(newPassword);
+  if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
 
   const user = await prisma.user.findUnique({ where: { resetToken: token } });
 
