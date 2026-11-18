@@ -112,6 +112,8 @@ export async function POST(req: NextRequest) {
       invoiceNo: resolvedInvoiceNo,
       date: invoiceDate,
       dueDate: rest.dueDate ? parseDateInput(rest.dueDate) : null,
+      irsaliyeNo: typeof rest.irsaliyeNo === 'string' && rest.irsaliyeNo.trim() ? rest.irsaliyeNo.trim() : null,
+      sevkTarihi: rest.sevkTarihi ? parseDateInput(rest.sevkTarihi) : null,
       currency: rest.currency || 'USD',
       // Tutarlar iade faturasında da pozitif saklanır; yönü isReturn belirler
       subtotal,

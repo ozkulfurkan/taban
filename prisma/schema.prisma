@@ -368,6 +368,8 @@ model Invoice {
   invoiceNo      String
   date           DateTime
   dueDate        DateTime?
+  irsaliyeNo     String?
+  sevkTarihi     DateTime?
   currency       String        @default("USD")
   subtotal       Float         @default(0)
   vatRate        Float         @default(0)

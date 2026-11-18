@@ -96,6 +96,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return incoming;
     })() : existing.date,
     dueDate: rest.dueDate ? parseDateInput(rest.dueDate) : existing.dueDate,
+    irsaliyeNo: rest.irsaliyeNo !== undefined ? (String(rest.irsaliyeNo).trim() || null) : existing.irsaliyeNo,
+    sevkTarihi: rest.sevkTarihi !== undefined ? (rest.sevkTarihi ? parseDateInput(rest.sevkTarihi) : null) : existing.sevkTarihi,
     currency: rest.currency ?? existing.currency,
     notes: rest.notes !== undefined ? rest.notes : existing.notes,
     status: rest.status ?? existing.status,

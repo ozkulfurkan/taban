@@ -160,3 +160,31 @@ test('stok gösterimi: binlik ayraç ve eksi/sıfır ayrımı', () => {
   assert.equal(stockTone(0), 'zero');
   assert.equal(stockTone(5), 'positive');
 });
+
+import { docTotals, emptyLine, lineNet, lineProblem, purchaseItemsPayload, invoiceItemsPayload } from '../../lib/document-lines';
+
+test('belge kalemleri: Türkçe girişten tutar, iskonto ve KDV', () => {
+  const lines = [
+    emptyLine({ description: 'Taban', quantity: '3', unitPrice: '33,33' }),
+    emptyLine({ description: 'Taban', quantity: '10', unitPrice: '100', discount: '15' }),
+  ];
+  assert.equal(lineNet(lines[0]), 99.99);
+  assert.equal(lineNet(lines[1]), 850);
+  assert.deepEqual(docTotals(lines, 20), { subtotal: 949.99, vatAmount: 190, total: 1139.99 });
+  assert.deepEqual(docTotals([], 20), { subtotal: 0, vatAmount: 0, total: 0 });
+});
+
+test('belge kalemleri: kayıt öncesi kontrol ve API gövdesi', () => {
+  assert.match(lineProblem('sale', emptyLine({ description: 'x', quantity: '0', unitPrice: '1' }), 0)!, /1\. kalem: miktar/);
+  assert.match(lineProblem('purchase', emptyLine({ quantity: '1', unitPrice: '1' }), 1)!, /2\. kalem: ürün ya da hammadde/);
+  assert.match(lineProblem('return', emptyLine({ description: 'x', quantity: '1', unitPrice: '1', discount: '120' }), 0)!, /iskonto/);
+  assert.equal(lineProblem('sale', emptyLine({ description: 'Taban', quantity: '2', unitPrice: '1,5' }), 0), null);
+
+  const mat = emptyLine({ itemType: 'material', materialId: 'm1', description: 'Kauçuk', quantity: '12,5', unitPrice: '2,40' });
+  const prod = emptyLine({ itemType: 'product', productId: 'p1', description: 'Taban', quantity: '4', unitPrice: '10' });
+  assert.deepEqual(purchaseItemsPayload([mat, prod], 'sub1'), [
+    { productId: null, materialId: 'm1', subcontractorId: 'sub1', description: 'Kauçuk', qty: 12.5, unitPrice: 2.4 },
+    { productId: 'p1', materialId: null, subcontractorId: null, description: 'Taban', qty: 4, unitPrice: 10 },
+  ]);
+  assert.equal(invoiceItemsPayload([prod])[0].quantity, 4);
+});

@@ -12,7 +12,6 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { matchesText } from '@/lib/search';
 import FitText from '@/app/components/fit-text';
 import MoreMenu from '@/app/components/more-menu';
@@ -32,7 +31,6 @@ const STATUS_COLOR: Record<string, string> = {
   CANCELLED: 'bg-red-100 text-red-600',
 };
 const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı'];
-const CURRENCIES = ['TRY', 'USD', 'EUR'];
 const RECORD_CURRENCY = 'TRY';
 const fmtDateC = formatDate;
 
@@ -445,355 +443,6 @@ function BakiyeDuzeltModal({ supplier, currentBalance, onClose, onSaved }: {
             <button type="submit" disabled={saving || delta === null || delta === 0}
               className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50 transition-colors">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : '💾'} Kaydet
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-// ── AlışModal ──────────────────────────────────────────────────────────────
-type ItemType = 'product' | 'material';
-type LineItem = { id: number; itemType: ItemType; refId: string; itemName: string; qty: string; unitPrice: string };
-
-function AlışModal({ supplier, onClose, onSaved }: {
-  supplier: any; onClose: () => void; onSaved: () => void;
-}) {
-  const { t } = useLanguage();
-  const [form, setForm] = useState(() => {
-    const now = new Date();
-    return {
-      date: now.toISOString().split('T')[0],
-      time: now.toTimeString().slice(0, 5),
-      invoiceNo: '',
-      currency: supplier.currency || 'USD',
-      notes: '',
-    };
-  });
-  const [items, setItems] = useState<LineItem[]>([
-    { id: 1, itemType: 'material', refId: '', itemName: '', qty: '1', unitPrice: '' },
-  ]);
-  const [productList, setProductList] = useState<any[]>([]);
-  const [materialList, setMaterialList] = useState<any[]>([]);
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
-  const [showNewItem, setShowNewItem] = useState<number | null>(null); // item.id
-  const [newItemForm, setNewItemForm] = useState({ name: '', unitPrice: '', currency: 'TRY', pricePerKg: '' });
-  const [saving, setSaving] = useState(false);
-  const [creatingItem, setCreatingItem] = useState(false);
-  const [subcontractorList, setSubcontractorList] = useState<any[]>([]);
-  const [subcontractorId, setSubcontractorId] = useState('');
-
-
-  useEffect(() => {
-    fetch('/api/products').then(r => r.json()).then(d => setProductList(Array.isArray(d) ? d : []));
-    fetch('/api/materials').then(r => r.json()).then(d => setMaterialList(Array.isArray(d) ? d : []));
-    fetch('/api/subcontractors').then(r => r.json()).then(d => setSubcontractorList(Array.isArray(d) ? d : []));
-  }, []);
-
-  const closeDropdown = () => setOpenDropdown(null);
-
-  const total = items.reduce((sum, it) => sum + (parseFloat(it.qty) || 0) * fromPriceInput(it.unitPrice), 0);
-
-  const addRow = () => setItems(p => [...p, { id: Date.now(), itemType: 'material', refId: '', itemName: '', qty: '1', unitPrice: '' }]);
-  const removeRow = (id: number) => setItems(p => p.filter(r => r.id !== id));
-  const updateItem = (id: number, field: keyof LineItem, value: string) =>
-    setItems(p => p.map(r => r.id === id ? { ...r, [field]: value } : r));
-  const setItemType = (id: number, type: ItemType) =>
-    setItems(p => p.map(r => r.id === id ? { ...r, itemType: type, refId: '', itemName: '' } : r));
-
-  const selectRef = (itemId: number, ref: any, type: ItemType) => {
-    const price = type === 'material' ? toPriceInput(ref.pricePerKg || '') : toPriceInput(ref.unitPrice || '');
-    setItems(p => p.map(r => r.id === itemId
-      ? { ...r, refId: ref.id, itemName: ref.name, unitPrice: price }
-      : r));
-    setOpenDropdown(null);
-  };
-
-
-  const filteredList = (item: LineItem) => {
-    const list = item.itemType === 'material' ? materialList : productList;
-    const q = item.itemName.toLowerCase();
-    if (!q) return list.slice(0, 8);
-    return list.filter((x: any) =>
-      matchesText(x.name, q) || (x.code && matchesText(x.code, q))
-    ).slice(0, 8);
-  };
-
-  const handleCreateItem = async (itemId: number, itemType: ItemType) => {
-    if (!newItemForm.name) return;
-    const price = itemType === 'material' ? newItemForm.pricePerKg : newItemForm.unitPrice;
-    if (!price) return;
-    setCreatingItem(true);
-    try {
-      let created: any;
-      if (itemType === 'material') {
-        const res = await fetch('/api/materials', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: newItemForm.name, pricePerKg: fromPriceInput(price), currency: newItemForm.currency }),
-        });
-        created = await res.json();
-        setMaterialList(p => [...p, created]);
-      } else {
-        const res = await fetch('/api/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: newItemForm.name, unitPrice: fromPriceInput(price), currency: newItemForm.currency }),
-        });
-        created = await res.json();
-        setProductList(p => [...p, created]);
-      }
-      selectRef(itemId, created, itemType);
-      setNewItemForm({ name: '', unitPrice: '', currency: 'TRY', pricePerKg: '' });
-      setShowNewItem(null);
-    } finally { setCreatingItem(false); }
-  };
-
-  const validItems = items.filter(i => i.refId && parseFloat(i.qty) > 0 && fromPriceInput(i.unitPrice) > 0);
-  const canSavePurchase = validItems.length > 0 && total > 0;
-
-  const handle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSavePurchase) return;
-    setSaving(true);
-    try {
-      const purchaseDateIso = new Date(`${form.date}T${form.time}`).toISOString();
-      await fetch('/api/purchases', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          supplierId: supplier.id,
-          invoiceNo: form.invoiceNo || null,
-          date: purchaseDateIso,
-          currency: form.currency,
-          total,
-          notes: form.notes || null,
-          items: validItems.map(i => ({
-            productId: i.itemType === 'product' ? (i.refId || null) : null,
-            materialId: i.itemType === 'material' ? (i.refId || null) : null,
-            subcontractorId: i.itemType === 'material' && subcontractorId ? subcontractorId : null,
-            description: i.itemName,
-            qty: i.qty,
-            unitPrice: fromPriceInput(i.unitPrice),
-          })),
-        }),
-      });
-      onSaved();
-      onClose();
-    } catch (err) { console.error(err); }
-    finally { setSaving(false); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
-        <div className="bg-indigo-600 rounded-t-2xl px-5 py-4 flex items-center justify-between flex-shrink-0">
-          <h3 className="text-white font-semibold">{t('supplierDetail', 'newPurchase')}</h3>
-          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
-        </div>
-        <form onSubmit={handle} className="flex flex-col flex-1 overflow-hidden">
-          <div className="p-5 space-y-3 overflow-y-auto flex-1">
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 text-sm text-indigo-800 font-medium truncate">
-              {supplier.name}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'date')}</label>
-                <div className="flex gap-2">
-                  <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
-                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
-                  <input type="time" value={form.time} onChange={e => setForm(p => ({ ...p, time: e.target.value }))}
-                    className="w-24 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">{t('supplierDetail', 'invoiceNo')}</label>
-                <input value={form.invoiceNo} onChange={e => setForm(p => ({ ...p, invoiceNo: e.target.value }))}
-                  placeholder="Opsiyonel"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Döviz</label>
-              <div className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg text-sm">
-                <span className="font-semibold text-slate-700">{supplier.currency || 'USD'}</span>
-                <span className="text-xs text-slate-400">(tedarikçi para birimi)</span>
-              </div>
-            </div>
-
-            {subcontractorList.length > 0 && (
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Hedef Depo</label>
-                <select value={subcontractorId} onChange={e => setSubcontractorId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                  <option value="">Ana Depo</option>
-                  {subcontractorList.map((s: any) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Line items */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-medium text-slate-500">Kalemler</label>
-                <button type="button" onClick={addRow}
-                  className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium">
-                  <Plus className="w-3.5 h-3.5" /> Satır Ekle
-                </button>
-              </div>
-              <div className="space-y-2">
-                {items.map(item => {
-                  const rowTotal = (parseFloat(item.qty) || 0) * fromPriceInput(item.unitPrice);
-                  const fp = filteredList(item);
-                  const isOpen = openDropdown === item.id;
-                  const isMaterial = item.itemType === 'material';
-                  return (
-                    <div key={item.id} className="border border-slate-200 rounded-lg p-2 space-y-2">
-                      {/* Type toggle */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex rounded-md overflow-hidden border border-slate-200 text-xs">
-                          <button type="button"
-                            onClick={() => setItemType(item.id, 'material')}
-                            className={`px-2.5 py-1 font-medium transition-colors ${isMaterial ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
-                            Hammadde
-                          </button>
-                          <button type="button"
-                            onClick={() => setItemType(item.id, 'product')}
-                            className={`px-2.5 py-1 font-medium transition-colors ${!isMaterial ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
-                            Ürün
-                          </button>
-                        </div>
-                        {items.length > 1 && (
-                          <button type="button" onClick={() => removeRow(item.id)}>
-                            <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
-                          </button>
-                        )}
-                      </div>
-                      {/* Search input */}
-                      <div className="relative flex items-center gap-2">
-                        <Search className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                        <input
-                          value={item.itemName}
-                          onChange={e => {
-                            updateItem(item.id, 'itemName', e.target.value);
-                            updateItem(item.id, 'refId', '');
-                            setOpenDropdown(item.id);
-                          }}
-                          onFocus={() => setOpenDropdown(item.id)}
-                          onBlur={() => setTimeout(closeDropdown, 150)}
-                          placeholder={isMaterial ? 'Hammadde ara veya yaz...' : 'Ürün ara veya yaz...'}
-                          className="flex-1 text-sm outline-none"
-                        />
-                        {isOpen && fp.length > 0 && (
-                          <div className="absolute left-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 w-full max-h-40 overflow-y-auto">
-                            {fp.map((ref: any) => (
-                              <button key={ref.id} type="button"
-                                onMouseDown={() => selectRef(item.id, ref, item.itemType)}
-                                className="w-full text-left px-3 py-1.5 text-sm hover:bg-indigo-50 flex items-center justify-between gap-2">
-                                <span className="min-w-0">
-                                  {ref.name}
-                                  {ref.code && <span className="ml-1.5 text-xs text-slate-400 font-mono">{ref.code}</span>}
-                                </span>
-                                <span className="text-xs text-slate-400 flex-shrink-0">
-                                  {isMaterial ? `${ref.pricePerKg} ${ref.currency}/kg` : `${ref.unitPrice} ${ref.currency}`}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div>
-                          <label className="text-slate-400 mb-0.5 block">{isMaterial ? 'Miktar (kg)' : 'Miktar'}</label>
-                          <DecimalInput step="0.01" min="0.01" value={item.qty}
-                            onChange={e => updateItem(item.id, 'qty', e.target.value)}
-                            className="w-full px-2 py-1 border border-slate-200 rounded text-right outline-none focus:ring-1 focus:ring-indigo-400" />
-                        </div>
-                        <div>
-                          <label className="text-slate-400 mb-0.5 block">{isMaterial ? 'Kg Fiyatı' : 'Birim Fiyat'}</label>
-                          <input type="text" inputMode="decimal" value={item.unitPrice}
-                            onChange={e => updateItem(item.id, 'unitPrice', normalizePriceInput(e.target.value))}
-                            onKeyDown={blockDot}
-                            className={`w-full px-2 py-1 border rounded text-right outline-none focus:ring-1 focus:ring-indigo-400 ${
-                              parseFloat(item.qty) > 0 && !fromPriceInput(item.unitPrice)
-                                ? 'border-orange-300 bg-orange-50'
-                                : 'border-slate-200'
-                            }`} />
-                        </div>
-                        <div>
-                          <label className="text-slate-400 mb-0.5 block">{t('supplierDetail', 'amount')}</label>
-                          <div className="px-2 py-1 bg-slate-50 rounded text-right font-semibold text-slate-700">
-                            {rowTotal > 0 ? rowTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
-                          </div>
-                        </div>
-                      </div>
-                      {/* New item inline form */}
-                      {showNewItem === item.id ? (
-                        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 space-y-2">
-                          <p className="text-xs font-medium text-indigo-700">
-                            {isMaterial ? 'Yeni Hammadde Ekle (Kataloğa eklenecek)' : 'Yeni Ürün Ekle (Kataloğa eklenecek)'}
-                          </p>
-                          <input value={newItemForm.name} onChange={e => setNewItemForm(p => ({ ...p, name: e.target.value }))}
-                            placeholder={isMaterial ? 'Hammadde adı' : 'Ürün adı'}
-                            className="w-full px-2 py-1.5 border border-indigo-200 rounded text-sm outline-none" />
-                          <div className="grid grid-cols-2 gap-2">
-                            <input type="text" inputMode="decimal"
-                              value={isMaterial ? newItemForm.pricePerKg : newItemForm.unitPrice}
-                              onChange={e => { const v = normalizePriceInput(e.target.value); setNewItemForm(p => isMaterial ? { ...p, pricePerKg: v } : { ...p, unitPrice: v }); }}
-                              onKeyDown={blockDot}
-                              placeholder={isMaterial ? 'Kg fiyatı' : 'Birim fiyat'}
-                              className="px-2 py-1.5 border border-indigo-200 rounded text-sm outline-none text-right" />
-                            <select value={newItemForm.currency} onChange={e => setNewItemForm(p => ({ ...p, currency: e.target.value }))}
-                              className="px-2 py-1.5 border border-indigo-200 rounded text-sm outline-none bg-white">
-                              {CURRENCIES.map(c => <option key={c}>{c}</option>)}
-                            </select>
-                          </div>
-                          <div className="flex gap-2">
-                            <button type="button" onClick={() => { setShowNewItem(null); setNewItemForm({ name: '', unitPrice: '', currency: 'TRY', pricePerKg: '' }); }}
-                              className="flex-1 py-1 border border-slate-200 rounded text-xs text-slate-500 hover:bg-slate-50">{t('common', 'cancel')}</button>
-                            <button type="button" onClick={() => handleCreateItem(item.id, item.itemType)}
-                              disabled={creatingItem || !newItemForm.name || !(isMaterial ? newItemForm.pricePerKg : newItemForm.unitPrice)}
-                              className="flex-1 py-1 bg-indigo-600 text-white rounded text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1">
-                              {creatingItem ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />} Ekle
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button type="button" onClick={() => { setShowNewItem(item.id); setNewItemForm({ name: '', unitPrice: '', currency: 'TRY', pricePerKg: '' }); }}
-                          className="text-xs text-indigo-500 hover:text-indigo-700 underline">
-                          Listede olmayan {isMaterial ? 'hammadde' : 'ürün'} eklemek için tıklayın
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="bg-slate-50 rounded-lg px-4 py-3 flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-600">Genel Toplam</span>
-              <span className="text-lg font-bold text-slate-800">
-                {total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.currency}
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'notes')}</label>
-              <input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
-            </div>
-          </div>
-          <div className="flex gap-3 p-5 border-t flex-shrink-0">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">{t('common', 'cancel')}</button>
-            <button type="submit" disabled={saving || !canSavePurchase}
-              className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />} {t('common', 'save')}
             </button>
           </div>
         </form>
@@ -1282,7 +931,6 @@ export default function SupplierDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteWarning, setDeleteWarning] = useState('');
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
-  const [showAlıs, setShowAlıs] = useState(false);
   const [showOdeme, setShowOdeme] = useState(false);
   const [showIade, setShowIade] = useState(false);
   const [showBorcFis, setShowBorcFis] = useState(false);
@@ -1564,10 +1212,10 @@ export default function SupplierDetailPage() {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-1.5">
-          <button onClick={() => setShowAlıs(true)}
+          <Link href={`/purchases/new?supplierId=${supplier.id}`}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
             <ShoppingBag className="w-3.5 h-3.5" /> {t('supplierDetail', 'newPurchase')}
-          </button>
+          </Link>
           <div className="relative">
             <button
               onClick={() => setOdemeDropdown(d => !d)}
@@ -1792,9 +1440,6 @@ export default function SupplierDetailPage() {
         </div>{/* end grid */}
       </div>
 
-      {showAlıs && (
-        <AlışModal supplier={supplier} onClose={() => setShowAlıs(false)} onSaved={load} />
-      )}
       {showIade && (
         <IadeModal supplier={supplier} onClose={() => setShowIade(false)} onSaved={load} />
       )}
