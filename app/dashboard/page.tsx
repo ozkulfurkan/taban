@@ -23,6 +23,7 @@ import {
   verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
+import FitText from '@/app/components/fit-text';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -84,7 +85,7 @@ function KpiContent({ data }: { data: any }) {
               <k.icon className={`w-3.5 h-3.5 ${k.iconCls}`} />
             </div>
           </div>
-          <p className="text-lg font-bold text-slate-800 tabular-nums">{k.value}</p>
+          <FitText className="text-lg font-bold text-slate-800 tabular-nums">{k.value}</FitText>
           <p className="text-xs text-slate-400 mt-0.5">{k.unit}</p>
         </div>
       ))}

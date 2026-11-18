@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import type { Employee } from '@/app/personnel/data';
+import DecimalInput from '@/app/components/decimal-input';
 import {
   ArrowLeft, Pencil, CreditCard, Banknote, TrendingUp, Scissors,
   CalendarDays, Clock, Upload, X, Loader2,
@@ -131,7 +132,7 @@ function PaymentModal({ type, emp, empId, onClose, onSave }: {
         <form onSubmit={handle} className="p-6 space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Tutar ({emp.currency}) *</label>
-            <input type="number" min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
+            <DecimalInput min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Kasa / Banka *</label>
@@ -217,7 +218,7 @@ function HakedisModal({ emp, empId, onClose, onSave }: {
           <p className="text-xs text-gray-500 bg-teal-50 px-3 py-2 rounded-lg">Personeli alacaklandırır. Kasadan para çıkmaz.</p>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Tutar ({emp.currency}) *</label>
-            <input type="number" min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
+            <DecimalInput min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
@@ -293,7 +294,7 @@ function PrimModal({ emp, empId, onClose, onSave }: {
           <p className="text-xs text-gray-500 bg-green-50 px-3 py-2 rounded-lg">Personeli alacaklandırır. Kasadan para çıkmaz.</p>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Prim Tutarı ({emp.currency}) *</label>
-            <input type="number" min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
+            <DecimalInput min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
@@ -369,7 +370,7 @@ function KesModal({ emp, empId, onClose, onSave }: {
           <p className="text-xs text-gray-500 bg-red-50 px-3 py-2 rounded-lg">Personeli borçlandırır. Kasadan para çıkmaz.</p>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Kesinti Tutarı ({emp.currency}) *</label>
-            <input type="number" min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
+            <DecimalInput min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
@@ -508,11 +509,11 @@ function OvertimeModal({ empId, onClose, onSave }: { empId: string; onClose: () 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Saat</label>
-              <input type="number" min="0.5" step="0.5" className={inputCls} value={form.hours} onChange={e => set('hours', e.target.value)} placeholder="4" required />
+              <DecimalInput min="0.5" step="0.5" className={inputCls} value={form.hours} onChange={e => set('hours', e.target.value)} placeholder="4" required />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Tutar (TRY)</label>
-              <input type="number" min="0" step="0.01" className={inputCls} value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="800" />
+              <DecimalInput min="0" step="0.01" className={inputCls} value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="800" />
             </div>
           </div>
           <div>
@@ -688,11 +689,11 @@ function EditModal({ emp, empId, onClose, onSave, onLeave }: {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Maaş</label>
-              <input type="number" min="0" className={inputCls} value={form.salary} onChange={e => set('salary', e.target.value)} />
+              <DecimalInput min="0" className={inputCls} value={form.salary} onChange={e => set('salary', e.target.value)} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Maaş Günü</label>
-              <input type="number" min="1" max="31" className={inputCls} value={form.payday} onChange={e => set('payday', e.target.value)} />
+              <DecimalInput min="1" max="31" className={inputCls} value={form.payday} onChange={e => set('payday', e.target.value)} />
             </div>
           </div>
           <div>
@@ -804,7 +805,7 @@ function LedgerEditModal({ entry, empId, onClose, onSaved }: {
         <form onSubmit={handle} className="p-6 space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Tutar *</label>
-            <input type="number" min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} required />
+            <DecimalInput min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} required />
           </div>
           {hasCash && accounts.length > 0 && (
             <div>

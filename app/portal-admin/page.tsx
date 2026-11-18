@@ -210,7 +210,7 @@ export default function PortalAdminPage() {
                       .filter(o => !filterStatus || o.status === filterStatus)
                       .map(order => (
                       <tr key={order.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-medium text-slate-800">{order.orderNo}</td>
+                        <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{order.orderNo}</td>
                         <td className="px-4 py-3 text-slate-600">{order.customer?.name}</td>
                         <td className="px-4 py-3 text-slate-600">{order.productCode || order.product?.name || '—'}</td>
                         <td className="px-4 py-3 text-slate-600">{order.totalQuantity}</td>

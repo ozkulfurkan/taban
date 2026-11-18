@@ -132,3 +132,31 @@ test('Türkçe karakterden bağımsız arama', () => {
   assert.ok(!matchesText('Ayakkabı', 'terlik'));
   assert.ok(matchesText(null, ''));
 });
+
+import { normalizeDecimal } from '../../app/components/decimal-input';
+import { fmtQty, stockTone } from '../../lib/stock-display';
+
+test('normalizeDecimal: Türkçe virgülü noktaya çevirir, harfleri atar', () => {
+  const cases: Array<[string, string]> = [
+    ['12,5', '12.5'],
+    ['1.234,56', '1234.56'],
+    ['12.5', '12.5'],
+    ['-3', '-3'],
+    ['3-', '3'], // eksi sadece başta geçerli
+    ['abc12', '12'],
+    ['1,2,3', '1.23'],
+    [' 1 000 ', '1000'],
+    ['', ''],
+  ];
+  for (const [input, expected] of cases) assert.equal(normalizeDecimal(input), expected, `girdi: ${input}`);
+});
+
+test('stok gösterimi: binlik ayraç ve eksi/sıfır ayrımı', () => {
+  assert.equal(fmtQty(1940), '1.940');
+  assert.equal(fmtQty(-999149), '-999.149');
+  assert.equal(fmtQty(12.5), '12,5');
+  assert.equal(fmtQty(-0), '0');
+  assert.equal(stockTone(-3), 'negative');
+  assert.equal(stockTone(0), 'zero');
+  assert.equal(stockTone(5), 'positive');
+});

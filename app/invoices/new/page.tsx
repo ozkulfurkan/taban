@@ -7,6 +7,9 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle, Info, CheckCircle, ChevronDown } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { matchesText } from '@/lib/search';
+import { stockTextClass, fmtQty as fmtStock } from '@/lib/stock-display';
+import StickySaveBar from '@/app/components/sticky-save-bar';
+import { useLeaveGuard } from '@/lib/use-leave-guard';
 
 interface LineItem {
   productId?: string;
@@ -154,8 +157,8 @@ function ItemModal({ initial, currency, products, materials, customerPrices, onC
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none"
               />
               {!(selectedProduct && (selectedProduct.parts ?? []).length > 0) && selectedProduct && (
-                <p className={`text-xs mt-1 font-medium ${selectedProduct.stock <= 0 ? 'text-red-500' : 'text-green-600'}`}>
-                  Stok: {selectedProduct.stock} {selectedProduct.unit}
+                <p className={`text-xs mt-1 font-medium ${stockTextClass(selectedProduct.stock, 'text-green-600')}`}>
+                  Stok: {fmtStock(selectedProduct.stock)} {selectedProduct.unit}
                 </p>
               )}
             </div>
@@ -608,6 +611,8 @@ export default function NewInvoicePage() {
   };
 
   const subtotal = items.reduce((s, it) => s + lineSubtotal(it), 0);
+  // Kalem eklenmiş ya da not yazılmışsa çıkmadan önce sor
+  const { guard, leave } = useLeaveGuard(!saving && (items.length > 0 || !!form.notes?.trim()));
   const vatRate = parseFloat(form.vatRate) || 0;
   const vatAmount = subtotal * vatRate / 100;
   const total = subtotal + vatAmount;
@@ -711,16 +716,8 @@ export default function NewInvoicePage() {
         )}
         {/* Top action bar */}
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={() => router.back()} className="flex items-center gap-1.5 px-3 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors">
+          <button onClick={() => leave(() => router.back())} className="flex items-center gap-1.5 px-3 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors">
             <ArrowLeft className="w-4 h-4" /> {t('common', 'back')}
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {saving ? t('newInvoice', 'saving') : t('newInvoice', 'save')}
           </button>
         </div>
 
@@ -1000,6 +997,15 @@ export default function NewInvoicePage() {
             </div>
           </div>
         </div>
+        <StickySaveBar
+          summaryLabel={t('newInvoice', 'grandTotal')}
+          summaryValue={`${total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${form.currency}`}
+          onSave={handleSubmit}
+          saving={saving}
+          saveLabel={t('newInvoice', 'save')}
+          savingLabel={t('newInvoice', 'saving')}
+        />
+        {guard}
       </div>
 
       {/* Item Modal */}

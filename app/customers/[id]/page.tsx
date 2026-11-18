@@ -11,6 +11,9 @@ import {
 import Link from 'next/link';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
+import FitText from '@/app/components/fit-text';
+import MoreMenu from '@/app/components/more-menu';
+import DecimalInput from '@/app/components/decimal-input';
 
 function nowIstanbulISO(): string {
   const now = new Date();
@@ -156,7 +159,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')} {form.paymentCurrency ? `(${form.paymentCurrency})` : ''}</label>
-            <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => handleAmountChange(e.target.value)}
+            <DecimalInput required step="0.01" min="0.01" value={form.amount} onChange={e => handleAmountChange(e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-right" />
           </div>
           {!isSameCurrency && (
@@ -166,7 +169,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
                   <label className="block text-xs font-medium text-blue-700 mb-1">
                     {t('modal', 'rate')} (1 {customer.currency || 'TRY'}={form.paymentCurrency})
                   </label>
-                  <input type="number" step="0.0001" min="0.0001" value={form.exchangeRate}
+                  <DecimalInput step="0.0001" min="0.0001" value={form.exchangeRate}
                     onChange={e => handleRateChange(e.target.value)} placeholder="0.0000"
                     className="w-full px-2 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white" />
                 </div>
@@ -174,7 +177,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
                   <label className="block text-xs font-medium text-blue-700 mb-1">
                     {t('modal', 'recordedAmount')} ({customer.currency || 'TRY'}) *
                   </label>
-                  <input type="number" step="0.01" min="0.01" value={form.recordedAmount}
+                  <DecimalInput step="0.01" min="0.01" value={form.recordedAmount}
                     onChange={e => handleRecordedChange(e.target.value)} placeholder="0.00"
                     className="w-full px-2 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white font-semibold" />
                 </div>
@@ -244,7 +247,7 @@ function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () 
         <form onSubmit={handle} className="p-5 space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')}</label>
-            <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
+            <DecimalInput required step="0.01" min="0.01" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
           </div>
           <div>
@@ -335,7 +338,7 @@ function BorcAlacakFisModal({ customer, onClose, onSaved }: { customer: any; onC
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Tutar</label>
-            <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
+            <DecimalInput required step="0.01" min="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
           </div>
           <div>
@@ -411,7 +414,7 @@ function BakiyeDuzeltModal({ customer, currentBalance, onClose, onSaved }: {
             <label className="block text-xs font-medium text-slate-500 mb-1">
               Yeni Bakiye ({customer.currency || 'TL'})
             </label>
-            <input required type="number" step="0.01" value={targetBalance} onChange={e => setTargetBalance(e.target.value)}
+            <DecimalInput required step="0.01" value={targetBalance} onChange={e => setTargetBalance(e.target.value)}
               placeholder="0,00"
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
             {delta !== null && delta !== 0 && (
@@ -522,7 +525,7 @@ function CekTanimModal({ borclu: defaultBorclu, customerCurrency, onClose, onAdd
           <div>
             <label className="text-xs font-medium text-slate-500 mb-1 block">Tutar *</label>
             <div className="flex gap-2">
-              <input type="number" placeholder="0.00" value={form.tutar} onChange={e => set('tutar', e.target.value)}
+              <DecimalInput placeholder="0.00" value={form.tutar} onChange={e => set('tutar', e.target.value)}
                 className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
               <select value={form.currency} onChange={e => set('currency', e.target.value)}
                 className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500">
@@ -535,9 +538,9 @@ function CekTanimModal({ borclu: defaultBorclu, customerCurrency, onClose, onAdd
               <label className="text-xs font-medium text-blue-700 block">
                 Müşteri Para Birimi Karşılığı ({customerCurrency}) *
               </label>
-              <input
+              <DecimalInput
                 required
-                type="number"
+               
                 step="0.01"
                 min="0.01"
                 value={form.customerAmount}
@@ -966,22 +969,22 @@ export default function CustomerDetailPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="rounded-xl p-4 text-white bg-orange-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'balance')}</p>
-                <p className="text-xl font-bold">{(customer.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <FitText className="text-xl font-bold">{(customer.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
                 <p className="text-xs opacity-70 mt-0.5">{customer.currency || 'TRY'}</p>
               </div>
               <div className="rounded-xl p-4 text-white bg-blue-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'totalInvoiced')}</p>
-                <p className="text-xl font-bold">{(customer.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <FitText className="text-xl font-bold">{(customer.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
                 <p className="text-xs opacity-70 mt-0.5">{(customer.invoices || []).length} fatura</p>
               </div>
               <div className="rounded-xl p-4 text-white bg-teal-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'totalPaid')}</p>
-                <p className="text-xl font-bold">{(customer.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <FitText className="text-xl font-bold">{(customer.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
                 <p className="text-xs opacity-70 mt-0.5">{(customer.payments || []).length} ödeme</p>
               </div>
               <div className="rounded-xl p-4 text-white bg-cyan-600 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">Çek Bakiyesi</p>
-                <p className="text-xl font-bold">{cekBakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <FitText className="text-xl font-bold">{cekBakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
                 <p className="text-xs opacity-70 mt-0.5">{cekler.filter(c => c.durum === 'PORTFOY' || c.durum === 'BANKAYA_VERILDI').length} çek</p>
               </div>
             </div>
@@ -1028,15 +1031,15 @@ export default function CustomerDetailPage() {
           </Link>
           <Link
             href={`/quotes/new?customerId=${customer.id}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
           >
-            <FileText className="w-3.5 h-3.5" /> Teklif Hazırla
+            <FileText className="w-3.5 h-3.5 text-slate-500" /> Teklif Hazırla
           </Link>
           <Link
             href={`/invoices/return?customerId=${customer.id}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> {t('customerDetail', 'returnInvoice')}
+            <RotateCcw className="w-3.5 h-3.5 text-red-500" /> {t('customerDetail', 'returnInvoice')}
           </Link>
           <div className="relative">
             <button
@@ -1075,18 +1078,11 @@ export default function CustomerDetailPage() {
             )}
           </div>
           <Link href={`/customers/${params.id}/ekstre`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
           >
-            <Download className="w-3.5 h-3.5" /> {t('customerDetail', 'accountStatement')}
+            <Download className="w-3.5 h-3.5 text-slate-500" /> {t('customerDetail', 'accountStatement')}
           </Link>
-          <button
-            onClick={handleDeleteCustomer}
-            disabled={deleting}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
-          >
-            {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-            Müşteriyi Sil
-          </button>
+          <MoreMenu align="left" items={[{ label: deleting ? 'Siliniyor...' : 'Müşteriyi Sil', icon: Trash2, danger: true, disabled: deleting, onClick: handleDeleteCustomer }]} />
         </div>
 
         {/* Delete warning modal */}
@@ -1122,6 +1118,7 @@ export default function CustomerDetailPage() {
               <div className="py-8 text-center text-slate-400 text-sm">{t('customerDetail', 'noSales')}</div>
             ) : (
               <>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
@@ -1150,7 +1147,7 @@ export default function CustomerDetailPage() {
                           <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap">
                             {new Date(inv.date).toLocaleDateString('tr-TR')}
                           </td>
-                          <td className="px-4 py-2.5 font-medium text-blue-600">{inv.invoiceNo}</td>
+                          <td className="px-4 py-2.5 font-medium text-blue-600 whitespace-nowrap">{inv.invoiceNo}</td>
                           <td className="px-4 py-2.5 text-right font-semibold text-slate-800 whitespace-nowrap">
                             {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
@@ -1210,6 +1207,7 @@ export default function CustomerDetailPage() {
                   })}
                 </tbody>
               </table>
+              </div>
               {customer.invoices.length > invoicesShown && (
                 <div className="px-4 py-3 border-t text-center">
                   <button onClick={() => setInvoicesShown(p => p + 10)}
@@ -1359,7 +1357,7 @@ export default function CustomerDetailPage() {
                       <div>{new Date(inv.date).toLocaleDateString('tr-TR')}</div>
                       <div className="text-xs text-slate-400">{new Date(inv.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
                     </td>
-                    <td className="px-4 py-2.5 font-medium text-red-700">{inv.invoiceNo}</td>
+                    <td className="px-4 py-2.5 font-medium text-red-700 whitespace-nowrap">{inv.invoiceNo}</td>
                     <td className="px-4 py-2.5 text-right font-semibold text-red-600">
                       {Math.abs(inv.total).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>

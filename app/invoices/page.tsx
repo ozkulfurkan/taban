@@ -128,7 +128,7 @@ export default function InvoicesPage() {
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+          <div className="bg-white rounded-xl shadow-sm overflow-x-auto border border-slate-200">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-800 text-white text-xs font-semibold uppercase tracking-wide">
@@ -163,7 +163,7 @@ export default function InvoicesPage() {
                           <div className="text-xs text-slate-400">{new Date(inv.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
                         </td>
                         <td className="px-4 py-3 font-medium text-slate-800">{inv.customer?.name ?? '—'}</td>
-                        <td className="px-4 py-3 text-slate-600">{inv.invoiceNo}</td>
+                        <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{inv.invoiceNo}</td>
                         <td className="px-4 py-3 text-slate-600">{inv.soleOrder?.orderNo ?? '—'}</td>
                         <td className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${inv.isReturn ? 'text-red-600' : 'text-slate-800'}`}>
                           {inv.isReturn ? '−' : ''}{Math.abs(inv.total).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

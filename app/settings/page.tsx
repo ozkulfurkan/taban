@@ -6,6 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Settings, Save, Loader2, Globe, DollarSign, User, Building2, CreditCard, Plus, Trash2, Image, RefreshCw, QrCode, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion } from 'framer-motion';
+import DecimalInput from '@/app/components/decimal-input';
 
 interface BankEntry {
   bankName: string;
@@ -347,11 +348,11 @@ export default function SettingsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">{t('settings', 'usdToTry')}</label>
-                  <input type="number" step="0.01" value={usdToTry} onChange={(e) => setUsdToTry(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
+                  <DecimalInput step="0.01" value={usdToTry} onChange={(e) => setUsdToTry(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">{t('settings', 'eurToTry')}</label>
-                  <input type="number" step="0.01" value={eurToTry} onChange={(e) => setEurToTry(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
+                  <DecimalInput step="0.01" value={eurToTry} onChange={(e) => setEurToTry(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
                 </div>
               </div>
             </div>
@@ -360,7 +361,7 @@ export default function SettingsPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">{t('settings', 'vatRate')}</label>
               <div className="flex items-center gap-2">
-                <input type="number" step="0.1" min="0" max="100" value={vatRate} onChange={(e) => setVatRate(e.target.value)} disabled={!canEditCompany} className="w-32 px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
+                <DecimalInput step="0.1" min="0" max="100" value={vatRate} onChange={(e) => setVatRate(e.target.value)} disabled={!canEditCompany} className="w-32 px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
                 <span className="text-slate-500">%</span>
               </div>
             </div>
@@ -479,7 +480,7 @@ export default function SettingsPage() {
               ].map(({ label, val, set }) => (
                 <div key={label}>
                   <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
-                  <input type="number" min="0" max="300" value={val} onChange={e => set(e.target.value)}
+                  <DecimalInput min="0" max="300" value={val} onChange={e => set(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
                 </div>
               ))}
@@ -529,7 +530,7 @@ export default function SettingsPage() {
                   ].map(({ label, val, set }) => (
                     <div key={label}>
                       <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
-                      <input type="number" min="1" max="72" value={val} onChange={e => set(e.target.value)}
+                      <DecimalInput min="1" max="72" value={val} onChange={e => set(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
                     </div>
                   ))}

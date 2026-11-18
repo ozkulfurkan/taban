@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { buildPrintHtml, type BarcodeTemplateSettings } from '@/lib/barcode-print';
+import DecimalInput from '@/app/components/decimal-input';
 
 const ALL_UNITS = ['çift', 'adet', 'kg', 'ton', 'lt', 'metre', 'paket'];
 
@@ -633,8 +634,8 @@ export default function ProductDetailPage() {
                   </span>
                 </div>
                 <div className="space-y-2">
-                  <input
-                    type="number"
+                  <DecimalInput
+                    integer
                     min="0"
                     step="1"
                     value={stokAmt}
@@ -816,14 +817,14 @@ export default function ProductDetailPage() {
                                 className={`w-full px-2 py-1 border rounded text-sm outline-none focus:ring-1 focus:ring-blue-400 ${nameEmpty ? 'border-red-300 bg-red-50' : 'border-slate-200'}`} />
                             </td>
                             <td className="px-3 py-2">
-                              <input type="number" step="0.01" min="0" value={part.gramsPerPiece}
+                              <DecimalInput step="0.01" min="0" value={part.gramsPerPiece}
                                 onChange={e => setPart(idx, 'gramsPerPiece', e.target.value)}
                                 placeholder="0"
                                 className="w-20 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-blue-400" />
                             </td>
                             <td className="px-3 py-2">
                               <div className="flex items-center gap-1 justify-end">
-                                <input type="number" step="0.1" min="0" max="100" value={part.wasteRate}
+                                <DecimalInput step="0.1" min="0" max="100" value={part.wasteRate}
                                   onChange={e => setPart(idx, 'wasteRate', e.target.value)}
                                   className="w-16 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-blue-400" />
                                 <span className="text-xs text-slate-400">%</span>
@@ -934,7 +935,7 @@ export default function ProductDetailPage() {
                   <div className="flex items-center gap-3 flex-wrap">
                     <div>
                       <label className="block text-xs font-medium text-slate-500 mb-1">Kolide Çift Sayısı</label>
-                      <input type="number" step="1" min="0" value={editForm.ciftPerKoli}
+                      <DecimalInput integer step="1" min="0" value={editForm.ciftPerKoli}
                         onChange={e => setEditForm((p: any) => ({ ...p, ciftPerKoli: e.target.value }))}
                         placeholder="0"
                         className="w-28 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-orange-400" />
@@ -1199,7 +1200,7 @@ export default function ProductDetailPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Kaç Etiket</label>
-                <input type="number" min="1" value={barcodeForm.labelCount}
+                <DecimalInput min="1" value={barcodeForm.labelCount}
                   onChange={e => handleBarcodeLabelCountChange(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
               </div>

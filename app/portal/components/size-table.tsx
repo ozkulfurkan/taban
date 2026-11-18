@@ -1,5 +1,6 @@
 'use client';
 import { usePortalText } from '@/lib/i18n/portal';
+import DecimalInput from '@/app/components/decimal-input';
 
 const ALL_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];
 
@@ -44,8 +45,8 @@ export default function SizeTable({ value, onChange, readOnly = false, sizes: si
                     {value[sz] || 0}
                   </div>
                 ) : (
-                  <input
-                    type="number"
+                  <DecimalInput
+                   
                     min="0"
                     value={value[sz] || ''}
                     onChange={e => handleChange(sz, e.target.value)}

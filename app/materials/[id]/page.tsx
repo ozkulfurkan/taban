@@ -10,6 +10,8 @@ import {
   Plus, CheckCircle, History, AlertTriangle,
 } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
+import { stockTextClass } from '@/lib/stock-display';
+import DecimalInput from '@/app/components/decimal-input';
 
 const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', EUR: '€', TRY: '₺' };
 
@@ -419,7 +421,7 @@ export default function MaterialDetailPage() {
                   <span className="text-sm font-semibold text-slate-800">{material.name}</span>
                   <div className="text-right">
                     <p className="text-xs text-slate-400">Mevcut</p>
-                    <p className={`text-lg font-bold ${stokModal.stock <= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    <p className={`text-lg font-bold ${stockTextClass(stokModal.stock, 'text-emerald-600')}`}>
                       {stokModal.stock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                     </p>
                   </div>
@@ -446,7 +448,7 @@ export default function MaterialDetailPage() {
                   <label className="block text-xs font-medium text-slate-500 mb-1">
                     {stokMode === 'artirma' ? 'Eklenecek Miktar (kg)' : stokMode === 'azaltma' ? 'Azaltılacak Miktar (kg)' : 'Güncel Stok Değeri (kg)'}
                   </label>
-                  <input type="number" step="0.001" min="0" value={stokValue} onChange={e => setStokValue(e.target.value)}
+                  <DecimalInput step="0.001" min="0" value={stokValue} onChange={e => setStokValue(e.target.value)}
                     placeholder="0,000" autoFocus
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-emerald-400" />
                 </div>
@@ -498,7 +500,7 @@ export default function MaterialDetailPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Miktar (kg) *</label>
-                <input type="number" step="0.001" min="0.001" value={sendQty} onChange={e => setSendQty(e.target.value)} placeholder="0.000"
+                <DecimalInput step="0.001" min="0.001" value={sendQty} onChange={e => setSendQty(e.target.value)} placeholder="0.000"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-orange-500 outline-none" />
               </div>
               <div>
@@ -534,7 +536,7 @@ export default function MaterialDetailPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Alınacak Miktar (kg) *</label>
-                <input type="number" step="0.001" min="0.001" max={receiveModal.availableQty} value={receiveQty}
+                <DecimalInput step="0.001" min="0.001" max={receiveModal.availableQty} value={receiveQty}
                   onChange={e => setReceiveQty(e.target.value)} placeholder="0.000" autoFocus
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>

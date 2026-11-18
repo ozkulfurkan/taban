@@ -14,6 +14,9 @@ import { formatDate, toDateInputValue } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { matchesText } from '@/lib/search';
+import FitText from '@/app/components/fit-text';
+import MoreMenu from '@/app/components/more-menu';
+import DecimalInput from '@/app/components/decimal-input';
 
 function nowIstanbulISO(): string {
   const now = new Date();
@@ -159,7 +162,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')} {form.paymentCurrency ? `(${form.paymentCurrency})` : ''}</label>
-            <input required type="number" step="0.01" min="0.01" value={form.amount}
+            <DecimalInput required step="0.01" min="0.01" value={form.amount}
               onChange={e => handleAmountChange(e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
           </div>
@@ -170,7 +173,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
                   <label className="block text-xs font-medium text-blue-700 mb-1">
                     {t('modal', 'rate')} (1 {supplier.currency || 'TRY'}={form.paymentCurrency})
                   </label>
-                  <input type="number" step="0.0001" min="0.0001" value={form.exchangeRate}
+                  <DecimalInput step="0.0001" min="0.0001" value={form.exchangeRate}
                     onChange={e => handleRateChange(e.target.value)} placeholder="0.0000"
                     className="w-full px-2 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white" />
                 </div>
@@ -178,7 +181,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
                   <label className="block text-xs font-medium text-blue-700 mb-1">
                     {t('modal', 'recordedAmount')} ({supplier.currency || 'TRY'}) *
                   </label>
-                  <input type="number" step="0.01" min="0.01" value={form.recordedAmount}
+                  <DecimalInput step="0.01" min="0.01" value={form.recordedAmount}
                     onChange={e => handleRecordedChange(e.target.value)} placeholder="0.00"
                     className="w-full px-2 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white font-semibold" />
                 </div>
@@ -254,7 +257,7 @@ function IadeModal({ supplier, onClose, onSaved }: {
         <form onSubmit={handle} className="p-5 space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')}</label>
-            <input required type="number" step="0.01" min="0.01" value={form.amount}
+            <DecimalInput required step="0.01" min="0.01" value={form.amount}
               onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
           </div>
@@ -349,7 +352,7 @@ function BorcAlacakFisModal({ supplier, onClose, onSaved }: { supplier: any; onC
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Tutar</label>
-            <input required type="number" step="0.01" min="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
+            <DecimalInput required step="0.01" min="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
           </div>
           <div>
@@ -424,7 +427,7 @@ function BakiyeDuzeltModal({ supplier, currentBalance, onClose, onSaved }: {
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Yeni Bakiye (TRY)</label>
-            <input required type="number" step="0.01" value={targetBalance} onChange={e => setTargetBalance(e.target.value)}
+            <DecimalInput required step="0.01" value={targetBalance} onChange={e => setTargetBalance(e.target.value)}
               placeholder="0,00"
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
             {delta !== null && delta !== 0 && (
@@ -707,7 +710,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
                       <div className="grid grid-cols-3 gap-2 text-xs">
                         <div>
                           <label className="text-slate-400 mb-0.5 block">{isMaterial ? 'Miktar (kg)' : 'Miktar'}</label>
-                          <input type="number" step="0.01" min="0.01" value={item.qty}
+                          <DecimalInput step="0.01" min="0.01" value={item.qty}
                             onChange={e => updateItem(item.id, 'qty', e.target.value)}
                             className="w-full px-2 py-1 border border-slate-200 rounded text-right outline-none focus:ring-1 focus:ring-indigo-400" />
                         </div>
@@ -861,7 +864,7 @@ function KendiCekTanimModal({ supplierName, onClose, onAdd }: {
           <div>
             <label className="text-xs font-medium text-slate-500 mb-1 block">Tutar *</label>
             <div className="flex gap-2">
-              <input type="number" placeholder="0.00" value={form.tutar} onChange={e => set('tutar', e.target.value)}
+              <DecimalInput placeholder="0.00" value={form.tutar} onChange={e => set('tutar', e.target.value)}
                 className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
               <select value={form.currency} onChange={e => set('currency', e.target.value)}
                 className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500 bg-white">
@@ -1185,8 +1188,8 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
                         <td className="px-3 py-2">
                           {supplier.currency !== 'TRY' ? (
                             <div className="flex items-center gap-1">
-                              <input
-                                type="number" step="0.01" placeholder="0.00"
+                              <DecimalInput
+                                step="0.01" placeholder="0.00"
                                 value={fxAmounts[c.id] || ''}
                                 onChange={e => setFxAmounts(r => ({ ...r, [c.id]: e.target.value }))}
                                 className="w-24 px-2 py-1 border border-slate-300 rounded text-xs text-right outline-none focus:ring-1 focus:ring-teal-400"
@@ -1512,19 +1515,19 @@ export default function SupplierDetailPage() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="rounded-xl p-4 text-white bg-red-500 shadow-sm">
             <p className="text-xs font-medium opacity-80 mb-1">{t('supplierDetail', 'balance')}</p>
-            <p className="text-2xl font-bold">{(supplier.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <FitText className="text-2xl font-bold">{(supplier.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
             <p className="text-xs opacity-70 mt-0.5">Borç</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
             className="rounded-xl p-4 text-white bg-blue-500 shadow-sm">
             <p className="text-xs font-medium opacity-80 mb-1">{t('supplierDetail', 'totalPurchased')}</p>
-            <p className="text-2xl font-bold">{(supplier.totalPurchased || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <FitText className="text-2xl font-bold">{(supplier.totalPurchased || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
             <p className="text-xs opacity-70 mt-0.5">{(supplier.purchases || []).length} alış</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="rounded-xl p-4 text-white bg-teal-500 shadow-sm">
             <p className="text-xs font-medium opacity-80 mb-1">{t('supplierDetail', 'totalPaid')}</p>
-            <p className="text-2xl font-bold">{(supplier.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <FitText className="text-2xl font-bold">{(supplier.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
             <p className="text-xs opacity-70 mt-0.5">{(supplier.payments || []).length} ödeme</p>
           </motion.div>
         </div>
@@ -1562,7 +1565,7 @@ export default function SupplierDetailPage() {
         {/* Action buttons */}
         <div className="flex flex-wrap gap-1.5">
           <button onClick={() => setShowAlıs(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
             <ShoppingBag className="w-3.5 h-3.5" /> {t('supplierDetail', 'newPurchase')}
           </button>
           <div className="relative">
@@ -1598,17 +1601,10 @@ export default function SupplierDetailPage() {
             )}
           </div>
           <Link href={`/suppliers/${params.id}/ekstre`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
-            <Download className="w-3.5 h-3.5" /> {t('supplierDetail', 'accountStatement')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors">
+            <Download className="w-3.5 h-3.5 text-slate-500" /> {t('supplierDetail', 'accountStatement')}
           </Link>
-          <button
-            onClick={handleDeleteSupplier}
-            disabled={deleting}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
-          >
-            {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-            Tedarikçiyi Sil
-          </button>
+          <MoreMenu align="left" items={[{ label: deleting ? 'Siliniyor...' : 'Tedarikçiyi Sil', icon: Trash2, danger: true, disabled: deleting, onClick: handleDeleteSupplier }]} />
         </div>
 
         {/* Delete warning modal */}

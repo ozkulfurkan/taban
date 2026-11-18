@@ -13,6 +13,7 @@ import {
   Plus, Trash2, Save, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers, Search, AlertTriangle,
 } from 'lucide-react';
 import { matchesText } from '@/lib/search';
+import DecimalInput from '@/app/components/decimal-input';
 
 interface EditLineItem {
   productId?: string;
@@ -526,7 +527,7 @@ export default function InvoiceDetailPage() {
             <form onSubmit={handlePayment} className="flex flex-wrap gap-3 items-end">
               <div>
                 <label className="block text-xs font-medium text-green-700 mb-1">Tutar</label>
-                <input required type="number" step="0.01" value={payForm.amount}
+                <DecimalInput required step="0.01" value={payForm.amount}
                   onChange={e => setPayForm(p => ({ ...p, amount: e.target.value }))}
                   placeholder={`Kalan: ${fmt(remaining)}`}
                   className="w-36 px-3 py-2 border border-green-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-400" />
@@ -936,8 +937,8 @@ export default function InvoiceDetailPage() {
                                 {adj.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                               <td className="px-3 py-2.5 text-right">
-                                <input
-                                  type="number" step="0.001" min="0"
+                                <DecimalInput
+                                  step="0.001" min="0"
                                   value={adj.kgInput}
                                   onChange={e => setStokAdjustments(p => p.map((a, i) => i === idx ? { ...a, kgInput: e.target.value } : a))}
                                   className="w-28 px-2 py-1 border border-amber-300 rounded text-sm text-right outline-none focus:ring-2 focus:ring-amber-400"

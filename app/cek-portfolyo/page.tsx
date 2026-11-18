@@ -6,6 +6,7 @@ import { formatDate } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Loader2, ChevronLeft, ChevronRight, RefreshCw, X, AlertTriangle, Upload, Download, CheckCircle2, AlertCircle } from 'lucide-react';
 import { matchesText } from '@/lib/search';
+import FitText from '@/app/components/fit-text';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -395,11 +396,11 @@ export default function CekPortfoyuPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-orange-500 rounded-xl p-4 text-white shadow-sm">
             <p className="text-xs font-medium opacity-80 mb-1">{t('checks', 'count')}</p>
-            <p className="text-2xl font-bold">{data?.total ?? '—'}</p>
+            <FitText className="text-2xl font-bold">{data?.total ?? '—'}</FitText>
           </div>
           <div className="bg-blue-500 rounded-xl p-4 text-white shadow-sm">
             <p className="text-xs font-medium opacity-80 mb-1">{t('checks', 'totalAmount')}</p>
-            <p className="text-2xl font-bold">{fmt(totalTutar)} TL</p>
+            <FitText className="text-2xl font-bold">{fmt(totalTutar)} TL</FitText>
           </div>
           <div className="bg-emerald-500 rounded-xl p-4 text-white shadow-sm">
             <p className="text-xs font-medium opacity-80 mb-1">{t('checks', 'avgMaturity')}</p>

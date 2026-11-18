@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { Employee } from '@/app/personnel/data';
 import { matchesText } from '@/lib/search';
+import DecimalInput from '@/app/components/decimal-input';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ function AddEmployeeModal({ onClose, onSave }: { onClose: () => void; onSave: (e
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Maaş <span className="text-red-500">*</span></label>
-              <input type="number" min="0" step="0.01" className={fieldErrors.salary ? errCls : inputCls} value={form.salary} onChange={e => set('salary', e.target.value)} placeholder="25000" />
+              <DecimalInput min="0" step="0.01" className={fieldErrors.salary ? errCls : inputCls} value={form.salary} onChange={e => set('salary', e.target.value)} placeholder="25000" />
               {fieldErrors.salary && <p className="mt-0.5 text-xs text-red-500">{fieldErrors.salary}</p>}
             </div>
             <div>
@@ -109,7 +110,7 @@ function AddEmployeeModal({ onClose, onSave }: { onClose: () => void; onSave: (e
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Maaş Günü</label>
-              <input type="number" min="1" max="31" className={inputCls} value={form.payday} onChange={e => set('payday', e.target.value)} />
+              <DecimalInput min="1" max="31" className={inputCls} value={form.payday} onChange={e => set('payday', e.target.value)} />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Telefon</label>

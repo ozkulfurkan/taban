@@ -6,6 +6,7 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { Plus, ChevronDown, Loader2, Pencil, Trash2, X, Save, Landmark, CreditCard, ArrowDownCircle, ArrowUpCircle, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import DecimalInput from '@/app/components/decimal-input';
 
 const ACCOUNT_TYPES = ['Kasa', 'Banka', 'POS'];
 const CURRENCIES = ['TRY', 'USD', 'EUR'];
@@ -104,7 +105,7 @@ function AccountModal({
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">{t('accounts', 'currentBalance')}</label>
-              <input type="number" step="0.01" value={form.balance} onChange={e => set('balance', e.target.value)}
+              <DecimalInput step="0.01" value={form.balance} onChange={e => set('balance', e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right" />
             </div>
           </div>

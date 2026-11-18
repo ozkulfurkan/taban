@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import PortalShell from '../components/portal-shell';
 import { Loader2, Package, Plus, ShoppingCart, Trash2, Send, ChevronUp } from 'lucide-react';
 import { usePortalText } from '@/lib/i18n/portal';
+import DecimalInput from '@/app/components/decimal-input';
 
 interface Product {
   id: string;
@@ -201,8 +202,8 @@ export default function PortalCatalogPage() {
                           {sizes.map(sz => (
                             <div key={sz} className="flex flex-col items-center gap-0.5">
                               <span className="text-xs font-semibold text-slate-500">{sz}</span>
-                              <input
-                                type="number"
+                              <DecimalInput
+                               
                                 min="0"
                                 value={orderSizes[sz] || ''}
                                 onChange={e => {
