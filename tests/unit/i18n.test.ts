@@ -32,6 +32,6 @@ test('Türkçe ve İngilizce çeviri anahtarları aynı', () => {
     Object.entries(o).flatMap(([k, v]) => (v && typeof v === 'object' ? flat(v, `${p}${k}.`) : [`${p}${k}`]));
   const tr = new Set(flat(translations.tr));
   const en = new Set(flat(translations.en));
-  assert.deepEqual([...tr].filter(k => !en.has(k)), [], 'İngilizcede eksik');
-  assert.deepEqual([...en].filter(k => !tr.has(k)), [], 'Türkçede eksik');
+  assert.deepEqual(Array.from(tr).filter(k => !en.has(k)), [], 'İngilizcede eksik');
+  assert.deepEqual(Array.from(en).filter(k => !tr.has(k)), [], 'Türkçede eksik');
 });
