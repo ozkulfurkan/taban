@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { customerBalance } from '@/lib/money';
+import { partyInputError } from '@/lib/party-input';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -33,36 +35,13 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   const salesInvoices = customer.invoices.filter((inv: any) => !inv.isReturn);
   const returnInvoices = customer.invoices.filter((inv: any) => inv.isReturn);
 
-  const totalNormalInvoiced = salesInvoices.reduce((s: number, i: any) => s + i.total, 0);
-  const totalReturnInvoiced = returnInvoices.reduce((s: number, i: any) => s + i.total, 0);
-
-  let balanceDelta = 0;
-  let totalPaid = 0;
-  for (const p of customer.payments) {
-    if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
-      balanceDelta += p.amount;
-    } else {
-      balanceDelta -= p.amount;
-      totalPaid += p.amount;
-    }
-  }
-
-  // Çekler bakiyeye dahil: customerAmount (çapraz döviz) veya tutar (aynı döviz)
-  let totalCek = 0;
-  for (const c of cekler) {
-    const amt = (c as any).customerAmount ?? c.tutar;
-    totalCek += amt;
-    balanceDelta -= amt;
-    totalPaid += amt;
-  }
-
-  const balance = totalNormalInvoiced + totalReturnInvoiced + balanceDelta;
+  const { totalInvoiced, totalPaid, totalCek, balance } = customerBalance(customer.invoices as any, customer.payments as any, cekler as any);
 
   return NextResponse.json({
     ...customer,
     invoices: salesInvoices,
     returns: returnInvoices,
-    totalInvoiced: totalNormalInvoiced,
+    totalInvoiced,
     totalPaid,
     totalCek,
     balance,
@@ -75,6 +54,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const user = session.user as any;
 
   const body = await req.json();
+  const inputError = partyInputError(body, { requireName: false });
+  if (inputError) return NextResponse.json({ error: inputError }, { status: 400 });
   try {
     // currency değiştirilmesine izin verme — oluşturulurken belirlenir, sonradan değişmez
     const customer = await prisma.customer.updateMany({

@@ -27,6 +27,8 @@ export default defineConfig({
     { name: 'setup', testMatch: '**/auth.setup.ts' },
     // Tarayıcısız API güvenlik testleri (firma ayrımı, roller, oturum)
     { name: 'security', testMatch: '**/security/*.spec.ts' },
+    // Tarayıcısız API testleri (para hesapları, belge numaraları, doğrulama)
+    { name: 'api', testMatch: '**/api/*.spec.ts' },
     {
       name: 'chromium',
       use: {
@@ -34,7 +36,7 @@ export default defineConfig({
         storageState: 'tests/.auth/user.json',
       },
       dependencies: ['setup'],
-      testIgnore: ['**/auth.setup.ts', '**/security/**'],
+      testIgnore: ['**/auth.setup.ts', '**/security/**', '**/api/**', '**/unit/**'],
     },
   ],
   outputDir: 'test-results',

@@ -305,10 +305,14 @@ function CurrencyWarning({ invoiceCurrency, customerCurrency, onConfirm, onCance
 }
 
 // ── Stock Confirmation Modal ──────────────────────────────────────────────────
-function StockConfirmModal({ deductions, onConfirm, onCancel, saving }: {
+type ProductShortage = { name: string; unit: string; quantity: number; stock: number };
+
+function StockConfirmModal({ deductions, productShortages = [], onConfirm, onCancel, saving }: {
   deductions: { name: string; variantInfo: string; kgAmount: number; currentStock: number }[];
+  productShortages?: ProductShortage[];
   onConfirm: () => void; onCancel: () => void; saving: boolean;
 }) {
+  const fmtQty = (n: number) => n.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
@@ -318,12 +322,29 @@ function StockConfirmModal({ deductions, onConfirm, onCancel, saving }: {
           <button onClick={onCancel} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
-          {deductions.some(d => d.currentStock < d.kgAmount) && (
+          {productShortages.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 space-y-1.5">
+              <p className="flex items-center gap-2 text-xs font-semibold text-amber-800">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                Ürün stoğu yetersiz. Fatura kaydedilebilir, stok eksiye düşer.
+              </p>
+              <ul className="text-xs text-amber-900 space-y-0.5 pl-6">
+                {productShortages.map((p, i) => (
+                  <li key={i}>
+                    <span className="font-medium">{p.name}</span>: stokta {fmtQty(p.stock)} {p.unit}, satılan {fmtQty(p.quantity)} {p.unit}
+                    {' '}→ <span className="font-semibold text-red-600">{fmtQty(p.stock - p.quantity)} {p.unit}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {deductions.length > 0 && deductions.some(d => d.currentStock < d.kgAmount) && (
             <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
               <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-red-700 font-medium">Bazı hammaddeler yetersiz — stok eksi değere düşecek.</p>
             </div>
           )}
+          {deductions.length > 0 && <>
           <p className="text-sm text-slate-600">
             Fatura kaydedildiğinde aşağıdaki hammaddeler stoğunuzdan otomatik düşülür.
             <span className="text-slate-400 block text-xs mt-0.5">Bu işlem geri alınamaz.</span>
@@ -353,6 +374,7 @@ function StockConfirmModal({ deductions, onConfirm, onCancel, saving }: {
               </tbody>
             </table>
           </div>
+          </>}
           <div className="flex gap-3">
             <button onClick={onCancel} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
               Geri Dön
@@ -393,7 +415,8 @@ export default function NewInvoicePage() {
   const [productCategories, setProductCategories] = useState<{ id: string; name: string }[]>([]);
   const [currencyWarning, setCurrencyWarning] = useState(false);
   const [pendingCurrency, setPendingCurrency] = useState('');
-  const [stockConfirm, setStockConfirm] = useState<{ deductions: any[] } | null>(null);
+  const [stockConfirm, setStockConfirm] = useState<{ deductions: any[]; productShortages: ProductShortage[] } | null>(null);
+  const [saveError, setSaveError] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const searchRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -590,6 +613,7 @@ export default function NewInvoicePage() {
 
   const performSave = async () => {
     setSaving(true);
+    setSaveError('');
     try {
       const dateTimeIso = new Date(`${form.date}T${form.time}`).toISOString();
       const res = await fetch('/api/invoices', {
@@ -598,6 +622,11 @@ export default function NewInvoicePage() {
         body: JSON.stringify({ ...form, date: dateTimeIso, items }),
       });
       const data = await res.json();
+      if (!res.ok || !data.id) {
+        setStockConfirm(null);
+        setSaveError(data?.error || 'Fatura kaydedilemedi');
+        return;
+      }
       if (data.id) {
         setStockConfirm(null);
         if (orderId) {
@@ -651,8 +680,19 @@ export default function NewInvoicePage() {
       }
     }
 
-    if (hasAnyParts && deductionMap.size > 0) {
-      setStockConfirm({ deductions: Array.from(deductionMap.values()) });
+    // Ürün stoğu yetersizse uyar (satış engellenmez, stok eksiye düşebilir)
+    const qtyByProduct = new Map<string, number>();
+    for (const item of items) {
+      if (item.productId) qtyByProduct.set(item.productId, (qtyByProduct.get(item.productId) ?? 0) + fromPriceInput(item.quantity));
+    }
+    const productShortages: ProductShortage[] = [];
+    for (const [productId, quantity] of Array.from(qtyByProduct.entries())) {
+      const p = products.find(pr => pr.id === productId);
+      if (p && quantity > (p.stock ?? 0)) productShortages.push({ name: p.name, unit: p.unit ?? 'çift', quantity, stock: p.stock ?? 0 });
+    }
+
+    if ((hasAnyParts && deductionMap.size > 0) || productShortages.length > 0) {
+      setStockConfirm({ deductions: hasAnyParts ? Array.from(deductionMap.values()) : [], productShortages });
     } else {
       performSave();
     }
@@ -661,6 +701,13 @@ export default function NewInvoicePage() {
   return (
     <AppShell>
       <div className="space-y-3 h-full">
+        {saveError && (
+          <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2.5 text-sm">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span className="flex-1">{saveError}</span>
+            <button onClick={() => setSaveError('')} aria-label="Kapat"><X className="w-4 h-4" /></button>
+          </div>
+        )}
         {/* Top action bar */}
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => router.back()} className="flex items-center gap-1.5 px-3 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors">
@@ -979,6 +1026,7 @@ export default function NewInvoicePage() {
       {stockConfirm && (
         <StockConfirmModal
           deductions={stockConfirm.deductions}
+          productShortages={stockConfirm.productShortages}
           onConfirm={performSave}
           onCancel={() => setStockConfirm(null)}
           saving={saving}

@@ -272,10 +272,12 @@ export default function ReturnInvoicePage() {
         body: JSON.stringify({ ...form, items, isReturn: true }),
       });
       const data = await res.json();
-      if (data.id) {
-        router.push(form.customerId ? `/customers/${form.customerId}` : `/invoices/${data.id}`);
+      if (!res.ok || !data.id) {
+        setErrorMsg(data?.error || 'İade faturası kaydedilemedi');
+        return;
       }
-    } catch (e) { console.error(e); }
+      router.push(form.customerId ? `/customers/${form.customerId}` : `/invoices/${data.id}`);
+    } catch (e) { console.error(e); setErrorMsg('İade faturası kaydedilemedi'); }
     finally { setSaving(false); }
   };
 

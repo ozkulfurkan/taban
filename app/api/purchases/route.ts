@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
-import { parseDateInputOrNow } from '@/lib/time';
+import { parseDateInput, parseDateInputOrNow } from '@/lib/time';
+import { parseAmount, round2 } from '@/lib/money';
 import { logAction, getIp } from '@/lib/audit-logger';
 import { rejectForeignRefs } from '@/lib/tenant';
+import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -63,28 +65,26 @@ export async function POST(req: NextRequest) {
     currency = supplier.currency;
   }
 
-  const parseNum = (v: any) => parseFloat(String(v ?? '').replace(',', '.')) || 0;
+  const parseNum = (v: any) => { const n = parseAmount(v); return Number.isFinite(n) ? n : 0; };
+  for (let k = 0; k < items.length; k++) {
+    const q = parseAmount(items[k]?.qty), u = parseAmount(items[k]?.unitPrice);
+    if (!(q > 0)) return NextResponse.json({ error: `${k + 1}. kalem: miktar 0'dan büyük olmalı` }, { status: 400 });
+    if (!(u >= 0)) return NextResponse.json({ error: `${k + 1}. kalem: birim fiyat geçersiz` }, { status: 400 });
+  }
 
-  const computedTotal = items.length > 0
-    ? items.reduce((s: number, i: any) => s + parseNum(i.qty) * parseNum(i.unitPrice), 0)
-    : parseNum(total);
+  const computedTotal = round2(items.length > 0
+    ? items.reduce((s: number, i: any) => s + round2(parseNum(i.qty) * parseNum(i.unitPrice)), 0)
+    : parseNum(total));
 
   if (computedTotal <= 0) return NextResponse.json({ error: 'Invalid total' }, { status: 400 });
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const alfPrefix = `ALF-${year}-`;
+  const alfPrefix = `ALF-${documentYear(parseDateInput(date) ?? new Date())}-`;
 
   try {
   const purchase = await prisma.$transaction(async (tx) => {
     let resolvedInvoiceNo = invoiceNo as string | undefined;
     if (!resolvedInvoiceNo) {
-      const last = await tx.purchase.findFirst({
-        where: { companyId: user.companyId, invoiceNo: { startsWith: alfPrefix } },
-        orderBy: { invoiceNo: 'desc' },
-      });
-      const seq = last ? parseInt(last.invoiceNo!.split('-')[2]) + 1 : 1;
-      resolvedInvoiceNo = `${alfPrefix}${String(seq).padStart(4, '0')}`;
+      resolvedInvoiceNo = await nextDocumentNumber('purchase', user.companyId, alfPrefix, { db: tx });
     }
     return tx.purchase.create({
       data: {

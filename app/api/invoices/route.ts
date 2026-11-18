@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { nowUtc, parseDateInput } from '@/lib/time';
 import { logAction, getIp } from '@/lib/audit-logger';
 import { rejectForeignRefs } from '@/lib/tenant';
+import { validateInvoiceInput } from '@/lib/invoice-input';
+import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -63,42 +65,29 @@ export async function POST(req: NextRequest) {
     if (customer?.currency) rest.currency = customer.currency;
   }
 
-  const parseNum = (v: any) => parseFloat(String(v ?? '').replace(',', '.')) || 0;
-  const sign = isReturn ? -1 : 1;
-
-  const subtotal = sign * items.reduce((s: number, i: any) => {
-    const qty = parseNum(i.quantity);
-    const price = parseNum(i.unitPrice);
-    const disc = parseNum(i.discount);
-    return s + qty * price * (1 - disc / 100);
-  }, 0);
-  const vatRate = parseNum(rest.vatRate);
-  const vatAmount = subtotal * vatRate / 100;
-  const total = subtotal + vatAmount;
-
-  const now = new Date();
-  const year = now.getFullYear();
-  const ftrPrefix = isReturn ? `IAD-${year}-` : `FTR-${year}-`;
+  const input = validateInvoiceInput(body);
+  if (!input.ok) return NextResponse.json({ error: input.error }, { status: 400 });
+  const { lines, vatRate, subtotal, vatAmount, total } = input;
+  const invoiceDate = parseDateInput(rest.date) ?? nowUtc();
+  // Yıl fatura tarihinden alınır (2027 tarihli fatura FTR-2027- ile başlar)
+  const ftrPrefix = `${isReturn ? 'IAD' : 'FTR'}-${documentYear(invoiceDate)}-`;
+  const manualNo = typeof rest.invoiceNo === 'string' && rest.invoiceNo.trim() ? rest.invoiceNo.trim() : null;
+  if (manualNo && await prisma.invoice.findFirst({ where: { companyId: user.companyId, invoiceNo: manualNo }, select: { id: true } })) {
+    return NextResponse.json({ error: `${manualNo} numaralı fatura zaten var` }, { status: 409 });
+  }
 
   try {
   const invoice = await prisma.$transaction(async (tx) => {
-    let resolvedInvoiceNo = rest.invoiceNo as string | undefined;
-    if (!resolvedInvoiceNo) {
-      const last = await tx.invoice.findFirst({
-        where: { companyId: user.companyId, invoiceNo: { startsWith: ftrPrefix } },
-        orderBy: { invoiceNo: 'desc' },
-      });
-      const seq = last ? parseInt(last.invoiceNo.split('-')[2]) + 1 : 1;
-      resolvedInvoiceNo = `${ftrPrefix}${String(seq).padStart(4, '0')}`;
-    }
+    const resolvedInvoiceNo = manualNo ?? await nextDocumentNumber('invoice', user.companyId, ftrPrefix, { db: tx });
     return tx.invoice.create({
     data: {
       companyId: user.companyId,
       customerId: rest.customerId,
       invoiceNo: resolvedInvoiceNo,
-      date: parseDateInput(rest.date) ?? nowUtc(),
+      date: invoiceDate,
       dueDate: rest.dueDate ? parseDateInput(rest.dueDate) : null,
       currency: rest.currency || 'USD',
+      // Tutarlar iade faturasında da pozitif saklanır; yönü isReturn belirler
       subtotal,
       vatRate,
       vatAmount,
@@ -108,34 +97,16 @@ export async function POST(req: NextRequest) {
       isReturn,
       notes: rest.notes || null,
       createdById: user.id || null,
-      items: {
-        create: items.map((i: any) => {
-          const qty = parseNum(i.quantity);
-          const price = parseNum(i.unitPrice);
-          const disc = parseNum(i.discount);
-          return {
-            description: i.description,
-            productId: i.productId || null,
-            quantity: qty,
-            unitPrice: price,
-            discount: disc,
-            total: sign * qty * price * (1 - disc / 100),
-            notes: i.notes || null,
-            partVariantsData: Array.isArray(i.partVariantsData) && i.partVariantsData.length > 0
-              ? i.partVariantsData
-              : undefined,
-          };
-        }),
-      },
+      items: { create: lines },
     },
     include: { items: true, customer: true },
     });
   });
 
   // Ürün stoğunu güncelle (product.stock)
-  const productItems = items.filter((i: any) => i.productId);
+  const productItems = lines.filter((i): i is typeof i & { productId: string } => !!i.productId);
   const stockUpdates = productItems.map((i: any) => {
-    const qty = parseNum(i.quantity);
+    const qty = i.quantity;
     const delta = isReturn ? qty : -qty;
     return prisma.product.updateMany({
       where: { id: i.productId, companyId: user.companyId },
@@ -166,7 +137,7 @@ const uniqueProductIds = ids;
     const materialMap = new Map<string, number>();  // materialId -> kgAmount
 
     for (const item of productItems) {
-      const qty = parseNum(item.quantity);
+      const qty = item.quantity;
       const product = products.find((p: any) => p.id === item.productId);
       if (!product) continue;
 
@@ -212,7 +183,14 @@ const uniqueProductIds = ids;
     meta: { total: invoice.total, currency: invoice.currency },
     ip: getIp(req),
   });
-  return NextResponse.json(invoice);
+  // Stok eksiye düşebilir (satış engellenmez) ama kullanıcı uyarılır
+  const negativeStock = productItems.length && !isReturn
+    ? await prisma.product.findMany({
+        where: { id: { in: productItems.map(i => i.productId) }, companyId: user.companyId, stock: { lt: 0 } },
+        select: { id: true, name: true, code: true, stock: true, unit: true },
+      })
+    : [];
+  return NextResponse.json({ ...invoice, stockWarnings: negativeStock });
   } catch (err: any) {
     await logAction({
       companyId: user.companyId,

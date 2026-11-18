@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
 import { rejectForeignRefs } from '@/lib/tenant';
+import { partyInputError } from '@/lib/party-input';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -66,6 +67,9 @@ export async function POST(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
   const body = await req.json();
+  const inputError = partyInputError(body);
+  if (inputError) return NextResponse.json({ error: inputError }, { status: 400 });
+  body.name = body.name.trim();
   const foreign = await rejectForeignRefs(user.companyId, { supplierCategory: body?.categoryId });
   if (foreign) return foreign;
   try {

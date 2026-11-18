@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { rejectForeignRefs } from '@/lib/tenant';
+import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -99,17 +100,10 @@ export async function POST(req: NextRequest) {
 
   if (finalTotalQty === 0) return NextResponse.json({ error: 'En az 1 adet girmelisiniz' }, { status: 400 });
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const sipPrefix = `SIP-${year}-`;
+  const sipPrefix = `SIP-${documentYear()}-`;
 
   const order = await prisma.$transaction(async (tx) => {
-    const last = await tx.soleOrder.findFirst({
-      where: { companyId: user.companyId, orderNo: { startsWith: sipPrefix } },
-      orderBy: { orderNo: 'desc' },
-    });
-    const seq = last ? parseInt(last.orderNo.split('-')[2]) + 1 : 1;
-    const orderNo = `${sipPrefix}${String(seq).padStart(4, '0')}`;
+    const orderNo = await nextDocumentNumber('order', user.companyId, sipPrefix, { db: tx });
 
     return tx.soleOrder.create({
       data: {

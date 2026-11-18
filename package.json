@@ -14,7 +14,9 @@
     "test:orders": "playwright test tests/e2e/orders",
     "test:ux": "playwright test tests/e2e/ux",
     "postinstall": "prisma generate",
-    "test:security": "playwright test --project=security"
+    "test:security": "playwright test --project=security",
+    "test:unit": "tsx --test tests/unit/*.test.ts",
+    "test:api": "playwright test --project=api"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config scripts/safe-seed.ts"
