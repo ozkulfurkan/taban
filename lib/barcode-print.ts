@@ -1,3 +1,7 @@
+// Yazdırma penceresine yazılan kullanıcı verisini HTML olarak yorumlanmaktan korur
+const esc = (v: unknown) =>
+  String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
 export interface BarcodePrintForm {
   companyName: string;
   productName: string;
@@ -48,20 +52,20 @@ export function buildPrintHtml(
   const labelsHtml = numbers.map((num, i) => {
     const isLast = i === numbers.length - 1;
     const details = [
-      form.shore ? `Shore: ${form.shore}` : '',
-      `${form.qtyPerPack} ${form.qtyUnit}`,
+      form.shore ? `Shore: ${esc(form.shore)}` : '',
+      `${esc(form.qtyPerPack)} ${esc(form.qtyUnit)}`,
     ].filter(Boolean).join('&nbsp;&nbsp;|&nbsp;&nbsp;');
 
     return `
 <div class="label" style="page-break-after:${isLast ? 'avoid' : 'always'}">
-  ${form.logoUrl ? `<img src="${form.logoUrl}" class="logo" alt="" />` : ''}
-  <div class="company">${form.companyName}</div>
-  ${form.productCode ? `<div class="product-code">${form.productCode}</div>` : ''}
-  <div class="product">${form.productName}</div>
+  ${form.logoUrl ? `<img src="${esc(form.logoUrl)}" class="logo" alt="" />` : ''}
+  <div class="company">${esc(form.companyName)}</div>
+  ${form.productCode ? `<div class="product-code">${esc(form.productCode)}</div>` : ''}
+  <div class="product">${esc(form.productName)}</div>
   ${details ? `<div class="details">${details}</div>` : ''}
   <svg class="barcode" id="bc${i}"></svg>
-  <div class="barcode-num">${num}</div>
-  <div class="date">${form.date}</div>
+  <div class="barcode-num">${esc(num)}</div>
+  <div class="date">${esc(form.date)}</div>
 </div>`;
   }).join('\n');
 

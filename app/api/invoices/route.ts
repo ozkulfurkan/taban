@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { nowUtc, parseDateInput } from '@/lib/time';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -38,6 +39,13 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const { items = [], isReturn = false, ...rest } = body;
+
+  if (!rest.customerId) return NextResponse.json({ error: 'Müşteri seçilmedi' }, { status: 400 });
+  const foreign = await rejectForeignRefs(user.companyId, {
+    customer: rest.customerId,
+    product: (items as any[]).map(i => i?.productId),
+  });
+  if (foreign) return foreign;
 
   // Para birimi doğrulama: müşteri para birimiyle eşleşmeli
   if (rest.customerId) {

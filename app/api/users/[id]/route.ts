@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { passwordError } from '@/lib/password';
+import { canAssignRole } from '@/lib/access';
 
 function canManage(role: string) {
   return role === 'ADMIN' || role === 'COMPANY_OWNER';
@@ -22,6 +24,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const body = await req.json();
   const { name, role, allowedPages, newPassword, generateResetToken } = body;
+
+  // Firma sahibi platform yöneticisi (ADMIN) atayamaz ve ADMIN hesabını değiştiremez
+  if (target.role === 'ADMIN' && actor.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Bu kullanıcı değiştirilemez' }, { status: 403 });
+  }
+  if (role !== undefined && !canAssignRole(actor.role, role)) {
+    return NextResponse.json({ error: 'Bu rol atanamaz' }, { status: 403 });
+  }
+  if (newPassword) {
+    const pwErr = passwordError(newPassword);
+    if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
+  }
 
   const data: any = {};
   if (name !== undefined) data.name = name;
@@ -61,6 +75,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     where: { id: params.id, companyId: actor.companyId },
   });
   if (!target) return NextResponse.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 });
+  if (target.role === 'ADMIN' && actor.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Bu kullanıcı silinemez' }, { status: 403 });
+  }
 
   // Cannot delete the last COMPANY_OWNER
   if (target.role === 'COMPANY_OWNER') {

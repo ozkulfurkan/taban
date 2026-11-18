@@ -4,9 +4,50 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
+import { LIMITS, clientIp, normEmail, isLimited, recordAttempt, clearAttempts } from '@/lib/login-throttle';
 
-async function authorizePortalCustomer(credentials: Record<string, string> | undefined) {
+const sameList = (a: unknown, b: unknown) =>
+  JSON.stringify([...((a as string[]) ?? [])].sort()) === JSON.stringify([...((b as string[]) ?? [])].sort());
+
+// Hata fırlatmak next-auth'ta oturumu geçersiz kılar: getServerSession null döner,
+// /api/auth/session çerezi temizler ve kullanıcı yeniden giriş yapar.
+async function assertTokenStillValid(token: any) {
+  if (!token?.sub) throw new Error('SESSION_INVALID');
+
+  if (token.type === 'portal') {
+    const pc = await prisma.portalCustomer.findUnique({
+      where: { id: token.sub },
+      select: { isActive: true, customerId: true, subcontractor: { select: { id: true } } },
+    });
+    if (!pc || !pc.isActive) throw new Error('SESSION_REVOKED');
+    if ((pc.customerId ?? null) !== (token.customerId ?? null)) throw new Error('SESSION_CHANGED');
+    if ((pc.subcontractor?.id ?? null) !== (token.subcontractorId ?? null)) throw new Error('SESSION_CHANGED');
+    return;
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: token.sub },
+    select: { role: true, companyId: true, allowedPages: true, company: { select: { name: true, companyType: true } } },
+  });
+  if (!dbUser) throw new Error('SESSION_REVOKED');
+  if (
+    dbUser.role !== token.role ||
+    (dbUser.companyId ?? null) !== (token.companyId ?? null) ||
+    !sameList(dbUser.allowedPages, token.allowedPages)
+  ) {
+    throw new Error('SESSION_CHANGED');
+  }
+  token.companyName = dbUser.company?.name ?? token.companyName;
+  token.companyType = dbUser.company?.companyType ?? token.companyType;
+}
+
+async function authorizePortalCustomer(credentials: Record<string, string> | undefined, req?: any) {
   if (!credentials?.email || !credentials?.password) return null;
+  const acctKey = `portal:${normEmail(credentials.email)}`;
+  const ipKey = `login-ip:${clientIp(req?.headers)}`;
+  if ((await isLimited(acctKey, LIMITS.loginPerAccount)) || (await isLimited(ipKey, LIMITS.loginPerIp))) {
+    throw new Error('TOO_MANY_ATTEMPTS');
+  }
 
   const portalCustomer = await prisma.portalCustomer.findUnique({
     where: { email: credentials.email },
@@ -16,10 +57,17 @@ async function authorizePortalCustomer(credentials: Record<string, string> | und
     },
   });
 
-  if (!portalCustomer) throw new Error('INVALID_CREDENTIALS');
+  if (!portalCustomer) {
+    await recordAttempt(acctKey, ipKey);
+    throw new Error('INVALID_CREDENTIALS');
+  }
 
   const isValid = await bcrypt.compare(credentials.password, portalCustomer.password);
-  if (!isValid) throw new Error('INVALID_CREDENTIALS');
+  if (!isValid) {
+    await recordAttempt(acctKey, ipKey);
+    throw new Error('INVALID_CREDENTIALS');
+  }
+  await clearAttempts(acctKey);
 
   if (!portalCustomer.isActive) throw new Error('ACCOUNT_INACTIVE');
 
@@ -62,7 +110,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
         impersonateToken: { label: 'Impersonate Token', type: 'text' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         // Impersonation flow
         if (credentials?.impersonateToken) {
           const user = await prisma.user.findUnique({
@@ -91,14 +139,26 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!credentials?.email || !credentials?.password) return null;
+        const acctKey = `login:${normEmail(credentials.email)}`;
+        const ipKey = `login-ip:${clientIp((req as any)?.headers)}`;
+        if ((await isLimited(acctKey, LIMITS.loginPerAccount)) || (await isLimited(ipKey, LIMITS.loginPerIp))) {
+          throw new Error('TOO_MANY_ATTEMPTS');
+        }
         try {
           const user = await prisma.user.findUnique({
             where: { email: credentials.email },
             include: { company: { select: { name: true, companyType: true } } },
           });
-          if (!user) return null;
+          if (!user) {
+            await recordAttempt(acctKey, ipKey);
+            return null;
+          }
           const isValid = await bcrypt.compare(credentials.password, user.password);
-          if (!isValid) return null;
+          if (!isValid) {
+            await recordAttempt(acctKey, ipKey);
+            return null;
+          }
+          await clearAttempts(acctKey);
           if (!user.emailVerified) {
             const token = user.emailVerifyToken ?? crypto.randomBytes(32).toString('hex');
             if (!user.emailVerifyToken) {
@@ -136,6 +196,7 @@ export const authOptions: NextAuthOptions = {
           } as any;
         } catch (error) {
           if (error instanceof Error && error.message === 'EMAIL_NOT_VERIFIED') throw error;
+          if (error instanceof Error && error.message === 'TOO_MANY_ATTEMPTS') throw error;
           console.error('Auth error:', error);
           return null;
         }
@@ -173,6 +234,18 @@ export const authOptions: NextAuthOptions = {
       if (trigger === 'update' && session) {
         token.language = session.language ?? token.language;
         token.currency = session.currency ?? token.currency;
+      }
+      // Her istekte oturumun hâlâ geçerli olduğunu doğrula. Middleware çerezdeki
+      // bilgiye göre karar verdiği için, rol/firma/izin değişince oturum düşürülür.
+      if (!user) {
+        try {
+          await assertTokenStillValid(token);
+        } catch (error) {
+          // Sadece bilinçli geçersizlikler oturumu düşürür; anlık veritabanı
+          // hatası yüzünden kullanıcıyı sistemden atmayalım.
+          if (error instanceof Error && error.message.startsWith('SESSION_')) throw error;
+          console.error('Session validation skipped (database error):', error);
+        }
       }
       return token;
     },

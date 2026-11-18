@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 async function getInvoice(id: string, companyId: string) {
   return prisma.invoice.findFirst({
@@ -55,6 +56,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const body = await req.json();
   const { items, ...rest } = body;
+
+  const foreign = await rejectForeignRefs(user.companyId, {
+    customer: rest.customerId,
+    product: Array.isArray(items) ? items.map((i: any) => i?.productId) : [],
+  });
+  if (foreign) return foreign;
 
   let updateData: any = {
     customerId: rest.customerId ?? existing.customerId,

@@ -29,6 +29,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const { name } = await req.json();
   if (!name?.trim()) return NextResponse.json({ error: 'Ad zorunludur' }, { status: 400 });
 
+  const owned = await prisma.productCategory.findFirst({ where: { id: params.id, companyId: user.companyId }, select: { id: true } });
+  if (!owned) return NextResponse.json({ error: 'Bulunamadı' }, { status: 404 });
+
   const category = await prisma.productCategory.update({
     where: { id: params.id },
     data: { name: name.trim() },

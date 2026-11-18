@@ -1036,3 +1036,12 @@ model ProductStockAdjustment {
   @@index([productId])
   @@index([companyId])
 }
+
+// Başarısız giriş ve şifre sıfırlama denemeleri (sunucular arası ortak deneme sınırı için)
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}

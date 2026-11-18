@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -25,6 +26,8 @@ export async function POST(req: NextRequest) {
   if (!user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { productId, portalVisible } = await req.json();
+  const foreign = await rejectForeignRefs(user.companyId, { product: productId });
+  if (foreign) return foreign;
 
   await prisma.product.updateMany({
     where: { id: productId, companyId: user.companyId },

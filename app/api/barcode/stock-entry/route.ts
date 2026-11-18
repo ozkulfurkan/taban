@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -10,6 +11,8 @@ export async function POST(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
   const { productId, quantity, notes } = await req.json();
+  const foreign = await rejectForeignRefs(user.companyId, { product: productId });
+  if (foreign) return foreign;
   if (!productId || !quantity || quantity <= 0) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
   }

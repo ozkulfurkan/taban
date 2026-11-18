@@ -3,6 +3,7 @@
 import { SessionProvider } from 'next-auth/react';
 import { LanguageProvider } from '@/lib/i18n/language-context';
 import { useState, useEffect, ReactNode } from 'react';
+import { AccessDeniedNotice } from '@/app/components/access-denied-notice';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -17,6 +18,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <div style={!mounted ? { visibility: 'hidden' } : undefined}>
           {children}
         </div>
+        <AccessDeniedNotice />
       </LanguageProvider>
     </SessionProvider>
   );

@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
     const token = crypto.randomBytes(32).toString('hex');
     await prisma.user.update({ where: { id: user.id }, data: { emailVerifyToken: token } });
 
-    const baseUrl = req.headers.get('origin') || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    // E-postadaki bağlantı istek başlığından değil, sabit adresten üretilir (başlık sahteciliğine karşı)
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
 
     await sendMail({

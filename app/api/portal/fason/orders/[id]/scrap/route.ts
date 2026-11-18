@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -16,6 +17,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const { materialId, quantity, reason } = await req.json();
+  const foreign = await rejectForeignRefs(user.companyId, { material: materialId });
+  if (foreign) return foreign;
   const qty = parseFloat(quantity) || 0;
   if (!materialId || qty <= 0) {
     return NextResponse.json({ error: 'materialId ve quantity gerekli' }, { status: 400 });

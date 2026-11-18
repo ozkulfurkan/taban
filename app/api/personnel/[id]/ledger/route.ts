@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 type Params = { params: { id: string } };
 
@@ -19,6 +20,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const body = await req.json();
   const { date, type, description, amount, account, accountId } = body;
+  const foreign = await rejectForeignRefs(user.companyId, { account: accountId });
+  if (foreign) return foreign;
 
   if (!type || !amount) {
     return NextResponse.json({ error: 'type ve amount zorunlu' }, { status: 400 });

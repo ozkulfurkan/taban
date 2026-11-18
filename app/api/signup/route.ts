@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
 import { rateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { passwordError } from '@/lib/password';
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(getRateLimitKey(req, 'signup'), { limit: 5, windowMs: 60_000 });
@@ -23,12 +24,8 @@ export async function POST(req: NextRequest) {
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
     }
-    if (!/[a-zA-ZğüşıöçĞÜŞİÖÇ]/.test(password) || !/[0-9]/.test(password) || password.length < 6) {
-      return NextResponse.json(
-        { error: 'Şifre en az 6 karakter, 1 harf ve 1 rakam içermelidir.' },
-        { status: 400 }
-      );
-    }
+    const pwErr = passwordError(password);
+    if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -71,7 +68,8 @@ export async function POST(req: NextRequest) {
       ],
     });
 
-    const baseUrl = req.headers.get('origin') || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    // E-postadaki bağlantı istek başlığından değil, sabit adresten üretilir (başlık sahteciliğine karşı)
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${emailVerifyToken}`;
     try {
       await sendMail({

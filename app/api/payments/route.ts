@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { rejectForeignRefs } from '@/lib/tenant';
 import { parseDateInputOrNow } from '@/lib/time';
 import { logAction, getIp } from '@/lib/audit-logger';
 
@@ -38,8 +39,13 @@ export async function POST(req: NextRequest) {
   } = body;
 
   if (!amount || parseFloat(amount) <= 0) {
-    return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    return NextResponse.json({ error: 'Tutar sıfırdan büyük olmalı' }, { status: 400 });
   }
+
+  const foreign = await rejectForeignRefs(user.companyId, {
+    invoice: invoiceId, purchase: purchaseId, customer: customerId, supplier: supplierId, account: accountId,
+  });
+  if (foreign) return foreign;
 
   try {
   const payment = await prisma.$transaction(async (tx) => {

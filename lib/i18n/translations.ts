@@ -438,6 +438,13 @@ export const translations = {
       quoteNo: 'Teklif No',
       quoteDate: 'Teklif Tarihi',
     },
+    access: {
+      title: 'Bu sayfaya erişim yetkiniz yok',
+      body: 'Bu sayfayı görmek için firma yöneticinizden ilgili sayfa iznini isteyin.',
+      allowed: 'Erişebileceğiniz sayfalar',
+      none: 'Hesabınıza henüz hiçbir sayfa izni verilmemiş.',
+      logout: 'Çıkış yap',
+    },
   },
   en: {
     common: {
@@ -877,6 +884,13 @@ export const translations = {
       bankDetails: 'Bank Details',
       quoteNo: 'Quote No',
       quoteDate: 'Quote Date',
+    },
+    access: {
+      title: "You don't have access to this page",
+      body: 'Ask your company administrator to grant you access to this page.',
+      allowed: 'Pages you can open',
+      none: 'No pages have been assigned to your account yet.',
+      logout: 'Sign out',
     },
   },
 };

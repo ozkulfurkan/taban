@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2, CheckCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { passwordError } from '@/lib/password';
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -24,8 +25,9 @@ function ResetPasswordForm() {
       setError('Şifreler eşleşmiyor');
       return;
     }
-    if (password.length < 6) {
-      setError('Şifre en az 6 karakter olmalı');
+    const pwErr = passwordError(password);
+    if (pwErr) {
+      setError(pwErr);
       return;
     }
     setError('');
