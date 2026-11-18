@@ -4,9 +4,12 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { formatDate } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Loader2, ChevronLeft, ChevronRight, RefreshCw, X, AlertTriangle, Upload, Download, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, RefreshCw, X, AlertTriangle, Upload, Download, CheckCircle2, AlertCircle, Landmark, Truck, Wallet } from 'lucide-react';
 import { matchesText } from '@/lib/search';
 import FitText from '@/app/components/fit-text';
+import { vadeTone, daysToVade, weightedAvgVade, totalsByCurrency } from '@/lib/cek';
+import type { Rates } from '@/lib/fx';
+import { BankModal, CollectModal, SupplierPayModal } from './bulk-modals';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -21,112 +24,6 @@ const DURUM_COLOR: Record<string, string> = {
   KARSILIKS: 'bg-red-100 text-red-700',
   IPTAL: 'bg-slate-100 text-slate-600',
 };
-
-function calcAvgVade(cekler: any[]) {
-  const total = cekler.reduce((s, c) => s + Number(c.tutar), 0);
-  if (!total) return null;
-  const today = Date.now();
-  const weightedDays = cekler.reduce((s, c) => {
-    const daysToVade = (new Date(c.vadesi).getTime() - today) / 86400000;
-    return s + Number(c.tutar) * daysToVade;
-  }, 0);
-  const avgDays = Math.round(weightedDays / total);
-  const avgDate = new Date(today + avgDays * 86400000);
-  return { date: avgDate, days: avgDays };
-}
-
-function TahsilModal({ cek, onClose, onSaved }: { cek: any; onClose: () => void; onSaved: () => void }) {
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [accountId, setAccountId] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState('');
-
-  useEffect(() => {
-    fetch('/api/accounts')
-      .then(r => r.json())
-      .then(data => {
-        const list = Array.isArray(data) ? data.filter((a: any) => a.currency === cek.currency) : [];
-        setAccounts(list);
-        if (list.length > 0) setAccountId(list[0].id);
-      })
-      .catch(() => setErr('Kasalar yüklenemedi.'));
-  }, [cek.currency]);
-
-  const handleSave = async () => {
-    if (!accountId) { setErr('Lütfen kasa seçin.'); return; }
-    setSaving(true); setErr('');
-    try {
-      const payRes = await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountId,
-          amount: cek.tutar,
-          currency: cek.currency,
-          date,
-          method: 'Çek',
-          _type: 'RECEIVED',
-          notes: [
-            cek.seriNo ? `Çek No: ${cek.seriNo}` : '',
-            cek.bankasi ? `Banka: ${cek.bankasi}` : '',
-            `Borçlu: ${cek.borclu}`,
-          ].filter(Boolean).join(' | '),
-        }),
-      });
-      if (!payRes.ok) throw new Error();
-      const payment = await payRes.json();
-      await fetch(`/api/cek/${cek.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ durum: 'ODENDI', paymentId: payment.id }),
-      });
-      onSaved(); onClose();
-    } catch { setErr('Kayıt sırasında hata oluştu.'); }
-    finally { setSaving(false); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
-          <h2 className="text-white font-bold text-sm">Çek Tahsil Et — {cek.borclu}</h2>
-          <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-4 h-4" /></button>
-        </div>
-        <div className="p-5 space-y-4">
-          <p className="text-sm text-slate-500">Tutar: <span className="font-semibold text-slate-800">{fmt(cek.tutar)} {cek.currency}</span></p>
-          {accounts.length === 0 && !err ? (
-            <p className="text-sm text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
-              {cek.currency} para biriminde kasa bulunamadı.
-            </p>
-          ) : (
-            <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Kasa *</label>
-              <select value={accountId} onChange={e => setAccountId(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500 bg-white">
-                {accounts.map(a => <option key={a.id} value={a.id}>{a.name} — {fmt(a.balance)} {a.currency}</option>)}
-              </select>
-            </div>
-          )}
-          <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Tahsil Tarihi</label>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
-          </div>
-          {err && <p className="text-xs text-red-600">{err}</p>}
-          <div className="flex gap-2 pt-1">
-            <button onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
-            <button onClick={handleSave} disabled={saving || accounts.length === 0}
-              className="flex-1 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
-              {saving && <Loader2 className="w-4 h-4 animate-spin" />}Tahsil Et
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -248,8 +145,13 @@ export default function CekPortfoyuPage() {
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ cek: any; durum: string } | null>(null);
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
-  const [tahsilCek, setTahsilCek] = useState<any>(null);
   const [showImport, setShowImport] = useState(false);
+  const [vadeFilter, setVadeFilter] = useState<'' | 'overdue' | 'week'>('');
+  // Seçim sayfalar arasında korunur
+  const [selected, setSelected] = useState<Map<string, any>>(new Map());
+  const [bulk, setBulk] = useState<null | { kind: 'bank' | 'supplier' | 'collect'; cekler: any[] }>(null);
+  const [rates, setRates] = useState<Rates>({});
+  useEffect(() => { fetch('/api/exchange-rates').then(r => r.json()).then(d => { if (d?.usd || d?.eur) setRates(d); }).catch(() => {}); }, []);
 
   const DURUM_LABEL: Record<string, string> = {
     PORTFOY: t('checks', 'statusPortfoy'),
@@ -284,10 +186,19 @@ export default function CekPortfoyuPage() {
     try {
       const qs = new URLSearchParams({ page: String(page), sortBy, sortDir });
       if (tab) qs.set('durum', tab);
+      if (vadeFilter) qs.set('vade', vadeFilter);
       const res = await fetch(`/api/cek?${qs}`);
       setData(await res.json());
     } finally { setLoading(false); }
-  }, [tab, page, sortBy, sortDir]);
+  }, [tab, page, sortBy, sortDir, vadeFilter]);
+
+  // İşlemden sonra liste yenilenir ve seçim temizlenir
+  const afterBulk = () => { setSelected(new Map()); load(); };
+  const toggle = (c: any) => setSelected(prev => {
+    const n = new Map(prev);
+    if (n.has(c.id)) n.delete(c.id); else n.set(c.id, c);
+    return n;
+  });
 
   useEffect(() => { load(); }, [load]);
 
@@ -314,10 +225,9 @@ export default function CekPortfoyuPage() {
   const handleDurumChange = (cek: any, durum: string) => {
     setOpenDropdown(null);
     setMenuPos(null);
-    if (durum === 'ODENDI') {
-      setTahsilCek(cek);
-      return;
-    }
+    if (durum === 'ODENDI') { setBulk({ kind: 'collect', cekler: [cek] }); return; }
+    if (durum === 'BANKAYA_VERILDI' && cek.durum === 'PORTFOY') { setBulk({ kind: 'bank', cekler: [cek] }); return; }
+    if (durum === 'TEDARIKCI_VERILDI' && cek.durum === 'PORTFOY') { setBulk({ kind: 'supplier', cekler: [cek] }); return; }
     if (durum === 'PORTFOY' && (cek.durum === 'TEDARIKCI_VERILDI' || (cek.durum === 'ODENDI' && cek.paymentId))) {
       setConfirmModal({ cek, durum });
       return;
@@ -335,6 +245,7 @@ export default function CekPortfoyuPage() {
         ...(removePayment ? { removePayment: true } : {}),
       }),
     });
+    setSelected(prev => { const n = new Map(prev); n.delete(id); return n; });
     load();
   };
 
@@ -356,18 +267,31 @@ export default function CekPortfoyuPage() {
       )
     : cekler;
 
-  // Summary stats from API (all matching records, not just current page)
-  const totalTutar: number = data?.totalTutar ?? 0;
-  const avgVade = (() => {
-    if (!data?.avgVadeMs) return null;
-    const avgDate = new Date(data.avgVadeMs);
-    const days = Math.round((data.avgVadeMs - Date.now()) / 86400000);
-    return { date: avgDate, days };
-  })();
+  // Özet: döviz bazında (API tüm eşleşen kayıtlar üzerinden hesaplar)
+  const totals: Array<{ currency: string; count: number; total: number; avgVadeMs: number | null }> = data?.totals ?? [];
+
+  const sel = Array.from(selected.values());
+  const selAvg = weightedAvgVade(sel, rates);
+  const selTotals = totalsByCurrency(sel);
+  const allPortfoy = sel.length > 0 && sel.every(c => c.durum === 'PORTFOY');
+  const allBank = sel.length > 0 && sel.every(c => c.durum === 'BANKAYA_VERILDI');
+  const pageAllSelected = filtered.length > 0 && filtered.every(c => selected.has(c.id));
+  const togglePage = () => setSelected(prev => {
+    const n = new Map(prev);
+    if (pageAllSelected) filtered.forEach(c => n.delete(c.id)); else filtered.forEach(c => n.set(c.id, c));
+    return n;
+  });
+  const VADE_TEXT = { overdue: 'text-red-600', soon: 'text-orange-600', normal: 'text-slate-500' } as const;
+  const vadeNote = (c: any) => {
+    const tone = vadeTone(c);
+    if (tone === 'normal') return null;
+    const d = daysToVade(c.vadesi);
+    return tone === 'overdue' ? `${-d} gün geçti` : d === 0 ? 'bugün' : `${d} gün kaldı`;
+  };
 
   return (
     <AppShell>
-      <div className="space-y-5">
+      <div className={`space-y-5 ${sel.length ? 'pb-40 lg:pb-0' : ''}`}>
         <div className="bg-teal-600 rounded-xl px-6 py-4 flex items-center justify-between">
           <h1 className="text-white font-bold text-lg uppercase tracking-wide">{t('checks', 'title')}</h1>
           <button
@@ -377,6 +301,40 @@ export default function CekPortfoyuPage() {
             <Upload className="w-4 h-4" /> İçeri Aktar
           </button>
         </div>
+
+        {/* Seçim çubuğu: masaüstünde sağ üstte, telefonda altta sabit */}
+        {sel.length > 0 && (
+          <div role="region" aria-label="Seçili çekler"
+            className="fixed bottom-[60px] inset-x-0 z-30 lg:sticky lg:bottom-auto lg:inset-x-auto lg:top-16 lg:ml-auto lg:w-[460px] bg-white border border-slate-200 shadow-xl lg:rounded-xl p-3 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-sm">
+                <p className="font-semibold text-slate-800">{sel.length} çek seçildi</p>
+                <p className="text-slate-600 tabular-nums">{selTotals.map(x => `${fmt(x.total)} ${x.currency}`).join(' + ')}</p>
+                {selAvg && (
+                  <p className="text-slate-600">Ortalama vade: <b data-testid="sel-avg-vade">{fmtDate(selAvg.date)}</b> ({selAvg.days} {t('checks', 'days')})</p>
+                )}
+              </div>
+              <button onClick={() => setSelected(new Map())} className="text-xs text-slate-500 hover:text-slate-800 underline flex-shrink-0">Seçimi temizle</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button disabled={!allPortfoy} title={allPortfoy ? '' : 'Sadece portföydeki çekler bankaya verilebilir'}
+                onClick={() => setBulk({ kind: 'bank', cekler: sel })}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold disabled:opacity-40">
+                <Landmark className="w-3.5 h-3.5" /> Bankaya Gönder
+              </button>
+              <button disabled={!allPortfoy} title={allPortfoy ? '' : 'Sadece portföydeki çekler tedarikçiye verilebilir'}
+                onClick={() => setBulk({ kind: 'supplier', cekler: sel })}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold disabled:opacity-40">
+                <Truck className="w-3.5 h-3.5" /> Tedarikçiye Ödeme Yap
+              </button>
+              <button disabled={!allBank} title={allBank ? '' : 'Bankadaki çekler tahsil edilebilir'}
+                onClick={() => setBulk({ kind: 'collect', cekler: sel })}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold disabled:opacity-40">
+                <Wallet className="w-3.5 h-3.5" /> Tahsil Et
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
@@ -392,22 +350,30 @@ export default function CekPortfoyuPage() {
           </div>
         </div>
 
-        {/* Summary cards */}
+        {/* Hızlı vade filtreleri */}
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Vade filtresi">
+          {([['', 'Tüm vadeler'], ['overdue', 'Vadesi geçmiş'], ['week', '7 gün içinde']] as const).map(([k, label]) => (
+            <button key={k} onClick={() => { setVadeFilter(k); setPage(1); }} aria-pressed={vadeFilter === k}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                vadeFilter === k
+                  ? k === 'overdue' ? 'bg-red-600 border-red-600 text-white' : k === 'week' ? 'bg-orange-500 border-orange-500 text-white' : 'bg-teal-600 border-teal-600 text-white'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Özet: döviz bazında */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-orange-500 rounded-xl p-4 text-white shadow-sm">
-            <p className="text-xs font-medium opacity-80 mb-1">{t('checks', 'count')}</p>
-            <FitText className="text-2xl font-bold">{data?.total ?? '—'}</FitText>
-          </div>
-          <div className="bg-blue-500 rounded-xl p-4 text-white shadow-sm">
-            <p className="text-xs font-medium opacity-80 mb-1">{t('checks', 'totalAmount')}</p>
-            <FitText className="text-2xl font-bold">{fmt(totalTutar)} TL</FitText>
-          </div>
-          <div className="bg-emerald-500 rounded-xl p-4 text-white shadow-sm">
-            <p className="text-xs font-medium opacity-80 mb-1">{t('checks', 'avgMaturity')}</p>
-            <p className="text-xl font-bold">
-              {avgVade ? `${fmtDate(avgVade.date)} (${avgVade.days} ${t('checks', 'days')})` : '—'}
-            </p>
-          </div>
+          {(totals.length ? totals : [{ currency: 'TRY', count: 0, total: 0, avgVadeMs: null }]).map(tt => (
+            <div key={tt.currency} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <p className="text-xs font-medium text-slate-500 mb-1">{tt.currency} · {tt.count} {t('checks', 'count').toLowerCase()}</p>
+              <FitText className="text-2xl font-bold text-slate-800">{`${fmt(tt.total)} ${tt.currency}`}</FitText>
+              <p className="text-xs text-slate-500 mt-1">
+                {t('checks', 'avgMaturity')}: {tt.avgVadeMs ? `${fmtDate(new Date(tt.avgVadeMs))} (${daysToVade(new Date(tt.avgVadeMs))} ${t('checks', 'days')})` : '—'}
+              </p>
+            </div>
+          ))}
         </div>
 
         {/* Search + Refresh */}
@@ -426,9 +392,10 @@ export default function CekPortfoyuPage() {
           <div className="bg-white rounded-xl shadow-sm py-16 text-center text-slate-400">{t('checks', 'noResults')}</div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm">
                 <colgroup>
+                  <col className="w-[36px]" />
                   <col className="w-[22%]" />
                   <col className="w-[9%]" />
                   <col className="w-[9%]" />
@@ -441,6 +408,10 @@ export default function CekPortfoyuPage() {
                 </colgroup>
                 <thead>
                   <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50 select-none">
+                    <th className="px-2 py-2.5">
+                      <input type="checkbox" aria-label="Sayfadaki tüm çekleri seç" checked={pageAllSelected} onChange={togglePage}
+                        className="w-4 h-4 rounded border-slate-300 accent-teal-600" />
+                    </th>
                     {[
                       { label: t('checks', 'debtor'), field: 'borclu', align: 'left' },
                       { label: t('checks', 'receivedDate'), field: 'islemTarihi', align: 'left' },
@@ -463,15 +434,27 @@ export default function CekPortfoyuPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(c => (
-                    <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                      <td className="px-2 py-2 font-medium text-slate-800 max-w-0 truncate" title={c.borclu}>{c.borclu}</td>
+                  {filtered.map(c => {
+                    const tone = vadeTone(c);
+                    return (
+                    <tr key={c.id} data-vade={tone}
+                      className={`border-b border-slate-100 ${selected.has(c.id) ? 'bg-teal-50' : tone === 'overdue' ? 'bg-red-50/60 hover:bg-red-50' : 'hover:bg-slate-50/50'}`}>
+                      <td className="px-2 py-2">
+                        <input type="checkbox" aria-label={`${c.borclu} ${c.seriNo || ''} çekini seç`} checked={selected.has(c.id)} onChange={() => toggle(c)}
+                          className="w-4 h-4 rounded border-slate-300 accent-teal-600" />
+                      </td>
+                      <td className={`px-2 py-2 font-medium max-w-0 truncate ${tone === 'overdue' ? 'text-red-700' : 'text-slate-800'}`} title={c.borclu}>{c.borclu}</td>
                       <td className="px-2 py-2 text-slate-500 whitespace-nowrap">{fmtDate(c.islemTarihi)}</td>
-                      <td className="px-2 py-2 text-slate-500 whitespace-nowrap">{fmtDate(c.vadesi)}</td>
+                      <td className={`px-2 py-2 whitespace-nowrap ${VADE_TEXT[tone]} ${tone !== 'normal' ? 'font-semibold' : ''}`}>
+                        {fmtDate(c.vadesi)}
+                        {vadeNote(c) && <span className="block text-[11px] font-medium">{vadeNote(c)}</span>}
+                      </td>
                       <td className="px-2 py-2 text-slate-500 truncate max-w-0" title={c.bankasi || ''}>{c.bankasi || '—'}</td>
                       <td className="px-2 py-2 text-slate-600 font-medium truncate max-w-0">{c.seriNo || '—'}</td>
-                      <td className="px-2 py-2 text-slate-500 truncate max-w-0">{c.aciklama || c.islem}</td>
-                      <td className="px-2 py-2 text-right font-semibold text-slate-800 whitespace-nowrap">{fmt(c.tutar)} {c.currency}</td>
+                      <td className="px-2 py-2 text-slate-500 truncate max-w-0" title={c.aciklama || c.islem}>
+                        {c.durum === 'BANKAYA_VERILDI' && c.bankAccount ? `${c.bankAccount.name} — ` : ''}{c.aciklama || c.islem}
+                      </td>
+                      <td className={`px-2 py-2 text-right font-semibold whitespace-nowrap ${tone === 'overdue' ? 'text-red-700' : 'text-slate-800'}`}>{fmt(c.tutar)} {c.currency}</td>
                       <td className="px-2 py-2 text-center">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${DURUM_COLOR[c.durum] || 'bg-slate-100 text-slate-600'}`}>
                           {DURUM_LABEL[c.durum] || c.durum}
@@ -495,9 +478,41 @@ export default function CekPortfoyuPage() {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Telefon: seçilebilir kartlar */}
+            <div className="sm:hidden">
+              <label className="flex items-center gap-2 px-4 py-2 border-b border-slate-100 text-xs text-slate-500">
+                <input type="checkbox" checked={pageAllSelected} onChange={togglePage} className="w-4 h-4 accent-teal-600" /> Sayfadakilerin tümünü seç
+              </label>
+              <ul className="divide-y divide-slate-100">
+                {filtered.map(c => {
+                  const tone = vadeTone(c);
+                  return (
+                    <li key={c.id} data-vade={tone} className={`flex items-start gap-3 px-4 py-3 ${selected.has(c.id) ? 'bg-teal-50' : tone === 'overdue' ? 'bg-red-50/60' : ''}`}>
+                      <input type="checkbox" aria-label={`${c.borclu} çekini seç`} checked={selected.has(c.id)} onChange={() => toggle(c)} className="mt-1 w-5 h-5 accent-teal-600 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex justify-between gap-2">
+                          <p className={`font-medium truncate ${tone === 'overdue' ? 'text-red-700' : 'text-slate-800'}`}>{c.borclu}</p>
+                          <p className={`font-semibold whitespace-nowrap tabular-nums ${tone === 'overdue' ? 'text-red-700' : 'text-slate-800'}`}>{fmt(c.tutar)} {c.currency}</p>
+                        </div>
+                        <div className="flex justify-between gap-2 mt-0.5 text-xs">
+                          <span className={`${VADE_TEXT[tone]} ${tone !== 'normal' ? 'font-semibold' : ''}`}>Vade {fmtDate(c.vadesi)}{vadeNote(c) ? ` · ${vadeNote(c)}` : ''}</span>
+                          <span className={`px-2 py-0.5 rounded-full font-semibold ${DURUM_COLOR[c.durum] || 'bg-slate-100 text-slate-600'}`}>{DURUM_LABEL[c.durum] || c.durum}</span>
+                        </div>
+                        <p className="text-xs text-slate-400 truncate mt-0.5">{[c.bankasi, c.seriNo].filter(Boolean).join(' · ') || '—'}</p>
+                      </div>
+                      <button aria-label="İşlemler"
+                        onClick={(e) => { const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right }); setOpenDropdown(c.id); }}
+                        className="px-2 py-1 text-slate-500 hover:bg-slate-100 rounded-lg">⋯</button>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
 
             {/* Pagination */}
@@ -527,7 +542,7 @@ export default function CekPortfoyuPage() {
           <>
             <div className="fixed inset-0 z-30" onClick={() => { setOpenDropdown(null); setMenuPos(null); }} />
             <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right }} className="bg-white rounded-xl shadow-lg border border-slate-100 z-40 min-w-[220px] overflow-hidden">
-              {ISLEMLER.filter(i => i.key !== cek.durum).map(i => (
+              {ISLEMLER.filter(i => i.key !== cek.durum && (cek.durum === 'PORTFOY' || (i.key !== 'TEDARIKCI_VERILDI' && i.key !== 'BANKAYA_VERILDI'))).map(i => (
                 <button key={i.key} onClick={() => handleDurumChange(cek, i.key)}
                   className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
                   {i.label}
@@ -550,9 +565,9 @@ export default function CekPortfoyuPage() {
         />
       )}
 
-      {tahsilCek && (
-        <TahsilModal cek={tahsilCek} onClose={() => setTahsilCek(null)} onSaved={load} />
-      )}
+      {bulk?.kind === 'bank' && <BankModal cekler={bulk.cekler} onClose={() => setBulk(null)} onDone={afterBulk} />}
+      {bulk?.kind === 'collect' && <CollectModal cekler={bulk.cekler} onClose={() => setBulk(null)} onDone={afterBulk} />}
+      {bulk?.kind === 'supplier' && <SupplierPayModal cekler={bulk.cekler} onClose={() => setBulk(null)} onDone={afterBulk} />}
 
       {/* Confirm modal: → PORTFOY (tedarikçi veya tahsil edilmiş) */}
       {confirmModal && (

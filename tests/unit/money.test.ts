@@ -188,3 +188,40 @@ test('belge kalemleri: kayıt öncesi kontrol ve API gövdesi', () => {
   ]);
   assert.equal(invoiceItemsPayload([prod])[0].quantity, 4);
 });
+
+import { convertAmount, crossRate } from '../../lib/fx';
+import { daysToVade, vadeTone, weightedAvgVade, totalsByCurrency } from '../../lib/cek';
+
+test('kur çevirme: TCMB satış kuruyla çapraz kur', () => {
+  const rates = { usd: 34, eur: 37 };
+  assert.equal(convertAmount(3400, 'TRY', 'USD', rates), 100);
+  assert.equal(convertAmount(100, 'USD', 'TRY', rates), 3400);
+  assert.equal(convertAmount(100, 'EUR', 'USD', rates), 108.82);
+  assert.equal(convertAmount(50, 'USD', 'USD', rates), 50);
+  assert.equal(convertAmount(100, 'TRY', 'EUR', {}), null);
+  assert.equal(crossRate('USD', 'EUR', rates)!.toFixed(4), (34 / 37).toFixed(4));
+});
+
+test('çek vadesi: gün farkı, renk ve ağırlıklı ortalama', () => {
+  const now = new Date('2026-11-18T10:00:00');
+  assert.equal(daysToVade('2026-11-18T00:00:00', now), 0);
+  assert.equal(daysToVade('2026-11-15T00:00:00', now), -3);
+  assert.equal(vadeTone({ vadesi: '2026-11-15', durum: 'PORTFOY' }, now), 'overdue');
+  assert.equal(vadeTone({ vadesi: '2026-11-15', durum: 'ODENDI' }, now), 'normal');
+  assert.equal(vadeTone({ vadesi: '2026-11-24', durum: 'BANKAYA_VERILDI' }, now), 'soon');
+  assert.equal(vadeTone({ vadesi: '2026-12-30', durum: 'PORTFOY' }, now), 'normal');
+  // 1000 TL 10 gün, 3000 TL 30 gün → ortalama 25 gün
+  const avg = weightedAvgVade([
+    { tutar: 1000, currency: 'TRY', vadesi: '2026-11-28T10:00:00' },
+    { tutar: 3000, currency: 'TRY', vadesi: '2026-12-18T10:00:00' },
+  ], {}, now)!;
+  assert.equal(avg.days, 25);
+  // 100 USD (=3400 TL) ağırlığı 1000 TL'den büyük
+  const fx = weightedAvgVade([
+    { tutar: 1000, currency: 'TRY', vadesi: '2026-11-28T10:00:00' },
+    { tutar: 100, currency: 'USD', vadesi: '2026-12-18T10:00:00' },
+  ], { usd: 34 }, now)!;
+  assert.ok(fx.days > 20, String(fx.days));
+  assert.deepEqual(totalsByCurrency([{ tutar: 1, currency: 'USD' }, { tutar: 2.5, currency: 'TRY' }, { tutar: 0.1, currency: 'USD' }]),
+    [{ currency: 'TRY', count: 1, total: 2.5 }, { currency: 'USD', count: 2, total: 1.1 }]);
+});

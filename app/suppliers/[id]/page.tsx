@@ -13,6 +13,7 @@ import FitText from '@/app/components/fit-text';
 import MoreMenu from '@/app/components/more-menu';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
+import { convertAmount, type Rates } from '@/lib/fx';
 
 function nowIstanbulISO(): string {
   const now = new Date();
@@ -577,6 +578,25 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
 
   const allChecks = [...kendiCekler, ...portfoyCekler];
   const totalTutar = allChecks.reduce((s, c) => s + Number(c.tutar), 0);
+
+  // Tedarikçi dövizi farklıysa karşılık güncel TCMB kuruyla otomatik dolar (elle değiştirilebilir)
+  const [rates, setRates] = useState<Rates | null>(null);
+  useEffect(() => {
+    if (supplier.currency === 'TRY') return;
+    fetch('/api/exchange-rates').then(r => r.json()).then(d => { if (d?.usd || d?.eur) setRates(d); }).catch(() => {});
+  }, [supplier.currency]);
+  useEffect(() => {
+    if (!rates || supplier.currency === 'TRY') return;
+    setFxAmounts(prev => {
+      const next = { ...prev };
+      for (const c of allChecks) {
+        if (next[c.id]) continue;
+        const v = convertAmount(Number(c.tutar), c.currency || 'TRY', supplier.currency, rates);
+        if (v != null) next[c.id] = String(v);
+      }
+      return next;
+    });
+  }, [rates, allChecks.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const avgVade = calcAvgVadeC(allChecks);
 
   // Re-animate toggle on every change
