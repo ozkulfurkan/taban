@@ -14,7 +14,8 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Playwright 1.59 en fazla Ubuntu 24.04'ün sistem paketlerini tanıyor; ubuntu-latest artık 26
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     services:
