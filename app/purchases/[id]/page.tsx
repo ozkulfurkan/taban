@@ -61,7 +61,9 @@ export default function PurchaseDetailPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleDelete = () => {
-    setConfirmModal({ message: 'Bu alış faturası silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Bu alışla eklenen hammadde ve ürün stokları geri alınacaktır.', onConfirm: async () => {
+    setConfirmModal({ message: purchase.isReturn
+      ? 'Bu iade silinecek.\n\n⚠️ İade edilen hammadde ve ürünler stoğa geri eklenecek, tedarikçi borcu iade tutarı kadar artacak.'
+      : 'Bu alış faturası silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Bu alışla eklenen hammadde ve ürün stokları geri alınacaktır.', onConfirm: async () => {
       setDeleting(true);
       await fetch(`/api/purchases/${params.id}`, { method: 'DELETE' });
       router.replace(`/suppliers/${purchase.supplierId}`);
@@ -98,14 +100,20 @@ export default function PurchaseDetailPage() {
   const remaining = purchase.total - purchase.paidAmount;
 
   const totalKg = purchaseMaterials.reduce((s: number, pm: any) => s + (pm.kgAmount ?? 0), 0);
-  const statusLabel = remaining <= 0 ? 'Faturalaşmış' : remaining < purchase.total ? 'Kısmi Ödeme' : 'Beklemede';
-  const statusColor = remaining <= 0 ? 'bg-green-100 text-green-700' : remaining < purchase.total ? 'bg-yellow-100 text-yellow-700' : 'bg-orange-100 text-orange-700';
+  const statusLabel = purchase.isReturn ? 'Alış İadesi' : remaining <= 0 ? 'Faturalaşmış' : remaining < purchase.total ? 'Kısmi Ödeme' : 'Beklemede';
+  const statusColor = purchase.isReturn ? 'bg-amber-100 text-amber-700' : remaining <= 0 ? 'bg-green-100 text-green-700' : remaining < purchase.total ? 'bg-yellow-100 text-yellow-700' : 'bg-orange-100 text-orange-700';
 
   return (
     <AppShell>
       <div className="space-y-3 max-w-6xl">
 
         <BackLink href={`/suppliers/${purchase.supplierId}`} prefix="Tedarikçi" label={purchase.supplier?.name ?? ''} />
+
+        {purchase.isReturn && (
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-sm font-medium">
+            Tedarikçiye iade — bu belge stoğu düşürür ve tedarikçi borcunu azaltır.
+          </div>
+        )}
 
         {/* Action bar */}
         <div className="flex flex-wrap gap-2 items-center">

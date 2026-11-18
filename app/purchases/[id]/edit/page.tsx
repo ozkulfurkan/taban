@@ -52,8 +52,8 @@ export default function EditPurchasePage() {
   return (
     <AppShell>
       <DocumentEditor
-        kind="purchase" mode="edit"
-        title={`Alışı Düzenle — ${purchase.invoiceNo ?? ''}`}
+        kind={purchase.isReturn ? 'purchaseReturn' : 'purchase'} mode="edit"
+        title={`${purchase.isReturn ? 'İadeyi Düzenle' : 'Alışı Düzenle'} — ${purchase.invoiceNo ?? ''}`}
         saveLabel="Değişiklikleri Kaydet"
         initialHeader={header}
         initialLines={pms.map(lineFromPurchaseMaterial)}

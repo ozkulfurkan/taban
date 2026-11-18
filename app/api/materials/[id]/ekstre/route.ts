@@ -80,7 +80,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     id: string;
     date: Date;
     createdAt: Date;
-    type: 'alis' | 'satis' | 'iade' | 'fason_transfer' | 'artirma' | 'azaltma' | 'stok_guncelleme';
+    type: 'alis' | 'alis_iade' | 'satis' | 'iade' | 'fason_transfer' | 'artirma' | 'azaltma' | 'stok_guncelleme';
     party: string;
     partyId: string;
     product: string | null;
@@ -98,12 +98,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       id: pm.id,
       date: pm.purchase.date,
       createdAt: (pm as any).createdAt ?? pm.purchase.date,
-      type: 'alis',
+      // Tedarikçiye iade stok çıkışıdır
+      type: pm.purchase.isReturn ? 'alis_iade' : 'alis',
       party: pm.purchase.supplier?.name ?? '—',
       partyId: pm.purchase.supplierId,
       product: null,
       productId: null,
-      kgAmount: pm.kgAmount,
+      kgAmount: pm.purchase.isReturn ? -pm.kgAmount : pm.kgAmount,
       pricePerKg: pm.pricePerKg,
       currency: pm.purchase.currency,
       invoiceNo: pm.purchase.invoiceNo,

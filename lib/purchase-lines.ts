@@ -50,13 +50,13 @@ async function changeSubcontractorStock(tx: Tx, subcontractorId: string, materia
   const existing = await tx.subcontractorStock.findFirst({ where: { subcontractorId, materialId } });
   if (existing) {
     await tx.subcontractorStock.update({ where: { id: existing.id }, data: { quantity: { increment: delta } } });
-  } else if (delta > 0) {
+  } else if (delta !== 0) { // iade depoda kayıt yokken de eksiye düşebilir
     await tx.subcontractorStock.create({ data: { subcontractorId, materialId, quantity: delta } });
   }
 }
 
-// Kalemleri kaydeder ve stokları artırır.
-export async function applyPurchaseLines(tx: Tx, companyId: string, purchaseId: string, lines: PurchaseLine[]) {
+// Kalemleri kaydeder ve stoğu değiştirir: alışta artar (dir=1), alış iadesinde azalır (dir=-1).
+export async function applyPurchaseLines(tx: Tx, companyId: string, purchaseId: string, lines: PurchaseLine[], dir: 1 | -1 = 1) {
   for (const l of lines) {
     await tx.purchaseMaterial.create({
       data: {
@@ -68,26 +68,28 @@ export async function applyPurchaseLines(tx: Tx, companyId: string, purchaseId: 
         pricePerKg: l.unitPrice || null,
       },
     });
+    const delta = dir * l.qty;
     if (l.productId) {
-      await tx.product.updateMany({ where: { id: l.productId, companyId }, data: { stock: { increment: l.qty } } });
+      await tx.product.updateMany({ where: { id: l.productId, companyId }, data: { stock: { increment: delta } } });
     } else if (l.materialId && l.subcontractorId) {
-      await changeSubcontractorStock(tx, l.subcontractorId, l.materialId, l.qty);
+      await changeSubcontractorStock(tx, l.subcontractorId, l.materialId, delta);
     } else if (l.materialId) {
-      await tx.material.updateMany({ where: { id: l.materialId, companyId }, data: { stock: { increment: l.qty } } });
+      await tx.material.updateMany({ where: { id: l.materialId, companyId }, data: { stock: { increment: delta } } });
     }
   }
 }
 
-// Alışın mevcut kalemlerinin stok etkisini geri alır ve kalemleri siler.
-export async function reversePurchaseLines(tx: Tx, companyId: string, purchaseId: string) {
+// Alışın (ya da iadenin, dir=-1) mevcut kalemlerinin stok etkisini geri alır ve kalemleri siler.
+export async function reversePurchaseLines(tx: Tx, companyId: string, purchaseId: string, dir: 1 | -1 = 1) {
   const existing = await tx.purchaseMaterial.findMany({ where: { purchaseId } });
   for (const pm of existing) {
+    const delta = -dir * pm.kgAmount;
     if (pm.productId) {
-      await tx.product.updateMany({ where: { id: pm.productId, companyId }, data: { stock: { decrement: pm.kgAmount } } });
+      await tx.product.updateMany({ where: { id: pm.productId, companyId }, data: { stock: { increment: delta } } });
     } else if (pm.materialId && pm.subcontractorId) {
-      await changeSubcontractorStock(tx, pm.subcontractorId, pm.materialId, -pm.kgAmount);
+      await changeSubcontractorStock(tx, pm.subcontractorId, pm.materialId, delta);
     } else if (pm.materialId) {
-      await tx.material.updateMany({ where: { id: pm.materialId, companyId }, data: { stock: { decrement: pm.kgAmount } } });
+      await tx.material.updateMany({ where: { id: pm.materialId, companyId }, data: { stock: { increment: delta } } });
     }
   }
   await tx.purchaseMaterial.deleteMany({ where: { purchaseId } });

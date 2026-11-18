@@ -70,8 +70,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   await prisma.$transaction(async (tx) => {
     if (validated) {
-      await reversePurchaseLines(tx, user.companyId, existing.id);
-      await applyPurchaseLines(tx, user.companyId, existing.id, validated.lines);
+      const dir = existing.isReturn ? -1 : 1;
+      await reversePurchaseLines(tx, user.companyId, existing.id, dir);
+      await applyPurchaseLines(tx, user.companyId, existing.id, validated.lines, dir);
     }
     await tx.purchase.update({
       where: { id: existing.id },
@@ -88,7 +89,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     await logAction({
       companyId: user.companyId, userId: user.id, userName: user.name,
       action: 'UPDATE', entity: 'Purchase', entityId: existing.id,
-      detail: `Alış düzenlendi — ${newNo ?? existing.invoiceNo ?? existing.id}`,
+      detail: `${existing.isReturn ? 'Alış iadesi' : 'Alış'} düzenlendi — ${newNo ?? existing.invoiceNo ?? existing.id}`,
       meta: { oldTotal: existing.total, total: validated.total, currency: existing.currency },
       ip: getIp(req),
     });
@@ -121,7 +122,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
 
   await prisma.$transaction(async (tx) => {
     // Stok geri al (ürün, ana depo ve fasoncu deposu) ve kalemleri sil
-    await reversePurchaseLines(tx, user.companyId, params.id);
+    await reversePurchaseLines(tx, user.companyId, params.id, purchase.isReturn ? -1 : 1);
 
     // Reverse account balances for all payments
     for (const payment of purchase.payments) {

@@ -22,7 +22,7 @@ export default function StickySaveBar({
   saveLabel?: string;
   savingLabel?: string;
   disabled?: boolean;
-  tone?: 'primary' | 'danger' | 'indigo';
+  tone?: 'primary' | 'danger' | 'indigo' | 'amber';
   children?: React.ReactNode;
 }) {
   return (
@@ -40,7 +40,7 @@ export default function StickySaveBar({
             type="button"
             onClick={onSave}
             disabled={saving || disabled}
-            className={`flex items-center gap-1.5 px-5 py-2.5 ${tone === 'danger' ? 'bg-red-600 hover:bg-red-700' : tone === 'indigo' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50`}
+            className={`flex items-center gap-1.5 px-5 py-2.5 ${tone === 'danger' ? 'bg-red-600 hover:bg-red-700' : tone === 'indigo' ? 'bg-indigo-600 hover:bg-indigo-700' : tone === 'amber' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50`}
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? savingLabel : saveLabel}

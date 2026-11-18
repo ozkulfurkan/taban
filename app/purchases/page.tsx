@@ -131,9 +131,12 @@ export default function PurchasesListPage() {
                           <div className="text-xs text-slate-400">{new Date(p.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
                         </td>
                         <td className="px-4 py-3 font-medium text-slate-800">{p.supplier?.name ?? '—'}</td>
-                        <td className="px-4 py-3 text-slate-600">{p.invoiceNo || '—'}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-slate-800 whitespace-nowrap">
-                          {p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                          {p.invoiceNo || '—'}
+                          {p.isReturn && <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-semibold uppercase align-middle">İade</span>}
+                        </td>
+                        <td className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${p.isReturn ? 'text-amber-700' : 'text-slate-800'}`}>
+                          {p.isReturn ? '−' : ''}{p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
                         </td>
                       </tr>

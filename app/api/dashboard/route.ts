@@ -70,7 +70,7 @@ export async function GET() {
         FROM "Cek" WHERE "companyId" = ${companyId} AND "customerId" IS NOT NULL AND "islem" = 'Müşteriden Alınan Çek Kaydı'
         GROUP BY 1`,
       prisma.$queryRaw<CurrencySum[]>`
-        SELECT "currency", SUM("total") AS amount
+        SELECT "currency", SUM(CASE WHEN "isReturn" THEN -ABS("total") ELSE ABS("total") END) AS amount
         FROM "Purchase" WHERE "companyId" = ${companyId} AND "supplierId" IS NOT NULL GROUP BY "currency"`,
       prisma.$queryRawUnsafe<CurrencySum[]>(
         `SELECT "currency", SUM(${debtSign} * "amount") AS amount

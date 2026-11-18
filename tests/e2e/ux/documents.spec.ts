@@ -99,3 +99,23 @@ test('alış tedarikçi sayfasından aynı ekranla açılır, kaydedilir ve düz
   expect(after.total).toBe(30); // 10 kg × 2 + 2 × 5
   expect(after.purchaseMaterials).toHaveLength(2);
 });
+
+test('tedarikçi sayfasından iade: aynı ekran, stok düşer, listede İade rozeti', async ({ page }) => {
+  const f = await fixtures(page);
+  const RUN = f.RUN;
+  await page.request.post('/api/purchases', { data: { supplierId: f.supplier.id, items: [{ materialId: f.material.id, qty: 10, unitPrice: 2 }] } });
+
+  await page.goto(`/suppliers/${f.supplier.id}`);
+  await page.getByRole('link', { name: 'İade', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/purchases/return\\?supplierId=${f.supplier.id}`));
+  await expectSameLayout(page);
+  await addFromSearch(page, `Belge Kauçuk ${RUN}`, '4');
+  await page.getByRole('button', { name: 'İadeyi Kaydet' }).click();
+  await expect(page).toHaveURL(new RegExp(`/suppliers/${f.supplier.id}$`));
+
+  const mat = await (await page.request.get(`/api/materials/${f.material.id}`)).json();
+  expect(mat.stock).toBe(6);
+  const sup = await (await page.request.get(`/api/suppliers/${f.supplier.id}`)).json();
+  expect(sup.balance).toBe(12); // 20 alış − 8 iade
+  await expect(page.getByText('İade', { exact: true }).first()).toBeVisible();
+});

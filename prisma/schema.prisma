@@ -422,6 +422,7 @@ model Purchase {
   total             Float              @default(0)
   paidAmount        Float              @default(0)
   status            InvoiceStatus      @default(PENDING)
+  isReturn          Boolean            @default(false)
   notes             String?
   payments          Payment[]
   purchaseMaterials PurchaseMaterial[]

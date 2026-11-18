@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { purchaseBalanceEffect, round2 } from '@/lib/money';
 import { logAction, getIp } from '@/lib/audit-logger';
 import { partyInputError } from '@/lib/party-input';
 
@@ -17,7 +18,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
         include: {
           purchaseMaterials: {
-            include: { material: { select: { id: true, name: true } } },
+            include: { material: { select: { id: true, name: true } }, product: { select: { id: true, name: true, code: true } } },
           },
         },
       },
@@ -26,7 +27,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   });
   if (!supplier) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const totalPurchased = supplier.purchases.reduce((s: number, p: any) => s + p.total, 0);
+  // Net alış: iadeler düşülür
+  const totalPurchased = round2(supplier.purchases.reduce((s: number, p: any) => s + purchaseBalanceEffect(p), 0));
 
   let balanceDelta = 0;
   let totalPaid = 0;

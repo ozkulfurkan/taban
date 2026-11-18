@@ -64,7 +64,20 @@ export default function SupplierEkstrePage() {
     });
 
     events.forEach(ev => {
-      if (ev._type === 'purchase') {
+      if (ev._type === 'purchase' && ev.isReturn) {
+        // Tedarikçiye mal iadesi borcu azaltır
+        balance -= Math.abs(ev.total);
+        rows.push({
+          id: ev.id,
+          date: ev.date,
+          hareket: 'Alış İadesi',
+          belgeNo: ev.invoiceNo,
+          aciklama: ev.notes || '',
+          borc: 0,
+          alacak: Math.abs(ev.total),
+          bakiye: balance,
+        });
+      } else if (ev._type === 'purchase') {
         balance += ev.total;
         rows.push({
           id: ev.id,
