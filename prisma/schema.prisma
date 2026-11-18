@@ -157,6 +157,7 @@ model Material {
   stockAdjustments    StockAdjustment[]
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
+  @@index([companyId])
 }
 
 model PriceHistory {
@@ -166,6 +167,7 @@ model PriceHistory {
   pricePerKg Float
   currency   String
   createdAt  DateTime @default(now())
+  @@index([materialId])
 }
 
 model SoleCalculation {
@@ -193,6 +195,7 @@ model SoleCalculation {
   notes               String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  @@index([companyId])
 }
 
 enum OrderStatus {
@@ -253,6 +256,7 @@ model Product {
   stockAdjustments      ProductStockAdjustment[]
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
+  @@index([companyId])
 }
 
 model ProductPart {
@@ -267,6 +271,7 @@ model ProductPart {
   sortOrder     Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  @@index([productId])
 }
 
 model ProductExtraCost {
@@ -279,6 +284,7 @@ model ProductExtraCost {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([productId])
 }
 
 model CustomerCategory {
@@ -316,6 +322,7 @@ model Customer {
   portalCustomer        PortalCustomer?
   soleOrders            SoleOrder[]
   customerProductPrices CustomerProductPrice[]
+  @@index([companyId])
 }
 
 model SupplierCategory {
@@ -349,6 +356,7 @@ model Supplier {
   purchases Purchase[]
   payments  Payment[]
   cekler    Cek[]
+  @@index([companyId])
 }
 
 model Invoice {
@@ -379,6 +387,8 @@ model Invoice {
   updatedAt      DateTime      @updatedAt
 
   @@unique([companyId, invoiceNo])
+  @@index([companyId, date])
+  @@index([customerId])
 }
 
 model InvoiceItem {
@@ -394,6 +404,8 @@ model InvoiceItem {
   total            Float
   notes            String?
   partVariantsData Json?    // [{ partId, variantId }] - sale-time variant selections
+  @@index([invoiceId])
+  @@index([productId])
 }
 
 model Purchase {
@@ -415,6 +427,8 @@ model Purchase {
   updatedAt         DateTime           @updatedAt
 
   @@unique([companyId, invoiceNo])
+  @@index([companyId, date])
+  @@index([supplierId])
 }
 
 model PurchaseMaterial {
@@ -430,6 +444,8 @@ model PurchaseMaterial {
   subcontractorId String?
   subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id])
   createdAt     DateTime       @default(now())
+  @@index([purchaseId])
+  @@index([materialId])
 }
 
 model Payment {
@@ -456,6 +472,12 @@ model Payment {
   method           String      @default("Nakit")
   notes            String?
   createdAt        DateTime    @default(now())
+  @@index([companyId, date])
+  @@index([customerId])
+  @@index([supplierId])
+  @@index([invoiceId])
+  @@index([purchaseId])
+  @@index([accountId])
 }
 
 model Account {
@@ -470,6 +492,7 @@ model Account {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   payments  Payment[]
+  @@index([companyId])
 }
 
 model SolePart {
@@ -484,6 +507,7 @@ model SolePart {
   netWeight     Float
   cost          Float
   createdAt     DateTime        @default(now())
+  @@index([calculationId])
 }
 
 enum CekDurum {
@@ -518,6 +542,9 @@ model Cek {
   paymentId   String?   // linked Payment.id when check is collected (ODENDI)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  @@index([companyId])
+  @@index([customerId])
+  @@index([supplierId])
 }
 
 // ─── B2B Customer Portal ───────────────────────────────────────────────────
@@ -583,6 +610,8 @@ model SoleOrder {
   updatedAt             DateTime             @updatedAt
 
   @@unique([companyId, orderNo])
+  @@index([companyId, createdAt])
+  @@index([customerId])
 }
 
 model OrderStatusHistory {
@@ -592,6 +621,7 @@ model OrderStatusHistory {
   status    OrderStatus
   note      String?
   createdAt DateTime    @default(now())
+  @@index([orderId])
 }
 
 model OrderShipment {

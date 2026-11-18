@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthSession, unauthorized } from '@/lib/helpers';
-import { invoiceBalanceEffect, paymentBalanceEffect } from '@/lib/money';
+import { round2 } from '@/lib/money';
 
 export async function GET() {
   try {
@@ -13,33 +13,33 @@ export async function GET() {
     const companyId = session.user.companyId;
     const where = session.user.role === 'ADMIN' ? {} : { companyId };
 
+    // Gün ve ay sınırları İstanbul saatine göre (sunucu UTC'de çalışır)
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const tomorrowStart = new Date(todayStart); tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const IST = 3 * 60 * 60 * 1000;
+    const ist = new Date(now.getTime() + IST);
+    const todayStart = new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), ist.getUTCDate()) - IST);
+    const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+    const monthStart = new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth(), 1) - IST);
     const oneMonthLater = new Date(now); oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+
+    type CurrencySum = { currency: string; amount: number | null };
+    // Bakiye kuralları lib/money.ts ile aynı: iade borcu azaltır (eski negatif kayıtlar için ABS),
+    // borç fişi ve "+" bakiye düzeltmesi borcu artırır, diğer ödemeler azaltır.
+    const debtSign = `CASE WHEN "method" = 'Borç Fişi' OR ("method" = 'Bakiye Düzeltme' AND "notes" LIKE '+%') THEN 1 ELSE -1 END`;
 
     const [
       company,
-      materialCount, calcCount, recentCalcs,
+      materialCount, calcCount, recentCalcs, calcAvg,
       dailyInvoicesByCurrency,
       monthlyInvoicesByCurrency,
-      customers,
-      allInvoices,
-      allCustomerPayments,
-      suppliers,
-      allPurchases,
-      allSupplierPayments,
+      invoiceSums, customerPaymentSums, customerCekSums,
+      purchaseSums, supplierPaymentSums,
       accounts,
-      products,
+      stockSums,
       cekTotal,
       upcomingChecks,
     ] = await Promise.all([
-      // Kur bilgileri
-      prisma.company.findUnique({
-        where: { id: companyId },
-        select: { usdToTry: true, eurToTry: true },
-      }),
+      prisma.company.findUnique({ where: { id: companyId }, select: { usdToTry: true, eurToTry: true } }),
       prisma.material.count({ where }),
       prisma.soleCalculation.count({ where }),
       prisma.soleCalculation.findMany({
@@ -48,59 +48,42 @@ export async function GET() {
         take: 5,
         include: { user: { select: { name: true } } },
       }),
-      // Günlük ciro — para birimine göre grupla
+      prisma.soleCalculation.aggregate({ where, _avg: { totalCost: true } }),
       prisma.invoice.groupBy({
         by: ['currency'],
         where: { companyId, isReturn: false, date: { gte: todayStart, lt: tomorrowStart } },
         _sum: { total: true },
       }),
-      // Aylık ciro — para birimine göre grupla
       prisma.invoice.groupBy({
         by: ['currency'],
         where: { companyId, isReturn: false, date: { gte: monthStart } },
         _sum: { total: true },
       }),
-      // Müşteriler (id + currency)
-      prisma.customer.findMany({
-        where: { companyId },
-        select: { id: true, currency: true },
-      }),
-      // Tüm faturalar (müşteri bazlı bakiye için)
-      prisma.invoice.findMany({
-        where: { companyId },
-        select: { customerId: true, total: true, isReturn: true, currency: true },
-      }),
-      // Tüm müşteri tahsilatları
-      prisma.payment.findMany({
-        where: { companyId, type: 'RECEIVED' },
-        select: { customerId: true, amount: true, method: true, notes: true, currency: true },
-      }),
-      // Tedarikçiler (id + currency)
-      prisma.supplier.findMany({
-        where: { companyId },
-        select: { id: true, currency: true },
-      }),
-      // Tüm alışlar (tedarikçi bazlı borç için)
-      prisma.purchase.findMany({
-        where: { companyId },
-        select: { supplierId: true, total: true, currency: true },
-      }),
-      // Tüm tedarikçi ödemeleri
-      prisma.payment.findMany({
-        where: { companyId, type: 'PAID' },
-        select: { supplierId: true, amount: true, method: true, notes: true, currency: true },
-      }),
-      // Hesap bakiyeleri
+      prisma.$queryRaw<CurrencySum[]>`
+        SELECT "currency", SUM(CASE WHEN "isReturn" THEN -ABS("total") ELSE ABS("total") END) AS amount
+        FROM "Invoice" WHERE "companyId" = ${companyId} GROUP BY "currency"`,
+      prisma.$queryRawUnsafe<CurrencySum[]>(
+        `SELECT "currency", SUM(${debtSign} * "amount") AS amount
+         FROM "Payment" WHERE "companyId" = $1 AND "customerId" IS NOT NULL GROUP BY "currency"`, companyId),
+      prisma.$queryRaw<CurrencySum[]>`
+        SELECT COALESCE("customerCurrency", "currency") AS currency, SUM(COALESCE("customerAmount", "tutar")) AS amount
+        FROM "Cek" WHERE "companyId" = ${companyId} AND "customerId" IS NOT NULL AND "islem" = 'Müşteriden Alınan Çek Kaydı'
+        GROUP BY 1`,
+      prisma.$queryRaw<CurrencySum[]>`
+        SELECT "currency", SUM("total") AS amount
+        FROM "Purchase" WHERE "companyId" = ${companyId} AND "supplierId" IS NOT NULL GROUP BY "currency"`,
+      prisma.$queryRawUnsafe<CurrencySum[]>(
+        `SELECT "currency", SUM(${debtSign} * "amount") AS amount
+         FROM "Payment" WHERE "companyId" = $1 AND "supplierId" IS NOT NULL AND "type" = 'PAID' GROUP BY "currency"`, companyId),
       prisma.account.findMany({ where: { companyId } }),
-      // Ürün stok
-      prisma.product.findMany({ where: { companyId }, select: { stock: true, unitPrice: true, currency: true } }),
-      // Aktif çek toplamı (döviz bazında grupla)
+      prisma.$queryRaw<CurrencySum[]>`
+        SELECT "currency", SUM("stock" * "unitPrice") AS amount
+        FROM "Product" WHERE "companyId" = ${companyId} GROUP BY "currency"`,
       prisma.cek.groupBy({
         by: ['currency'],
         where: { companyId, durum: { in: ['PORTFOY', 'BANKAYA_VERILDI'] } },
         _sum: { tutar: true },
       }),
-      // Vadesi son 1 ay içindeki aktif çekler
       prisma.cek.findMany({
         where: {
           companyId,
@@ -115,59 +98,23 @@ export async function GET() {
 
     const usdToTry = company?.usdToTry ?? 1;
     const eurToTry = company?.eurToTry ?? 1;
-
     const toTry = (amount: number, currency: string) => {
       if (currency === 'USD') return amount * usdToTry;
       if (currency === 'EUR') return amount * eurToTry;
       return amount; // TRY
     };
+    const sumTry = (rows: CurrencySum[]) => rows.reduce((s, r) => s + toTry(Number(r.amount ?? 0), r.currency), 0);
 
-    const calcs = await prisma.soleCalculation.findMany({ where, select: { totalCost: true } });
-    const avgCost = calcs?.length ? (calcs.reduce((s: number, c: any) => s + (c?.totalCost ?? 0), 0) / calcs.length) : 0;
-
-    // Günlük & aylık ciro → TL cinsinden
+    const avgCost = calcAvg._avg.totalCost ?? 0;
     const dailyCiro = dailyInvoicesByCurrency.reduce((s, g) => s + toTry(g._sum.total ?? 0, g.currency), 0);
     const monthlyCiro = monthlyInvoicesByCurrency.reduce((s, g) => s + toTry(g._sum.total ?? 0, g.currency), 0);
 
-    // Toplam alacak: her fatura ve ödeme kendi currency'siyle TL'ye çevrilir
-    // Müşteri bakiyesiyle aynı kural: iade borcu azaltır, müşteriden alınan çek de tahsilat sayılır
-    const customerCekler = await prisma.cek.findMany({
-      where: { companyId, customerId: { not: null }, islem: 'Müşteriden Alınan Çek Kaydı' },
-      select: { tutar: true, currency: true, customerAmount: true, customerCurrency: true },
-    });
-    let totalReceivables = 0;
-    for (const inv of allInvoices) totalReceivables += toTry(invoiceBalanceEffect(inv), inv.currency);
-    for (const p of allCustomerPayments) {
-      if (p.customerId) totalReceivables += toTry(paymentBalanceEffect(p), p.currency);
-    }
-    for (const c of customerCekler) {
-      totalReceivables -= c.customerAmount != null
-        ? toTry(c.customerAmount, c.customerCurrency ?? c.currency)
-        : toTry(c.tutar, c.currency);
-    }
+    // Toplam alacak = satışlar − iadeler ± müşteri ödemeleri − müşteriden alınan çekler (TL)
+    const totalReceivables = round2(sumTry(invoiceSums) + sumTry(customerPaymentSums) - sumTry(customerCekSums));
+    // Toplam borç = alışlar ± tedarikçi ödemeleri (TL)
+    const totalPayables = round2(sumTry(purchaseSums) + sumTry(supplierPaymentSums));
 
-    // Toplam borç: her alış ve ödeme kendi currency'siyle TL'ye çevrilir
-    let totalPayables = 0;
-    for (const supplier of suppliers) {
-      const purchases = allPurchases.filter(p => p.supplierId === supplier.id);
-      const payments = allSupplierPayments.filter(p => p.supplierId === supplier.id);
-
-      let balanceTRY = 0;
-      for (const purchase of purchases) {
-        balanceTRY += toTry(purchase.total, purchase.currency);
-      }
-      for (const p of payments) {
-        const pTRY = toTry(p.amount, p.currency);
-        if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
-          balanceTRY += pTRY;
-        } else {
-          balanceTRY -= pTRY;
-        }
-      }
-      totalPayables += balanceTRY;
-    }
-
-    // Assets breakdown — her hesap kendi para birimiyle TL'ye çevrilir
+    // Varlıklar: her hesap kendi para birimiyle TL'ye çevrilir
     const kasaTotal = accounts
       .filter(a => a.type === 'Kasa' || a.name.toLowerCase().includes('kasa'))
       .reduce((s, a) => s + toTry(a.balance, a.currency), 0);
@@ -175,7 +122,7 @@ export async function GET() {
       .filter(a => a.name.toLowerCase().includes('pos'))
       .reduce((s, a) => s + toTry(a.balance, a.currency), 0);
     const cekTotalTRY = cekTotal.reduce((s, g) => s + toTry(g._sum.tutar ?? 0, g.currency), 0);
-    const stokTotal = products.reduce((s, p) => s + toTry(p.stock * p.unitPrice, p.currency), 0);
+    const stokTotal = sumTry(stockSums);
 
     return NextResponse.json({
       materialCount,

@@ -5,6 +5,7 @@ import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Plus, Loader2, Minus, ShoppingCart, User, Printer, Trash2, Search, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { Pager } from '@/app/components/pager';
 import { useSearchParams } from 'next/navigation';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -26,37 +27,46 @@ export default function InvoicesPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
+  // Sunucu tarafı sayfalama: binlerce faturada sayfa tek seferde yüklenmez
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    const h = setTimeout(() => setQuery(search.trim()), 300);
+    return () => clearTimeout(h);
+  }, [search]);
+  useEffect(() => { setPage(1); }, [query, customerIdParam]);
+
   const load = () => {
     setLoading(true);
-    fetch('/api/invoices')
+    const params = new URLSearchParams({ page: String(page), limit: '50' });
+    if (query) params.set('q', query);
+    if (customerIdParam) params.set('customerId', customerIdParam);
+    fetch(`/api/invoices?${params.toString()}`)
       .then(r => r.json())
-      .then(d => setInvoices(Array.isArray(d) ? d : []))
+      .then(d => {
+        setInvoices(Array.isArray(d?.items) ? d.items : []);
+        setTotal(d?.total ?? 0);
+        setTotalPages(d?.totalPages ?? 1);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [page, query, customerIdParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = (id: string) => setExpandedId(prev => prev === id ? null : id);
 
   const handleDelete = async (id: string, no: string) => {
     setConfirmModal({ message: `"${no}" silinecek.`, onConfirm: async () => {
       await fetch(`/api/invoices/${id}`, { method: 'DELETE' });
-      setInvoices(prev => prev.filter(inv => inv.id !== id));
+      load();
     }});
   };
 
-  const filtered = invoices.filter(inv => {
-    if (customerIdParam && inv.customerId !== customerIdParam) return false;
-    if (search.trim()) {
-      const q = search.toLowerCase().trim();
-      return (
-        inv.invoiceNo?.toLowerCase().includes(q) ||
-        inv.customer?.name?.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  const filtered = invoices;
 
   return (
     <AppShell>
@@ -65,7 +75,7 @@ export default function InvoicesPage() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">{t('invoices', 'title')}</h1>
-            <p className="text-slate-500 text-sm">{invoices.length} {t('invoices', 'title').toLowerCase()}</p>
+            <p className="text-slate-500 text-sm">{total.toLocaleString('tr-TR')} {t('invoices', 'title').toLowerCase()}</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             {/* Search */}
@@ -243,6 +253,7 @@ export default function InvoicesPage() {
             </table>
           </div>
         )}
+        {!loading && <Pager page={page} totalPages={totalPages} total={total} onChange={p => { setPage(p); window.scrollTo({ top: 0 }); }} />}
       </div>
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
