@@ -17,24 +17,44 @@ export default function FitText({
   as?: 'p' | 'span' | 'div';
 }) {
   const ref = useRef<HTMLElement>(null);
+  const innerRef = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    const inner = innerRef.current;
+    if (!el || !inner) return;
     el.title = el.textContent ?? '';
+    // Metnin gerçek genişliği iç span'den ölçülür; sığana kadar (en çok birkaç
+    // adım) küçültülür. Ölçüm ile yazı boyutu her ortamda doğrusal olmayabilir.
+    const clip = (on: boolean) => {
+      // En küçük boyutta da sığmıyorsa sonu "…" ile kesilir (tam değer title'da)
+      inner.style.maxWidth = on ? '100%' : '';
+      inner.style.overflow = on ? 'hidden' : '';
+      inner.style.textOverflow = on ? 'ellipsis' : '';
+      inner.style.verticalAlign = on ? 'top' : '';
+    };
     const fit = () => {
+      clip(false);
       el.style.fontSize = '';
       const available = el.clientWidth;
-      const needed = el.scrollWidth;
-      if (!available || needed <= available) return;
-      const base = parseFloat(getComputedStyle(el).fontSize);
-      el.style.fontSize = `${Math.max(minPx, Math.floor(base * (available / needed) * 100) / 100)}px`;
+      if (!available) return;
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      for (let i = 0; i < 6; i++) {
+        const needed = inner.getBoundingClientRect().width;
+        if (needed <= available) break;
+        const next = Math.max(minPx, Math.floor(size * (available / needed) * 100) / 100 - (i ? 0.25 : 0));
+        if (next >= size) break;
+        size = next;
+        el.style.fontSize = `${size}px`;
+      }
+      if (inner.getBoundingClientRect().width > available + 0.5) clip(true);
     };
     fit();
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
+    // Kutu genişliği değişince (ekran döndü, kenar menü açıldı) ve metin genişliği
+    // değişince (web fontu sonradan yüklendi) yeniden sığdır.
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => fit()) : null;
     ro?.observe(el);
-    // Web fontu sonradan yüklenince metin genişler ama kutu boyu değişmez
-    // (ResizeObserver tetiklenmez); font yüklenince yeniden sığdır.
+    ro?.observe(inner);
     const fonts = typeof document !== 'undefined' ? document.fonts : undefined;
     let alive = true;
     fonts?.ready.then(() => { if (alive) fit(); });
@@ -48,7 +68,7 @@ export default function FitText({
 
   return (
     <Tag ref={ref as any} className={`${className} block whitespace-nowrap overflow-hidden text-ellipsis tabular-nums [contain:inline-size]`}>
-      {children}
+      <span ref={innerRef} className="inline-block">{children}</span>
     </Tag>
   );
 }

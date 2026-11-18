@@ -20,9 +20,18 @@ test('büyük tutar müşteri kartına sığar, silme menünün içindedir', asy
   // Ölçüm bilgisi hata mesajında görünsün (ortam farklarını teşhis için)
   const measure = () => amount.evaluate(el => {
     const cs = getComputedStyle(el);
-    return { scroll: el.scrollWidth, client: el.clientWidth, fontSize: cs.fontSize, font: cs.fontFamily.slice(0, 40), fontsLoaded: document.fonts.status };
+    const inner = el.firstElementChild as HTMLElement;
+    return {
+      scroll: el.scrollWidth, client: el.clientWidth,
+      text: Math.round(inner.getBoundingClientRect().width), textScroll: inner.scrollWidth,
+      fontSize: cs.fontSize, font: cs.fontFamily.slice(0, 40), fontsLoaded: document.fonts.status,
+    };
   });
-  await expect.poll(async () => { const m = await measure(); return m.scroll <= m.client + 1 ? 'sığıyor' : JSON.stringify(m); },
+  // Tutar hem kutuya sığmalı hem de "…" ile kesilmemiş olmalı
+  await expect.poll(async () => {
+    const m = await measure();
+    return m.scroll <= m.client + 1 && m.textScroll <= m.text + 1 ? 'sığıyor' : JSON.stringify(m);
+  },
     { message: 'tutar kutudan taşmamalı' }).toBe('sığıyor');
   // Sayfa yatay kaymamalı
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
