@@ -32,7 +32,10 @@ async function main() {
     ],
   };
 
+  // Bu script seed-test.ts'in oluşturduğu ürünlere ek veri koyar (npm run db:seed:test).
+  const seededProducts = new Set((await prisma.product.findMany({ where: { companyId: CID }, select: { id: true } })).map(p => p.id));
   for (const [productId, parts] of Object.entries(partsByProduct)) {
+    if (!seededProducts.has(productId)) { console.warn(`⚠️  ${productId} yok, atlandı (önce seed-test çalıştırın)`); continue; }
     const existing = await prisma.productPart.findMany({ where: { productId } });
     if (existing.length === 0) {
       await prisma.productPart.createMany({ data: parts.map(p => ({ ...p, productId })) });

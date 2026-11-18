@@ -292,6 +292,7 @@ export default function RegisterPage() {
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
+              role="alert"
               className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-sm"
             >
               {error}
@@ -300,8 +301,10 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'fullName')}</label>
+              <label htmlFor="reg-name" className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'fullName')}</label>
               <input
+                id="reg-name"
+                autoComplete="name"
                 type="text"
                 value={form.name}
                 onChange={(e) => updateField('name', e.target.value)}
@@ -310,8 +313,10 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'companyName')}</label>
+              <label htmlFor="reg-company" className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'companyName')}</label>
               <input
+                id="reg-company"
+                autoComplete="organization"
                 type="text"
                 value={form.companyName}
                 onChange={(e) => updateField('companyName', e.target.value)}
@@ -320,8 +325,10 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'email')}</label>
+              <label htmlFor="reg-email" className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'email')}</label>
               <input
+                id="reg-email"
+                autoComplete="email"
                 type="email"
                 value={form.email}
                 onChange={(e) => updateField('email', e.target.value)}
@@ -330,9 +337,11 @@ export default function RegisterPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'password')}</label>
+              <label htmlFor="reg-password" className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'password')}</label>
               <div className="relative">
                 <input
+                  id="reg-password"
+                  autoComplete="new-password"
                   type={showPass ? 'text' : 'password'}
                   value={form.password}
                   onChange={(e) => updateField('password', e.target.value)}
@@ -342,6 +351,7 @@ export default function RegisterPage() {
                 />
                 <button
                   type="button"
+                  aria-label={showPass ? 'Şifreyi gizle' : 'Şifreyi göster'}
                   onClick={() => setShowPass(!showPass)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-300 hover:text-white"
                 >

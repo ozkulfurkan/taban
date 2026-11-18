@@ -8,14 +8,19 @@ export class RegisterPage {
     await this.page.waitForLoadState('domcontentloaded');
   }
 
+  // Form alanları etiketleriyle bulunur (id/htmlFor bağlı)
+  name() { return this.page.locator('#reg-name'); }
+  company() { return this.page.locator('#reg-company'); }
+  email() { return this.page.locator('#reg-email'); }
+  password() { return this.page.locator('#reg-password'); }
+  submit() { return this.page.locator('form button[type="submit"]'); }
+
   async register(name: string, companyName: string, email: string, password: string) {
-    // Inputs don't have placeholders; use nth() ordering: name, company, email, password
-    const inputs = this.page.locator('input[type="text"], input[type="email"], input[type="password"]');
-    await inputs.nth(0).fill(name);       // Ad Soyad
-    await inputs.nth(1).fill(companyName); // Firma Adı
-    await inputs.nth(2).fill(email);      // E-posta
-    await inputs.nth(3).fill(password);   // Şifre
-    await this.page.getByRole('button', { name: /kayıt|register|oluştur/i }).click();
+    await this.name().fill(name);
+    await this.company().fill(companyName);
+    await this.email().fill(email);
+    await this.password().fill(password);
+    await this.submit().click();
   }
 
   async expectSuccessModal() {
@@ -32,7 +37,6 @@ export class RegisterPage {
   }
 
   async expectSubmitDisabled() {
-    const btn = this.page.getByRole('button', { name: /kayıt|register|oluştur/i });
-    await expect(btn).toBeDisabled({ timeout: 5000 });
+    await expect(this.submit()).toBeDisabled({ timeout: 5000 });
   }
 }

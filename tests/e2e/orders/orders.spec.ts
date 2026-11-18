@@ -16,9 +16,8 @@ test.describe('Sipariş Yönetimi', () => {
     await page.goto('/orders/new');
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/orders\/new/, { timeout: 10000 });
-    // Check for form elements
-    const hasContent = await page.locator('form, select, input, button').first().isVisible({ timeout: 8000 }).catch(() => false);
-    expect(hasContent).toBeTruthy();
+    await expect(page.getByRole('heading', { name: /yeni sipariş|new order/i })).toBeVisible();
+    await expect(page.locator('select').first()).toBeVisible();
     await page.screenshot({ path: 'test-results/screenshots/orders-new.png', fullPage: true });
   });
 

@@ -84,9 +84,9 @@ test.describe('UI / UX Kontrolleri', () => {
     const res = await page.goto('/nonexistent-page-xyz');
     await page.waitForLoadState('domcontentloaded');
     // Should either redirect to dashboard or show 404, not crash
-    const is404 = await page.getByText(/404|bulunamadı|not found/i).isVisible({ timeout: 5000 }).catch(() => false);
-    const redirected = page.url().includes('/dashboard') || page.url().includes('/login');
-    expect(is404 || redirected).toBeTruthy();
+    // Bulunamadı sayfası kısa bir mesaj gösterip ana sayfaya yönlendirir
+    await expect(page.getByText(/sayfa bulunamadı|not found/i)).toBeVisible({ timeout: 5000 });
+    await expect(page).toHaveURL(/dashboard|login/, { timeout: 10000 });
     await page.screenshot({ path: 'test-results/screenshots/ux-404.png' });
   });
 
