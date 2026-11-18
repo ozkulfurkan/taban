@@ -48,7 +48,8 @@ const PORTAL_API_PREFIXES = [
 const VIEWER_WRITE_ALLOWED = ['/api/auth/', '/api/settings', '/api/support/'];
 
 // Düzenleyicinin silebileceği API'ler (kendi oturumu, kendi destek talepleri).
-const EDITOR_DELETE_ALLOWED = ['/api/auth/', '/api/support/'];
+// Ekstre linkini kapatmak kayıt silmek değildir; düzenleyici de linki yenileyip kapatabilir.
+const EDITOR_DELETE_ALLOWED = ['/api/auth/', '/api/support/', '/api/statement-links'];
 
 export const ASSIGNABLE_ROLES = ['COMPANY_OWNER', 'EDITOR', 'VIEWER'] as const;
 

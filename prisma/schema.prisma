@@ -108,6 +108,7 @@ model Company {
   supportTickets        SupportTicket[]
   barcodeSettings         BarcodeSettings?
   productStockAdjustments ProductStockAdjustment[]
+  statementShareLinks     StatementShareLink[]
 }
 
 model User {
@@ -322,6 +323,7 @@ model Customer {
   portalCustomer        PortalCustomer?
   soleOrders            SoleOrder[]
   customerProductPrices CustomerProductPrice[]
+  statementShareLinks   StatementShareLink[]
   @@index([companyId])
 }
 
@@ -356,6 +358,7 @@ model Supplier {
   purchases Purchase[]
   payments  Payment[]
   cekler    Cek[]
+  statementShareLinks StatementShareLink[]
   @@index([companyId])
 }
 
@@ -1091,4 +1094,26 @@ model DocumentCounter {
   value     Int
 
   @@id([companyId, key])
+}
+
+// Hesap ekstresini giriş yapmadan görüntülemek için paylaşılan link.
+// Bir cari için aynı anda tek aktif link olur; yenilenince eskisi revokedAt ile geçersizleşir.
+model StatementShareLink {
+  id           String    @id @default(cuid())
+  companyId    String
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customerId   String?
+  customer     Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  supplierId   String?
+  supplier     Supplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  token        String    @unique
+  createdById  String?
+  createdAt    DateTime  @default(now())
+  revokedAt    DateTime?
+  lastViewedAt DateTime?
+  viewCount    Int       @default(0)
+
+  @@index([companyId])
+  @@index([customerId])
+  @@index([supplierId])
 }
