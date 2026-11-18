@@ -20,6 +20,14 @@ export async function GET(req: NextRequest) {
   const where: any = { companyId: user.companyId };
   if (durum) where.durum = durum;
   if (customerId) where.customerId = customerId;
+  // Hızlı vade filtreleri: sadece tahsil bekleyen (portföy / bankada) çekler
+  const vade = searchParams.get('vade');
+  if (vade === 'overdue' || vade === 'week') {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(today.getTime() + 8 * 86400000);
+    if (!durum) where.durum = { in: ['PORTFOY', 'BANKAYA_VERILDI'] };
+    where.vadesi = vade === 'overdue' ? { lt: today } : { gte: today, lt: weekEnd };
+  }
 
   const all = searchParams.get('all') === 'true';
 
@@ -33,12 +41,16 @@ export async function GET(req: NextRequest) {
   const [cekler, total, stats] = await Promise.all([
     prisma.cek.findMany({
       where,
-      include: { customer: { select: { id: true, name: true } }, supplier: { select: { id: true, name: true } } },
+      include: {
+        customer: { select: { id: true, name: true } },
+        supplier: { select: { id: true, name: true } },
+        bankAccount: { select: { id: true, name: true, currency: true } },
+      },
       orderBy: { [sortBy]: sortDir },
       ...(all ? {} : { skip: (page - 1) * limit, take: limit }),
     }),
     prisma.cek.count({ where }),
-    prisma.cek.findMany({ where, select: { tutar: true, vadesi: true } }),
+    prisma.cek.findMany({ where, select: { tutar: true, vadesi: true, currency: true } }),
   ]);
 
   const totalTutar = stats.reduce((s, c) => s + c.tutar, 0);
@@ -47,7 +59,18 @@ export async function GET(req: NextRequest) {
     avgVadeMs = stats.reduce((s, c) => s + c.tutar * new Date(c.vadesi).getTime(), 0) / totalTutar;
   }
 
-  return NextResponse.json({ cekler, total, page, pages: Math.ceil(total / limit), totalTutar, avgVadeMs });
+  // Döviz bazında toplam ve ortalama vade (farklı dövizler birbirine eklenmez)
+  const byCur = new Map<string, { currency: string; count: number; total: number; w: number }>();
+  for (const c of stats) {
+    const e = byCur.get(c.currency) ?? { currency: c.currency, count: 0, total: 0, w: 0 };
+    e.count += 1; e.total += c.tutar; e.w += c.tutar * new Date(c.vadesi).getTime();
+    byCur.set(c.currency, e);
+  }
+  const totals = Array.from(byCur.values())
+    .sort((a, b) => a.currency.localeCompare(b.currency))
+    .map(e => ({ currency: e.currency, count: e.count, total: Math.round(e.total * 100) / 100, avgVadeMs: e.total > 0 ? e.w / e.total : null }));
+
+  return NextResponse.json({ cekler, total, page, pages: Math.ceil(total / limit), totalTutar, avgVadeMs, totals });
 }
 
 export async function POST(req: NextRequest) {

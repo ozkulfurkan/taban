@@ -34,13 +34,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     await prisma.cek.updateMany({
       where: { id: params.id, companyId: user.companyId },
-      data: { ...body, paymentId: null },
+      data: { ...body, paymentId: null, ...(body.durum === 'PORTFOY' ? { bankAccountId: null } : {}) },
     });
   } else if (removeSupplierPayment) {
     const cek = await prisma.cek.findFirst({
       where: { id: params.id, companyId: user.companyId },
     });
-    if (cek?.supplierId) {
+    if (cek?.paymentId) {
+      // Toplu işlemle verilen çekte ödeme doğrudan bağlı: tam o kayıt silinir
+      await prisma.payment.deleteMany({ where: { id: cek.paymentId, companyId: user.companyId, supplierId: cek.supplierId } });
+    } else if (cek?.supplierId) {
+      // Eski kayıtlar: ödemeyi tutar ve seri no ile bul
       const whereClause: any = {
         supplierId: cek.supplierId,
         companyId: user.companyId,
@@ -56,12 +60,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     await prisma.cek.updateMany({
       where: { id: params.id, companyId: user.companyId },
-      data: { ...body, supplierId: null },
+      data: { ...body, supplierId: null, paymentId: null },
     });
   } else {
     await prisma.cek.updateMany({
       where: { id: params.id, companyId: user.companyId },
-      data: body,
+      // Portföye dönen çekin banka hesabı bağı kalkar
+      data: body.durum === 'PORTFOY' ? { ...body, bankAccountId: null } : body,
     });
   }
 
