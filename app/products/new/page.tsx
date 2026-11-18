@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
+import DecimalInput from '@/app/components/decimal-input';
 
 const CURRENCIES = ['USD', 'EUR', 'TRY'];
 
@@ -111,7 +112,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Mevcut Stok {isMaterial ? `(${form.unit})` : ''}</label>
-              <input type="number" step="any" min="0" value={form.stock} onChange={e => set('stock', e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <DecimalInput step="any" min="0" value={form.stock} onChange={e => set('stock', e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-slate-600 mb-1">Açıklama</label>

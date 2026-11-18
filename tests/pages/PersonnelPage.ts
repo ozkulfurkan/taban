@@ -22,7 +22,7 @@ export class PersonnelPage {
     await this.page.getByPlaceholder('Ahmet Yılmaz').fill(name);
     await this.page.getByPlaceholder('Üretim').fill('Üretim');
     await this.page.getByPlaceholder('Operatör').fill('İşçi');
-    await this.page.locator('input[type="number"]').first().fill(salary);
+    await this.page.locator('input[inputmode="decimal"], input[inputmode="numeric"]').first().fill(salary);
   }
 
   async savePersonnel() {

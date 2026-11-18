@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, ArrowLeft, ChevronRight, AlertTriangle, CheckCircle2, Clock, Package, Flame, Truck, MapPin } from 'lucide-react';
+import DecimalInput from '@/app/components/decimal-input';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Bekliyor', MATERIAL_SENT: 'Hammadde Gönderildi',
@@ -347,7 +348,7 @@ export default function FasonOrderDetailPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Miktar (kg)</label>
-                <input type="number" step="0.01" min="0.01" value={scrapQty} onChange={e => setScrapQty(e.target.value)} required
+                <DecimalInput step="0.01" min="0.01" value={scrapQty} onChange={e => setScrapQty(e.target.value)} required
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none"
                   placeholder="0.00" />
               </div>

@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { matchesText } from '@/lib/search';
+import { stockTextClass, fmtQty } from '@/lib/stock-display';
+import MoreMenu from '@/app/components/more-menu';
 
 interface PortalModalState {
   productId: string;
@@ -311,8 +313,8 @@ export default function ProductsPage() {
                         <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className={`font-medium ${p.stock <= 0 ? 'text-red-500' : 'text-slate-700'}`}>
-                          {p.stock} {p.unit}
+                        <span className={`font-medium tabular-nums ${stockTextClass(p.stock)}`}>
+                          {fmtQty(p.stock)} {p.unit}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
@@ -325,9 +327,10 @@ export default function ProductsPage() {
                         </button>
                       </td>
                       <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => handleDelete(p.id, p.name)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <MoreMenu size="sm" label="Ürün işlemleri" items={[
+                          { label: 'Düzenle', icon: Pencil, onClick: () => router.push(`/products/${p.id}?edit=true`) },
+                          { label: 'Sil', icon: Trash2, danger: true, onClick: () => handleDelete(p.id, p.name) },
+                        ]} />
                       </td>
                     </motion.tr>
                   );

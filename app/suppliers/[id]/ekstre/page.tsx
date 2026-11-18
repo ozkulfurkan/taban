@@ -6,6 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { ArrowLeft, Loader2, FileSpreadsheet, FileDown, RefreshCw } from 'lucide-react';
 import { matchesText } from '@/lib/search';
+import FitText from '@/app/components/fit-text';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -230,15 +231,15 @@ export default function SupplierEkstrePage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="rounded-xl p-4 text-white bg-red-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">Toplam Borç</p>
-                <p className="text-2xl font-bold">{fmt(totalBorc)}</p>
+                <FitText className="text-2xl font-bold">{fmt(totalBorc)}</FitText>
               </div>
               <div className="rounded-xl p-4 text-white bg-blue-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">Toplam Alacak</p>
-                <p className="text-2xl font-bold">{fmt(totalAlacak)}</p>
+                <FitText className="text-2xl font-bold">{fmt(totalAlacak)}</FitText>
               </div>
               <div className="rounded-xl p-4 text-white bg-emerald-500 shadow-sm">
                 <p className="text-xs font-medium opacity-80 mb-1">Bakiye</p>
-                <p className="text-2xl font-bold">{fmt(lastBalance)}</p>
+                <FitText className="text-2xl font-bold">{fmt(lastBalance)}</FitText>
               </div>
             </div>
 

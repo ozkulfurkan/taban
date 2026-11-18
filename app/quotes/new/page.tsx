@@ -9,6 +9,7 @@ import {
   Banknote, CreditCard, Calendar, X
 } from 'lucide-react';
 import { matchesText } from '@/lib/search';
+import DecimalInput from '@/app/components/decimal-input';
 
 function tr(text: string): string {
   return String(text ?? '')
@@ -416,7 +417,7 @@ function QuoteForm() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Geçerlilik Süresi (Gün)</label>
-              <input type="number" value={validityDays} onChange={e => setValidityDays(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <DecimalInput value={validityDays} onChange={e => setValidityDays(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-slate-600 mb-1">Firma Adresi</label>
@@ -514,8 +515,8 @@ function QuoteForm() {
                         />
                       </td>
                       <td className="px-2 py-2">
-                        <input
-                          type="number" step="0.0001"
+                        <DecimalInput
+                          step="0.0001"
                           value={row.birimFiyat}
                           onChange={e => updateRow(row.id, 'birimFiyat', e.target.value)}
                           placeholder="0.00"
@@ -524,8 +525,8 @@ function QuoteForm() {
                       </td>
                       {numaralar.map(n => (
                         <td key={n} className="px-2 py-2 text-center">
-                          <input
-                            type="number" min="0"
+                          <DecimalInput
+                            min="0"
                             value={row.adetler[n] ?? ''}
                             onChange={e => updateAdet(row.id, n, e.target.value)}
                             placeholder="0"
@@ -633,7 +634,7 @@ function QuoteForm() {
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Kaç Aylık Çek</label>
                 <div className="flex items-center gap-2">
-                  <input type="number" min="1" value={checkMonths} onChange={e => setCheckMonths(e.target.value)} placeholder="3" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <DecimalInput min="1" value={checkMonths} onChange={e => setCheckMonths(e.target.value)} placeholder="3" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                   <span className="text-slate-500 text-sm whitespace-nowrap">ay vadeli</span>
                 </div>
               </div>
@@ -641,7 +642,7 @@ function QuoteForm() {
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">KDV Oranı</label>
               <div className="flex items-center gap-2">
-                <input type="number" min="0" max="100" value={vatRate} onChange={e => setVatRate(e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <DecimalInput min="0" max="100" value={vatRate} onChange={e => setVatRate(e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 <span className="text-slate-500 text-sm">%</span>
               </div>
             </div>

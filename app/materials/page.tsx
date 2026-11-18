@@ -9,6 +9,7 @@ import { useSession } from 'next-auth/react';
 import { Package, Plus, Search, Loader2, Tag } from 'lucide-react';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { motion } from 'framer-motion';
+import { stockTextClass } from '@/lib/stock-display';
 
 export default function MaterialsPage() {
   const router = useRouter();
@@ -154,7 +155,7 @@ export default function MaterialsPage() {
                       <p className="text-xs text-slate-400">{mat?.currency ?? ''}</p>
                     </div>
                     <div className="text-right min-w-[80px]">
-                      <p className={`font-semibold text-sm ${(mat?.stock ?? 0) <= 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                      <p className={`font-semibold text-sm ${stockTextClass(mat?.stock, 'text-emerald-600')}`}>
                         {(mat?.stock ?? 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                       </p>
                       <p className="text-xs text-slate-400">Stok</p>

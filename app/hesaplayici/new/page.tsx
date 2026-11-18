@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { Plus, Trash2, Loader2, ArrowLeft, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import DecimalInput from '@/app/components/decimal-input';
 
 const DEFAULT_ITEMS = [
   { name: 'SBS', qty: 0, currency: 'TRY', unitPriceExVat: 0, unitPriceInVat: 0 },
@@ -160,8 +161,8 @@ export default function NewHesaplayiciPage() {
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium text-slate-600">USD Kuru (₺)</label>
               </div>
-              <input
-                type="number" min="0" step="0.01"
+              <DecimalInput
+                min="0" step="0.01"
                 value={kurUsd || ''}
                 onChange={e => setKurUsd(parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
@@ -177,8 +178,8 @@ export default function NewHesaplayiciPage() {
                   TCMB
                 </button>
               </div>
-              <input
-                type="number" min="0" step="0.01"
+              <DecimalInput
+                min="0" step="0.01"
                 value={kurEur || ''}
                 onChange={e => setKurEur(parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
@@ -241,8 +242,8 @@ export default function NewHesaplayiciPage() {
                   placeholder="Malzeme adı"
                   className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full"
                 />
-                <input
-                  type="number" min="0" step="0.001"
+                <DecimalInput
+                  min="0" step="0.001"
                   value={item.qty || ''}
                   onChange={e => updateItem(idx, 'qty', e.target.value)}
                   placeholder="0"
@@ -257,15 +258,15 @@ export default function NewHesaplayiciPage() {
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
                 </select>
-                <input
-                  type="number" min="0" step="0.0001"
+                <DecimalInput
+                  min="0" step="0.0001"
                   value={item.unitPriceExVat || ''}
                   onChange={e => updateItem(idx, 'unitPriceExVat', e.target.value)}
                   placeholder="0.00"
                   className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full text-right"
                 />
-                <input
-                  type="number" min="0" step="0.0001"
+                <DecimalInput
+                  min="0" step="0.0001"
                   value={item.unitPriceInVat || ''}
                   onChange={e => updateItem(idx, 'unitPriceInVat', e.target.value)}
                   placeholder="0.00"
@@ -288,8 +289,8 @@ export default function NewHesaplayiciPage() {
           <div className="flex items-center gap-3 max-w-sm">
             <div className="flex-1">
               <label className="block text-xs font-medium text-slate-600 mb-1">kg Başına İşçilik</label>
-              <input
-                type="number" min="0" step="0.01"
+              <DecimalInput
+                min="0" step="0.01"
                 value={laborPerKg || ''}
                 onChange={e => setLaborPerKg(parseFloat(e.target.value) || 0)}
                 placeholder="0.00"

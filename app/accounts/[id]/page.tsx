@@ -9,6 +9,7 @@ import {
   ArrowLeftRight, ChevronDown, Trash2, X, Save, AlertTriangle,
 } from 'lucide-react';
 import { matchesText } from '@/lib/search';
+import DecimalInput from '@/app/components/decimal-input';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -78,7 +79,7 @@ function HesapIslemModal({
         <div className="p-5 space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Tutar</label>
-            <input type="number" step="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
+            <DecimalInput step="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
               placeholder="0,00"
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right" />
           </div>
@@ -204,7 +205,7 @@ function TransferModal({
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-700 font-bold mb-1">Gönderilen Tutar</label>
-            <input type="number" step="0.01" value={form.amount} onChange={e => handleAmountChange(e.target.value)}
+            <DecimalInput step="0.01" value={form.amount} onChange={e => handleAmountChange(e.target.value)}
               placeholder="0,00"
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right font-medium" />
           </div>
@@ -214,7 +215,7 @@ function TransferModal({
                 <label className="block text-xs font-medium text-slate-500 mb-1">
                   Döviz Kuru <span className="text-slate-400">({sourceAccount.currency} / {targetAccount.currency})</span>
                 </label>
-                <input type="number" step="0.0001" value={form.exchangeRate} onChange={e => handleExchangeRateChange(e.target.value)}
+                <DecimalInput step="0.0001" value={form.exchangeRate} onChange={e => handleExchangeRateChange(e.target.value)}
                   placeholder="0,0000"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
               </div>
@@ -222,7 +223,7 @@ function TransferModal({
                 <label className="block text-xs font-medium text-slate-700 font-bold mb-1">
                   Karşı Hesaba Geçen Tutar <span className="text-slate-400 font-normal">({targetAccount.currency})</span>
                 </label>
-                <input type="number" step="0.0001" value={form.targetAmount} onChange={e => handleTargetAmountChange(e.target.value)}
+                <DecimalInput step="0.0001" value={form.targetAmount} onChange={e => handleTargetAmountChange(e.target.value)}
                   placeholder="0,00"
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right font-medium" />
               </div>
@@ -298,7 +299,7 @@ function EditAccountModal({
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Bakiye</label>
-              <input type="number" step="0.01" value={form.balance} onChange={e => set('balance', e.target.value)}
+              <DecimalInput step="0.01" value={form.balance} onChange={e => set('balance', e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none text-right" />
             </div>
           </div>

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import SizeTable from '@/app/portal/components/size-table';
 import Link from 'next/link';
+import DecimalInput from '@/app/components/decimal-input';
 import {
   Loader2, ChevronLeft, Factory, Send, Package, ArrowRight,
   AlertTriangle, CheckCircle2, Mail, X, RotateCcw, Trash2,
@@ -269,7 +270,7 @@ export default function SubcontractorOrderDetailPage() {
                     {matList.map((m: any) => <option key={m.id} value={m.id}>{m.name} ({m.stock?.toFixed(2) ?? 0} kg)</option>)}
                   </select>
                   <div className="flex gap-2">
-                    <input type="number" min="0" step="0.001" value={transferForm.quantity} onChange={e => setTransferForm(p => ({ ...p, quantity: e.target.value }))}
+                    <DecimalInput min="0" step="0.001" value={transferForm.quantity} onChange={e => setTransferForm(p => ({ ...p, quantity: e.target.value }))}
                       placeholder="Miktar (kg)" className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-400" />
                     <input value={transferForm.notes} onChange={e => setTransferForm(p => ({ ...p, notes: e.target.value }))}
                       placeholder="Not" className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-400" />
@@ -290,7 +291,7 @@ export default function SubcontractorOrderDetailPage() {
                   <Package className="w-3.5 h-3.5" /> Ürün Teslim Al
                 </p>
                 <div className="space-y-2">
-                  <input type="number" min="1" value={receiveForm.receivedPairs} onChange={e => setReceiveForm(p => ({ ...p, receivedPairs: e.target.value }))}
+                  <DecimalInput min="1" value={receiveForm.receivedPairs} onChange={e => setReceiveForm(p => ({ ...p, receivedPairs: e.target.value }))}
                     placeholder="Teslim alınan çift adedi" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-400" />
                   <input value={receiveForm.notes} onChange={e => setReceiveForm(p => ({ ...p, notes: e.target.value }))}
                     placeholder="Not" className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-400" />

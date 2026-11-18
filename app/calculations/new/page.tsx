@@ -7,6 +7,7 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { Calculator, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Paintbrush, Wrench, History } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import DecimalInput from '@/app/components/decimal-input';
 
 interface PartForm {
   partName: string;
@@ -238,11 +239,11 @@ function NewCalculationForm() {
                           </div>
                           <div>
                             <label className="block text-xs font-medium text-slate-500 mb-1">{t('calculation', 'grossWeight')}</label>
-                            <input type="number" step="0.1" value={part.grossWeight} onChange={(e) => updatePart(idx, 'grossWeight', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                            <DecimalInput step="0.1" value={part.grossWeight} onChange={(e) => updatePart(idx, 'grossWeight', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                           </div>
                           <div>
                             <label className="block text-xs font-medium text-slate-500 mb-1">{t('calculation', 'wasteRate')}</label>
-                            <input type="number" step="0.1" value={part.wasteRate} onChange={(e) => updatePart(idx, 'wasteRate', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                            <DecimalInput step="0.1" value={part.wasteRate} onChange={(e) => updatePart(idx, 'wasteRate', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                           </div>
                         </div>
                         <div className="flex justify-between text-xs text-slate-500 pt-1">
@@ -292,21 +293,21 @@ function NewCalculationForm() {
                   {laborMethod === 'direct' ? (
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'laborCostPerPair')} ({laborCurrency})</label>
-                      <input type="number" step="0.01" value={laborCostPerPair} onChange={(e) => setLaborCostPerPair(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                      <DecimalInput step="0.01" value={laborCostPerPair} onChange={(e) => setLaborCostPerPair(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'monthlySalary')} ({laborCurrency})</label>
-                        <input type="number" step="0.01" value={monthlySalary} onChange={(e) => setMonthlySalary(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <DecimalInput step="0.01" value={monthlySalary} onChange={(e) => setMonthlySalary(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'workDays')}</label>
-                        <input type="number" value={workDays} onChange={(e) => setWorkDays(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <DecimalInput value={workDays} onChange={(e) => setWorkDays(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'dailyProduction')}</label>
-                        <input type="number" value={dailyProduction} onChange={(e) => setDailyProduction(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <DecimalInput value={dailyProduction} onChange={(e) => setDailyProduction(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                       </div>
                     </div>
                   )}
@@ -328,7 +329,7 @@ function NewCalculationForm() {
               <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
                 <div className="p-5">
                   <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'paintCost')}</label>
-                  <input type="number" step="0.01" value={paintCost} onChange={(e) => setPaintCost(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <DecimalInput step="0.01" value={paintCost} onChange={(e) => setPaintCost(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
               </motion.div>
             )}
@@ -354,7 +355,7 @@ function NewCalculationForm() {
             <div className="flex justify-between">
               <span className="text-blue-200">{t('calculation', 'profitMargin')}:</span>
               <div className="flex items-center gap-2">
-                <input type="number" step="0.1" value={profitMargin} onChange={(e) => setProfitMargin(e.target.value)} className="w-16 px-2 py-1 bg-white/20 rounded text-white text-right text-sm outline-none" />
+                <DecimalInput step="0.1" value={profitMargin} onChange={(e) => setProfitMargin(e.target.value)} className="w-16 px-2 py-1 bg-white/20 rounded text-white text-right text-sm outline-none" />
                 <span>%</span>
               </div>
             </div>
@@ -371,7 +372,7 @@ function NewCalculationForm() {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
                 <span>{t('calculation', 'vatRate')}:</span>
-                <input type="number" step="0.1" min="0" value={vatRate} onChange={(e) => setVatRate(e.target.value)} className="w-14 px-2 py-1 bg-white/20 rounded text-white text-right text-sm outline-none" />
+                <DecimalInput step="0.1" min="0" value={vatRate} onChange={(e) => setVatRate(e.target.value)} className="w-14 px-2 py-1 bg-white/20 rounded text-white text-right text-sm outline-none" />
                 <span>%</span>
               </div>
             </div>

@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { formatDate, toDateInputValue } from '@/lib/time';
-import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Loader2, Plus, Trash2, Pencil, X, ArrowLeft, Save, AlertTriangle } from 'lucide-react';
 import { fromPriceInput } from '@/lib/price-input';
 import { matchesText } from '@/lib/search';
+import StickySaveBar from '@/app/components/sticky-save-bar';
+import { useLeaveGuard } from '@/lib/use-leave-guard';
 
 interface LineItem {
   productId?: string;
@@ -258,6 +260,7 @@ export default function ReturnInvoicePage() {
   };
 
   const subtotal = items.reduce((s, it) => s + lineTotal(it), 0);
+  const { guard, leave } = useLeaveGuard(!saving && (items.length > 0 || !!form.notes?.trim()));
   const vatRate = parseFloat(form.vatRate) || 0;
   const vatAmount = subtotal * vatRate / 100;
   const total = subtotal + vatAmount;
@@ -286,16 +289,8 @@ export default function ReturnInvoicePage() {
     <AppShell>
       <div className="space-y-3 h-full">
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={() => router.back()} className="flex items-center gap-1.5 px-3 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors">
+          <button onClick={() => leave(() => router.back())} className="flex items-center gap-1.5 px-3 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors">
             <ArrowLeft className="w-4 h-4" /> {t('common', 'back')}
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={saving || items.length === 0 || !form.customerId}
-            className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-            {saving ? t('newInvoice', 'saving') : t('newInvoice', 'saveReturn')}
           </button>
         </div>
 
@@ -514,6 +509,17 @@ export default function ReturnInvoicePage() {
             </div>
           </div>
         </div>
+        <StickySaveBar
+          summaryLabel={t('newInvoice', 'grandTotal')}
+          summaryValue={`${total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${form.currency}`}
+          onSave={handleSubmit}
+          saving={saving}
+          disabled={items.length === 0 || !form.customerId}
+          tone="danger"
+          saveLabel={t('newInvoice', 'saveReturn')}
+          savingLabel={t('newInvoice', 'saving')}
+        />
+        {guard}
       </div>
 
       {modal.open && (
