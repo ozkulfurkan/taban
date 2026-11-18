@@ -1,6 +1,7 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 import { canSeePage, checkApiAccess } from '@/lib/access';
+import { withBearerCookie } from '@/lib/mobile-auth';
 
 export default withAuth(
   function middleware(req) {
@@ -13,7 +14,9 @@ export default withAuth(
       if (!decision.ok) {
         return NextResponse.json({ error: decision.error }, { status: decision.status });
       }
-      return NextResponse.next();
+      // Mobil uygulama: Bearer token route'lara oturum çerezi olarak iletilir (getServerSession çerez okur)
+      const headers = withBearerCookie(req.headers);
+      return headers ? NextResponse.next({ request: { headers } }) : NextResponse.next();
     }
 
     // Portal users must not access main app routes

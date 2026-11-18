@@ -4,7 +4,8 @@ import { test, expect, Page } from '@playwright/test';
 // (kurla otomatik karşılık), bankaya verme ve tahsil.
 
 const RUN = Date.now().toString(36);
-const day = (o: number) => new Date(Date.now() + o * 86400000).toISOString().slice(0, 10);
+// Tarayıcı Europe/Istanbul saatinde; vade günü de o saat dilimine göre (UTC gece yarısı kaymasın)
+const day = (o: number) => new Date(Date.now() + o * 86400000).toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' });
 
 async function post(page: Page, url: string, data: any) {
   const r = await page.request.post(url, { data });
