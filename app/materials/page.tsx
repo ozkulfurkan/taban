@@ -171,28 +171,28 @@ export default function MaterialsPage() {
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={t('materials', 'addMaterial')}>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'materialName')} <span className="text-red-500">*</span></label>
-            <input value={form.name}
+            <label htmlFor="mat-name" className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'materialName')} <span className="text-red-500">*</span></label>
+            <input id="mat-name" value={form.name}
               onChange={(e) => { setForm({ ...form, name: e.target.value }); if (e.target.value.trim()) setNameError(''); }}
               className={`w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${nameError ? 'border-red-400 ring-1 ring-red-400' : 'border-slate-200'}`} />
             {nameError && <p className="mt-1 text-xs text-red-500">{nameError}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Kategori (opsiyonel)</label>
-            <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Ör: Taban, Astar, Bağcık" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            <label htmlFor="mat-category" className="block text-sm font-medium text-slate-700 mb-1">Kategori (opsiyonel)</label>
+            <input id="mat-category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Ör: Taban, Astar, Bağcık" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'supplier')}</label>
-            <input value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            <label htmlFor="mat-supplier" className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'supplier')}</label>
+            <input id="mat-supplier" value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'pricePerKg')}</label>
-              <input type="text" inputMode="decimal" value={form.pricePerKg} onChange={(e) => setForm({ ...form, pricePerKg: normalizePriceInput(e.target.value) })} onKeyDown={blockDot} placeholder="0,00" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label htmlFor="mat-price" className="block text-sm font-medium text-slate-700 mb-1">{t('materials', 'pricePerKg')}</label>
+              <input id="mat-price" type="text" inputMode="decimal" value={form.pricePerKg} onChange={(e) => setForm({ ...form, pricePerKg: normalizePriceInput(e.target.value) })} onKeyDown={blockDot} placeholder="0,00" className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{t('common', 'currency')}</label>
-              <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+              <label htmlFor="mat-currency" className="block text-sm font-medium text-slate-700 mb-1">{t('common', 'currency')}</label>
+              <select id="mat-currency" value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 <option value="USD">USD ($)</option>
                 <option value="EUR">EUR (€)</option>
                 <option value="TRY">TRY (₺)</option>

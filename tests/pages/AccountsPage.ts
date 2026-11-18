@@ -12,23 +12,15 @@ export class AccountsPage {
     await expect(this.page).toHaveURL(/accounts/, { timeout: 10000 });
   }
 
-  async openAddAccountModal() {
-    const btn = this.page.getByRole('button', { name: /hesap ekle|ekle|yeni|add/i }).first();
-    await btn.waitFor({ state: 'visible', timeout: 8000 });
-    await btn.click();
-    await this.page.waitForTimeout(500);
+  // "Yeni Hesap" bir açılır menü: önce hesap türü seçilir, sonra pencere açılır
+  async openAddAccountModal(type = 'Kasa') {
+    await this.page.getByRole('button', { name: /yeni hesap|new account/i }).click();
+    await this.page.getByRole('button', { name: new RegExp(`^\\s*${type}\\b`, 'i') }).click();
+    await expect(this.page.getByPlaceholder(/TL Kasa/i)).toBeVisible();
   }
 
-  async fillAccountForm(name: string, type = 'Kasa') {
-    const nameInput = this.page.getByPlaceholder(/hesap adı|ad|name/i).last();
-    if (await nameInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await nameInput.fill(name);
-    }
-
-    const typeSelect = this.page.locator('select').filter({ hasText: /kasa|banka|pos/i }).first();
-    if (await typeSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await typeSelect.selectOption(type);
-    }
+  async fillAccountForm(name: string) {
+    await this.page.getByPlaceholder(/TL Kasa/i).fill(name);
   }
 
   async saveAccount() {

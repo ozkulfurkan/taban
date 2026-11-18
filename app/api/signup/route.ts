@@ -22,14 +22,14 @@ export async function POST(req: NextRequest) {
     const { email, password, name, companyName } = body ?? {};
 
     if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
+      return NextResponse.json({ error: 'E-posta ve şifre zorunludur' }, { status: 400 });
     }
     const pwErr = passwordError(password);
     if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+      return NextResponse.json({ error: 'Bu e-posta adresiyle kayıtlı bir hesap zaten var. Giriş yapmayı deneyin.' }, { status: 400 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);

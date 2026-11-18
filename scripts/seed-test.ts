@@ -28,22 +28,25 @@ async function main() {
     });
   }
 
-  // Test kullanıcısı oluştur
-  const testPassword = await bcrypt.hash('test123', 12);
+  // Test kullanıcısı: Playwright testleri (tests/helpers/config.ts) bu bilgilerle giriş yapar
+  const TEST_EMAIL = process.env.TEST_EMAIL || 'test@solecost.com';
+  const TEST_PASSWORD = process.env.TEST_PASSWORD || 'Test123456';
+  const testPassword = await bcrypt.hash(TEST_PASSWORD, 12);
   const testUser = await prisma.user.upsert({
-    where: { email: 'test@solecost.com' },
-    update: { password: testPassword },
+    where: { email: TEST_EMAIL },
+    update: { password: testPassword, role: 'COMPANY_OWNER', emailVerified: true, companyId: company.id },
     create: {
-      email: 'test@solecost.com',
+      email: TEST_EMAIL,
       name: 'Test Kullanıcı',
       password: testPassword,
-      role: 'EDITOR',
+      role: 'COMPANY_OWNER',
+      emailVerified: true,
       companyId: company.id,
       language: 'tr',
       currency: 'USD',
     },
   });
-  console.log(`✅ Kullanıcı: ${testUser.email} / test123`);
+  console.log(`✅ Kullanıcı: ${testUser.email} / ${TEST_PASSWORD}`);
 
   // ── Müşteriler ───────────────────────────────────────────────────────
   const customersData = [
@@ -166,8 +169,8 @@ async function main() {
   console.log('\n🎉 Test verisi başarıyla oluşturuldu!\n');
   console.log('═══════════════════════════════════════');
   console.log('  Giriş Bilgileri:');
-  console.log('  E-posta : test@solecost.com');
-  console.log('  Şifre   : test123');
+  console.log(`  E-posta : ${TEST_EMAIL}`);
+  console.log(`  Şifre   : ${TEST_PASSWORD}`);
   console.log('═══════════════════════════════════════\n');
 }
 

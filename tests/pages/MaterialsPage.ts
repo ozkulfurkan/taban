@@ -21,14 +21,8 @@ export class MaterialsPage {
   }
 
   async fillMaterialForm(name: string, price = '10') {
-    const nameInput = this.page.getByPlaceholder(/ad|isim|name/i).last();
-    await nameInput.waitFor({ state: 'visible', timeout: 8000 });
-    await nameInput.fill(name);
-
-    const priceInput = this.page.locator('input[type="number"], input[placeholder*="fiyat"], input[placeholder*="price"]').last();
-    if (await priceInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await priceInput.fill(price);
-    }
+    await this.page.locator('#mat-name').fill(name);
+    await this.page.locator('#mat-price').fill(price);
   }
 
   async saveForm() {
