@@ -1,4 +1,5 @@
 'use client';
+import { usePortalText } from '@/lib/i18n/portal';
 
 const ALL_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];
 
@@ -10,6 +11,7 @@ interface SizeTableProps {
 }
 
 export default function SizeTable({ value, onChange, readOnly = false, sizes: sizesProp }: SizeTableProps) {
+  const { tp } = usePortalText();
   const SIZES = (sizesProp && sizesProp.length > 0) ? sizesProp : ALL_SIZES;
   const total = SIZES.reduce((s, sz) => s + (Number(value[sz]) || 0), 0);
 
@@ -29,7 +31,7 @@ export default function SizeTable({ value, onChange, readOnly = false, sizes: si
               </th>
             ))}
             <th className="px-3 py-2 text-center font-bold text-slate-700 border border-slate-200 bg-blue-50 min-w-[60px]">
-              Toplam
+              {tp('Toplam')}
             </th>
           </tr>
         </thead>

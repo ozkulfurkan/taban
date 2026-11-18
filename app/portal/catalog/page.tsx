@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import PortalShell from '../components/portal-shell';
 import { Loader2, Package, Plus, ShoppingCart, Trash2, Send, ChevronUp } from 'lucide-react';
+import { usePortalText } from '@/lib/i18n/portal';
 
 interface Product {
   id: string;
@@ -28,6 +29,7 @@ interface CartItem {
 const ALL_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];
 
 export default function PortalCatalogPage() {
+  const { tp } = usePortalText();
   const { status } = useSession() || {};
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -113,7 +115,7 @@ export default function PortalCatalogPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        setSubmitError(data.error || 'Bir hata oluştu.');
+        setSubmitError(data.error || tp('Bir hata oluştu.'));
         return;
       }
       router.push('/portal/orders');
@@ -125,7 +127,7 @@ export default function PortalCatalogPage() {
   return (
     <PortalShell>
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-slate-800">Ürün Kataloğu</h1>
+        <h1 className="text-xl font-bold text-slate-800">{tp('Ürün Kataloğu')}</h1>
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -134,7 +136,7 @@ export default function PortalCatalogPage() {
         ) : products.length === 0 ? (
           <div className="bg-white rounded-xl p-12 text-center shadow-sm">
             <Package className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-            <p className="text-slate-400 text-sm">Katalog henüz yüklenmedi.</p>
+            <p className="text-slate-400 text-sm">{tp('Katalog henüz yüklenmedi.')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -158,7 +160,7 @@ export default function PortalCatalogPage() {
                     </div>
 
                     <div>
-                      <p className="text-xs text-slate-400 mb-1.5">Mevcut Numaralar</p>
+                      <p className="text-xs text-slate-400 mb-1.5">{tp('Mevcut Numaralar')}</p>
                       <div className="flex flex-wrap gap-1">
                         {sizes.map(sz => (
                           <span key={sz} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-md">{sz}</span>
@@ -175,26 +177,26 @@ export default function PortalCatalogPage() {
                       }`}
                     >
                       {isActive
-                        ? <><ChevronUp className="w-4 h-4" /> Kapat</>
-                        : <><Plus className="w-4 h-4" /> Sipariş Ver</>}
+                        ? <><ChevronUp className="w-4 h-4" /> {tp('Kapat')}</>
+                        : <><Plus className="w-4 h-4" /> {tp('Sipariş Ver')}</>}
                     </button>
                   </div>
 
                   {isActive && (
                     <div className="px-5 pb-5 border-t border-slate-100 pt-4 space-y-4">
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">Renk *</label>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">{tp('Renk *')}</label>
                         <input
                           value={orderColor}
                           onChange={e => { setOrderColor(e.target.value); setFormError(''); }}
                           className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                          placeholder="örn: Siyah"
+                          placeholder={tp('örn: Siyah')}
                           autoFocus
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-2">Adet (Numaraya Göre)</label>
+                        <label className="block text-xs font-medium text-slate-600 mb-2">{tp('Adet (Numaraya Göre)')}</label>
                         <div className="grid grid-cols-4 gap-1.5">
                           {sizes.map(sz => (
                             <div key={sz} className="flex flex-col items-center gap-0.5">
@@ -214,7 +216,7 @@ export default function PortalCatalogPage() {
                           ))}
                         </div>
                         {formTotal > 0 && (
-                          <p className="text-xs text-blue-600 font-medium mt-2 text-right">Toplam: {formTotal} çift</p>
+                          <p className="text-xs text-blue-600 font-medium mt-2 text-right">{tp('Toplam')}: {formTotal} {tp('çift')}</p>
                         )}
                       </div>
 
@@ -225,7 +227,7 @@ export default function PortalCatalogPage() {
                         className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors"
                       >
                         <ShoppingCart className="w-4 h-4" />
-                        Sepete Ekle
+                        {tp('Sepete Ekle')}
                       </button>
                     </div>
                   )}
@@ -240,15 +242,15 @@ export default function PortalCatalogPage() {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
               <ShoppingCart className="w-5 h-5 text-blue-600" />
-              <h2 className="font-semibold text-slate-800">Sepet</h2>
-              <span className="ml-auto text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full">{cart.length} ürün</span>
+              <h2 className="font-semibold text-slate-800">{tp('Sepet')}</h2>
+              <span className="ml-auto text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full">{cart.length} {tp('ürün')}</span>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50">
                   <tr>
-                    {['Model', 'Renk', 'Beden Dağılımı', 'Toplam', ''].map(h => (
+                    {['Model', tp('Renk'), tp('Beden Dağılımı'), tp('Toplam'), ''].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
@@ -273,7 +275,7 @@ export default function PortalCatalogPage() {
                             ))}
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-bold text-slate-800 whitespace-nowrap">{item.totalQuantity} çift</td>
+                      <td className="px-4 py-3 font-bold text-slate-800 whitespace-nowrap">{item.totalQuantity} {tp('çift')}</td>
                       <td className="px-4 py-3 text-right">
                         <button onClick={() => removeFromCart(item.cartId)}
                           className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors">
@@ -283,9 +285,9 @@ export default function PortalCatalogPage() {
                     </tr>
                   ))}
                   <tr className="bg-slate-50">
-                    <td colSpan={3} className="px-4 py-3 text-right text-sm font-semibold text-slate-600">Genel Toplam</td>
+                    <td colSpan={3} className="px-4 py-3 text-right text-sm font-semibold text-slate-600">{tp('Genel Toplam')}</td>
                     <td className="px-4 py-3 font-bold text-blue-700 whitespace-nowrap">
-                      {cart.reduce((s, i) => s + i.totalQuantity, 0)} çift
+                      {cart.reduce((s, i) => s + i.totalQuantity, 0)} {tp('çift')}
                     </td>
                     <td />
                   </tr>
@@ -295,13 +297,13 @@ export default function PortalCatalogPage() {
 
             <div className="p-5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">İstenen Termin Tarihi</label>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">{tp('İstenen Termin Tarihi')}</label>
                 <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Notlar</label>
-                <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Ek notlar..."
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">{tp('Notlar')}</label>
+                <input value={notes} onChange={e => setNotes(e.target.value)} placeholder={tp('Ek notlar...')}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
             </div>
@@ -316,7 +318,7 @@ export default function PortalCatalogPage() {
               <button onClick={handleSubmit} disabled={submitting}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl font-semibold transition-colors">
                 {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                Siparişleri Gönder ({cart.length} ürün)
+                {tp('Siparişleri Gönder')} ({cart.length} {tp('ürün')})
               </button>
             </div>
           </div>

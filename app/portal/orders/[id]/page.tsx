@@ -7,8 +7,10 @@ import PortalShell from '../../components/portal-shell';
 import OrderStepper from '../../components/order-stepper';
 import SizeTable from '../../components/size-table';
 import { ArrowLeft, Loader2, RefreshCw, Truck } from 'lucide-react';
+import { usePortalText } from '@/lib/i18n/portal';
 
 export default function PortalOrderDetailPage() {
+  const { tp } = usePortalText();
   const { status } = useSession() || {};
   const router = useRouter();
   const params = useParams();
@@ -36,7 +38,7 @@ export default function PortalOrderDetailPage() {
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
-  if (!order) return <PortalShell><p className="text-slate-500">Sipariş bulunamadı.</p></PortalShell>;
+  if (!order) return <PortalShell><p className="text-slate-500">{tp('Sipariş bulunamadı.')}</p></PortalShell>;
 
   const isPackage = Array.isArray(order.orderItems) && order.orderItems.length > 0;
 
@@ -56,26 +58,26 @@ export default function PortalOrderDetailPage() {
           {!isPackage && (
             <button onClick={handleRepeat}
               className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-medium transition-colors">
-              <RefreshCw className="w-4 h-4" /> Tekrarla
+              <RefreshCw className="w-4 h-4" /> {tp('Tekrarla')}
             </button>
           )}
         </div>
 
         {/* Stepper */}
         <div className="bg-white rounded-xl p-5 shadow-sm overflow-x-auto">
-          <h2 className="font-semibold text-slate-700 mb-3">Sipariş Durumu</h2>
+          <h2 className="font-semibold text-slate-700 mb-3">{tp('Sipariş Durumu')}</h2>
           <OrderStepper status={order.status} />
         </div>
 
         {/* Details */}
         <div className="bg-white rounded-xl p-5 shadow-sm">
-          <h2 className="font-semibold text-slate-700 mb-4">Sipariş Detayları</h2>
+          <h2 className="font-semibold text-slate-700 mb-4">{tp('Sipariş Detayları')}</h2>
           {isPackage ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
                 <thead className="bg-slate-50">
                   <tr>
-                    {['Model', 'Renk', 'Beden Dağılımı', 'Adet'].map(h => (
+                    {['Model', tp('Renk'), tp('Beden Dağılımı'), tp('Adet')].map(h => (
                       <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b border-slate-200">{h}</th>
                     ))}
                   </tr>
@@ -108,9 +110,9 @@ export default function PortalOrderDetailPage() {
           ) : (
             <dl className="grid grid-cols-2 gap-3 text-sm">
               {[
-                ['Model Kodu', order.productCode || order.product?.name || '—'],
-                ['Renk', order.color || '—'],
-                ['Malzeme', order.material || '—'],
+                [tp('Model Kodu'), order.productCode || order.product?.name || '—'],
+                [tp('Renk'), order.color || '—'],
+                [tp('Malzeme'), order.material || '—'],
                 ['Toplam Adet', order.totalQuantity],
                 ['Termin Tarihi', order.confirmedDeliveryDate
                   ? new Date(order.confirmedDeliveryDate).toLocaleDateString('tr-TR')
@@ -128,7 +130,7 @@ export default function PortalOrderDetailPage() {
 
         {/* Size table */}
         <div className="bg-white rounded-xl p-5 shadow-sm">
-          <h2 className="font-semibold text-slate-700 mb-3">{isPackage ? 'Toplam Beden Dağılımı' : 'Beden Dağılımı'}</h2>
+          <h2 className="font-semibold text-slate-700 mb-3">{isPackage ? tp('Toplam Beden Dağılımı') : tp('Beden Dağılımı')}</h2>
           <SizeTable value={order.sizeDistribution || {}} readOnly />
         </div>
 
@@ -137,13 +139,13 @@ export default function PortalOrderDetailPage() {
           <div className="bg-white rounded-xl p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <Truck className="w-5 h-5 text-green-600" />
-              <h2 className="font-semibold text-slate-700">Sevkiyat Bilgileri</h2>
+              <h2 className="font-semibold text-slate-700">{tp('Sevkiyat Bilgileri')}</h2>
             </div>
             <dl className="grid grid-cols-2 gap-3 text-sm">
               {[
-                ['Sevk Tarihi', new Date(order.shipment.shipmentDate).toLocaleDateString('tr-TR')],
-                ['İrsaliye No', order.shipment.deliveryNoteNo || '—'],
-                ['Taşıyıcı', order.shipment.carrier || '—'],
+                [tp('Sevk Tarihi'), new Date(order.shipment.shipmentDate).toLocaleDateString('tr-TR')],
+                [tp('İrsaliye No'), order.shipment.deliveryNoteNo || '—'],
+                [tp('Taşıyıcı'), order.shipment.carrier || '—'],
                 ['Takip No', order.shipment.trackingNo || '—'],
               ].map(([k, v]) => (
                 <div key={String(k)}>
@@ -158,7 +160,7 @@ export default function PortalOrderDetailPage() {
         {/* Status history */}
         {order.statusHistory?.length > 0 && (
           <div className="bg-white rounded-xl p-5 shadow-sm">
-            <h2 className="font-semibold text-slate-700 mb-3">Durum Geçmişi</h2>
+            <h2 className="font-semibold text-slate-700 mb-3">{tp('Durum Geçmişi')}</h2>
             <div className="space-y-2">
               {order.statusHistory.map((h: any) => (
                 <div key={h.id} className="flex items-start gap-3 text-sm">

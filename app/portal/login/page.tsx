@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { usePortalText } from '@/lib/i18n/portal';
 
 export default function PortalLoginPage() {
+  const { tp } = usePortalText();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -28,13 +30,13 @@ export default function PortalLoginPage() {
         callbackUrl: '/portal/dashboard',
       });
       if (result?.error === 'EMAIL_NOT_VERIFIED') {
-        setError('E-posta adresiniz doğrulanmamış. Doğrulama maili gönderildi, lütfen gelen kutunuzu kontrol edin.');
+        setError(tp('E-posta adresiniz doğrulanmamış. Doğrulama maili gönderildi, lütfen gelen kutunuzu kontrol edin.'));
       } else if (result?.error === 'TOO_MANY_ATTEMPTS') {
-        setError('Çok fazla hatalı deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin veya şifrenizi sıfırlayın.');
+        setError(tp('Çok fazla hatalı deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin veya şifrenizi sıfırlayın.'));
       } else if (result?.error === 'ACCOUNT_INACTIVE') {
-        setError('Hesabınız pasif durumda. Lütfen firma sahibi ile iletişime geçin.');
+        setError(tp('Hesabınız pasif durumda. Lütfen firma sahibi ile iletişime geçin.'));
       } else if (result?.error) {
-        setError('E-posta adresi veya şifre hatalı.');
+        setError(tp('E-posta adresi veya şifre hatalı.'));
       } else {
         router.replace('/portal/dashboard');
       }
@@ -50,16 +52,16 @@ export default function PortalLoginPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-blue-600/30">
             <span className="text-white font-bold text-xl">SC</span>
           </div>
-          <h1 className="text-2xl font-bold text-white">Müşteri Portalı</h1>
-          <p className="text-blue-300 text-sm mt-1">SoleCost B2B Sipariş Sistemi</p>
+          <h1 className="text-2xl font-bold text-white">{tp('Müşteri Portalı')}</h1>
+          <p className="text-blue-300 text-sm mt-1">{tp('SoleCost B2B Sipariş Sistemi')}</p>
         </div>
 
         <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/10">
-          <h2 className="text-lg font-semibold text-white mb-5">Giriş Yap</h2>
+          <h2 className="text-lg font-semibold text-white mb-5">{tp('Giriş Yap')}</h2>
 
           {verified && (
             <div className="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-lg text-green-200 text-sm">
-              E-posta adresiniz doğrulandı. Giriş yapabilirsiniz.
+              {tp('E-posta adresiniz doğrulandı. Giriş yapabilirsiniz.')}
             </div>
           )}
           {error && (
@@ -70,13 +72,13 @@ export default function PortalLoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-blue-200 mb-1.5">E-posta</label>
+              <label className="block text-sm font-medium text-blue-200 mb-1.5">{tp('E-posta')}</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
                 className="w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300/50 focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="email@example.com" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-blue-200 mb-1.5">Şifre</label>
+              <label className="block text-sm font-medium text-blue-200 mb-1.5">{tp('Şifre')}</label>
               <div className="relative">
                 <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required
                   className="w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300/50 focus:ring-2 focus:ring-blue-500 outline-none pr-10" />
@@ -89,7 +91,7 @@ export default function PortalLoginPage() {
             <button type="submit" disabled={loading}
               className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Giriş Yap
+              {tp('Giriş Yap')}
             </button>
           </form>
         </div>
