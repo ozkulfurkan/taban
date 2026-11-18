@@ -47,6 +47,9 @@ const PORTAL_API_PREFIXES = [
 // VIEWER rolünün yazma yapabileceği API'ler (kendi profili, destek talepleri).
 const VIEWER_WRITE_ALLOWED = ['/api/auth/', '/api/settings', '/api/support/'];
 
+// Düzenleyicinin silebileceği API'ler (kendi oturumu, kendi destek talepleri).
+const EDITOR_DELETE_ALLOWED = ['/api/auth/', '/api/support/'];
+
 export const ASSIGNABLE_ROLES = ['COMPANY_OWNER', 'EDITOR', 'VIEWER'] as const;
 
 function matchPrefix(pathname: string, prefix: string) {
@@ -88,6 +91,11 @@ export function checkApiAccess(user: AccessUser | null | undefined, method: stri
     if (!VIEWER_WRITE_ALLOWED.some(p => matchPrefix(pathname, p.replace(/\/$/, '')) || pathname.startsWith(p))) {
       return { ok: false, status: 403, error: 'Görüntüleyici rolüyle kayıt eklenemez veya değiştirilemez' };
     }
+  }
+
+  // Düzenleyici (EDITOR) kayıt ekleyip değiştirebilir ama silemez
+  if (method.toUpperCase() === 'DELETE' && user.role === 'EDITOR' && !EDITOR_DELETE_ALLOWED.some(p => pathname.startsWith(p))) {
+    return { ok: false, status: 403, error: 'Düzenleyici rolüyle kayıt silinemez. Firma yöneticinizden yardım isteyin.' };
   }
 
   if (!hasFullAccess(user)) {

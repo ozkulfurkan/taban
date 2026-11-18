@@ -125,6 +125,19 @@ test.describe('Roller ve yetkiler', () => {
     expect((await viewer.put('/api/settings', { data: { language: 'tr' } })).status()).toBe(200);
   });
 
+  test('düzenleyici (EDITOR) kayıt ekleyip değiştirebilir ama silemez', async () => {
+    const editor = await loggedIn(await createUser(A.companyId, 'editor-del', 'EDITOR', ['customers']));
+    const created = await editor.post('/api/customers', { data: { name: `Editör müşteri ${RUN}`, currency: 'TRY' } });
+    expect(created.status()).toBe(200);
+    const { id } = await created.json();
+    expect((await editor.put(`/api/customers/${id}`, { data: { name: `Editör müşteri 2 ${RUN}` } })).status()).toBe(200);
+    const del = await editor.delete(`/api/customers/${id}`);
+    expect(del.status()).toBe(403);
+    expect((await del.json()).error).toContain('silinemez');
+    expect(await prisma.customer.count({ where: { id } })).toBe(1);
+    expect((await A.owner.delete(`/api/customers/${id}`)).status()).toBe(200);
+  });
+
   test('personel izni olmayan kullanıcı maaşları göremez', async () => {
     const editor = await loggedIn(await createUser(A.companyId, 'no-personnel', 'EDITOR', ['customers', 'invoices']));
     expect((await editor.get('/api/personnel')).status()).toBe(403);
