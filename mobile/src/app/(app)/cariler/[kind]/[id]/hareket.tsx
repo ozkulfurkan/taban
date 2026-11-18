@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Card, ErrorState, Field, Loading, Screen, T } from '@/components/ui';
@@ -28,31 +28,26 @@ export default function Hareket() {
   const accounts = useApi<Account[]>('/api/accounts');
   const rates = useApi<{ usd: number; eur: number }>('/api/exchange-rates');
 
-  const [accountId, setAccountId] = useState<string | null>(null);
+  const [pickedAccountId, setAccountId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
-  const [rate, setRate] = useState('');
+  // Elle girilen kur, hangi hesap için girildiğiyle birlikte tutulur (hesap değişince öneriye döner)
+  const [rateEdit, setRateEdit] = useState<{ accountId: string; value: string } | null>(null);
   const [date, setDate] = useState(isoDay());
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
   const cur = party.data?.currency || 'TRY';
+  // Varsayılan hesap: carinin dövizindeki ilk hesap
+  const accountId = pickedAccountId ?? (accounts.data?.find(a => a.currency === cur) ?? accounts.data?.[0])?.id ?? null;
   const account = accounts.data?.find(a => a.id === accountId) ?? null;
   const cross = !!account && account.currency !== cur;
-
-  // Varsayılan hesap: carinin dövizindeki ilk hesap
-  useEffect(() => {
-    if (!accountId && accounts.data?.length && party.data) {
-      setAccountId((accounts.data.find(a => a.currency === cur) ?? accounts.data[0]).id);
-    }
-  }, [accounts.data, party.data, accountId, cur]);
-
   // Farklı dövizde TCMB kuruyla öneri (1 cari dövizi = X hesap dövizi), düzenlenebilir
-  useEffect(() => {
-    if (!cross || !account) { setRate(''); return; }
-    const r = rates.data ? crossRate(cur, account.currency, rates.data) : null;
-    setRate(r ? formatAmountInput(String(Math.round(r * 10000) / 10000), 4) : '');
-  }, [cross, account, cur, rates.data]);
+  const suggested = cross && rates.data ? crossRate(cur, account!.currency, rates.data) : null;
+  const rate = !cross ? '' : rateEdit && rateEdit.accountId === account!.id
+    ? rateEdit.value
+    : suggested ? formatAmountInput(String(Math.round(suggested * 10000) / 10000), 4) : '';
+  const setRate = (v: string) => { if (account) setRateEdit({ accountId: account.id, value: v }); };
 
   const amt = parseAmountInput(amount);
   const r = parseAmountInput(rate);

@@ -11,7 +11,7 @@ import { daysToVade } from '@shared/cek';
 type Dashboard = {
   dailyCiro: number; monthlyCiro: number; totalReceivables: number; totalPayables: number;
   assets: { kasa: number; pos: number; cek: number; stok: number };
-  upcomingChecks: Array<{ id: string; borclu: string; tutar: number; currency: string; vadesi: string; customer?: { name: string } | null }>;
+  upcomingChecks: { id: string; borclu: string; tutar: number; currency: string; vadesi: string; customer?: { name: string } | null }[];
   negativeStock: { materials: unknown[]; products: unknown[] };
 };
 

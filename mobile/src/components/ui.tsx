@@ -34,7 +34,7 @@ export function T({ variant = 'body', color, style, children, numberOfLines, tes
 /** Kaydırılabilir sayfa; çekip yenileme destekli */
 export function Screen({ children, refreshing, onRefresh, scroll = true, padded = true, edges }: {
   children: ReactNode; refreshing?: boolean; onRefresh?: () => void; scroll?: boolean; padded?: boolean;
-  edges?: Array<'top' | 'bottom' | 'left' | 'right'>;
+  edges?: ('top' | 'bottom' | 'left' | 'right')[];
 }) {
   const c = useTheme();
   const inner = <View style={[styles.content, padded && styles.padded]}>{children}</View>;
@@ -108,7 +108,7 @@ export function Field({ label, error, style, ...props }: TextInputProps & { labe
 }
 
 export function Segmented<V extends string>({ value, options, onChange }: {
-  value: V; options: Array<{ value: V; label: string }>; onChange: (v: V) => void;
+  value: V; options: { value: V; label: string }[]; onChange: (v: V) => void;
 }) {
   const c = useTheme();
   return (

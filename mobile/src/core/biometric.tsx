@@ -27,6 +27,16 @@ export function BiometricGate({ active, children }: { active: boolean; children:
   const [locked, setLocked] = useState(false);
   const backgroundAt = useRef<number | null>(null);
 
+  const unlock = useCallback(async () => {
+    if (await authenticate('SoleCost kilidini açın')) setLocked(false);
+  }, []);
+
+  // Kilitle ve hemen kimlik doğrulaması iste
+  const lock = useCallback(() => {
+    setLocked(true);
+    void unlock();
+  }, [unlock]);
+
   useEffect(() => {
     if (Platform.OS === 'web') return;
     (async () => {
@@ -34,25 +44,19 @@ export function BiometricGate({ active, children }: { active: boolean; children:
       setAvailable(ok);
       const on = ok && (await getItem(KEY)) === '1';
       setEnabledState(on);
-      if (on && active) setLocked(true);
+      if (on && active) lock();
     })();
-  }, [active]);
+  }, [active, lock]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', s => {
       if (s === 'background') backgroundAt.current = Date.now();
       if (s === 'active' && backgroundAt.current && Date.now() - backgroundAt.current > GRACE_MS && enabled && active) {
-        setLocked(true);
+        lock();
       }
     });
     return () => sub.remove();
-  }, [enabled, active]);
-
-  const unlock = useCallback(async () => {
-    if (await authenticate('SoleCost kilidini açın')) setLocked(false);
-  }, []);
-
-  useEffect(() => { if (locked) void unlock(); }, [locked, unlock]);
+  }, [enabled, active, lock]);
 
   const setEnabled = useCallback(async (v: boolean) => {
     if (v && !(await authenticate('Kilidi etkinleştirmek için doğrulayın'))) return false;
