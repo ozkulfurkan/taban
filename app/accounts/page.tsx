@@ -5,6 +5,7 @@ import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Plus, ChevronDown, Loader2, Pencil, Trash2, X, Save, Landmark, CreditCard, ArrowDownCircle, ArrowUpCircle, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const ACCOUNT_TYPES = ['Kasa', 'Banka', 'POS'];
 const CURRENCIES = ['TRY', 'USD', 'EUR'];
@@ -226,7 +227,7 @@ export default function AccountsPage() {
     setPaymentsOpen(next);
     if (next && payments.length === 0) {
       setPaymentsLoading(true);
-      fetch('/api/payments').then(r => r.json()).then(d => setPayments(Array.isArray(d) ? d : [])).finally(() => setPaymentsLoading(false));
+      fetch('/api/payments?page=1&limit=100').then(r => r.json()).then(d => setPayments(Array.isArray(d?.items) ? d.items : [])).finally(() => setPaymentsLoading(false));
     }
   };
 
@@ -364,6 +365,11 @@ export default function AccountsPage() {
                     ))}
                   </tbody>
                 </table>
+                {payments.length >= 100 && (
+                  <p className="px-4 py-2.5 text-xs text-slate-500 border-t border-slate-100">
+                    Son 100 hareket gösteriliyor. Tamamı için <Link href="/payments" className="text-blue-600 underline">Ödemeler</Link> sayfasına gidin.
+                  </p>
+                )}
               </div>
             )}
           </div>

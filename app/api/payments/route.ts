@@ -6,6 +6,7 @@ import { rejectForeignRefs } from '@/lib/tenant';
 import { parseAmount, round2 } from '@/lib/money';
 import { parseDateInput, parseDateInputOrNow } from '@/lib/time';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { pageParams, pageResult, dateRange } from '@/lib/pagination';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -13,15 +14,34 @@ export async function GET(req: NextRequest) {
   const user = session.user as any;
   if (!user.companyId) return NextResponse.json([]);
 
-  const payments = await prisma.payment.findMany({
-    where: { companyId: user.companyId },
-    include: {
-      customer: { select: { id: true, name: true } },
-      supplier: { select: { id: true, name: true } },
-      invoice: { select: { id: true, invoiceNo: true } },
-    },
-    orderBy: { date: 'desc' },
-  });
+  const { searchParams } = new URL(req.url);
+  const type = searchParams.get('type');
+  const date = dateRange(searchParams);
+  const where: any = {
+    companyId: user.companyId,
+    ...(type === 'RECEIVED' || type === 'PAID' ? { type } : {}),
+    ...(date ? { date } : {}),
+  };
+  const include = {
+    customer: { select: { id: true, name: true } },
+    supplier: { select: { id: true, name: true } },
+    invoice: { select: { id: true, invoiceNo: true } },
+  };
+  const orderBy = [{ date: 'desc' as const }, { createdAt: 'desc' as const }];
+
+  // Sayfalı kullanım (?page=): toplamlar para birimine göre ayrı (TL ile USD toplanmaz)
+  if (searchParams.has('page')) {
+    const { page, limit, skip, take } = pageParams(searchParams);
+    const [items, total, sums] = await Promise.all([
+      prisma.payment.findMany({ where, include, orderBy, skip, take }),
+      prisma.payment.count({ where }),
+      prisma.payment.groupBy({ by: ['type', 'currency'], where, _sum: { amount: true } }),
+    ]);
+    const totals = sums.map(s => ({ type: s.type, currency: s.currency, amount: round2(s._sum.amount ?? 0) }));
+    return NextResponse.json({ ...pageResult(items, total, page, limit), totals });
+  }
+
+  const payments = await prisma.payment.findMany({ where, include, orderBy, take: 1000 });
   return NextResponse.json(payments);
 }
 

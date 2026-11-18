@@ -72,6 +72,7 @@ export default function OrdersPage() {
   const [customerFilter, setCustomerFilter] = useState('');
   const [customers, setCustomers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [ordersTotal, setOrdersTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [uretimData, setUretimData] = useState<{ orders: any[]; materialRequirements: any[] } | null>(null);
   const [uretimLoading, setUretimLoading] = useState(false);
@@ -107,7 +108,7 @@ export default function OrdersPage() {
     if (terminTo) params.set('terminTo', terminTo);
     if (customerFilter) params.set('customerId', customerFilter);
     fetch(`/api/orders?${params.toString()}`)
-      .then(r => r.json())
+      .then(r => { setOrdersTotal(Number(r.headers.get('X-Total-Count') ?? 0)); return r.json(); })
       .then(d => setOrders(Array.isArray(d) ? d : []))
       .finally(() => setLoading(false));
   }, [activeTab, dateFrom, dateTo, terminFrom, terminTo, customerFilter]);
@@ -255,6 +256,13 @@ export default function OrdersPage() {
 
           </div>
         </div>
+
+        {ordersTotal > orders.length && (
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-sm">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            {ordersTotal.toLocaleString('tr-TR')} siparişin en yeni {orders.length.toLocaleString('tr-TR')} tanesi gösteriliyor. Tarih veya müşteri filtresiyle aramayı daraltın.
+          </div>
+        )}
 
         {/* Status tabs + bulk actions */}
         <div className="flex items-center gap-2 flex-wrap">

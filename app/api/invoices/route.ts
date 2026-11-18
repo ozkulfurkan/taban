@@ -7,6 +7,7 @@ import { logAction, getIp } from '@/lib/audit-logger';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { validateInvoiceInput } from '@/lib/invoice-input';
 import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
+import { pageParams, pageResult, dateRange } from '@/lib/pagination';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -16,20 +17,44 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get('status');
+  const customerId = searchParams.get('customerId');
+  const q = searchParams.get('q')?.trim();
+  const type = searchParams.get('type'); // 'sale' | 'return'
+  const date = dateRange(searchParams);
 
-  const invoices = await prisma.invoice.findMany({
-    where: {
-      companyId: user.companyId,
-      ...(status ? { status: status as any } : {}),
-    },
-    include: {
-      customer: { select: { id: true, name: true } },
-      items: true,
-      createdBy: { select: { name: true } },
-      soleOrder: { select: { orderNo: true } },
-    },
-    orderBy: { date: 'desc' },
-  });
+  const where: any = {
+    companyId: user.companyId,
+    ...(status ? { status: status as any } : {}),
+    ...(customerId ? { customerId } : {}),
+    ...(type === 'sale' ? { isReturn: false } : type === 'return' ? { isReturn: true } : {}),
+    ...(date ? { date } : {}),
+    ...(q ? {
+      OR: [
+        { invoiceNo: { contains: q, mode: 'insensitive' } },
+        { customer: { name: { contains: q, mode: 'insensitive' } } },
+      ],
+    } : {}),
+  };
+  const include = {
+    customer: { select: { id: true, name: true } },
+    items: true,
+    createdBy: { select: { name: true } },
+    soleOrder: { select: { orderNo: true } },
+  };
+  const orderBy = [{ date: 'desc' as const }, { createdAt: 'desc' as const }];
+
+  // Sayfalı kullanım (?page=): { items, total, page, limit, totalPages }
+  if (searchParams.has('page')) {
+    const { page, limit, skip, take } = pageParams(searchParams);
+    const [items, total] = await Promise.all([
+      prisma.invoice.findMany({ where, include, orderBy, skip, take }),
+      prisma.invoice.count({ where }),
+    ]);
+    return NextResponse.json(pageResult(items, total, page, limit));
+  }
+
+  // Eski kullanım (dizi): Vercel yanıt sınırını aşmamak için en fazla 1000 kayıt
+  const invoices = await prisma.invoice.findMany({ where, include, orderBy, take: 1000 });
   return NextResponse.json(invoices);
 }
 

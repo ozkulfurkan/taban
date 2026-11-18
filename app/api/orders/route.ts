@@ -7,6 +7,8 @@ import { prisma } from '@/lib/prisma';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
 
+const MAX_ORDERS = 1000;
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   const user = session?.user as any;
@@ -20,24 +22,27 @@ export async function GET(req: NextRequest) {
   const terminFrom = searchParams.get('terminFrom');
   const terminTo = searchParams.get('terminTo');
 
+  const where: any = {
+    companyId: user.companyId,
+    ...(status ? { status: status as any } : {}),
+    ...(customerId ? { customerId } : {}),
+    ...(from || to ? {
+      createdAt: {
+        ...(from ? { gte: new Date(from) } : {}),
+        ...(to ? { lte: new Date(to + 'T23:59:59') } : {}),
+      },
+    } : {}),
+    ...(terminFrom || terminTo ? {
+      requestedDeliveryDate: {
+        ...(terminFrom ? { gte: new Date(terminFrom) } : {}),
+        ...(terminTo ? { lte: new Date(terminTo + 'T23:59:59') } : {}),
+      },
+    } : {}),
+  };
+
+  // Vercel yanıt sınırı için en fazla MAX_ORDERS kayıt; toplam sayı başlıkta döner
   const orders = await prisma.soleOrder.findMany({
-    where: {
-      companyId: user.companyId,
-      ...(status ? { status: status as any } : {}),
-      ...(customerId ? { customerId } : {}),
-      ...(from || to ? {
-        createdAt: {
-          ...(from ? { gte: new Date(from) } : {}),
-          ...(to ? { lte: new Date(to + 'T23:59:59') } : {}),
-        },
-      } : {}),
-      ...(terminFrom || terminTo ? {
-        requestedDeliveryDate: {
-          ...(terminFrom ? { gte: new Date(terminFrom) } : {}),
-          ...(terminTo ? { lte: new Date(terminTo + 'T23:59:59') } : {}),
-        },
-      } : {}),
-    },
+    where,
     include: {
       customer: { select: { id: true, name: true } },
       portalCustomer: { select: { id: true, name: true, email: true } },
@@ -45,9 +50,11 @@ export async function GET(req: NextRequest) {
       shipment: true,
     },
     orderBy: { createdAt: 'desc' },
+    take: MAX_ORDERS,
   });
 
-  return NextResponse.json(orders);
+  const total = orders.length < MAX_ORDERS ? orders.length : await prisma.soleOrder.count({ where });
+  return NextResponse.json(orders, { headers: { 'X-Total-Count': String(total) } });
 }
 
 export async function POST(req: NextRequest) {

@@ -5,6 +5,7 @@ import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { CreditCard, Loader2, ArrowDownCircle, ArrowUpCircle, Info } from 'lucide-react';
 import Link from 'next/link';
+import { Pager } from '@/app/components/pager';
 import { motion } from 'framer-motion';
 
 export default function PaymentsPage() {
@@ -12,23 +13,38 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totals, setTotals] = useState<{ type: string; currency: string; amount: number }[]>([]);
+
   useEffect(() => {
-    fetch('/api/payments')
+    setLoading(true);
+    fetch(`/api/payments?page=${page}&limit=50`)
       .then(r => r.json())
-      .then(d => setPayments(Array.isArray(d) ? d : []))
+      .then(d => {
+        setPayments(Array.isArray(d?.items) ? d.items : []);
+        setTotal(d?.total ?? 0);
+        setTotalPages(d?.totalPages ?? 1);
+        setTotals(Array.isArray(d?.totals) ? d.totals : []);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [page]);
 
-  const totalReceived = payments.filter(p => p.type === 'RECEIVED').reduce((s, p) => s + p.amount, 0);
-  const totalPaid = payments.filter(p => p.type === 'PAID').reduce((s, p) => s + p.amount, 0);
+  // Toplamlar para birimine göre ayrı gösterilir (TL ile USD toplanmaz)
+  const fmtTotals = (type: string) => {
+    const list = totals.filter(x => x.type === type && x.amount);
+    if (!list.length) return '0,00';
+    return list.map(x => `${x.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${x.currency}`).join(' · ');
+  };
 
   return (
     <AppShell>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">{t('payments', 'title')}</h1>
-          <p className="text-slate-500 text-sm">{payments.length} {t('common', 'actions').toLowerCase()}</p>
+          <p className="text-slate-500 text-sm">{total.toLocaleString('tr-TR')} {t('common', 'actions').toLowerCase()}</p>
         </div>
 
         {/* Summary */}
@@ -39,7 +55,7 @@ export default function PaymentsPage() {
             </div>
             <div>
               <p className="text-xs text-slate-500">{t('payments', 'totalReceived')}</p>
-              <p className="text-lg font-bold text-green-600">{totalReceived.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-lg font-bold text-green-600">{fmtTotals('RECEIVED')}</p>
             </div>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3">
@@ -48,7 +64,7 @@ export default function PaymentsPage() {
             </div>
             <div>
               <p className="text-xs text-slate-500">{t('payments', 'totalPaid')}</p>
-              <p className="text-lg font-bold text-red-500">{totalPaid.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-lg font-bold text-red-500">{fmtTotals('PAID')}</p>
             </div>
           </div>
         </div>
@@ -83,7 +99,7 @@ export default function PaymentsPage() {
                     key={p.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.03 }}
+                    transition={{ delay: Math.min(i, 20) * 0.02 }}
                     className="hover:bg-slate-50/50"
                   >
                     <td className="px-4 py-3 text-slate-500">{new Date(p.date).toLocaleDateString('tr-TR')}</td>
@@ -113,6 +129,7 @@ export default function PaymentsPage() {
             </table>
           </div>
         )}
+        {!loading && <Pager page={page} totalPages={totalPages} total={total} onChange={p => { setPage(p); window.scrollTo({ top: 0 }); }} />}
       </div>
     </AppShell>
   );
