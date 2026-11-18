@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { partyInputError } from '@/lib/party-input';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -54,6 +55,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const user = session.user as any;
 
   const body = await req.json();
+  const inputError = partyInputError(body, { requireName: false });
+  if (inputError) return NextResponse.json({ error: inputError }, { status: 400 });
   try {
     await prisma.supplier.updateMany({
       where: { id: params.id, companyId: user.companyId },

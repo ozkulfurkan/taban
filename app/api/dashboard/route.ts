@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthSession, unauthorized } from '@/lib/helpers';
+import { invoiceBalanceEffect, paymentBalanceEffect } from '@/lib/money';
 
 export async function GET() {
   try {
@@ -129,25 +130,20 @@ export async function GET() {
     const monthlyCiro = monthlyInvoicesByCurrency.reduce((s, g) => s + toTry(g._sum.total ?? 0, g.currency), 0);
 
     // Toplam alacak: her fatura ve ödeme kendi currency'siyle TL'ye çevrilir
+    // Müşteri bakiyesiyle aynı kural: iade borcu azaltır, müşteriden alınan çek de tahsilat sayılır
+    const customerCekler = await prisma.cek.findMany({
+      where: { companyId, customerId: { not: null }, islem: 'Müşteriden Alınan Çek Kaydı' },
+      select: { tutar: true, currency: true, customerAmount: true, customerCurrency: true },
+    });
     let totalReceivables = 0;
-    for (const customer of customers) {
-      const invoices = allInvoices.filter(i => i.customerId === customer.id);
-      const payments = allCustomerPayments.filter(p => p.customerId === customer.id);
-
-      let balanceTRY = 0;
-      for (const inv of invoices) {
-        const amountTRY = toTry(inv.total, inv.currency);
-        balanceTRY += inv.isReturn ? -amountTRY : amountTRY;
-      }
-      for (const p of payments) {
-        const pTRY = toTry(p.amount, p.currency);
-        if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
-          balanceTRY += pTRY;
-        } else {
-          balanceTRY -= pTRY;
-        }
-      }
-      totalReceivables += balanceTRY;
+    for (const inv of allInvoices) totalReceivables += toTry(invoiceBalanceEffect(inv), inv.currency);
+    for (const p of allCustomerPayments) {
+      if (p.customerId) totalReceivables += toTry(paymentBalanceEffect(p), p.currency);
+    }
+    for (const c of customerCekler) {
+      totalReceivables -= c.customerAmount != null
+        ? toTry(c.customerAmount, c.customerCurrency ?? c.currency)
+        : toTry(c.tutar, c.currency);
     }
 
     // Toplam borç: her alış ve ödeme kendi currency'siyle TL'ye çevrilir

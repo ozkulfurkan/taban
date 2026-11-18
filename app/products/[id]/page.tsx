@@ -263,6 +263,8 @@ export default function ProductDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...editForm,
+          // Sunucu stoğu fark olarak uygular; form açıkken kesilen faturaların düşümü kaybolmaz
+          stockLoaded: product.stock,
           unitPrice: fromPriceInput(editForm.unitPrice),
           laborCostPerPair: fromPriceInput(editForm.laborCostPerPair),
           koliFiyati: fromPriceInput(editForm.koliFiyati),
@@ -303,7 +305,7 @@ export default function ProductDetailPage() {
       const res = await fetch(`/api/products/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...product, unitPrice: fromPriceInput(newPrice), parts: product.parts, extraCosts: product.extraCosts }),
+        body: JSON.stringify({ ...product, stockLoaded: product.stock, unitPrice: fromPriceInput(newPrice), parts: product.parts, extraCosts: product.extraCosts }),
       });
       const updated = await res.json();
       if (!updated?.error) { setProduct(updated); setPriceWarning(null); }

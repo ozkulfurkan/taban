@@ -1359,7 +1359,7 @@ export default function CustomerDetailPage() {
                     </td>
                     <td className="px-4 py-2.5 font-medium text-red-700">{inv.invoiceNo}</td>
                     <td className="px-4 py-2.5 text-right font-semibold text-red-600">
-                      {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {Math.abs(inv.total).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
                     </td>
                     <td className="pr-3 text-slate-300">

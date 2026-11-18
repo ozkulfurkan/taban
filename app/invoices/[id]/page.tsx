@@ -6,6 +6,8 @@ import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
+import { postPayment } from '@/lib/post-payment';
+import { parseAmount } from '@/lib/money';
 import {
   Loader2, Printer, Pencil, X, CreditCard, User,
   Plus, Trash2, Save, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers, Search, AlertTriangle,
@@ -370,6 +372,10 @@ export default function InvoiceDetailPage() {
         }),
       });
       const updated = await res.json();
+      if (!res.ok) {
+        window.alert(updated?.error || 'Fatura kaydedilemedi');
+        return;
+      }
       setInvoice(updated);
       setEditing(false);
     } finally { setSaving(false); }
@@ -385,22 +391,22 @@ export default function InvoiceDetailPage() {
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!payForm.amount || parseFloat(payForm.amount) <= 0) return;
+    if (!payForm.amount || !(parseAmount(payForm.amount) > 0)) return;
     setPayLoading(true);
     try {
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          invoiceId: invoice.id,
-          customerId: invoice.customerId,
-          amount: payForm.amount,
-          currency: invoice.currency,
-          date: payForm.date,
-          method: payForm.method,
-          notes: payForm.notes,
-        }),
+      const result = await postPayment({
+        invoiceId: invoice.id,
+        customerId: invoice.customerId,
+        amount: payForm.amount,
+        currency: invoice.currency,
+        date: payForm.date,
+        method: payForm.method,
+        notes: payForm.notes,
       });
+      if (!result.ok) {
+        if (result.error) window.alert(result.error);
+        return;
+      }
       setShowPayForm(false);
       setPayForm({ amount: '', method: 'Nakit', date: toDateInputValue(), notes: '' });
       load();

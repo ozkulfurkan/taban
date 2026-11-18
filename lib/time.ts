@@ -10,6 +10,12 @@ export function toDateInputValue(value?: string | Date | null): string {
   return istanbulDate.toISOString().slice(0, 10);
 }
 
+// 30 Şubat gibi takvimde olmayan günleri reddeder (Date sessizce sonraki aya kaydırır)
+function isRealDay(year: number, month: number, day: number): boolean {
+  const d = new Date(Date.UTC(year, month - 1, day));
+  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
+}
+
 export function parseDateInput(value?: string | null): Date | null {
   if (!value) return null;
 
@@ -18,7 +24,7 @@ export function parseDateInput(value?: string | null): Date | null {
     const year = Number(dateOnlyMatch[1]);
     const month = Number(dateOnlyMatch[2]);
     const day = Number(dateOnlyMatch[3]);
-    if (!year || !month || !day) return null;
+    if (!year || !month || !day || !isRealDay(year, month, day)) return null;
     return new Date(Date.UTC(year, month - 1, day) - ISTANBUL_OFFSET_MS);
   }
 
@@ -31,7 +37,7 @@ export function parseDateInput(value?: string | null): Date | null {
     const minute = Number(dateTimeLocalMatch[5]);
     const second = Number(dateTimeLocalMatch[6] || '0');
     const millisecond = Number((dateTimeLocalMatch[7] || '0').padEnd(3, '0'));
-    if (!year || !month || !day) return null;
+    if (!year || !month || !day || !isRealDay(year, month, day) || hour > 23 || minute > 59 || second > 59) return null;
     return new Date(Date.UTC(year, month - 1, day, hour, minute, second, millisecond) - ISTANBUL_OFFSET_MS);
   }
 

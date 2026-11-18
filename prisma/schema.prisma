@@ -1045,3 +1045,13 @@ model LoginAttempt {
 
   @@index([key, createdAt])
 }
+
+// Firma bazında belge numarası sayaçları (fatura, alış, sipariş, destek talebi).
+// key örneği: "invoice:FTR-2026-". Eşzamanlı isteklerde numara çakışmasını önler.
+model DocumentCounter {
+  companyId String
+  key       String
+  value     Int
+
+  @@id([companyId, key])
+}

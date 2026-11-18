@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
 import { rejectForeignRefs } from '@/lib/tenant';
+import { customerBalance } from '@/lib/money';
+import { partyInputError } from '@/lib/party-input';
 
 const LIMIT = 50;
 
@@ -97,27 +99,8 @@ export async function GET(req: NextRequest) {
     const payments = paymentMap.get(c.id) ?? [];
     const cekler = cekMap.get(c.id) ?? [];
 
-    const totalNormal = invoices.filter(i => !i.isReturn).reduce((s, i) => s + i.total, 0);
-    const totalReturn = invoices.filter(i => i.isReturn).reduce((s, i) => s + i.total, 0);
-
-    let balanceDelta = 0;
-    let totalPaid = 0;
-    for (const p of payments) {
-      if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && (p.notes as any)?.startsWith('+'))) {
-        balanceDelta += p.amount;
-      } else {
-        balanceDelta -= p.amount;
-        totalPaid += p.amount;
-      }
-    }
-    for (const cek of cekler) {
-      const amt = (cek as any).customerAmount ?? cek.tutar;
-      balanceDelta -= amt;
-      totalPaid += amt;
-    }
-    const balance = totalNormal - totalReturn + balanceDelta;
-
-    return { ...c, totalInvoiced: totalNormal, totalPaid, balance };
+    const { totalInvoiced, totalPaid, balance } = customerBalance(invoices, payments as any, cekler as any);
+    return { ...c, totalInvoiced, totalPaid, balance };
   });
 
   return NextResponse.json({
@@ -135,6 +118,9 @@ export async function POST(req: NextRequest) {
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
   const body = await req.json();
+  const inputError = partyInputError(body);
+  if (inputError) return NextResponse.json({ error: inputError }, { status: 400 });
+  body.name = body.name.trim();
   const foreign = await rejectForeignRefs(user.companyId, { customerCategory: body?.categoryId });
   if (foreign) return foreign;
   try {

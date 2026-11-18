@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { rejectForeignRefs } from '@/lib/tenant';
-import { parseDateInputOrNow } from '@/lib/time';
+import { parseAmount, round2 } from '@/lib/money';
+import { parseDateInput, parseDateInputOrNow } from '@/lib/time';
 import { logAction, getIp } from '@/lib/audit-logger';
 
 export async function GET(req: NextRequest) {
@@ -33,19 +34,58 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
     invoiceId, purchaseId, customerId, supplierId,
-    amount, currency, date, method, notes,
-    accountId, originalAmount, originalCurrency, exchangeRate,
-    _type,
+    currency, date, method, notes,
+    accountId, originalCurrency,
+    _type, allowOverpayment,
   } = body;
 
-  if (!amount || parseFloat(amount) <= 0) {
+  // Tutarlar Türkçe biçimde de gelebilir ("1.234,56"); kuruşa yuvarlanır
+  const amount = round2(parseAmount(body.amount));
+  if (!Number.isFinite(amount) || amount <= 0) {
     return NextResponse.json({ error: 'Tutar sıfırdan büyük olmalı' }, { status: 400 });
   }
+  if (amount > 1_000_000_000) return NextResponse.json({ error: 'Tutar çok büyük' }, { status: 400 });
+  const originalAmount = body.originalAmount ? round2(parseAmount(body.originalAmount)) : null;
+  const exchangeRate = body.exchangeRate ? parseAmount(body.exchangeRate) : null;
+  if ((originalAmount !== null && !(originalAmount > 0)) || (exchangeRate !== null && !(exchangeRate > 0))) {
+    return NextResponse.json({ error: 'Döviz tutarı veya kur geçersiz' }, { status: 400 });
+  }
+  if (date && !parseDateInput(date)) return NextResponse.json({ error: 'Ödeme tarihi geçersiz' }, { status: 400 });
 
   const foreign = await rejectForeignRefs(user.companyId, {
     invoice: invoiceId, purchase: purchaseId, customer: customerId, supplier: supplierId, account: accountId,
   });
   if (foreign) return foreign;
+
+  // "amount" her zaman bağlı kaydın para birimindedir; yabancı para originalAmount'ta tutulur.
+  // Ekranlar çeviriyi yapıyor, sunucu da kontrol eder (USD faturaya "100 TRY" yazılmasın).
+  const [invoice, purchase, customer, supplier] = await Promise.all([
+    invoiceId ? prisma.invoice.findFirst({ where: { id: invoiceId, companyId: user.companyId } }) : null,
+    purchaseId ? prisma.purchase.findFirst({ where: { id: purchaseId, companyId: user.companyId } }) : null,
+    customerId ? prisma.customer.findFirst({ where: { id: customerId, companyId: user.companyId }, select: { currency: true } }) : null,
+    supplierId ? prisma.supplier.findFirst({ where: { id: supplierId, companyId: user.companyId }, select: { currency: true } }) : null,
+  ]);
+  const expectedCurrency = invoice?.currency ?? purchase?.currency ?? customer?.currency ?? supplier?.currency;
+  const paymentCurrency = currency || expectedCurrency || 'TRY';
+  if (expectedCurrency && paymentCurrency !== expectedCurrency) {
+    return NextResponse.json({
+      error: `Tutar ${expectedCurrency} cinsinden girilmeli. Farklı para birimiyle ödeme için döviz tutarı ve kur girin.`,
+    }, { status: 400 });
+  }
+
+  // Fazla ödeme: kullanıcı onaylamadıysa kaydetme, onay iste
+  const target = invoice ?? purchase;
+  if (target && !allowOverpayment) {
+    const remaining = round2(Math.abs(target.total) - target.paidAmount);
+    if (amount > remaining + 0.005) {
+      return NextResponse.json({
+        error: `Bu ödeme kalan tutardan ${round2(amount - Math.max(remaining, 0))} ${expectedCurrency} fazla.`,
+        code: 'OVERPAYMENT',
+        remaining: Math.max(remaining, 0),
+        currency: expectedCurrency,
+      }, { status: 409 });
+    }
+  }
 
   try {
   const payment = await prisma.$transaction(async (tx) => {
@@ -58,11 +98,11 @@ export async function POST(req: NextRequest) {
         invoiceId: invoiceId || null,
         purchaseId: purchaseId || null,
         accountId: accountId || null,
-        amount: parseFloat(amount),
-        currency: currency || 'TRY',
-        originalAmount: originalAmount ? parseFloat(originalAmount) : null,
+        amount,
+        currency: paymentCurrency,
+        originalAmount,
         originalCurrency: originalCurrency || null,
-        exchangeRate: exchangeRate ? parseFloat(exchangeRate) : null,
+        exchangeRate,
         date: parseDateInputOrNow(date),
         method: method || 'Nakit',
         notes: notes || null,
@@ -71,12 +111,12 @@ export async function POST(req: NextRequest) {
 
     // Update invoice paidAmount and status
     if (invoiceId) {
-      const invoice = await tx.invoice.findUnique({ where: { id: invoiceId } });
+      const invoice = await tx.invoice.findFirst({ where: { id: invoiceId, companyId: user.companyId } });
       if (invoice) {
-        const newPaid = invoice.paidAmount + parseFloat(amount);
+        const newPaid = round2(invoice.paidAmount + amount);
         let status: any = invoice.status;
         if (newPaid <= 0) status = 'PENDING';
-        else if (newPaid < invoice.total) status = 'PARTIAL';
+        else if (newPaid < Math.abs(invoice.total) - 0.005) status = 'PARTIAL';
         else status = 'PAID';
 
         await tx.invoice.update({
@@ -88,12 +128,12 @@ export async function POST(req: NextRequest) {
 
     // Update purchase paidAmount and status
     if (purchaseId) {
-      const purchase = await tx.purchase.findUnique({ where: { id: purchaseId } });
+      const purchase = await tx.purchase.findFirst({ where: { id: purchaseId, companyId: user.companyId } });
       if (purchase) {
-        const newPaid = purchase.paidAmount + parseFloat(amount);
+        const newPaid = round2(purchase.paidAmount + amount);
         let status: any = purchase.status;
         if (newPaid <= 0) status = 'PENDING';
-        else if (newPaid < purchase.total) status = 'PARTIAL';
+        else if (newPaid < purchase.total - 0.005) status = 'PARTIAL';
         else status = 'PAID';
 
         await tx.purchase.update({
@@ -106,7 +146,7 @@ export async function POST(req: NextRequest) {
     // Update account balance: incoming → increment, outgoing → decrement
     // _type overrides the customerId heuristic (used by Para Girişi / Para Çıkışı buttons)
     if (accountId) {
-      const incrementBy = originalAmount ? parseFloat(originalAmount) : parseFloat(amount);
+      const incrementBy = originalAmount ?? amount;
       const isIncoming = _type ? _type === 'RECEIVED' : !!customerId;
       await tx.account.update({
         where: { id: accountId },

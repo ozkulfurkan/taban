@@ -72,7 +72,9 @@ export default function CustomerEkstrePage() {
       if (ev._type === 'invoice') {
         if (ev.isReturn) {
           // İade faturası → alacak sütunu, bakiye azalır
-          balance -= ev.total;
+          // (eski kayıtlarda iade tutarı negatif saklanmış olabilir)
+          const returnAmount = Math.abs(ev.total);
+          balance -= returnAmount;
           rows.push({
             id: ev.id,
             date: ev.date,
@@ -81,7 +83,7 @@ export default function CustomerEkstrePage() {
             belgeNo: ev.invoiceNo,
             aciklama: ev.notes || '',
             borc: 0,
-            alacak: ev.total,
+            alacak: returnAmount,
             bakiye: balance,
           });
         } else {
