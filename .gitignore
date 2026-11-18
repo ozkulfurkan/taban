@@ -10,3 +10,8 @@ tests/.auth/
 *.tsbuildinfo
 test-results/
 playwright-report/
+
+# Mobil uygulama
+mobile/ios/
+mobile/android/
+mobile/.expo/

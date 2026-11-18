@@ -1,4 +1,4 @@
-import { matchesText } from '@/lib/search';
+import { matchesText } from './search';
 
 // Hesap ekstresi satırlarını oluşturan saf fonksiyonlar.
 // İç ekstre sayfaları ve link ile paylaşılan ekstre sayfası aynı hesabı kullanır.
