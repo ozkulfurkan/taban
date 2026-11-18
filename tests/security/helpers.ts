@@ -72,7 +72,7 @@ export async function createPortalCustomer(customerId: string, name: string) {
 export async function cleanup() {
   // Kilit testinin IP sayacı da dahil, bu koşunun deneme kayıtlarını temizle
   await prisma.loginAttempt.deleteMany({
-    where: { OR: [{ key: { contains: RUN } }, { key: { startsWith: 'login-ip:' } }] },
+    where: { OR: [{ key: { contains: RUN } }, { key: { startsWith: 'login-ip:' } }, { key: { startsWith: 'statement-ip:' } }] },
   });
   await prisma.$disconnect();
 }

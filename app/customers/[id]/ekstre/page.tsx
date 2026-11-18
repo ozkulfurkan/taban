@@ -5,7 +5,9 @@ import { useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { Loader2, FileSpreadsheet, FileDown, RefreshCw } from 'lucide-react';
-import { matchesText } from '@/lib/search';
+import { buildCustomerRows } from '@/lib/statement-rows';
+import { exportStatementCsv, exportStatementPdf, type StatementExportInput } from '@/lib/statement-export';
+import StatementShareButton from '@/app/components/statement-share';
 import FitText from '@/app/components/fit-text';
 import BackLink from '@/app/components/back-link';
 
@@ -21,22 +23,6 @@ function defaultTo() {
   return toDateInputValue();
 }
 
-type Row = {
-  id: string;
-  date: string;
-  dueDate?: string;
-  hareket: string;
-  belgeNo?: string;
-  aciklama?: string;
-  borc: number;
-  alacak: number;
-  bakiye: number;
-  isSubRow?: boolean;
-  miktar?: string;
-  fiyat?: number;
-  productCode?: string;
-  extraInfo?: string; // çapraz döviz için
-};
 
 export default function CustomerEkstrePage() {
   const params = useParams();
@@ -56,249 +42,16 @@ export default function CustomerEkstrePage() {
 
   useEffect(() => { load(); }, []);
 
-  // Build merged row array
   // Cari döviz cinsi (USD/EUR carilerde TL yazılmasın)
   const cur: string = data?.customer?.currency || 'TRY';
-  const rows: Row[] = [];
-  if (data && !data.error) {
-    let balance = 0;
-    const events: any[] = [
-      ...(data.invoices || []).map((inv: any) => ({ ...inv, _type: 'invoice', _sortDate: inv.date })),
-      ...(data.payments || []).map((p: any) => ({ ...p, _type: 'payment', _sortDate: p.date })),
-      ...(data.cekler || []).map((c: any) => ({ ...c, _type: 'cek', _sortDate: c.islemTarihi })),
-    ].sort((a, b) => {
-      const d = new Date(a._sortDate).getTime() - new Date(b._sortDate).getTime();
-      if (d !== 0) return d;
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    });
-
-    events.forEach(ev => {
-      if (ev._type === 'invoice') {
-        if (ev.isReturn) {
-          // İade faturası → alacak sütunu, bakiye azalır
-          // (eski kayıtlarda iade tutarı negatif saklanmış olabilir)
-          const returnAmount = Math.abs(ev.total);
-          balance -= returnAmount;
-          rows.push({
-            id: ev.id,
-            date: ev.date,
-            dueDate: ev.dueDate,
-            hareket: 'İade',
-            belgeNo: ev.invoiceNo,
-            aciklama: ev.notes || '',
-            borc: 0,
-            alacak: returnAmount,
-            bakiye: balance,
-          });
-        } else {
-          balance += ev.total;
-          rows.push({
-            id: ev.id,
-            date: ev.date,
-            dueDate: ev.dueDate,
-            hareket: 'Satış',
-            belgeNo: ev.invoiceNo,
-            aciklama: ev.notes || '',
-            borc: ev.total,
-            alacak: 0,
-            bakiye: balance,
-          });
-          (ev.items || []).forEach((item: any, i: number) => {
-            rows.push({
-              id: `${ev.id}-item-${i}`,
-              date: ev.date,
-              hareket: '',
-              aciklama: item.description,
-              miktar: item.quantity ? `${item.quantity.toLocaleString('tr-TR')}` : '',
-              fiyat: item.unitPrice,
-              productCode: item.product?.code || undefined,
-              borc: 0,
-              alacak: 0,
-              bakiye: balance,
-              isSubRow: true,
-            });
-          });
-        }
-      } else if (ev._type === 'payment') {
-        // Ödeme / Tahsilat
-        const method = ev.method || '';
-        const notesStr = ev.notes || '';
-        if (method === 'Borç Fişi') {
-          // Borç fişi → bakiye artar (müşteri borçlanır)
-          balance += ev.amount;
-          rows.push({
-            id: ev.id,
-            date: ev.date,
-            hareket: 'Borç Fişi',
-            aciklama: notesStr.replace(/^Vade:[^\s|]+\s*\|?\s*/, ''),
-            borc: ev.amount,
-            alacak: 0,
-            bakiye: balance,
-          });
-        } else if (method === 'Alacak Fişi') {
-          // Alacak fişi → bakiye azalır (müşteri alacaklanır)
-          balance -= ev.amount;
-          rows.push({
-            id: ev.id,
-            date: ev.date,
-            hareket: 'Alacak Fişi',
-            aciklama: notesStr.replace(/^Vade:[^\s|]+\s*\|?\s*/, ''),
-            borc: 0,
-            alacak: ev.amount,
-            bakiye: balance,
-          });
-        } else if (method === 'Bakiye Düzeltme') {
-          const isPositive = notesStr.startsWith('+');
-          if (isPositive) {
-            balance += ev.amount;
-            rows.push({
-              id: ev.id,
-              date: ev.date,
-              hareket: 'Bakiye Düzeltme',
-              aciklama: notesStr.replace(/^[+-]\s*\|?\s*/, ''),
-              borc: ev.amount,
-              alacak: 0,
-              bakiye: balance,
-            });
-          } else {
-            balance -= ev.amount;
-            rows.push({
-              id: ev.id,
-              date: ev.date,
-              hareket: 'Bakiye Düzeltme',
-              aciklama: notesStr.replace(/^[+-]\s*\|?\s*/, ''),
-              borc: 0,
-              alacak: ev.amount,
-              bakiye: balance,
-            });
-          }
-        } else {
-          const isIade = matchesText(notesStr, 'iade');
-          balance -= ev.amount;
-          rows.push({
-            id: ev.id,
-            date: ev.date,
-            hareket: isIade ? 'İade' : 'Tahsilat',
-            aciklama: [method, notesStr && notesStr !== 'İade' ? notesStr : ''].filter(Boolean).join(' — '),
-            borc: 0,
-            alacak: ev.amount,
-            bakiye: balance,
-          });
-        }
-      } else if (ev._type === 'cek') {
-        // Çek: customerAmount varsa müşteri dövizinde o kadar, yoksa tutar
-        const amt = ev.customerAmount ?? ev.tutar;
-        balance -= amt;
-        const extraInfo = ev.customerAmount
-          ? `${fmt(ev.tutar)} ${ev.currency}`
-          : undefined;
-        const aciklama = [
-          ev.islem,
-          ev.borclu,
-          ev.bankasi,
-          ev.seriNo,
-        ].filter(Boolean).join(' — ');
-        rows.push({
-          id: `cek-${ev.id}`,
-          date: ev.islemTarihi,
-          dueDate: ev.vadesi,
-          hareket: 'Çek',
-          belgeNo: ev.seriNo || undefined,
-          aciklama,
-          borc: 0,
-          alacak: amt,
-          bakiye: balance,
-          extraInfo,
-        });
-      }
-    });
-  }
-
-  const mainRows = rows.filter(r => !r.isSubRow);
-  const totalBorc = mainRows.reduce((s, r) => s + r.borc, 0);
-  const totalAlacak = mainRows.reduce((s, r) => s + r.alacak, 0);
-  const lastBalance = mainRows.length > 0 ? mainRows[mainRows.length - 1].bakiye : 0;
-
-  const handleExcel = () => {
-    if (!data) return;
-    const BOM = '\uFEFF';
-    const header = 'Tarih;Vade;Hareket;Belge No;Açıklama;Miktar;Fiyat;Borç (' + cur + ');Alacak (' + cur + ');Bakiye (' + cur + ')\n';
-    const lines = rows.map(r =>
-      [
-        fmtDate(r.date),
-        r.dueDate ? fmtDate(r.dueDate) : '',
-        r.hareket,
-        r.belgeNo || '',
-        (r.productCode ? `[${r.productCode}] ` : '') + (r.aciklama || ''),
-        r.miktar || '',
-        r.fiyat != null ? fmt(r.fiyat) : '',
-        r.borc > 0 ? fmt(r.borc) : '',
-        r.alacak > 0 ? fmt(r.alacak) : '',
-        !r.isSubRow ? fmt(r.bakiye) : '',
-      ].join(';')
-    ).join('\n');
-    const blob = new Blob([BOM + header + lines], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${data.customer?.name || 'ekstre'}_hesap_ekstresi.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handlePdf = async () => {
-    if (!data) return;
-    const { default: jsPDF } = await import('jspdf');
-    const tr = (s: string) => (s || '').replace(/ğ/g,'g').replace(/Ğ/g,'G').replace(/ü/g,'u').replace(/Ü/g,'U')
-      .replace(/ş/g,'s').replace(/Ş/g,'S').replace(/ı/g,'i').replace(/İ/g,'I')
-      .replace(/ö/g,'o').replace(/Ö/g,'O').replace(/ç/g,'c').replace(/Ç/g,'C');
-
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const W = 297; const M = 10;
-    let y = M;
-
-    doc.setFillColor(37,99,235);
-    doc.rect(0,0,W,18,'F');
-    doc.setTextColor(255,255,255); doc.setFontSize(12); doc.setFont('helvetica','bold');
-    doc.text(tr(`${data.customer?.name || ''} - HESAP EKSTRESI`), M, 11);
-    doc.setFontSize(8); doc.setFont('helvetica','normal');
-    doc.text(`${from} - ${to}`, W-M, 11, { align: 'right' });
-    y = 26;
-
-    doc.setTextColor(30,30,30); doc.setFontSize(8); doc.setFont('helvetica','bold');
-    const cols = [10,28,18,28,50,18,18,20,20,22]; // widths
-    const headers = ['Tarih','Vade','Hareket','Belge No','Aciklama','Miktar','Fiyat',`Borc ${cur}`,`Alacak ${cur}`,`Bakiye ${cur}`];
-    let x = M;
-    doc.setFillColor(241,245,249); doc.rect(M, y-4, W-2*M, 7, 'F');
-    headers.forEach((h, i) => { doc.text(h, x+1, y); x += cols[i]; });
-    y += 5; doc.setFont('helvetica','normal');
-
-    rows.forEach(r => {
-      if (y > 190) { doc.addPage(); y = 15; }
-      if (r.isSubRow) {
-        doc.setFillColor(255,251,235); doc.rect(M, y-3.5, W-2*M, 6, 'F');
-      }
-      x = M;
-      const vals = [
-        fmtDate(r.date), r.dueDate ? fmtDate(r.dueDate) : '', tr(r.hareket||''),
-        tr(r.belgeNo||''), tr(((r.productCode ? `[${r.productCode}] ` : '') + (r.aciklama||'')).substring(0,28)), tr(r.miktar||''),
-        r.fiyat != null ? fmt(r.fiyat) : '',
-        r.borc > 0 ? fmt(r.borc) : '', r.alacak > 0 ? fmt(r.alacak) : '',
-        !r.isSubRow ? fmt(r.bakiye) : '',
-      ];
-      vals.forEach((v, i) => {
-        doc.text(String(v), x+1, y);
-        x += cols[i];
-      });
-      doc.setDrawColor(230,230,230); doc.line(M, y+2, W-M, y+2);
-      y += 6;
-    });
-
-    y += 4;
-    doc.setFont('helvetica','bold');
-    doc.text(`Toplam Borc: ${fmt(totalBorc)} ${cur}  |  Toplam Alacak: ${fmt(totalAlacak)} ${cur}  |  Bakiye: ${fmt(lastBalance)} ${cur}`, M, y);
-    doc.save(`${tr(data.customer?.name||'ekstre')}_hesap_ekstresi.pdf`);
-  };
+  const { rows, totalBorc, totalAlacak, lastBalance } = buildCustomerRows(data);
+  const exportInput = (): StatementExportInput => ({
+    rows, totalBorc, totalAlacak, lastBalance,
+    partyName: data?.customer?.name || 'ekstre', currency: cur, from, to,
+    detailed: true, color: [37, 99, 235],
+  });
+  const handleExcel = () => { if (data) exportStatementCsv(exportInput()); };
+  const handlePdf = async () => { if (data) await exportStatementPdf(exportInput()); };
 
   return (
     <AppShell>
@@ -350,7 +103,7 @@ export default function CustomerEkstrePage() {
             </div>
 
             {/* Export buttons */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={handleExcel}
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
                 <FileSpreadsheet className="w-4 h-4" /> Excel
@@ -359,6 +112,10 @@ export default function CustomerEkstrePage() {
                 className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors">
                 <FileDown className="w-4 h-4" /> PDF
               </button>
+              <StatementShareButton accent="blue" party={{
+                kind: 'customer', id: String(params.id), name: data?.customer?.name || '',
+                phone: data?.customer?.phone, email: data?.customer?.email,
+              }} />
             </div>
 
             {/* Table */}

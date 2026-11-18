@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
-import { prisma } from '@/lib/prisma';
-import { parseDateInput, parseDateEndOfDay } from '@/lib/time';
+import { loadCustomerStatement, statementRange } from '@/lib/statement';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -10,45 +9,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const user = session.user as any;
 
   const { searchParams } = new URL(req.url);
-  const fromStr = searchParams.get('from');
-  const toStr = searchParams.get('to');
+  const { from, to } = statementRange(searchParams.get('from'), searchParams.get('to'));
 
-  const from = fromStr ? (parseDateInput(fromStr) ?? new Date(new Date().setFullYear(new Date().getFullYear() - 1))) : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
-  const to = toStr ? (parseDateEndOfDay(toStr) ?? new Date()) : new Date();
-
-  const customer = await prisma.customer.findFirst({
-    where: { id: params.id, companyId: user.companyId },
-    select: { id: true, name: true, currency: true },
-  });
-  if (!customer) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-  const [invoices, payments, cekler] = await Promise.all([
-    prisma.invoice.findMany({
-      where: { customerId: params.id, date: { gte: from, lte: to } },
-      include: { items: { include: { product: { select: { code: true } } }, orderBy: { id: 'asc' } } },
-      orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
-    }),
-    prisma.payment.findMany({
-      where: { customerId: params.id, date: { gte: from, lte: to } },
-      orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
-    }),
-    prisma.cek.findMany({
-      where: { customerId: params.id, companyId: user.companyId, islemTarihi: { gte: from, lte: to } },
-      orderBy: [{ islemTarihi: 'asc' }],
-    }),
-  ]);
-
-  const totalDebit = invoices.reduce((s, i) => s + i.total, 0);
-  const totalCredit = payments.reduce((s, p) => s + p.amount, 0)
-    + cekler.reduce((s, c) => s + ((c as any).customerAmount ?? c.tutar), 0);
-
-  return NextResponse.json({
-    customer,
-    invoices,
-    payments,
-    cekler,
-    totalDebit,
-    totalCredit,
-    balance: totalDebit - totalCredit,
-  });
+  const data = await loadCustomerStatement(user.companyId, params.id, from, to);
+  if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json(data);
 }
