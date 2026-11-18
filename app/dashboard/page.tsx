@@ -8,7 +8,7 @@ import { formatDate } from '@/lib/time';
 import {
   TrendingUp, TrendingDown, BarChart2, DollarSign,
   ScrollText, ChevronRight, Loader2, AlertCircle,
-  Users, Package, FileText, Layers, ClipboardList,
+  Users, Package, FileText, Layers, ClipboardList, AlertTriangle,
 } from 'lucide-react';
 import Link from 'next/link';
 import PendingOrdersWidget from '@/app/components/pending-orders-widget';
@@ -184,6 +184,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [rates, setRates] = useState<{ usd: number | null; eur: number | null; date: string | null }>({ usd: null, eur: null, date: null });
+  const [savedRates, setSavedRates] = useState<{ usd: number | null; eur: number | null } | null>(null);
   const [layout, setLayout] = useState<LayoutState>({ order: DEFAULT_ORDER, collapsed: [] });
 
   useEffect(() => {
@@ -193,8 +194,15 @@ export default function DashboardPage() {
   useEffect(() => {
     fetch('/api/dashboard')
       .then(r => r.json()).then(d => setData(d)).catch(console.error).finally(() => setLoading(false));
+    // TCMB'ye ulaşılamazsa hesaplamalar ayarlardaki kayıtlı kurla yapılır; kullanıcıya gösterilir
     fetch('/api/exchange-rates')
-      .then(r => r.json()).then(d => { if (!d.error) setRates(d); }).catch(() => {});
+      .then(r => r.json())
+      .then(d => { if (d && !d.error && (d.usd || d.eur)) setRates(d); else throw new Error(); })
+      .catch(() => {
+        fetch('/api/company').then(r => r.json())
+          .then(c => setSavedRates({ usd: c?.usdToTry ?? null, eur: c?.eurToTry ?? null }))
+          .catch(() => setSavedRates({ usd: null, eur: null }));
+      });
   }, []);
 
   const sensors = useSensors(
@@ -300,6 +308,41 @@ export default function DashboardPage() {
                 </Link>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Eksi stok uyarısı */}
+        {(data?.negativeStock?.materials?.length > 0 || data?.negativeStock?.products?.length > 0) && (
+          <div role="status" className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-800 space-y-2">
+            <p className="flex items-center gap-2 font-semibold">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              Eksi stokta kalemler var. Satışlar stoktan fazla yapılmış olabilir; stok düzeltmesi ya da alış girin.
+            </p>
+            <div className="flex flex-wrap gap-2 pl-6">
+              {data.negativeStock.products.map((p: any) => (
+                <Link key={p.id} href={`/products/${p.id}`} className="px-2.5 py-1 rounded-lg bg-white border border-red-200 hover:bg-red-100">
+                  {p.code ? `${p.code} · ` : ''}{p.name}: <b>{p.stock.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} {p.unit}</b>
+                </Link>
+              ))}
+              {data.negativeStock.materials.map((m: any) => (
+                <Link key={m.id} href={`/materials/${m.id}`} className="px-2.5 py-1 rounded-lg bg-white border border-red-200 hover:bg-red-100">
+                  {m.name}: <b>{m.stock.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} kg</b>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Kur alınamadı uyarısı */}
+        {savedRates && (
+          <div role="status" className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-sm">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span>
+              Güncel TCMB kuru şu an alınamadı. Hesaplamalarda ayarlardaki kayıtlı kur kullanılıyor
+              {savedRates.usd ? <>: <b>1 USD = {savedRates.usd.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL</b></> : null}
+              {savedRates.eur ? <>, <b>1 EUR = {savedRates.eur.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL</b></> : null}.
+              {' '}Kuru <Link href="/settings" className="underline">Ayarlar</Link> sayfasından güncelleyebilirsiniz.
+            </span>
           </div>
         )}
 

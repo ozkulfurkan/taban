@@ -12,6 +12,7 @@ import {
   Loader2, Printer, Pencil, X, CreditCard, User,
   Plus, Trash2, Save, ChevronLeft, Package, CheckCircle, ChevronDown, ChevronRight, Layers, Search, AlertTriangle,
 } from 'lucide-react';
+import { matchesText } from '@/lib/search';
 
 interface EditLineItem {
   productId?: string;
@@ -420,8 +421,8 @@ export default function InvoiceDetailPage() {
 
   const filteredSearchProducts = productSearch.length >= 2
     ? products.filter(p =>
-        p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-        (p.code && p.code.toLowerCase().includes(productSearch.toLowerCase()))
+        matchesText(p.name, productSearch.toLowerCase()) ||
+        (p.code && matchesText(p.code, productSearch.toLowerCase()))
       )
     : [];
 

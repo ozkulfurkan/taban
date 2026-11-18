@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { ArrowLeft, Loader2, FileSpreadsheet, FileDown, RefreshCw } from 'lucide-react';
+import { matchesText } from '@/lib/search';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -109,7 +110,7 @@ export default function SupplierEkstrePage() {
             rows.push({ id: ev.id, date: ev.date, hareket: 'Bakiye Düzeltme', aciklama: notesStr.replace(/^[+-]\s*\|?\s*/, ''), borc: 0, alacak: ev.amount, bakiye: balance });
           }
         } else {
-          const isIade = notesStr.toLowerCase().includes('iade');
+          const isIade = matchesText(notesStr, 'iade');
           balance -= ev.amount;
           rows.push({
             id: ev.id,

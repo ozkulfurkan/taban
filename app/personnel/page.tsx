@@ -8,6 +8,7 @@ import {
   AlertCircle, CheckCircle2, Users
 } from 'lucide-react';
 import type { Employee } from '@/app/personnel/data';
+import { matchesText } from '@/lib/search';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -183,7 +184,7 @@ export default function PersonnelPage() {
     return employees.filter(e => {
       if (search) {
         const q = search.toLowerCase();
-        if (!e.name.toLowerCase().includes(q) && !e.department.toLowerCase().includes(q) && !e.role.toLowerCase().includes(q)) return false;
+        if (!matchesText(e.name, q) && !matchesText(e.department, q) && !matchesText(e.role, q)) return false;
       }
       if (statusFilter !== 'all' && e.status !== statusFilter) return false;
       if (deptFilter && e.department !== deptFilter) return false;

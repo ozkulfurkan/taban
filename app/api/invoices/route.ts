@@ -8,6 +8,7 @@ import { rejectForeignRefs } from '@/lib/tenant';
 import { validateInvoiceInput } from '@/lib/invoice-input';
 import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
 import { pageParams, pageResult, dateRange } from '@/lib/pagination';
+import { idsMatching } from '@/lib/search-db';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
     ...(q ? {
       OR: [
         { invoiceNo: { contains: q, mode: 'insensitive' } },
-        { customer: { name: { contains: q, mode: 'insensitive' } } },
+        { customerId: { in: await idsMatching('Customer', user.companyId, q) } },
       ],
     } : {}),
   };

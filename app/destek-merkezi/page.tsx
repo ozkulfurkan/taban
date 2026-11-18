@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
+import { matchesText } from '@/lib/search';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -483,7 +484,7 @@ function BilgiBank() {
   const [expanded, setExpanded] = useState<number | null>(null);
 
   const filtered = ARTICLES.filter(a =>
-    !search || a.title.toLowerCase().includes(search.toLowerCase()) ||
+    !search || matchesText(a.title, search.toLowerCase()) ||
     a.keywords.some(k => k.includes(search.toLowerCase()))
   );
 

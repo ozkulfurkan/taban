@@ -7,6 +7,7 @@ import { BoxIcon, Plus, Trash2, Loader2, Search, Globe, X, Check, Upload, Downlo
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { matchesText } from '@/lib/search';
 
 interface PortalModalState {
   productId: string;
@@ -181,7 +182,7 @@ export default function ProductsPage() {
   };
 
   const filtered = products.filter(p => {
-    const matchSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase()) || p.code?.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search || matchesText(p.name, search.toLowerCase()) || matchesText(p.code, search.toLowerCase()) || matchesText(p.description, search.toLowerCase());
     const matchCat = !selectedCategory || p.categoryId === selectedCategory;
     return matchSearch && matchCat;
   });

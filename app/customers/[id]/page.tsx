@@ -785,7 +785,9 @@ export default function CustomerDetailPage() {
       setDeleteWarning(`Bu müşterinin ${customer.balance?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${customer.currency} açık bakiyesi var. Silmeden önce bakiyeyi sıfırlayın.`);
       return;
     }
-    setConfirmModal({ message: `"${customer.name}" adlı müşteri kalıcı olarak silinecek. Tüm geçmişi (fatura, ödeme vb.) ile birlikte silinir.`, onConfirm: async () => {
+    // Silme aslında arşivleme: müşteri listelerden kalkar, faturaları ve ödemeleri korunur
+    const docCount = (customer.invoices?.length ?? 0) + (customer.returns?.length ?? 0);
+    setConfirmModal({ message: `"${customer.name}" arşivlenecek ve müşteri listelerinden kaldırılacak.${docCount ? ` ${docCount} faturası ve ödemeleri silinmez; raporlarda ve ekstrede görünmeye devam eder.` : ''}`, onConfirm: async () => {
       setDeleting(true);
       const res = await fetch(`/api/customers/${customer.id}`, { method: 'DELETE' });
       setDeleting(false);

@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
+import { matchesText } from '@/lib/search';
 
 function nowIstanbulISO(): string {
   const now = new Date();
@@ -512,7 +513,7 @@ function AlışModal({ supplier, onClose, onSaved }: {
     const q = item.itemName.toLowerCase();
     if (!q) return list.slice(0, 8);
     return list.filter((x: any) =>
-      x.name.toLowerCase().includes(q) || (x.code && x.code.toLowerCase().includes(q))
+      matchesText(x.name, q) || (x.code && matchesText(x.code, q))
     ).slice(0, 8);
   };
 
@@ -914,7 +915,7 @@ function PortfoySecimModal({ onClose, onConfirm }: {
     setSelectedIds(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
 
   const filtered = cekler.filter(c =>
-    `${c.borclu} ${c.seriNo || ''} ${c.tutar} ${c.customer?.name || ''}`.toLowerCase().includes(search.toLowerCase())
+    matchesText(`${c.borclu} ${c.seriNo || ''} ${c.tutar} ${c.customer?.name || ''}`, search.toLowerCase())
   );
 
   return (
@@ -1328,11 +1329,18 @@ export default function SupplierDetailPage() {
       setDeleteWarning(`Bu tedarikçinin ${supplier.balance?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${supplier.currency} açık bakiyesi var. Silmeden önce bakiyeyi sıfırlayın.`);
       return;
     }
-    setConfirmModal({ message: `"${supplier.name}" adlı tedarikçi kalıcı olarak silinecek. Tüm geçmişi (alış, ödeme vb.) ile birlikte silinir.`, onConfirm: async () => {
+    // Silme aslında arşivleme: tedarikçi listelerden kalkar, alışları ve ödemeleri korunur
+    const docCount = supplier.purchases?.length ?? 0;
+    setConfirmModal({ message: `"${supplier.name}" arşivlenecek ve tedarikçi listelerinden kaldırılacak.${docCount ? ` ${docCount} alışı ve ödemeleri silinmez; raporlarda ve ekstrede görünmeye devam eder.` : ''}`, onConfirm: async () => {
       setDeleting(true);
       const res = await fetch(`/api/suppliers/${supplier.id}`, { method: 'DELETE' });
       setDeleting(false);
-      if (res.ok) router.push('/suppliers');
+      if (res.ok) {
+        router.push('/suppliers');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setDeleteWarning(data.error ?? 'Tedarikçi silinemedi.');
+      }
     }});
   };
 

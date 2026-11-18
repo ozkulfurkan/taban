@@ -5,6 +5,7 @@ import AppShell from '@/app/components/app-shell';
 import { formatDate } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Loader2, ChevronLeft, ChevronRight, RefreshCw, X, AlertTriangle, Upload, Download, CheckCircle2, AlertCircle } from 'lucide-react';
+import { matchesText } from '@/lib/search';
 
 const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = formatDate;
@@ -348,9 +349,9 @@ export default function CekPortfoyuPage() {
 
   const filtered = search
     ? cekler.filter(c =>
-        c.borclu?.toLowerCase().includes(search.toLowerCase()) ||
-        c.seriNo?.toLowerCase().includes(search.toLowerCase()) ||
-        c.bankasi?.toLowerCase().includes(search.toLowerCase())
+        matchesText(c.borclu, search.toLowerCase()) ||
+        matchesText(c.seriNo, search.toLowerCase()) ||
+        matchesText(c.bankasi, search.toLowerCase())
       )
     : cekler;
 

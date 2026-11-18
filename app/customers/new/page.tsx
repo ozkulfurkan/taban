@@ -12,6 +12,7 @@ export default function NewCustomerPage() {
   const router = useRouter();
   const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [form, setForm] = useState({ name: '', taxId: '', taxOffice: '', email: '', phone: '', address: '', currency: 'TRY', notes: '' });
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -49,13 +50,25 @@ export default function NewCustomerPage() {
     if (!form.name.trim()) return;
     setSaving(true);
     try {
-      const res = await fetch('/api/customers', {
+      setSaveError('');
+      const send = (extra: Record<string, unknown> = {}) => fetch('/api/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, categoryId: categoryId || null }),
+        body: JSON.stringify({ ...form, categoryId: categoryId || null, ...extra }),
       });
-      const data = await res.json();
-      if (data.id) router.push(`/customers/${data.id}`);
+      let res = await send();
+      let data = await res.json();
+      // Aynı adlı kayıt varsa sor: onaylanırsa yeni kayıt açılır, vazgeçilirse mevcut kayda gidilir
+      if (res.status === 409 && data?.code === 'DUPLICATE_NAME') {
+        const createAnyway = window.confirm(
+          `${data.error}\n\nYine de yeni bir müşteri kaydı açılsın mı?\n(İptal'e basarsanız mevcut kayıt açılır.)`,
+        );
+        if (!createAnyway) { router.push(`/customers/${data.existing.id}`); return; }
+        res = await send({ allowDuplicate: true });
+        data = await res.json();
+      }
+      if (!res.ok || !data?.id) { setSaveError(data?.error || 'Kayıt oluşturulamadı'); return; }
+      router.push(`/customers/${data.id}`);
     } catch (e) { console.error(e); }
     finally { setSaving(false); }
   };
@@ -70,6 +83,9 @@ export default function NewCustomerPage() {
           <h1 className="text-2xl font-bold text-slate-800">{t('customers', 'newCustomerTitle')}</h1>
         </div>
 
+        {saveError && (
+          <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2.5 text-sm">{saveError}</div>
+        )}
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">

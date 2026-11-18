@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { partyInputError } from '@/lib/party-input';
+import { findSameName } from '@/lib/search-db';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -70,6 +71,17 @@ export async function POST(req: NextRequest) {
   const inputError = partyInputError(body);
   if (inputError) return NextResponse.json({ error: inputError }, { status: 400 });
   body.name = body.name.trim();
+  // Aynı adlı kayıt varsa önce kullanıcıya sor (engellemez; onaylanırsa allowDuplicate ile gelir)
+  if (!body.allowDuplicate) {
+    const existing = await findSameName('Supplier', user.companyId, body.name);
+    if (existing) {
+      return NextResponse.json({
+        error: `"${existing.name}" adında bir tedarikçi zaten var.`,
+        code: 'DUPLICATE_NAME',
+        existing,
+      }, { status: 409 });
+    }
+  }
   const foreign = await rejectForeignRefs(user.companyId, { supplierCategory: body?.categoryId });
   if (foreign) return foreign;
   try {
