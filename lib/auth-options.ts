@@ -41,7 +41,7 @@ async function assertTokenStillValid(token: any) {
   token.companyType = dbUser.company?.companyType ?? token.companyType;
 }
 
-async function authorizePortalCustomer(credentials: Record<string, string> | undefined, req?: any) {
+export async function authorizePortalCustomer(credentials: Record<string, string> | undefined, req?: any) {
   if (!credentials?.email || !credentials?.password) return null;
   const acctKey = `portal:${normEmail(credentials.email)}`;
   const ipKey = `login-ip:${clientIp(req?.headers)}`;
@@ -101,6 +101,73 @@ async function authorizePortalCustomer(credentials: Record<string, string> | und
   } as any;
 }
 
+// Firma kullanıcısı girişi: web (NextAuth) ve mobil giriş aynı kuralları kullanır
+// (deneme sınırı, e-posta doğrulaması). Hatalı bilgide null döner.
+export async function authorizeStaff(credentials: Record<string, string> | undefined, req?: any) {
+  if (!credentials?.email || !credentials?.password) return null;
+  const acctKey = `login:${normEmail(credentials.email)}`;
+  const ipKey = `login-ip:${clientIp((req as any)?.headers)}`;
+  if ((await isLimited(acctKey, LIMITS.loginPerAccount)) || (await isLimited(ipKey, LIMITS.loginPerIp))) {
+    throw new Error('TOO_MANY_ATTEMPTS');
+  }
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: credentials.email },
+      include: { company: { select: { name: true, companyType: true } } },
+    });
+    if (!user) {
+      await recordAttempt(acctKey, ipKey);
+      return null;
+    }
+    const isValid = await bcrypt.compare(credentials.password, user.password);
+    if (!isValid) {
+      await recordAttempt(acctKey, ipKey);
+      return null;
+    }
+    await clearAttempts(acctKey);
+    if (!user.emailVerified) {
+      const token = user.emailVerifyToken ?? crypto.randomBytes(32).toString('hex');
+      if (!user.emailVerifyToken) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { emailVerifyToken: token },
+        });
+      }
+      const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
+      const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
+      sendMail({
+        to: user.email,
+        subject: 'SoleCost - E-posta adresinizi doğrulayın',
+        html: `
+          <p>Merhaba ${user.name ?? user.email},</p>
+          <p>Hesabınıza giriş yapmak için e-posta adresinizi doğrulamanız gerekmektedir.</p>
+          <p><a href="${verifyUrl}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
+          <p>Butona tıklayamıyorsanız şu bağlantıyı kopyalayın: ${verifyUrl}</p>
+        `,
+        text: `E-postanızı doğrulamak için: ${verifyUrl}`,
+      }).catch(() => {});
+      throw new Error('EMAIL_NOT_VERIFIED');
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      companyId: user.companyId,
+      companyName: user.company?.name ?? null,
+      companyType: user.company?.companyType ?? 'SOLE_MANUFACTURER',
+      language: user.language,
+      currency: user.currency,
+      allowedPages: (user as any).allowedPages ?? [],
+    } as any;
+  } catch (error) {
+    if (error instanceof Error && error.message === 'EMAIL_NOT_VERIFIED') throw error;
+    if (error instanceof Error && error.message === 'TOO_MANY_ATTEMPTS') throw error;
+    console.error('Auth error:', error);
+    return null;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -138,68 +205,7 @@ export const authOptions: NextAuthOptions = {
           } as any;
         }
 
-        if (!credentials?.email || !credentials?.password) return null;
-        const acctKey = `login:${normEmail(credentials.email)}`;
-        const ipKey = `login-ip:${clientIp((req as any)?.headers)}`;
-        if ((await isLimited(acctKey, LIMITS.loginPerAccount)) || (await isLimited(ipKey, LIMITS.loginPerIp))) {
-          throw new Error('TOO_MANY_ATTEMPTS');
-        }
-        try {
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email },
-            include: { company: { select: { name: true, companyType: true } } },
-          });
-          if (!user) {
-            await recordAttempt(acctKey, ipKey);
-            return null;
-          }
-          const isValid = await bcrypt.compare(credentials.password, user.password);
-          if (!isValid) {
-            await recordAttempt(acctKey, ipKey);
-            return null;
-          }
-          await clearAttempts(acctKey);
-          if (!user.emailVerified) {
-            const token = user.emailVerifyToken ?? crypto.randomBytes(32).toString('hex');
-            if (!user.emailVerifyToken) {
-              await prisma.user.update({
-                where: { id: user.id },
-                data: { emailVerifyToken: token },
-              });
-            }
-            const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
-            const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
-            sendMail({
-              to: user.email,
-              subject: 'SoleCost - E-posta adresinizi doğrulayın',
-              html: `
-                <p>Merhaba ${user.name ?? user.email},</p>
-                <p>Hesabınıza giriş yapmak için e-posta adresinizi doğrulamanız gerekmektedir.</p>
-                <p><a href="${verifyUrl}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
-                <p>Butona tıklayamıyorsanız şu bağlantıyı kopyalayın: ${verifyUrl}</p>
-              `,
-              text: `E-postanızı doğrulamak için: ${verifyUrl}`,
-            }).catch(() => {});
-            throw new Error('EMAIL_NOT_VERIFIED');
-          }
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            companyId: user.companyId,
-            companyName: user.company?.name ?? null,
-            companyType: user.company?.companyType ?? 'SOLE_MANUFACTURER',
-            language: user.language,
-            currency: user.currency,
-            allowedPages: (user as any).allowedPages ?? [],
-          } as any;
-        } catch (error) {
-          if (error instanceof Error && error.message === 'EMAIL_NOT_VERIFIED') throw error;
-          if (error instanceof Error && error.message === 'TOO_MANY_ATTEMPTS') throw error;
-          console.error('Auth error:', error);
-          return null;
-        }
+        return authorizeStaff(credentials, req);
       },
     }),
     CredentialsProvider({

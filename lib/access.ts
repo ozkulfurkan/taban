@@ -39,6 +39,7 @@ const API_PAGE_KEYS: Array<[string, string]> = [
 const PORTAL_API_PREFIXES = [
   '/api/auth/',
   '/api/portal/me/',
+  '/api/mobile/auth/', // mobil uygulama oturum bilgisi
   '/api/portal/fason/',
   '/api/portal/auth/verify-email',
   '/api/exchange-rates', // genel kur bilgisi, firma verisi içermez
