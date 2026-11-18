@@ -27,11 +27,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr" suppressHydrationWarning>
-      <head>
-        {/* Üçüncü taraf script (Abacus.AI). Kullanılmıyorsa kaldırılmalı: her sayfada çalışır ve sayfadaki veriyi görebilir. */}
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="https://apps.abacus.ai/chatllm/appllm-lib.js" />
-      </head>
       <body className={inter.className} suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
