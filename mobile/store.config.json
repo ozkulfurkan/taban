@@ -29,6 +29,27 @@
         "marketingUrl": "https://www.solecost.com",
         "supportUrl": "https://www.solecost.com/destek",
         "privacyPolicyUrl": "https://www.solecost.com/gizlilik"
+      },
+      "en-US": {
+        "title": "SoleCost",
+        "subtitle": "Sole production: cost & ledger",
+        "promoText": "Orders, accounts, cheques and cash for sole and material companies, in your pocket. Instant alerts for new orders.",
+        "description": "SoleCost is a business management app for shoe-sole manufacturers and sole raw-material suppliers. Sign in with your solecost.com account; the same data and rules as the web app.\n\nACCOUNTS\n• Customer and supplier balances, sales, returns and payments\n• Date-range statements, PDF sharing and statement links for customers\n• Collections and payments, with currency conversion for foreign-currency accounts\n\nSALES AND PURCHASES\n• Sales invoices, customer returns, purchases and returns to suppliers\n• Customer-specific prices, discounts and VAT\n• Edit, delete and share documents as PDF\n\nORDERS\n• Orders from the customer portal and the company network, plus manual order entry\n• Size breakdowns for paired products, quantities for kg / metre products\n• Status tracking, shipments and actual shipped quantities\n• Print pending orders or export them as PDF\n• Instant notifications for new orders and status changes\n\nCOMPANY NETWORK\n• Connect to suppliers that use SoleCost with their company code and order from their catalog\n• Approve incoming connection requests; orders land on your customer record\n\nCHEQUES AND CASH\n• Cheque portfolio: overdue and upcoming cheques, bulk deposit, collection, endorsement to suppliers\n• Total and average due date of selected cheques\n• Cash and bank accounts, deposits / withdrawals and transfers between accounts\n\nSTOCK, STAFF AND REPORTS\n• Product and raw-material stock, stock adjustments\n• Staff records and transactions\n• Sales, receivables and payables summaries\n\nSECURITY\n• Session stored in the device secure storage\n• Optional Face ID / fingerprint lock\n• Same user roles and page permissions as the web app\n\nSoleCost accounts are created by companies on the website. Customer portal accounts are created by the company you work with.",
+        "keywords": [
+          "shoe sole",
+          "footwear",
+          "cost",
+          "accounts",
+          "statement",
+          "cheque",
+          "orders",
+          "stock",
+          "invoice",
+          "raw material"
+        ],
+        "marketingUrl": "https://www.solecost.com",
+        "supportUrl": "https://www.solecost.com/destek",
+        "privacyPolicyUrl": "https://www.solecost.com/gizlilik"
       }
     },
     "release": {
