@@ -1,0 +1,98 @@
+// Müşteri portalı: sipariş durumları, beden dağılımı ve sepetten sipariş gövdesi (web portalıyla aynı)
+
+export type CatalogProduct = {
+  id: string; code: string | null; name: string; description: string | null; sizes: string[];
+  parts?: { id: string; name: string }[];
+};
+
+export type OrderItem = {
+  productId: string | null; productCode: string; productName: string; color: string;
+  sizeDistribution: Record<string, number>; totalQuantity: number;
+};
+
+export type PortalOrder = {
+  id: string; orderNo: string; status: string; createdAt: string; totalQuantity: number;
+  productCode?: string | null; color?: string | null; material?: string | null; notes?: string | null;
+  sizeDistribution: Record<string, number>; orderItems?: OrderItem[] | null;
+  colorPartials?: { name: string; color: string }[] | null;
+  requestedDeliveryDate?: string | null; confirmedDeliveryDate?: string | null;
+  product?: { id: string; name: string; code: string | null } | null;
+  statusHistory?: { id: string; status: string; note?: string | null; createdAt: string }[];
+  shipment?: { shipmentDate: string; deliveryNoteNo?: string | null; trackingNo?: string | null; carrier?: string | null; notes?: string | null } | null;
+};
+
+export const ORDER_STEPS = [
+  { key: 'ORDER_RECEIVED', label: 'Sipariş alındı' },
+  { key: 'IN_PRODUCTION', label: 'Üretime girdi' },
+  { key: 'MOLDING', label: 'Kalıplama' },
+  { key: 'PAINTING', label: 'Boya / apre' },
+  { key: 'PACKAGING', label: 'Paketleme' },
+  { key: 'READY_FOR_SHIPMENT', label: 'Sevkiyata hazır' },
+  { key: 'SHIPPED', label: 'Sevk edildi' },
+] as const;
+
+export const STATUS_LABEL: Record<string, string> = Object.fromEntries(ORDER_STEPS.map(s => [s.key, s.label]));
+
+export function statusTone(status: string): 'primary' | 'warning' | 'success' {
+  if (status === 'SHIPPED' || status === 'READY_FOR_SHIPMENT') return 'success';
+  if (status === 'ORDER_RECEIVED') return 'primary';
+  return 'warning';
+}
+
+export const stepIndex = (status: string) => ORDER_STEPS.findIndex(s => s.key === status);
+
+/** Web portalındaki varsayılan beden aralığı (ürüne beden tanımlanmamışsa) */
+export const DEFAULT_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];
+export const sizesOf = (p: Pick<CatalogProduct, 'sizes'>) => (p.sizes?.length ? p.sizes : DEFAULT_SIZES);
+
+/** Beden adetleri: boş/eksi/ondalık girişleri temizler, yalnızca 0'dan büyükleri tutar */
+export function cleanSizes(sizes: string[], raw: Record<string, string>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const s of sizes) {
+    const n = parseInt((raw[s] ?? '').replace(/\D/g, ''), 10);
+    if (n > 0) out[s] = n;
+  }
+  return out;
+}
+
+export const sumSizes = (d: Record<string, number>) => Object.values(d).reduce((s, v) => s + (Number(v) || 0), 0);
+
+/** Sepete eklenecek kalem; hata varsa mesaj döner */
+export function cartItem(p: CatalogProduct, color: string, raw: Record<string, string>): OrderItem | string {
+  if (!color.trim()) return 'Renk girin.';
+  const sizeDistribution = cleanSizes(sizesOf(p), raw);
+  const totalQuantity = sumSizes(sizeDistribution);
+  if (totalQuantity === 0) return 'En az 1 adet girin.';
+  return { productId: p.id, productCode: p.code || '', productName: p.name, color: color.trim(), sizeDistribution, totalQuantity };
+}
+
+/** Sepetten paket sipariş gövdesi (POST /api/portal/me/orders) */
+export function orderBody(items: OrderItem[], requestedDeliveryDate: string, notes: string) {
+  return {
+    orderItems: items,
+    requestedDeliveryDate: requestedDeliveryDate || undefined,
+    notes: notes.trim() || undefined,
+  };
+}
+
+/** Siparişin satırları: paket siparişte kalemler, tekli siparişte tek satır */
+export function orderLines(o: PortalOrder): OrderItem[] {
+  if (Array.isArray(o.orderItems) && o.orderItems.length) return o.orderItems;
+  return [{
+    productId: o.product?.id ?? null,
+    productCode: o.productCode || o.product?.code || '',
+    productName: o.product?.name || '',
+    color: o.color || '',
+    sizeDistribution: o.sizeDistribution || {},
+    totalQuantity: o.totalQuantity,
+  }];
+}
+
+/** "38×12 · 39×24" biçiminde beden özeti (beden sırasıyla) */
+export function sizeSummary(d: Record<string, number>) {
+  return Object.entries(d)
+    .filter(([, q]) => Number(q) > 0)
+    .sort(([a], [b]) => a.localeCompare(b, 'tr', { numeric: true }))
+    .map(([s, q]) => `${s}×${q}`)
+    .join(' · ');
+}
