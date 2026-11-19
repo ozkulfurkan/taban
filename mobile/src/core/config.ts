@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 export const API_URL: string = (
   process.env.EXPO_PUBLIC_API_URL ||
   (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ||
-  'https://solecost.com'
+  'https://www.solecost.com'
 ).replace(/\/+$/, '');
 
 export const WEB_URL = API_URL;

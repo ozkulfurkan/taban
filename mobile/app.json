@@ -55,7 +55,7 @@
       ]
     ],
     "extra": {
-      "apiUrl": "https://solecost.com"
+      "apiUrl": "https://www.solecost.com"
     },
     "experiments": {
       "typedRoutes": true,
