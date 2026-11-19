@@ -31,6 +31,7 @@ const TILES: Tile[] = [
   { label: 'İadeler', icon: 'undo', href: '/belgeler?tab=return', tone: 'danger', testID: 'home-returns' },
   { label: 'Çekler', icon: 'cheque', href: '/cekler', tone: 'success', testID: 'home-cekler' },
   { label: 'Kasa & Banka', icon: 'bank', href: '/hesaplar', tone: 'primary', testID: 'home-accounts' },
+  { label: 'Stok', icon: 'box', href: '/stok', tone: 'warning', testID: 'home-stock' },
   { label: 'Ayarlar', icon: 'settings', href: '/ayarlar', tone: 'neutral', testID: 'home-settings' },
 ];
 
@@ -130,9 +131,14 @@ export default function Home() {
         ) : null}
 
         {negative > 0 ? (
-          <Card style={{ backgroundColor: c.warningSoft, borderColor: c.warningSoft, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Card
+            onPress={() => router.push(d?.negativeStock.products.length ? '/stok?negative=1' : '/stok?kind=material&negative=1')}
+            testID="home-negative-stock"
+            style={{ backgroundColor: c.warningSoft, borderColor: c.warningSoft, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+          >
             <Icon name="alert" color={c.warning} />
             <T style={{ flex: 1 }}>{negative} kalemde stok eksiye düşmüş.</T>
+            <Icon name="chevron" size={14} color={c.warning} />
           </Card>
         ) : null}
       </ScrollView>
