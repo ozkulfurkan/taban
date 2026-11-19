@@ -54,8 +54,8 @@ export default function Hareket() {
   const r = parseAmountInput(rate);
   const recorded = useMemo(() => (cross ? (r > 0 ? round2(amt / r) : 0) : round2(amt)), [cross, amt, r]);
 
-  if (party.isLoading || accounts.isLoading) return <Loading />;
-  if (party.error || accounts.error) return <ErrorState message={((party.error || accounts.error) as Error).message} />;
+  if (party.isLoading || accounts.isLoading) return <><Stack.Screen options={{ title: k === 'customer' ? 'Tahsilat' : 'Ödeme' }} /><Loading /></>;
+  if (party.error || accounts.error) return <><Stack.Screen options={{ title: k === 'customer' ? 'Tahsilat' : 'Ödeme' }} /><ErrorState message={((party.error || accounts.error) as Error).message} /></>;
 
   const title = k === 'customer' ? 'Tahsilat' : 'Ödeme';
 
@@ -96,7 +96,7 @@ export default function Hareket() {
     <>
       {/* Native modal olarak sunulmaz: ayar veri yüklendikten sonra geldiği için ekran açıkken
           sayfadan modala dönüyor ve dokunuşlarda yeniden çiziliyordu */}
-      <Stack.Screen options={{ title, headerLargeTitle: false }} />
+      <Stack.Screen options={{ title }} />
       <Screen>
         <T variant="heading">{party.data!.name}</T>
         <T variant="small">Güncel bakiye: {money(party.data!.balance, cur)}</T>

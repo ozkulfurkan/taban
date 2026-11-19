@@ -1,0 +1,53 @@
+name: TestFlight'a gönder
+
+# Elle çalıştırılır: Actions → "TestFlight'a gönder" → Run workflow.
+# EAS bulutunda iOS üretim derlemesi alır ve bitince TestFlight'a gönderir (build numarası EAS'ta artar).
+# Gerekli: depo secret'ı EXPO_TOKEN (expo.dev → Account settings → Access tokens).
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform
+        type: choice
+        options: [ios, android, all]
+        default: ios
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eas-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: EXPO_TOKEN kontrolü
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::EXPO_TOKEN secret'ı yok. GitHub → Settings → Secrets and variables → Actions → New repository secret ile ekleyin."
+            exit 1
+          fi
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      # Derleme EAS bulutunda sürer (~15-25 dk); iş akışı sırada bekletmez, durum expo.dev'de izlenir
+      - name: Derle ve mağazaya gönder
+        env:
+          PLATFORM: ${{ inputs.platform }}
+        run: eas build --platform "$PLATFORM" --profile production --auto-submit --non-interactive --no-wait

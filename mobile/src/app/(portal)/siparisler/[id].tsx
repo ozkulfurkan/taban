@@ -13,8 +13,8 @@ export default function SiparisDetay() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const q = useApi<PortalOrder>(`/api/portal/me/orders/${id}`);
 
-  if (q.isLoading) return <Loading />;
-  if (q.error || !q.data) return <ErrorState message={(q.error as Error)?.message || 'Sipariş bulunamadı'} onRetry={() => { void q.refetch(); }} />;
+  if (q.isLoading) return <><Stack.Screen options={{ title: 'Sipariş' }} /><Loading /></>;
+  if (q.error || !q.data) return <><Stack.Screen options={{ title: 'Sipariş' }} /><ErrorState message={(q.error as Error)?.message || 'Sipariş bulunamadı'} onRetry={() => { void q.refetch(); }} /></>;
   const o = q.data;
   const current = stepIndex(o.status, o.unit);
   const steps = orderSteps(o.unit);
@@ -24,7 +24,7 @@ export default function SiparisDetay() {
 
   return (
     <>
-      <Stack.Screen options={{ title: o.orderNo, headerLargeTitle: false }} />
+      <Stack.Screen options={{ title: o.orderNo }} />
       <Screen refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }}>
         <Card style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -34,9 +34,9 @@ export default function AccountOperation() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  if (accounts.isLoading) return <Loading />;
+  if (accounts.isLoading) return <><Stack.Screen options={{ title: TITLE[kind] }} /><Loading /></>;
   const source = accounts.data?.find(a => a.id === params.id);
-  if (accounts.error || !source) return <ErrorState message={(accounts.error as Error)?.message || 'Hesap bulunamadı'} />;
+  if (accounts.error || !source) return <><Stack.Screen options={{ title: TITLE[kind] }} /><ErrorState message={(accounts.error as Error)?.message || 'Hesap bulunamadı'} /></>;
   const others = (accounts.data ?? []).filter(a => a.id !== source.id);
   const target = others.find(a => a.id === targetId) ?? null;
   const cross = kind === 'transfer' && !!target && target.currency !== source.currency;
@@ -73,7 +73,7 @@ export default function AccountOperation() {
 
   return (
     <>
-      <Stack.Screen options={{ title: TITLE[kind], headerLargeTitle: false }} />
+      <Stack.Screen options={{ title: TITLE[kind] }} />
       <Screen>
         <Card>
           <T variant="label">{kind === 'giris' ? 'Paranın girdiği hesap' : 'Paranın çıktığı hesap'}</T>

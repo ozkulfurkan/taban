@@ -55,8 +55,8 @@ export default function AccountDetail() {
     }).reverse();
   }, [q.data]);
 
-  if (q.isLoading) return <Loading />;
-  if (q.error || !q.data) return <ErrorState message={(q.error as Error)?.message || 'Hesap bulunamadı'} onRetry={() => { void q.refetch(); }} />;
+  if (q.isLoading) return <><Stack.Screen options={{ title: 'Hesap' }} /><Loading /></>;
+  if (q.error || !q.data) return <><Stack.Screen options={{ title: 'Hesap' }} /><ErrorState message={(q.error as Error)?.message || 'Hesap bulunamadı'} onRetry={() => { void q.refetch(); }} /></>;
   const a = q.data.account;
   const go = (type: 'giris' | 'cikis' | 'transfer') => router.push(`/hesaplar/islem?id=${a.id}&type=${type}`);
 
@@ -81,7 +81,7 @@ export default function AccountDetail() {
 
   return (
     <>
-      <Stack.Screen options={{ title: a.name, headerLargeTitle: false }} />
+      <Stack.Screen options={{ title: a.name }} />
       <Screen refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }}>
         <Card style={{ backgroundColor: c.strong, borderColor: c.strong }}>
           <T variant="small" color={c.strongText} style={{ opacity: 0.75 }}>{a.type} · {a.currency}</T>

@@ -28,8 +28,8 @@ export default function PartyDetail() {
   const linkSheet = useLinkSheet(k, id, party.data?.name ?? '', canWrite);
   const [list, setList] = useState<ListKey | null>(null);
 
-  if (party.isLoading) return <Loading />;
-  if (party.error || !party.data) return <ErrorState message={(party.error as Error)?.message || 'Cari bulunamadı'} onRetry={() => party.refetch()} />;
+  if (party.isLoading) return <><Stack.Screen options={{ title: k === 'customer' ? 'Müşteri' : 'Tedarikçi' }} /><Loading /></>;
+  if (party.error || !party.data) return <><Stack.Screen options={{ title: k === 'customer' ? 'Müşteri' : 'Tedarikçi' }} /><ErrorState message={(party.error as Error)?.message || 'Cari bulunamadı'} onRetry={() => party.refetch()} /></>;
   const p = party.data;
   const cur = p.currency || 'TRY';
   const docs = k === 'customer' ? (p.invoices ?? []) : (p.purchases ?? []).filter(d => !d.isReturn);
@@ -49,7 +49,7 @@ export default function PartyDetail() {
 
   return (
     <>
-      <Stack.Screen options={{ title: p.name, headerLargeTitle: false }} />
+      <Stack.Screen options={{ title: p.name }} />
       <Screen refreshing={party.isRefetching} onRefresh={() => { void party.refetch(); }}>
         <Card style={{ backgroundColor: c.strong, borderColor: c.strong }}>
           <T variant="small" color={c.strongText} style={{ opacity: 0.8 }}>Bakiye</T>

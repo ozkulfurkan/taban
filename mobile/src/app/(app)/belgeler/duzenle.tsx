@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 
 import { NewDocument, type EditDoc } from '@/components/new-document';
 import { ErrorState, Loading } from '@/components/ui';
@@ -29,8 +29,8 @@ export default function EditDocumentScreen() {
   const pur = useApi<Purchase>(purchase ? `/api/purchases/${id}` : null);
   const q = purchase ? pur : inv;
 
-  if (q.isLoading) return <Loading />;
-  if (q.error || !q.data) return <ErrorState message={(q.error as Error)?.message || 'Belge bulunamadı'} onRetry={() => { void q.refetch(); }} />;
+  if (q.isLoading) return <><Stack.Screen options={{ title: purchase ? 'Alış' : 'Satış' }} /><Loading /></>;
+  if (q.error || !q.data) return <><Stack.Screen options={{ title: purchase ? 'Alış' : 'Satış' }} /><ErrorState message={(q.error as Error)?.message || 'Belge bulunamadı'} onRetry={() => { void q.refetch(); }} /></>;
 
   let kind: DocKind;
   let edit: EditDoc;

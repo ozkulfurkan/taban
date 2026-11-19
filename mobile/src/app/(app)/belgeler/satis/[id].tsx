@@ -22,12 +22,12 @@ export default function InvoiceDetail() {
   const q = useApi<Invoice>(`/api/invoices/${id}`);
   // Cariler sekmesinden açıldıysa yeni belge de orada açılır (geri tuşu cariye döner)
   const inCariler = (useSegments() as string[]).includes('cariler');
-  if (q.isLoading) return <Loading />;
-  if (q.error || !q.data) return <ErrorState message={(q.error as Error)?.message || 'Belge bulunamadı'} onRetry={() => { void q.refetch(); }} />;
+  if (q.isLoading) return <><Stack.Screen options={{ title: 'Satış' }} /><Loading /></>;
+  if (q.error || !q.data) return <><Stack.Screen options={{ title: 'Satış' }} /><ErrorState message={(q.error as Error)?.message || 'Belge bulunamadı'} onRetry={() => { void q.refetch(); }} /></>;
   const inv = q.data;
   return (
     <>
-      <Stack.Screen options={{ title: inv.invoiceNo, headerLargeTitle: false }} />
+      <Stack.Screen options={{ title: inv.invoiceNo }} />
       <DocumentView
         refreshing={q.isRefetching}
         onRefresh={() => { void q.refetch(); }}

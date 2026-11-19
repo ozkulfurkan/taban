@@ -19,13 +19,13 @@ export default function PurchaseDetail() {
   const q = useApi<Purchase>(`/api/purchases/${id}`);
   // Cariler sekmesinden açıldıysa yeni belge de orada açılır (geri tuşu cariye döner)
   const inCariler = (useSegments() as string[]).includes('cariler');
-  if (q.isLoading) return <Loading />;
-  if (q.error || !q.data) return <ErrorState message={(q.error as Error)?.message || 'Belge bulunamadı'} onRetry={() => { void q.refetch(); }} />;
+  if (q.isLoading) return <><Stack.Screen options={{ title: 'Alış' }} /><Loading /></>;
+  if (q.error || !q.data) return <><Stack.Screen options={{ title: 'Alış' }} /><ErrorState message={(q.error as Error)?.message || 'Belge bulunamadı'} onRetry={() => { void q.refetch(); }} /></>;
   const p = q.data;
   const no = p.invoiceNo ?? 'Alış';
   return (
     <>
-      <Stack.Screen options={{ title: no, headerLargeTitle: false }} />
+      <Stack.Screen options={{ title: no }} />
       <DocumentView
         refreshing={q.isRefetching}
         onRefresh={() => { void q.refetch(); }}
