@@ -59,12 +59,9 @@ export default function Login() {
           <Pressable onPress={() => Linking.openURL(`${WEB_URL}/forgot-password`)} accessibilityRole="link">
             <T color={c.primary}>Şifremi unuttum</T>
           </Pressable>
+          {/* App Store 3.1.1: abonelik satılan siteye kayıt bağlantısı verilmez; yalnızca mevcut hesapla giriş */}
           {kind === 'staff' ? (
-            <Pressable onPress={() => Linking.openURL(WEB_URL)} accessibilityRole="link">
-              <T variant="small" style={{ textAlign: 'center' }}>
-                Hesabınız yok mu? <T variant="small" color={c.primary}>solecost.com</T> üzerinden oluşturabilirsiniz.
-              </T>
-            </Pressable>
+            <T variant="small" style={{ textAlign: 'center' }}>SoleCost firma hesabınızla giriş yapın.</T>
           ) : (
             <T variant="small" style={{ textAlign: 'center' }}>Portal hesabınızı çalıştığınız firma açar.</T>
           )}
