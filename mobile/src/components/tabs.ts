@@ -4,5 +4,6 @@ import type { IconName } from './icon';
 export const STAFF_TABS: { name: string; href: string; label: string; icon: IconName }[] = [
   { name: 'panel', href: '/panel', label: 'Panel', icon: 'home' },
   { name: 'cariler', href: '/cariler', label: 'Cariler', icon: 'people' },
+  { name: 'belgeler', href: '/belgeler', label: 'Belgeler', icon: 'doc' },
   { name: 'ayarlar', href: '/ayarlar', label: 'Ayarlar', icon: 'settings' },
 ];

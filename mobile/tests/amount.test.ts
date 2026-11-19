@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { formatAmountInput as f, parseAmountInput as p } from '../src/core/amount.ts';
+import { formatAmountInput as f, parseAmountInput as p } from '../src/core/amount';
 
 test('binlik ayırıcı yazarken eklenir', () => {
   assert.equal(f('3500'), '3.500');
