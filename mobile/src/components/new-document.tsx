@@ -119,7 +119,7 @@ export function NewDocument({ kind, initialPartyId, edit, onSaved }: {
 
   return (
     <>
-      <Stack.Screen options={{ title: edit ? EDIT_TITLE[kind] : DOC_TITLE[kind], headerLargeTitle: false }} />
+      <Stack.Screen options={{ title: edit ? EDIT_TITLE[kind] : DOC_TITLE[kind] }} />
       <Screen>
         <Card onPress={edit ? undefined : () => setPickingParty(true)} testID="doc-party">
           <T variant="label">{purchase ? 'Tedarikçi' : 'Müşteri'}</T>

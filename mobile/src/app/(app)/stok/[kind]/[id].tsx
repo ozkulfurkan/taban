@@ -31,16 +31,16 @@ export default function StockDetail() {
   const q = useApi<Ekstre>(`/api/${KIND_PATH[kind]}/${id}/ekstre`);
   const [adjust, setAdjust] = useState<AdjustMode | null>(null);
 
-  if (q.isLoading) return <Loading />;
+  if (q.isLoading) return <><Stack.Screen options={{ title: kind === 'product' ? 'Ürün' : 'Hammadde' }} /><Loading /></>;
   const head = q.data?.product ?? q.data?.material;
-  if (q.error || !head) return <ErrorState message={(q.error as Error)?.message || 'Kayıt bulunamadı'} onRetry={() => { void q.refetch(); }} />;
+  if (q.error || !head) return <><Stack.Screen options={{ title: kind === 'product' ? 'Ürün' : 'Hammadde' }} /><ErrorState message={(q.error as Error)?.message || 'Kayıt bulunamadı'} onRetry={() => { void q.refetch(); }} /></>;
   const unit = kind === 'product' ? (q.data!.product!.unit || 'çift') : 'kg';
   const item = { id: head.id, name: head.name, stock: head.stock, unit };
   const entries = q.data!.entries.slice(0, MAX_ROWS);
 
   return (
     <>
-      <Stack.Screen options={{ title: head.name, headerLargeTitle: false }} />
+      <Stack.Screen options={{ title: head.name }} />
       <Screen refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }}>
         <Card style={{ backgroundColor: c.strong, borderColor: c.strong }}>
           <T variant="small" color={c.strongText} style={{ opacity: 0.8 }}>{kind === 'product' ? 'Ürün stoku' : 'Hammadde stoku (ana depo)'}</T>

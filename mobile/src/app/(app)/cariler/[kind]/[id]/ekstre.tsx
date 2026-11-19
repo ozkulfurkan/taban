@@ -39,8 +39,8 @@ export default function Ekstre() {
     return m;
   }, [st.result]);
 
-  if (st.isLoading) return <Loading />;
-  if (st.error || !st.result || !st.party) return <ErrorState message={(st.error as Error)?.message || 'Ekstre yüklenemedi'} onRetry={() => st.refetch()} />;
+  if (st.isLoading) return <><Stack.Screen options={{ title: 'Ekstre' }} /><Loading /></>;
+  if (st.error || !st.result || !st.party) return <><Stack.Screen options={{ title: 'Ekstre' }} /><ErrorState message={(st.error as Error)?.message || 'Ekstre yüklenemedi'} onRetry={() => st.refetch()} /></>;
 
   const cur = st.party.currency || 'TRY';
   const { rows, totalBorc, totalAlacak, lastBalance } = st.result;
@@ -56,7 +56,7 @@ export default function Ekstre() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Ekstre', headerLargeTitle: false }} />
+      <Stack.Screen options={{ title: 'Ekstre' }} />
       <Screen refreshing={st.isRefetching} onRefresh={() => { void st.refetch(); }}>
         <T variant="heading">{st.party.name}</T>
         <Segmented

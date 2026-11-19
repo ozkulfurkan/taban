@@ -8,12 +8,14 @@ export function TabStack({ children }: { children?: ReactNode }) {
   return (
     <Stack
       screenOptions={{
-        headerLargeTitle: true,
+        // Kompakt başlık: büyük başlık + arama çubuğu iOS'ta listenin üstünde yüksek boşluk bırakıyordu
+        headerLargeTitle: false,
+        // Ekran kendi başlığını verene kadar rota adı ("cariler/[kind]/[id]/index") görünmesin
+        title: '',
         headerShadowVisible: false,
         headerStyle: { backgroundColor: c.background },
         headerTintColor: c.primary,
         headerTitleStyle: { color: c.text },
-        headerLargeTitleStyle: { color: c.text },
         headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: c.background },
       }}

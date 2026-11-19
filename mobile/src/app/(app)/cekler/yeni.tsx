@@ -83,7 +83,7 @@ export default function NewCek() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Müşteriden Çek', headerLargeTitle: false }} />
+      <Stack.Screen options={{ title: 'Müşteriden Çek' }} />
       <Screen>
         <Card onPress={() => setPicking(true)} testID="cek-customer">
           <T variant="label">Müşteri</T>
