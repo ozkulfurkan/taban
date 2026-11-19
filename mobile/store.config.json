@@ -1,34 +1,31 @@
 {
   "configVersion": 0,
   "apple": {
+    "version": "1.0.0",
     "copyright": "2026 SoleCost",
-    "categories": ["BUSINESS", "PRODUCTIVITY"],
-    "advisory": {
-      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
-      "contests": "NONE",
-      "gamblingSimulated": "NONE",
-      "horrorOrFearThemes": "NONE",
-      "matureOrSuggestiveThemes": "NONE",
-      "medicalOrTreatmentInformation": "NONE",
-      "profanityOrCrudeHumor": "NONE",
-      "sexualContentGraphicAndNudity": "NONE",
-      "sexualContentOrNudity": "NONE",
-      "violenceCartoonOrFantasy": "NONE",
-      "violenceRealistic": "NONE",
-      "violenceRealisticProlongedGraphicOrSadistic": "NONE",
-      "gambling": false,
-      "unrestrictedWebAccess": false,
-      "kidsAgeBand": null,
-      "ageRatingOverride": "NONE",
-      "koreaAgeRatingOverride": "NONE"
-    },
+    "categories": [
+      "BUSINESS",
+      "PRODUCTIVITY"
+    ],
     "info": {
       "tr": {
         "title": "SoleCost",
         "subtitle": "Taban üretimi: maliyet ve cari",
         "promoText": "Taban ve hammadde firmaları için sipariş, cari, çek ve kasa takibi cebinizde. Siparişler gelince anında bildirim.",
         "description": "SoleCost, ayakkabı tabanı üreticileri ve taban hammaddesi tedarikçileri için geliştirilmiş işletme yönetimi uygulamasıdır. solecost.com hesabınızla giriş yapın; web ile aynı veriler, aynı kurallar.\n\nCARİ HESAPLAR\n• Müşteri ve tedarikçi bakiyeleri, satışlar, iadeler ve ödemeler\n• Tarih aralıklı ekstre, PDF olarak paylaşma ve müşteriye ekstre linki gönderme\n• Tahsilat ve ödeme girişi; döviz hesaplarında kur ile çevirme\n\nSATIŞ VE ALIŞ\n• Satış faturası, müşteri iadesi, alış ve tedarikçiye iade\n• Müşteriye özel fiyatlar, iskonto ve KDV\n• Belgeleri düzenleme, silme ve PDF paylaşma\n\nSİPARİŞLER\n• Portal ve firma ağından gelen siparişler, elle sipariş girişi\n• Çift ürünlerde beden asortisi, kg / metre ürünlerde miktar\n• Durum takibi, sevkiyat ve gerçek sevk edilen miktar\n• Bekleyen siparişleri yazdırma ve PDF alma\n• Yeni sipariş ve durum değişikliğinde anlık bildirim\n\nFİRMA AĞI\n• SoleCost kullanan tedarikçinize firma koduyla bağlanın, kataloğundan doğrudan sipariş verin\n• Gelen bağlantı isteklerini onaylayın, siparişler müşteri kaydınıza düşsün\n\nÇEK VE KASA\n• Çek portföyü: vadesi geçen ve yaklaşan çekler, toplu bankaya verme, tahsil etme, tedarikçiye ciro\n• Seçilen çeklerin toplamı ve ortalama vadesi\n• Kasa ve banka hesapları, para girişi / çıkışı ve hesaplar arası transfer\n\nSTOK, PERSONEL VE RAPORLAR\n• Ürün ve hammadde stokları, stok düzeltme\n• Personel kartları ve hareketleri\n• Satış, alacak ve borç özetleri\n\nGÜVENLİK\n• Oturum cihazın güvenli deposunda saklanır\n• İsteğe bağlı Face ID / parmak izi kilidi\n• Kullanıcı rolleri ve sayfa izinleri web ile aynı\n\nSoleCost hesabı web sitesinden firma tarafından açılır. Müşteri portalı hesabını çalıştığınız firma oluşturur.",
-        "keywords": ["taban", "ayakkabı", "maliyet", "cari", "ekstre", "çek", "sipariş", "stok", "fatura", "hammadde", "muhasebe"],
+        "keywords": [
+          "taban",
+          "ayakkabı",
+          "maliyet",
+          "cari",
+          "ekstre",
+          "çek",
+          "sipariş",
+          "stok",
+          "fatura",
+          "hammadde",
+          "muhasebe"
+        ],
         "marketingUrl": "https://www.solecost.com",
         "supportUrl": "https://www.solecost.com/destek",
         "privacyPolicyUrl": "https://www.solecost.com/gizlilik"
