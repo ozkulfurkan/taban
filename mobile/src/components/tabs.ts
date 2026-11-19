@@ -5,5 +5,6 @@ export const STAFF_TABS: { name: string; href: string; label: string; icon: Icon
   { name: 'panel', href: '/panel', label: 'Panel', icon: 'home' },
   { name: 'cariler', href: '/cariler', label: 'Cariler', icon: 'people' },
   { name: 'belgeler', href: '/belgeler', label: 'Belgeler', icon: 'doc' },
+  { name: 'cekler', href: '/cekler', label: 'Çekler', icon: 'cheque' },
   { name: 'ayarlar', href: '/ayarlar', label: 'Ayarlar', icon: 'settings' },
 ];

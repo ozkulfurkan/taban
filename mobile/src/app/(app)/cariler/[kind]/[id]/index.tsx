@@ -61,6 +61,16 @@ export default function PartyDetail() {
               testID="party-new-doc"
             />
           ) : null}
+          {canWrite && k === 'customer' ? (
+            <Button
+              title="Çek al"
+              icon="cheque"
+              variant="secondary"
+              onPress={() => router.push(`/cekler/yeni?customerId=${id}`)}
+              style={styles.action}
+              testID="party-new-cek"
+            />
+          ) : null}
           <Button title="Ekstre" icon="doc" variant="secondary" onPress={() => router.push(`/cariler/${k}/${id}/ekstre`)} style={styles.action} />
           <Button title="Link Gönder" icon="link" variant="secondary" onPress={linkSheet.open} loading={linkSheet.busy} style={styles.action} testID="party-link" />
         </View>
