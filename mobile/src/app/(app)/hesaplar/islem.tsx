@@ -3,6 +3,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { DateField } from '@/components/date-field';
 import { Button, Card, ErrorState, Field, Loading, Screen, T } from '@/components/ui';
 import { formatAmountInput, parseAmountInput } from '@/core/amount';
 import { api } from '@/core/api';
@@ -46,7 +47,7 @@ export default function AccountOperation() {
   const save = async () => {
     setError('');
     if (!(amt > 0)) return setError('Tutar girin.');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Tarihi YYYY-AA-GG biçiminde girin.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Tarih seçin.');
     if (kind === 'transfer' && !target) return setError('Hedef hesabı seçin.');
     if (cross && !(tAmt > 0)) return setError(`Hedef hesaba geçecek ${target!.currency} tutarını girin.`);
     setSaving(true);
@@ -111,7 +112,7 @@ export default function AccountOperation() {
           <Field label={`Hedef hesaba geçen tutar (${target!.currency})`} value={targetAmount} onChangeText={v => setTargetAmount(formatAmountInput(v))}
             keyboardType="decimal-pad" placeholder="0,00" testID="op-target-amount" />
         ) : null}
-        <Field label="Tarih (YYYY-AA-GG)" value={date} onChangeText={setDate} autoCapitalize="none" />
+        <DateField label="Tarih" value={date} onChange={setDate} />
         <Field label="Açıklama" value={notes} onChangeText={setNotes} placeholder="İsteğe bağlı" multiline style={{ minHeight: 70, paddingTop: 12 }} />
 
         {error ? <T color={c.danger} testID="op-error">{error}</T> : null}

@@ -65,7 +65,7 @@ export default function Belgeler() {
       <Stack.Screen
         options={{
           title: tab === 'sale' ? 'Satışlar' : tab === 'return' ? 'İadeler' : 'Alışlar',
-          headerSearchBarOptions: { placeholder: 'Belge no ya da cari', onChangeText: e => setSearch(e.nativeEvent.text), hideWhenScrolling: false },
+          headerSearchBarOptions: { placeholder: 'Belge no ya da cari', onChangeText: e => setSearch(e.nativeEvent.text), hideWhenScrolling: false, placement: 'stacked' },
           headerRight: canWrite ? () => (
             <Pressable onPress={() => setNewOpen(true)} accessibilityRole="button" accessibilityLabel="Yeni belge" hitSlop={10} testID="doc-new">
               <Icon name="plus" size={24} color={c.primary} />

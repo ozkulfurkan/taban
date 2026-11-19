@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OrderDetailBody } from '@/components/order-detail';
 import { Sheet } from '@/components/sheet';
+import { DateField } from '@/components/date-field';
 import { Button, ErrorState, Field, Loading, Screen, T } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { formatAmountInput } from '@/core/amount';
@@ -120,7 +121,7 @@ function ShipModal({ order: o, onClose, onSaved }: { order: Incoming; onClose: (
 
   const save = async () => {
     setError('');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Sevk tarihini YYYY-AA-GG biçiminde girin.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Sevk tarihini seçin.');
     setSaving(true);
     try {
       await api(`/api/orders/${o.id}`, {
@@ -145,7 +146,7 @@ function ShipModal({ order: o, onClose, onSaved }: { order: Incoming; onClose: (
         <View style={[styles.sheet, { backgroundColor: c.card, paddingBottom: insets.bottom + Spacing.three }]} testID="ship-sheet">
           <T variant="heading">Sevkiyat</T>
           <ScrollView style={{ maxHeight: 520 }} contentContainerStyle={{ gap: Spacing.three }} keyboardShouldPersistTaps="handled">
-            <Field label="Sevk tarihi (YYYY-AA-GG)" value={date} onChangeText={setDate} autoCapitalize="none" testID="ship-date" />
+            <DateField label="Sevk tarihi" value={date} onChange={setDate} testID="ship-date" />
             <Field label="İrsaliye no" value={irsaliye} onChangeText={setIrsaliye} testID="ship-waybill" />
             <Field label="Taşıyıcı" value={carrier} onChangeText={setCarrier} />
             <T variant="label">Sevk edilen miktar (boş = sipariş miktarı)</T>

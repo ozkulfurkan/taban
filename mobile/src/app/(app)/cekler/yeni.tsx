@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Picker } from '@/components/picker';
+import { DateField } from '@/components/date-field';
 import { Button, Card, Field, Screen, T } from '@/components/ui';
 import { amountToInput, formatAmountInput, parseAmountInput } from '@/core/amount';
 import { api } from '@/core/api';
@@ -51,7 +52,7 @@ export default function NewCek() {
     setError('');
     if (!customerId || !customer.data) return setError('Müşteri seçin.');
     if (!(amount > 0)) return setError('Çek tutarını girin.');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(vadesi)) return setError('Vadeyi YYYY-AA-GG biçiminde girin.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(vadesi)) return setError('Vade tarihini seçin.');
     if (cross && !(customerAmount > 0)) return setError(`Müşteriye yansıyacak ${custCur} tutarını girin.`);
     setSaving(true);
     try {
@@ -117,7 +118,7 @@ export default function NewCek() {
               keyboardType="decimal-pad" placeholder="0,00" testID="cek-tutar" />
           </View>
           <View style={{ flex: 1 }}>
-            <Field label="Vade (YYYY-AA-GG)" value={vadesi} onChangeText={setVadesi} autoCapitalize="none" testID="cek-vade" />
+            <DateField label="Vade" value={vadesi} onChange={setVadesi} testID="cek-vade" />
           </View>
         </View>
         {cross ? (

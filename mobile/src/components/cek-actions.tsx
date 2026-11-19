@@ -13,6 +13,7 @@ import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
 import { round2 } from '@shared/money';
 import { Picker } from './picker';
+import { DateField } from './date-field';
 import { Button, Card, Field, T } from './ui';
 
 type Account = { id: string; name: string; type: string; currency: string };
@@ -63,7 +64,7 @@ export function CekActionModal({ action, cekler, onDone, onClose }: {
 
   const submit = async () => {
     setError('');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Tarihi YYYY-AA-GG biçiminde girin.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Tarih seçin.');
     if (action !== 'supplier' && !accountId) return setError('Hesap seçin.');
     if (action === 'supplier') {
       if (!supplier) return setError('Tedarikçi seçin.');
@@ -94,7 +95,7 @@ export function CekActionModal({ action, cekler, onDone, onClose }: {
           <T variant="heading">{TITLE[action]}</T>
           <View style={{ width: 52 }} />
         </View>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.body}>
+        <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" contentContainerStyle={styles.body}>
           <T variant="small">{cekler.length} çek seçildi</T>
 
           {action !== 'supplier' ? (
@@ -156,7 +157,7 @@ export function CekActionModal({ action, cekler, onDone, onClose }: {
             </Card>
           ) : null}
 
-          <Field label="Tarih (YYYY-AA-GG)" value={date} onChangeText={setDate} autoCapitalize="none" />
+          <DateField label="Tarih" value={date} onChange={setDate} />
           <Field label="Not" value={note} onChangeText={setNote} placeholder="İsteğe bağlı" />
           {error ? <T color={c.danger} testID="cek-action-error">{error}</T> : null}
           <Button title={TITLE[action]} onPress={submit} loading={saving} disabled={action === 'collect' && !cur} testID="cek-action-save" />

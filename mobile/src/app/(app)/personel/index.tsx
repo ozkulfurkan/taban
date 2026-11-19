@@ -31,7 +31,7 @@ export default function Personel() {
               <Icon name="plus" size={22} color={c.primary} />
             </Pressable>
           ) : undefined,
-          headerSearchBarOptions: { placeholder: 'Personel ara', onChangeText: e => setSearch(e.nativeEvent.text), hideWhenScrolling: false },
+          headerSearchBarOptions: { placeholder: 'Personel ara', onChangeText: e => setSearch(e.nativeEvent.text), hideWhenScrolling: false, placement: 'stacked' },
         }}
       />
       <FlatList

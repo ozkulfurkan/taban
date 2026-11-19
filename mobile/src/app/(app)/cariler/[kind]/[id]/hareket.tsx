@@ -3,6 +3,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { DateField } from '@/components/date-field';
 import { Button, Card, ErrorState, Field, Loading, Screen, T } from '@/components/ui';
 import { api } from '@/core/api';
 import { notify } from '@/core/dialog';
@@ -64,7 +65,7 @@ export default function Hareket() {
     if (!account) return setError('Kasa / banka hesabı seçin.');
     if (!(amt > 0)) return setError('Tutar girin.');
     if (cross && !(r > 0)) return setError('Kur girin.');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Tarihi YYYY-AA-GG biçiminde girin.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Tarih seçin.');
     setSaving(true);
     try {
       const rateNote = cross ? `${fmt(amt)} ${account.currency} | Kur: 1 ${cur} = ${rate} ${account.currency}` : '';
@@ -157,7 +158,7 @@ export default function Hareket() {
           </Card>
         ) : null}
 
-        <Field label="Tarih (YYYY-AA-GG)" value={date} onChangeText={setDate} autoCapitalize="none" />
+        <DateField label="Tarih" value={date} onChange={setDate} />
         <Field label="Açıklama" value={notes} onChangeText={setNotes} placeholder="İsteğe bağlı" multiline style={{ minHeight: 70, paddingTop: 12 }} />
 
         {error ? <T color={c.danger} testID="payment-error">{error}</T> : null}

@@ -4,6 +4,7 @@ import { useDeferredValue, useMemo, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DateField } from './date-field';
 import { Button, Empty, ErrorState, Field, ListRow, Loading, T } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { api } from '@/core/api';
@@ -66,7 +67,7 @@ export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKe
       <Stack.Screen
         options={{
           title,
-          headerSearchBarOptions: { placeholder: 'Model ara', onChangeText: e => setSearch(e.nativeEvent.text), hideWhenScrolling: false },
+          headerSearchBarOptions: { placeholder: 'Model ara', onChangeText: e => setSearch(e.nativeEvent.text), hideWhenScrolling: false, placement: 'stacked' },
         }}
       />
       <View style={{ flex: 1, backgroundColor: c.background }}>
@@ -238,7 +239,7 @@ function Checkout({ orderUrl, extraBody, items, onRemove, onClose, onSent }: {
 
   const send = async () => {
     setError('');
-    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Termini YYYY-AA-GG biçiminde girin ya da boş bırakın.');
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Termin tarihi geçersiz.');
     setSaving(true);
     try {
       const order = await api<{ id: string; orderNo: string }>(orderUrl, { method: 'POST', body: { ...orderBody(items, date, notes), ...extraBody } });
@@ -266,7 +267,7 @@ function Checkout({ orderUrl, extraBody, items, onRemove, onClose, onSent }: {
           </View>
         ))}
       </View>
-      <Field label="İstenen termin (YYYY-AA-GG)" value={date} onChangeText={setDate} placeholder="İsteğe bağlı" autoCapitalize="none" testID="checkout-date" />
+      <DateField label="İstenen termin" value={date} onChange={setDate} optional placeholder="İsteğe bağlı" minimumDate={new Date()} testID="checkout-date" />
       <Field label="Not" value={notes} onChangeText={setNotes} placeholder="İsteğe bağlı" multiline style={{ minHeight: 60, paddingTop: 12 }} testID="checkout-notes" />
       {error ? <T color={c.danger} testID="checkout-error">{error}</T> : null}
       <Button title={`Siparişi gönder · ${formatQty(total, items[0]?.unit)}`} onPress={send} loading={saving} testID="checkout-send" />

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import {
-  ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View,
+  ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View,
   type StyleProp, type TextInputProps, type TextStyle, type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,24 +31,28 @@ export function T({ variant = 'body', color, style, children, numberOfLines, tes
   );
 }
 
-/** Kaydırılabilir sayfa; çekip yenileme destekli */
+/** Kaydırılabilir sayfa; çekip yenileme destekli. Klavye açılınca odaktaki alan klavyenin üstüne kayar
+ * (iOS: kaydırma payı otomatik; Android: kenardan kenara düzende pencere küçülmediği için KeyboardAvoidingView). */
 export function Screen({ children, refreshing, onRefresh, scroll = true, padded = true, edges }: {
   children: ReactNode; refreshing?: boolean; onRefresh?: () => void; scroll?: boolean; padded?: boolean;
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
 }) {
   const c = useTheme();
   const inner = <View style={[styles.content, padded && styles.padded]}>{children}</View>;
+  const body = scroll ? (
+    <ScrollView
+      contentInsetAdjustmentBehavior="automatic"
+      automaticallyAdjustKeyboardInsets
+      keyboardDismissMode="interactive"
+      keyboardShouldPersistTaps="handled"
+      refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined}
+    >
+      {inner}
+    </ScrollView>
+  ) : inner;
   return (
     <SafeAreaView edges={edges ?? ['left', 'right']} style={{ flex: 1, backgroundColor: c.background }}>
-      {scroll ? (
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          keyboardShouldPersistTaps="handled"
-          refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined}
-        >
-          {inner}
-        </ScrollView>
-      ) : inner}
+      {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" style={{ flex: 1 }}>{body}</KeyboardAvoidingView> : body}
     </SafeAreaView>
   );
 }

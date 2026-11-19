@@ -43,7 +43,7 @@ export default function Stok() {
           headerSearchBarOptions: {
             placeholder: kind === 'product' ? 'Ürün ara' : 'Hammadde ara',
             onChangeText: e => setSearch(e.nativeEvent.text),
-            hideWhenScrolling: false,
+            hideWhenScrolling: false, placement: 'stacked',
           },
         }}
       />

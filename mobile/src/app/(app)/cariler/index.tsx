@@ -56,7 +56,7 @@ export default function Cariler() {
           headerSearchBarOptions: {
             placeholder: kind === 'customer' ? 'Müşteri ara' : 'Tedarikçi ara',
             onChangeText: e => setSearch(e.nativeEvent.text),
-            hideWhenScrolling: false,
+            hideWhenScrolling: false, placement: 'stacked',
           },
         }}
       />

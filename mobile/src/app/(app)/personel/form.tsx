@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
+import { DateField } from '@/components/date-field';
 import { Button, ErrorState, Field, Loading, Screen, Segmented, T } from '@/components/ui';
 import { amountToInput, formatAmountInput, parseAmountInput } from '@/core/amount';
 import { api } from '@/core/api';
@@ -36,7 +37,7 @@ function Form({ employee: e }: { employee: Employee | null }) {
   const save = async () => {
     setError('');
     if (!f.name.trim() || !f.department.trim() || !f.role.trim()) return setError('Ad, departman ve görev zorunlu.');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(f.hireDate)) return setError('İşe giriş tarihini YYYY-AA-GG biçiminde girin.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(f.hireDate)) return setError('İşe giriş tarihini seçin.');
     const payday = parseInt(f.payday, 10);
     if (!(payday >= 1 && payday <= 31)) return setError('Maaş günü 1–31 arasında olmalı.');
     const body = {
@@ -65,7 +66,7 @@ function Form({ employee: e }: { employee: Employee | null }) {
         <Field label="Maaş" value={f.salary} onChangeText={v => set('salary')(formatAmountInput(v))} keyboardType="decimal-pad" placeholder="0,00" testID="employee-salary" />
         <Segmented value={f.currency} onChange={set('currency')} options={['TRY', 'USD', 'EUR'].map(x => ({ value: x, label: x }))} />
         <Field label="Maaş günü (1–31)" value={f.payday} onChangeText={v => set('payday')(v.replace(/\D/g, '').slice(0, 2))} keyboardType="number-pad" />
-        <Field label="İşe giriş (YYYY-AA-GG)" value={f.hireDate} onChangeText={set('hireDate')} autoCapitalize="none" />
+        <DateField label="İşe giriş" value={f.hireDate} onChange={set('hireDate')} />
         <Field label="Telefon" value={f.phone} onChangeText={set('phone')} keyboardType="phone-pad" />
         <Field label="E-posta" value={f.email} onChangeText={set('email')} keyboardType="email-address" autoCapitalize="none" />
         <Field label="Notlar" value={f.notes} onChangeText={set('notes')} multiline style={{ minHeight: 60, paddingTop: 12 }} />

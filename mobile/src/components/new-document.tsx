@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from './icon';
 import { LineEditor, type Catalog } from './line-editor';
 import { Picker } from './picker';
+import { DateField } from './date-field';
 import { Button, Card, Field, Screen, Section, T } from './ui';
 import { api } from '@/core/api';
 import { confirm, notify } from '@/core/dialog';
@@ -93,8 +94,8 @@ export function NewDocument({ kind, initialPartyId, edit, onSaved }: {
   const save = async () => {
     setError('');
     if (!partyId || !party) return setError(purchase ? 'Tedarikçi seçin.' : 'Müşteri seçin.');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Tarihi YYYY-AA-GG biçiminde girin.');
-    if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return setError('Vade tarihini YYYY-AA-GG biçiminde girin.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Tarih seçin.');
+    if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return setError('Vade tarihi geçersiz.');
     const lineError = validateLines(kind, lines);
     if (lineError) return setError(lineError);
     setSaving(true);
@@ -130,11 +131,11 @@ export function NewDocument({ kind, initialPartyId, edit, onSaved }: {
 
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <Field label="Tarih" value={date} onChangeText={setDate} autoCapitalize="none" placeholder="YYYY-AA-GG" />
+            <DateField label="Tarih" value={date} onChange={setDate} />
           </View>
           {kind === 'sale' ? (
             <View style={{ flex: 1 }}>
-              <Field label="Vade" value={dueDate} onChangeText={setDueDate} autoCapitalize="none" placeholder="YYYY-AA-GG" />
+              <DateField label="Vade" value={dueDate} onChange={setDueDate} optional placeholder="İsteğe bağlı" />
             </View>
           ) : null}
         </View>

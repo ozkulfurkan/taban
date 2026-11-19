@@ -3,6 +3,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { DateField } from '@/components/date-field';
 import { Button, Card, ErrorState, Field, Loading, Screen, T } from '@/components/ui';
 import { formatAmountInput, parseAmountInput } from '@/core/amount';
 import { api } from '@/core/api';
@@ -39,7 +40,7 @@ export default function PersonelHareket() {
   const save = async () => {
     setError('');
     if (!(amt > 0)) return setError('Tutar girin.');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Tarihi YYYY-AA-GG biçiminde girin.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Tarih seçin.');
     if (cash && !accountId) return setError(`Ödemenin çıkacağı ${e.currency} kasa/banka hesabını seçin.`);
     const acc = usable.find(a => a.id === accountId);
     setSaving(true);
@@ -74,7 +75,7 @@ export default function PersonelHareket() {
             : type === 'Kesinti' ? 'Personelin hakedişinden düşülür.' : 'Personelin hak ettiği tutar; personele borcunuz artar.'}
         </T>
         <Field label={`Tutar (${e.currency})`} value={amount} onChangeText={v => setAmount(formatAmountInput(v))} keyboardType="decimal-pad" placeholder="0,00" testID="ledger-amount" />
-        <Field label="Tarih (YYYY-AA-GG)" value={date} onChangeText={setDate} autoCapitalize="none" />
+        <DateField label="Tarih" value={date} onChange={setDate} />
         <Field label="Açıklama" value={desc} onChangeText={setDesc} placeholder="İsteğe bağlı" />
         {cash ? (
           <View style={{ gap: 6 }}>

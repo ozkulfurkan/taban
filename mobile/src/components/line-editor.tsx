@@ -87,7 +87,7 @@ export function LineEditor({ kind, currency, initial, catalog, onSave, onClose }
           <T variant="heading">{initial ? 'Kalemi düzenle' : 'Kalem ekle'}</T>
           <Pressable onPress={save} hitSlop={12} accessibilityRole="button" testID="line-save-top"><T color={c.primary} style={{ fontWeight: '700' }}>Tamam</T></Pressable>
         </View>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.body}>
+        <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" contentContainerStyle={styles.body}>
           <Segmented
             value={line.type}
             onChange={t => setLine(l => ({ ...l, type: t, productId: undefined, materialId: undefined, code: undefined, description: t === 'free' ? l.description : '' }))}
