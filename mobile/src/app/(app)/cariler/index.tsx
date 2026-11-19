@@ -1,7 +1,10 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, Platform, RefreshControl, View } from 'react-native';
+import { FlatList, Platform, Pressable, RefreshControl, View } from 'react-native';
+
+import { Icon } from '@/components/icon';
+import { useCanWrite } from '@/core/auth';
 
 import { Empty, ErrorState, Field, ListRow, Loading, Segmented, T } from '@/components/ui';
 import { api } from '@/core/api';
@@ -15,6 +18,7 @@ type Kind = 'customer' | 'supplier';
 
 export default function Cariler() {
   const c = useTheme();
+  const canWrite = useCanWrite();
   const params = useLocalSearchParams<{ kind?: Kind }>();
   const [kind, setKind] = useState<Kind>(params.kind === 'supplier' ? 'supplier' : 'customer');
   const [search, setSearch] = useState('');
@@ -43,6 +47,12 @@ export default function Cariler() {
       <Stack.Screen
         options={{
           title: kind === 'customer' ? 'Müşteriler' : 'Tedarikçiler',
+          headerRight: canWrite ? () => (
+            <Pressable onPress={() => router.push(`/cariler/${kind}/form`)} hitSlop={10} accessibilityRole="button"
+              accessibilityLabel={kind === 'customer' ? 'Yeni müşteri' : 'Yeni tedarikçi'} testID="party-add">
+              <Icon name="plus" size={22} color={c.primary} />
+            </Pressable>
+          ) : undefined,
           headerSearchBarOptions: {
             placeholder: kind === 'customer' ? 'Müşteri ara' : 'Tedarikçi ara',
             onChangeText: e => setSearch(e.nativeEvent.text),

@@ -82,3 +82,17 @@ export function useCanWrite() {
   const { user } = useAuth();
   return user?.type === 'staff' && user.role !== 'VIEWER';
 }
+
+/** Web'deki sayfa izinleriyle aynı: sahip/yönetici her şeyi, diğerleri izin verilen sayfaları görür */
+export function useCanSee(page: string) {
+  const { user } = useAuth();
+  if (user?.type !== 'staff') return false;
+  if (user.role === 'ADMIN' || user.role === 'COMPANY_OWNER') return true;
+  return (user.allowedPages ?? []).includes(page);
+}
+
+/** Silme yalnızca firma sahibi/yöneticide (web ile aynı: düzenleyici silemez) */
+export function useCanDelete() {
+  const { user } = useAuth();
+  return user?.type === 'staff' && (user.role === 'ADMIN' || user.role === 'COMPANY_OWNER');
+}

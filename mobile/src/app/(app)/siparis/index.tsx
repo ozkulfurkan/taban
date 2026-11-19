@@ -1,0 +1,155 @@
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+
+import { Badge, Empty, ErrorState, Loading, Segmented, T } from '@/components/ui';
+import { formatDate } from '@/core/format';
+import { formatQty, statusLabel, statusTone, type PortalOrder } from '@/core/portal';
+import { useApi } from '@/core/query';
+import { useTheme } from '@/hooks/use-theme';
+
+type Side = 'gelen' | 'verilen';
+type Incoming = PortalOrder & {
+  customer?: { id: string; name: string } | null;
+  portalCustomer?: { email: string } | null;
+  link?: { buyerCompany?: { name: string } | null } | null;
+};
+type Outgoing = PortalOrder & { link?: { sellerCompany: { name: string } } | null };
+
+// Gelen: web "Gelen Siparişler" sekmeleri; Üretimde sekmesi kalıplama/boya/paketlemeyi de kapsar (sunucu)
+const IN_TABS = [
+  { key: 'ORDER_RECEIVED', label: 'Bekliyor' },
+  { key: 'IN_PRODUCTION', label: 'Üretimde' },
+  { key: 'READY_FOR_SHIPMENT', label: 'Hazır' },
+  { key: 'SHIPPED', label: 'Sevk' },
+  { key: 'CANCELLED', label: 'İptal' },
+  { key: 'ALL', label: 'Tümü' },
+] as const;
+const OUT_TABS = [
+  { key: 'active', label: 'Aktif' },
+  { key: 'shipped', label: 'Sevk edilen' },
+  { key: 'cancelled', label: 'İptal' },
+  { key: 'all', label: 'Tümü' },
+] as const;
+
+// Siparişler: müşterilerden gelen (portal, bağlı SoleCost firmaları, elle) ve tedarikçilere verilen
+export default function Siparisler() {
+  const params = useLocalSearchParams<{ side?: Side }>();
+  const [side, setSide] = useState<Side>(params.side === 'verilen' ? 'verilen' : 'gelen');
+  return (
+    <>
+      <Stack.Screen options={{ title: 'Siparişler' }} />
+      {side === 'gelen' ? <IncomingList header={<SideSwitch side={side} onChange={setSide} />} /> : <OutgoingList header={<SideSwitch side={side} onChange={setSide} />} />}
+    </>
+  );
+}
+
+function SideSwitch({ side, onChange }: { side: Side; onChange: (s: Side) => void }) {
+  return <Segmented value={side} onChange={onChange} options={[{ value: 'gelen', label: 'Gelen' }, { value: 'verilen', label: 'Verilen' }]} />;
+}
+
+function Chips<K extends string>({ tabs, value, onChange }: { tabs: readonly { key: K; label: string }[]; value: K; onChange: (k: K) => void }) {
+  const c = useTheme();
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+      {tabs.map(t => {
+        const on = t.key === value;
+        return (
+          <Pressable key={t.key} onPress={() => onChange(t.key)} accessibilityRole="tab" accessibilityState={{ selected: on }} testID={`order-tab-${t.key}`}
+            style={[styles.chip, { borderColor: on ? c.primary : c.border, backgroundColor: on ? c.primarySoft : c.card }]}>
+            <T color={on ? c.primary : c.text} style={{ fontWeight: '600' }}>{t.label}</T>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+function OrderRowView({ o, title, sub, onPress, testID }: { o: PortalOrder; title: string; sub: string; onPress: () => void; testID: string }) {
+  const c = useTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" testID={testID}
+      style={({ pressed }) => [styles.row, { backgroundColor: c.card, borderBottomColor: c.border }, pressed && { opacity: 0.6 }]}>
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <T style={{ fontWeight: '600' }} numberOfLines={1}>{title}</T>
+        <T variant="small" numberOfLines={1}>{sub}</T>
+      </View>
+      <View style={{ alignItems: 'flex-end', gap: 4 }}>
+        <T variant="money">{formatQty(o.totalQuantity, o.unit)}</T>
+        <Badge label={statusLabel(o.status, o.unit)} tone={statusTone(o.status)} />
+      </View>
+    </Pressable>
+  );
+}
+
+function IncomingList({ header }: { header: React.ReactNode }) {
+  const c = useTheme();
+  const [tab, setTab] = useState<(typeof IN_TABS)[number]['key']>('ORDER_RECEIVED');
+  const q = useApi<Incoming[]>('/api/orders', { status: tab, from: '2000-01-01' });
+  return (
+    <FlatList
+      contentInsetAdjustmentBehavior="automatic"
+      style={{ backgroundColor: c.background }}
+      data={q.isLoading || q.error ? [] : q.data ?? []}
+      keyExtractor={o => o.id}
+      ListHeaderComponent={<View style={{ padding: 16, gap: 12 }}>{header}<Chips tabs={IN_TABS} value={tab} onChange={setTab} /></View>}
+      ListEmptyComponent={q.isLoading ? <Loading /> : q.error
+        ? <ErrorState message={(q.error as Error).message} onRetry={() => { void q.refetch(); }} />
+        : <Empty message="Bu sekmede sipariş yok." />}
+      renderItem={({ item: o }) => {
+        const source = o.link ? `SoleCost · ${o.link.buyerCompany?.name ?? ''}` : o.portalCustomer ? 'Portal' : '';
+        return (
+          <OrderRowView
+            o={o}
+            testID={`in-order-${o.id}`}
+            title={`${o.orderNo} · ${o.customer?.name ?? '—'}`}
+            sub={[formatDate(o.createdAt), source].filter(Boolean).join(' · ')}
+            onPress={() => router.push(`/siparis/gelen/${o.id}`)}
+          />
+        );
+      }}
+      refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }} />}
+    />
+  );
+}
+
+function OutgoingList({ header }: { header: React.ReactNode }) {
+  const c = useTheme();
+  const [tab, setTab] = useState<(typeof OUT_TABS)[number]['key']>('active');
+  const q = useApi<Outgoing[]>('/api/network/orders');
+  const rows = (q.data ?? []).filter(o => tab === 'all' ? true : tab === 'shipped' ? o.status === 'SHIPPED'
+    : tab === 'cancelled' ? o.status === 'CANCELLED' : o.status !== 'SHIPPED' && o.status !== 'CANCELLED');
+  return (
+    <FlatList
+      contentInsetAdjustmentBehavior="automatic"
+      style={{ backgroundColor: c.background }}
+      data={q.isLoading || q.error ? [] : rows}
+      keyExtractor={o => o.id}
+      ListHeaderComponent={(
+        <View style={{ padding: 16, gap: 12 }}>
+          {header}
+          <Chips tabs={OUT_TABS} value={tab} onChange={setTab} />
+          <T variant="small">Yeni sipariş için bağlı tedarikçinin sayfasındaki &quot;Sipariş ver&quot; düğmesini kullanın.</T>
+        </View>
+      )}
+      ListEmptyComponent={q.isLoading ? <Loading /> : q.error
+        ? <ErrorState message={(q.error as Error).message} onRetry={() => { void q.refetch(); }} />
+        : <Empty message="Bu sekmede sipariş yok." />}
+      renderItem={({ item: o }) => (
+        <OrderRowView
+          o={o}
+          testID={`out-order-${o.id}`}
+          title={`${o.orderNo} · ${o.link?.sellerCompany.name ?? '—'}`}
+          sub={formatDate(o.createdAt)}
+          onPress={() => router.push(`/siparis/verilen/${o.id}`)}
+        />
+      )}
+      refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }} />}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  chip: { borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+});
