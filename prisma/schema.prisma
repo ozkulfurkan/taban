@@ -657,6 +657,10 @@ model OrderShipment {
   trackingNo     String?
   carrier        String?
   notes          String?
+  // Sevk edilen gerçek miktarlar (sipariş miktarından az/çok olabilir):
+  // [{ index, productId, productCode, productName, unit, ordered, shipped }]
+  items          Json?
+  totalQuantity  Float?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }

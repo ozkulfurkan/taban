@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Badge, Card, ErrorState, Loading, Screen, Section, T } from '@/components/ui';
 import { formatDate } from '@/core/format';
-import { formatQty, orderLines, orderSteps, sizeSummary, statusLabel, statusTone, stepIndex, type PortalOrder } from '@/core/portal';
+import { formatDiff, formatQty, orderLines, orderSteps, sizeSummary, statusLabel, statusTone, stepIndex, type PortalOrder } from '@/core/portal';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -84,6 +84,13 @@ export default function SiparisDetay() {
               {o.shipment.carrier ? <Info label="Taşıyıcı" value={o.shipment.carrier} /> : null}
               {o.shipment.trackingNo ? <Info label="Takip no" value={o.shipment.trackingNo} /> : null}
               {o.shipment.notes ? <Info label="Not" value={o.shipment.notes} /> : null}
+              {(o.shipment.items ?? []).map(i => (
+                <Info
+                  key={i.index}
+                  label={[i.productCode, i.productName].filter(Boolean).join(' ') || 'Ürün'}
+                  value={`${formatQty(i.shipped, i.unit)} sevk · sipariş ${formatQty(i.ordered, i.unit)}${formatDiff(i.ordered, i.shipped, i.unit) ? ` (${formatDiff(i.ordered, i.shipped, i.unit)})` : ''}`}
+                />
+              ))}
             </Card>
           </Section>
         ) : null}

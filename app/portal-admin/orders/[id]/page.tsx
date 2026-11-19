@@ -1,5 +1,7 @@
 'use client';
 
+import { shipLines } from '@/lib/shipment';
+import { ShipQtyInputs, ShippedTable } from '@/app/components/shipment-qty';
 import { formatQty } from '@/lib/order-units';
 import { orderSteps, statusLabel } from '@/lib/order-status';
 import { useEffect, useState } from 'react';
@@ -78,13 +80,14 @@ export default function PortalAdminOrderDetailPage() {
     loadOrder();
   };
 
+  const [shipQty, setShipQty] = useState<Record<number, string>>({});
   const handleShipment = async (e: React.FormEvent) => {
     e.preventDefault();
     setShipping(true);
     await fetch(`/api/portal/orders/${params?.id}/shipment`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(shipForm),
+      body: JSON.stringify({ ...shipForm, items: shipLines(order).map(l => ({ index: l.index, shipped: shipQty[l.index] ? Number(shipQty[l.index]) : undefined })) }),
     });
     setShipping(false);
     setShowShipForm(false);
@@ -192,6 +195,9 @@ export default function PortalAdminOrderDetailPage() {
               ))}
             </dl>
           )}
+          {order.shipment && !showShipForm && Array.isArray(order.shipment.items) && (
+            <div className="mt-4 pt-3 border-t border-slate-100"><ShippedTable items={order.shipment.items} /></div>
+          )}
           {showShipForm && (
             <form onSubmit={handleShipment} className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
@@ -206,6 +212,7 @@ export default function PortalAdminOrderDetailPage() {
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
               ))}
+              <div className="col-span-2"><ShipQtyInputs lines={shipLines(order)} value={shipQty} onChange={setShipQty} /></div>
               <div className="col-span-2">
                 <label className="block text-xs font-medium text-slate-500 mb-1">Not</label>
                 <input value={shipForm.notes} onChange={e => setShipForm(f => ({ ...f, notes: e.target.value }))}

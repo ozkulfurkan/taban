@@ -21,8 +21,9 @@ export default function OrderStepper({ status, unit }: { status: string; unit?: 
     <div className="w-full overflow-x-auto">
       <div className="flex items-center min-w-max px-2 py-4">
         {STEPS.map((step, i) => {
-          const done = i < currentIdx;
-          const active = i === currentIdx;
+          // Sevk edildi son adımdır: tamamlanmış gösterilir
+          const done = i < currentIdx || (status === 'SHIPPED' && i === currentIdx);
+          const active = i === currentIdx && !done;
           return (
             <div key={step.key} className="flex items-center">
               <div className="flex flex-col items-center">
