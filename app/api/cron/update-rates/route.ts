@@ -7,7 +7,8 @@ export async function GET(req: NextRequest) {
   // Vercel Cron Jobs sends Authorization: Bearer <CRON_SECRET>
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Secret tanımlı değilse uç kapalıdır (aksi halde herkes tüm firmaların kurlarını ezebilirdi)
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

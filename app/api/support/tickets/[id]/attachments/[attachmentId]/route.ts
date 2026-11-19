@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { attachmentHeaders } from '@/lib/safe-download';
 
 export async function GET(
   _: NextRequest,
@@ -26,11 +27,5 @@ export async function GET(
 
   if (!attachment) return new NextResponse('Not found', { status: 404 });
 
-  return new NextResponse(attachment.data, {
-    headers: {
-      'Content-Type': attachment.mimeType,
-      'Content-Disposition': `inline; filename="${attachment.name}"`,
-      'Cache-Control': 'private, max-age=3600',
-    },
-  });
+  return new NextResponse(attachment.data, { headers: attachmentHeaders(attachment.name, attachment.mimeType) });
 }

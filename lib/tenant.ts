@@ -68,6 +68,12 @@ export async function rejectForeignRefs(companyId: string, refs: Refs, db: any =
   return NextResponse.json({ error: `${LABELS[kind]} bulunamadı` }, { status: 404 });
 }
 
+// Sipariş/fatura parça hammadde seçimlerindeki (partVariantsData) hammadde kimlikleri
+export function partVariantMaterialIds(partVariantsData: unknown): string[] {
+  if (!Array.isArray(partVariantsData)) return [];
+  return partVariantsData.map((pv: any) => pv?.materialId).filter((id): id is string => typeof id === 'string' && id !== '');
+}
+
 // Bir nesneden sadece izin verilen alanları alır (toplu atamayı önler).
 export function pick<T extends Record<string, any>>(obj: T, keys: readonly string[]): Partial<T> {
   const out: Record<string, any> = {};

@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   const user = session.user as any;
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
-  const count = Math.max(1, parseInt(req.nextUrl.searchParams.get('count') ?? '1', 10));
+  const count = Math.min(1000, Math.max(1, parseInt(req.nextUrl.searchParams.get('count') ?? '1', 10) || 1));
   const date = todayKey();
 
   // Atomik: mevcut lastNumber'ı oku, N kadar ilerlet

@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
   }
 
   const user = session.user as any;
-  if (!user.companyId) {
-    return NextResponse.json({ error: 'No company access' }, { status: 403 });
+  if (user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const { email } = await req.json();

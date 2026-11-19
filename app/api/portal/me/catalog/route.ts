@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { portalCatalogWhere } from '@/lib/portal-public';
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -12,12 +13,7 @@ export async function GET() {
 
   const products = await prisma.product.findMany({
     where: {
-      companyId: user.companyId,
-      portalVisible: true,
-      OR: [
-        { portalCustomers: { none: {} } },
-        { portalCustomers: { some: { portalCustomerId: user.id } } },
-      ],
+      ...portalCatalogWhere(user),
     },
     select: {
       id: true, code: true, name: true, description: true, sizes: true, unit: true,

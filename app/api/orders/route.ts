@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
-import { rejectForeignRefs } from '@/lib/tenant';
+import { partVariantMaterialIds, rejectForeignRefs } from '@/lib/tenant';
 import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
 import { PRODUCTION_STATUSES } from '@/lib/order-status';
 import { normalizeOrderItems } from '@/lib/orders';
@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
   const foreign = await rejectForeignRefs(user.companyId, {
     customer: customerId,
     product: [productId, ...(Array.isArray(orderItems) ? orderItems.map((i: any) => i?.productId) : [])],
+    material: partVariantMaterialIds(partVariantsData),
   });
   if (foreign) return foreign;
 

@@ -43,11 +43,11 @@ export async function GET(req: NextRequest) {
 
   const [pvMaterials, packageProducts] = await Promise.all([
     allPvMatIds.size > 0
-      ? prisma.material.findMany({ where: { id: { in: Array.from(allPvMatIds) } }, select: { id: true, name: true, stock: true } })
+      ? prisma.material.findMany({ where: { id: { in: Array.from(allPvMatIds) }, companyId: user.companyId }, select: { id: true, name: true, stock: true } })
       : [],
     allPackageProductIds.size > 0
       ? prisma.product.findMany({
-          where: { id: { in: Array.from(allPackageProductIds) } },
+          where: { id: { in: Array.from(allPackageProductIds) }, companyId: user.companyId },
           include: { parts: { include: { material: { select: { id: true, name: true, stock: true } } } } },
         })
       : [],

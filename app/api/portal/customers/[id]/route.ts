@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { PORTAL_CUSTOMER_PUBLIC } from '@/lib/portal-public';
 import bcrypt from 'bcryptjs';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -21,9 +22,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const data: any = {};
   if (typeof isActive === 'boolean') data.isActive = isActive;
-  if (newPassword) data.password = await bcrypt.hash(newPassword, 12);
+  if (newPassword) {
+    data.password = await bcrypt.hash(newPassword, 12);
+    data.passwordChangedAt = new Date(); // açık oturumlar kapanır
+  }
 
-  const updated = await prisma.portalCustomer.update({ where: { id: params.id }, data });
+  const updated = await prisma.portalCustomer.update({ where: { id: params.id }, data, select: PORTAL_CUSTOMER_PUBLIC });
   return NextResponse.json(updated);
 }
 

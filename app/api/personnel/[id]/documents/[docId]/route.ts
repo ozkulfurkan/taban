@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { contentDisposition } from '@/lib/safe-download';
 
 type Params = { params: { id: string; docId: string } };
 
@@ -17,8 +18,9 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   return new NextResponse(doc.data, {
     headers: {
-      'Content-Type': doc.mimeType,
-      'Content-Disposition': `attachment; filename="${encodeURIComponent(doc.name)}"`,
+      'Content-Type': doc.mimeType || 'application/octet-stream',
+      'Content-Disposition': contentDisposition('attachment', doc.name),
+      'X-Content-Type-Options': 'nosniff',
       'Content-Length': String(doc.size),
     },
   });

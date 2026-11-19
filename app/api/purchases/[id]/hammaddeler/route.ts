@@ -112,9 +112,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { entryId, pricePerKg } = await req.json();
   if (!entryId) return NextResponse.json({ error: 'entryId gerekli' }, { status: 400 });
 
+  // Kalem bu alışa ait olmalı (başka firmanın alış kalemi güncellenemez)
+  const entry = await (prisma.purchaseMaterial as any).findFirst({ where: { id: entryId, purchaseId: params.id }, select: { id: true } });
+  if (!entry) return NextResponse.json({ error: 'Kalem bulunamadı' }, { status: 404 });
+
   await prisma.$transaction(async (tx) => {
     await (tx.purchaseMaterial as any).update({
-      where: { id: entryId },
+      where: { id: entry.id },
       data: { pricePerKg: pricePerKg != null ? parseFloat(pricePerKg) : null },
     });
     const all = await (tx.purchaseMaterial as any).findMany({ where: { purchaseId: params.id } });
