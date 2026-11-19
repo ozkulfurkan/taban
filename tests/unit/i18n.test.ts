@@ -17,7 +17,8 @@ function walk(dir: string): string[] {
 
 test('müşteri portalındaki her tp() metninin İngilizcesi var', () => {
   const missing: string[] = [];
-  for (const file of walk(path.join(process.cwd(), 'app/portal'))) {
+  // Portal ve firma ağının ortak katalog ekranı da portal metinlerini kullanır
+  for (const file of [...walk(path.join(process.cwd(), 'app/portal')), path.join(process.cwd(), 'app/components/order-catalog.tsx')]) {
     const src = fs.readFileSync(file, 'utf8');
     for (const m of Array.from(src.matchAll(/\btp\('((?:[^'\\]|\\.)*)'\)/g))) {
       const key = m[1].replace(/\\'/g, "'");

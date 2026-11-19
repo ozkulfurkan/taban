@@ -1,5 +1,6 @@
 'use client';
 
+import { formatQty } from '@/lib/order-units';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -110,7 +111,7 @@ export default function PortalDashboardPage() {
                   className="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors">
                   <div>
                     <p className="text-sm font-medium text-slate-800">{order.orderNo}</p>
-                    <p className="text-xs text-slate-400">{order.productCode || order.product?.name || '—'} · {order.totalQuantity} adet</p>
+                    <p className="text-xs text-slate-400">{order.productCode || order.product?.name || '—'} · {formatQty(order.totalQuantity, order.unit)}</p>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLOR[order.status] ?? 'bg-slate-100 text-slate-600'}`}>
                     {tp(STATUS_LABELS[order.status] ?? order.status)}

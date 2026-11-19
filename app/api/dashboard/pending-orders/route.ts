@@ -57,6 +57,7 @@ export async function GET() {
         productName: o.product?.name ?? o.productCode ?? '—',
         productCode: o.product?.code ?? o.productCode ?? null,
         totalQuantity: o.totalQuantity,
+        unit: (o as any).unit ?? null,
         dueDate: dueDate ? dueDate.toISOString() : null,
         status: o.status,
         isOverdue,

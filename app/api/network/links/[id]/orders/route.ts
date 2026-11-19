@@ -23,25 +23,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!itemsInCatalog(body?.orderItems, new Set(catalog.map(p => p.id)))) {
     return NextResponse.json({ error: 'Sepette katalogda olmayan ürün var' }, { status: 400 });
   }
-  // Ürün adı ve kodu satıcının kataloğundan alınır (istemciden gelen değer kullanılmaz)
-  const byId = new Map(catalog.map(p => [p.id, p]));
-  // Beden adetleri pozitif tam sayıya çevrilir, toplam sunucuda hesaplanır
-  const orderItems = (body.orderItems as any[]).map(i => {
-    const sizeDistribution: Record<string, number> = {};
-    for (const [size, qty] of Object.entries(i.sizeDistribution && typeof i.sizeDistribution === 'object' ? i.sizeDistribution : {})) {
-      const n = Math.floor(Number(qty));
-      if (Number.isFinite(n) && n > 0) sizeDistribution[String(size).slice(0, 10)] = n;
-    }
-    return {
-      productId: i.productId as string,
-      productCode: byId.get(i.productId)!.code ?? '',
-      productName: byId.get(i.productId)!.name,
-      color: typeof i.color === 'string' ? i.color.trim().slice(0, 100) : '',
-      sizeDistribution,
-      totalQuantity: Object.values(sizeDistribution).reduce((s, n) => s + n, 0),
-    };
-  });
-  if (orderItems.some(i => i.totalQuantity === 0)) return NextResponse.json({ error: 'Her kalemde en az 1 adet olmalı' }, { status: 400 });
+  // Kalemler createSoleOrder içinde ürün birimine göre doğrulanır (çift: beden asortisi, diğerleri: miktar);
+  // ürün adı, kodu ve birimi satıcının kayıtlarından alınır, toplam sunucuda hesaplanır.
+  const orderItems = body.orderItems as unknown[];
 
   const me = await prisma.user.findUnique({ where: { id: user.id }, select: { email: true, name: true } });
   const result = await createSoleOrder(

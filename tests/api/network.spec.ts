@@ -81,7 +81,7 @@ test('istek → onay → katalog → sipariş → durum takibi', async () => {
   // Katalog: yalnızca portalda açık ve kısıtsız ürün; fiyat ve firma kimliği yok
   const cat = await (await A.owner.get(`/api/network/links/${link.id}/catalog`)).json();
   expect(cat.products.map((p: any) => p.id)).toEqual([shown]);
-  expect(Object.keys(cat.products[0]).sort()).toEqual(['code', 'description', 'id', 'name', 'sizes']);
+  expect(Object.keys(cat.products[0]).sort()).toEqual(['code', 'description', 'id', 'name', 'sizes', 'unit']);
 
   // Katalog dışı ürün ve görüntüleyici reddedilir
   expect((await order(link.id, hidden)).status()).toBe(400);
@@ -145,4 +145,50 @@ test('kendi kodu, reddetme ve yanlış kod sınırı', async () => {
   expect(statuses.slice(0, 10).every(s => s === 404)).toBeTruthy();
   expect(statuses[10]).toBe(429);
   await prisma.loginAttempt.deleteMany({ where: { key: `link-code:${C.companyId}` } });
+});
+
+test('birime göre sipariş: kg miktarla, çift asortiyle; birim kuralları sunucuda', async () => {
+  const buyer = await createCompany('ag-birim-alici');
+  const seller = await createCompany('ag-birim-satici');
+  const code = (await (await seller.owner.get('/api/network/code')).json()).code;
+  const mk = (name: string, unit: string) => prisma.product.create({
+    data: { companyId: seller.companyId, name: `${name} ${RUN}`, code: name, unit, portalVisible: true, sizes: ['40'] },
+  });
+  const kg = await mk('PVC-GRANUL', 'kg');
+  const adet = await mk('KOLI', 'adet');
+  const taban = await mk('TABAN', 'çift');
+
+  const { link } = await (await buyer.owner.post('/api/network/links', { data: { code } })).json();
+  await seller.owner.post(`/api/network/links/${link.id}/approve`, { data: { createCustomer: true } });
+
+  const cat = await (await buyer.owner.get(`/api/network/links/${link.id}/catalog`)).json();
+  expect(Object.fromEntries(cat.products.map((p: any) => [p.code, p.unit]))).toEqual({ 'PVC-GRANUL': 'kg', KOLI: 'adet', TABAN: 'çift' });
+
+  const send = (orderItems: any[]) => buyer.owner.post(`/api/network/links/${link.id}/orders`, { data: { orderItems } });
+
+  // kg: ondalıklı miktar, beden yok, renk zorunlu değil
+  const ok = await send([{ productId: kg.id, quantity: 1250.5, sizeDistribution: { '40': 99 }, totalQuantity: 1 }]);
+  expect(ok.status(), await ok.text()).toBe(201);
+  const row = await prisma.soleOrder.findUnique({ where: { id: (await ok.json()).id } });
+  expect(row?.unit).toBe('kg');
+  expect(row?.totalQuantity).toBe(1250.5);
+  expect(row?.sizeDistribution).toEqual({});
+  expect((row?.orderItems as any[])[0]).toMatchObject({ unit: 'kg', quantity: 1250.5, totalQuantity: 1250.5, productName: `PVC-GRANUL ${RUN}` });
+  const mine = await (await buyer.owner.get(`/api/network/orders/${row!.id}`)).json();
+  expect(mine.unit).toBe('kg');
+
+  // Hatalı miktarlar ve karışık birim reddedilir
+  expect((await send([{ productId: kg.id, quantity: 0 }])).status()).toBe(400);
+  expect((await send([{ productId: adet.id, quantity: 2.5 }])).status()).toBe(400);
+  expect((await send([{ productId: taban.id, color: 'Siyah', sizeDistribution: {} }])).status()).toBe(400);
+  const mixed = await send([{ productId: kg.id, quantity: 5 }, { productId: taban.id, color: 'Siyah', sizeDistribution: { '40': 6 } }]);
+  expect(mixed.status()).toBe(400);
+  expect((await mixed.json()).error).toContain('ayrı siparişlerde');
+
+  // Çift: eskisi gibi asorti, birim alanı boş (çift)
+  const pair = await send([{ productId: taban.id, color: 'Siyah', sizeDistribution: { '40': 6 } }]);
+  const pairRow = await prisma.soleOrder.findUnique({ where: { id: (await pair.json()).id } });
+  expect(pairRow?.unit).toBeNull();
+  expect(pairRow?.totalQuantity).toBe(6);
+  await buyer.owner.dispose(); await seller.owner.dispose();
 });

@@ -1,5 +1,6 @@
 'use client';
 
+import { formatQty } from '@/lib/order-units';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
@@ -401,8 +402,8 @@ export default function OrdersPage() {
 
                       {/* Adet */}
                       <div className="text-sm font-semibold text-slate-700 text-right">
-                        {order.totalQuantity}
-                        <span className="text-xs font-normal text-slate-400 ml-0.5">çift</span>
+                        {formatQty(order.totalQuantity, order.unit).split(' ')[0]}
+                        <span className="text-xs font-normal text-slate-400 ml-0.5">{formatQty(0, order.unit).split(' ').slice(1).join(' ')}</span>
                       </div>
 
                       {/* Düzenle */}

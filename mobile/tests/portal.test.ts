@@ -19,7 +19,7 @@ test('sepet kalemi: renk ve en az 1 adet şart', () => {
   assert.equal(cartItem(p, 'Siyah', {}), 'En az 1 adet girin.');
   assert.deepEqual(cartItem(p, ' Siyah ', { '38': '12', '40': '24' }), {
     productId: 'p1', productCode: 'SC-100', productName: 'Termo Taban', color: 'Siyah',
-    sizeDistribution: { '38': 12, '40': 24 }, totalQuantity: 36,
+    sizeDistribution: { '38': 12, '40': 24 }, totalQuantity: 36, unit: 'çift',
   });
 });
 
@@ -37,4 +37,16 @@ test('tekli siparişte satır; beden özeti sayısal sırada; durum adımı', ()
   assert.equal(sizeSummary({ '40': 3, '39': 2, '41': 0 }), '39×2 · 40×3');
   assert.equal(stepIndex('MOLDING'), 2);
   assert.equal(stepIndex('YOK'), -1);
+});
+
+test('birime göre sepet kalemi: kg ondalıklı miktar, adet tam sayı, renk isteğe bağlı', () => {
+  const kg: CatalogProduct = { id: 'm1', code: 'PVC', name: 'PVC Granül', description: null, sizes: [], unit: 'kg' };
+  assert.deepEqual(cartItem(kg, '', {}, '1.250,5'), {
+    productId: 'm1', productCode: 'PVC', productName: 'PVC Granül', color: '', sizeDistribution: {},
+    totalQuantity: 1250.5, unit: 'kg', quantity: 1250.5,
+  });
+  assert.equal(cartItem(kg, '', {}, ''), 'Geçerli bir miktar girin (kg).');
+  const adet: CatalogProduct = { ...kg, id: 'a1', unit: 'adet' };
+  assert.equal(cartItem(adet, '', {}, '2,5'), 'Geçerli bir miktar girin (adet).');
+  assert.equal((cartItem(adet, 'Mavi', {}, '40') as any).totalQuantity, 40);
 });

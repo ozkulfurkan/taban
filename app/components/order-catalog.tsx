@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, Package, Plus, ShoppingCart, Trash2, Send, ChevronUp } from 'lucide-react';
 import { usePortalText } from '@/lib/i18n/portal';
 import DecimalInput from '@/app/components/decimal-input';
+import { cleanQuantity, formatQty, isPairUnit, orderUnit, unitDecimals } from '@/lib/order-units';
 
 interface Product {
   id: string;
@@ -11,6 +12,7 @@ interface Product {
   name: string;
   description: string | null;
   sizes: string[];
+  unit?: string | null;
 }
 
 interface CartItem {
@@ -22,6 +24,7 @@ interface CartItem {
   color: string;
   sizeDistribution: Record<string, number>;
   totalQuantity: number;
+  unit: string;
 }
 
 const ALL_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];
@@ -38,6 +41,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
   const [orderColor, setOrderColor] = useState('');
   const [orderSizes, setOrderSizes] = useState<Record<string, number>>({});
+  const [orderQty, setOrderQty] = useState('');
   const [formError, setFormError] = useState('');
 
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -60,6 +64,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
     setActiveProductId(product.id);
     setOrderColor('');
     setOrderSizes({});
+    setOrderQty('');
     setFormError('');
   };
 
@@ -69,6 +74,27 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
   };
 
   const addToCart = (product: Product) => {
+    const unit = orderUnit(product.unit);
+    // Sepette tek birim: farklı birimli ürünler ayrı siparişte gönderilir
+    if (cart.length && cart[0].unit !== unit) {
+      setFormError(`Sepette ${cart[0].unit} birimli ürün var. ${unit} birimli ürünü ayrı bir siparişte gönderin.`);
+      return;
+    }
+    if (!isPairUnit(unit)) {
+      // DecimalInput değeri noktalı ondalıkla tutar ("1250.5")
+      const qty = cleanQuantity(Number(orderQty), unit);
+      if (qty === null) {
+        setFormError(unitDecimals(unit) ? `Geçerli bir miktar girin (${unit}).` : `Tam sayı bir miktar girin (${unit}).`);
+        return;
+      }
+      setCart(prev => [...prev, {
+        cartId: Math.random().toString(36).slice(2),
+        productId: product.id, productCode: product.code || '', productName: product.name,
+        availableSizes: [], color: orderColor.trim(), sizeDistribution: {}, totalQuantity: qty, unit,
+      }]);
+      closeOrderForm();
+      return;
+    }
     if (!orderColor.trim()) { setFormError('Renk girmelisiniz.'); return; }
     const sizes = getProductSizes(product);
     const total = sizes.reduce((s, sz) => s + (Number(orderSizes[sz]) || 0), 0);
@@ -83,6 +109,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
       color: orderColor.trim(),
       sizeDistribution: { ...orderSizes },
       totalQuantity: total,
+      unit,
     }]);
     closeOrderForm();
   };
@@ -101,6 +128,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
         color: item.color,
         sizeDistribution: item.sizeDistribution,
         totalQuantity: item.totalQuantity,
+        ...(isPairUnit(item.unit) ? {} : { quantity: item.totalQuantity }),
       }));
       const res = await fetch(orderUrl, {
         method: 'POST',
@@ -141,6 +169,8 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
               const isActive = activeProductId === product.id;
               const sizes = getProductSizes(product);
               const formTotal = sizes.reduce((s, sz) => s + (Number(orderSizes[sz]) || 0), 0);
+              const unit = orderUnit(product.unit);
+              const pair = isPairUnit(unit);
 
               return (
                 <div key={product.id} className={`bg-white rounded-xl shadow-sm flex flex-col transition-all ${isActive ? 'ring-2 ring-blue-500' : ''}`}>
@@ -156,14 +186,18 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
                       </div>
                     </div>
 
-                    <div>
-                      <p className="text-xs text-slate-400 mb-1.5">{tp('Mevcut Numaralar')}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {sizes.map(sz => (
-                          <span key={sz} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-md">{sz}</span>
-                        ))}
+                    {pair ? (
+                      <div>
+                        <p className="text-xs text-slate-400 mb-1.5">{tp('Mevcut Numaralar')}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {sizes.map(sz => (
+                            <span key={sz} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-md">{sz}</span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <p className="text-xs text-slate-500">{tp('Birim')}: <span className="font-semibold text-slate-700" data-testid={`catalog-unit-${product.id}`}>{unit}</span></p>
+                    )}
 
                     <button
                       onClick={() => isActive ? closeOrderForm() : openOrderForm(product)}
@@ -182,7 +216,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
                   {isActive && (
                     <div className="px-5 pb-5 border-t border-slate-100 pt-4 space-y-4">
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">{tp('Renk *')}</label>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">{pair ? tp('Renk *') : tp('Renk / açıklama (isteğe bağlı)')}</label>
                         <input
                           value={orderColor}
                           onChange={e => { setOrderColor(e.target.value); setFormError(''); }}
@@ -192,6 +226,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
                         />
                       </div>
 
+                      {pair ? (
                       <div>
                         <label className="block text-xs font-medium text-slate-600 mb-2">{tp('Adet (Numaraya Göre)')}</label>
                         <div className="grid grid-cols-4 gap-1.5">
@@ -216,6 +251,22 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
                           <p className="text-xs text-blue-600 font-medium mt-2 text-right">{tp('Toplam')}: {formTotal} {tp('çift')}</p>
                         )}
                       </div>
+                      ) : (
+                        <div>
+                          <label className="block text-xs font-medium text-slate-600 mb-1">{tp('Miktar')} ({unit}) *</label>
+                          <div className="flex items-center gap-2">
+                            <DecimalInput
+                              value={orderQty}
+                              onChange={e => { setOrderQty(e.target.value); setFormError(''); }}
+                              integer={!unitDecimals(unit)}
+                              placeholder={unitDecimals(unit) ? '0,000' : '0'}
+                              data-testid={`catalog-qty-${product.id}`}
+                              className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                            <span className="text-sm font-semibold text-slate-600">{unit}</span>
+                          </div>
+                        </div>
+                      )}
 
                       {formError && <p className="text-xs text-red-600">{formError}</p>}
 
@@ -259,8 +310,9 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
                         {item.productCode && <span className="text-xs font-semibold text-blue-600 mr-1">{item.productCode}</span>}
                         <span className="font-medium text-slate-800">{item.productName}</span>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{item.color}</td>
+                      <td className="px-4 py-3 text-slate-600">{item.color || '—'}</td>
                       <td className="px-4 py-3">
+                        {!isPairUnit(item.unit) ? <span className="text-xs text-slate-500">—</span> : null}
                         <div className="flex flex-wrap gap-1">
                           {item.availableSizes
                             .filter(sz => (item.sizeDistribution[sz] || 0) > 0)
@@ -272,7 +324,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
                             ))}
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-bold text-slate-800 whitespace-nowrap">{item.totalQuantity} {tp('çift')}</td>
+                      <td className="px-4 py-3 font-bold text-slate-800 whitespace-nowrap">{formatQty(item.totalQuantity, item.unit)}</td>
                       <td className="px-4 py-3 text-right">
                         <button onClick={() => removeFromCart(item.cartId)}
                           className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors">
@@ -284,7 +336,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
                   <tr className="bg-slate-50">
                     <td colSpan={3} className="px-4 py-3 text-right text-sm font-semibold text-slate-600">{tp('Genel Toplam')}</td>
                     <td className="px-4 py-3 font-bold text-blue-700 whitespace-nowrap">
-                      {cart.reduce((s, i) => s + i.totalQuantity, 0)} {tp('çift')}
+                      {formatQty(cart.reduce((s, i) => s + i.totalQuantity, 0), cart[0]?.unit)}
                     </td>
                     <td />
                   </tr>

@@ -1,5 +1,6 @@
 'use client';
 
+import { formatQty } from '@/lib/order-units';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Loader2, Truck } from 'lucide-react';
@@ -35,7 +36,7 @@ export default function NetworkOrderDetailPage() {
         <BackLink href="/verilen-siparisler" label="Verilen Siparişler" />
         <div>
           <h1 className="text-xl font-bold text-slate-800" data-testid="network-order-no">{order.orderNo}</h1>
-          <p className="text-sm text-slate-500">{order.link?.sellerCompany?.name} · {fmt(order.createdAt)} · {order.totalQuantity} çift</p>
+          <p className="text-sm text-slate-500">{order.link?.sellerCompany?.name} · {fmt(order.createdAt)} · {formatQty(order.totalQuantity, order.unit)}</p>
         </div>
 
         <div className="bg-white rounded-xl p-5 shadow-sm overflow-x-auto">
@@ -61,7 +62,7 @@ export default function NetworkOrderDetailPage() {
                       ))}
                     </div>
                   </td>
-                  <td className="text-right font-bold text-slate-800">{it.totalQuantity}</td>
+                  <td className="text-right font-bold text-slate-800">{formatQty(it.totalQuantity, it.unit ?? order.unit)}</td>
                 </tr>
               ))}
             </tbody>

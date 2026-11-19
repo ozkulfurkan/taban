@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Badge, Card, ErrorState, Loading, Screen, Section, T } from '@/components/ui';
 import { formatDate } from '@/core/format';
-import { ORDER_STEPS, STATUS_LABEL, orderLines, sizeSummary, statusTone, stepIndex, type PortalOrder } from '@/core/portal';
+import { ORDER_STEPS, STATUS_LABEL, formatQty, orderLines, sizeSummary, statusTone, stepIndex, type PortalOrder } from '@/core/portal';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -26,7 +26,7 @@ export default function SiparisDetay() {
       <Screen refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }}>
         <Card style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <T variant="small">{formatDate(o.createdAt)} · {o.totalQuantity} çift</T>
+            <T variant="small">{formatDate(o.createdAt)} · {formatQty(o.totalQuantity, o.unit)}</T>
             <Badge label={STATUS_LABEL[o.status] ?? o.status} tone={statusTone(o.status)} />
           </View>
           <View style={{ gap: 0 }} testID="order-steps">
@@ -54,9 +54,9 @@ export default function SiparisDetay() {
                 <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                   <T style={{ fontWeight: '600' }} numberOfLines={1}>{[l.productCode, l.productName].filter(Boolean).join(' · ') || 'Model'}</T>
                   {l.color ? <T variant="small">Renk: {l.color}</T> : null}
-                  <T variant="small">{sizeSummary(l.sizeDistribution) || '—'}</T>
+                  {sizeSummary(l.sizeDistribution) ? <T variant="small">{sizeSummary(l.sizeDistribution)}</T> : null}
                 </View>
-                <T style={{ fontWeight: '700' }}>{l.totalQuantity}</T>
+                <T style={{ fontWeight: '700' }}>{formatQty(l.totalQuantity, l.unit ?? o.unit)}</T>
               </View>
             ))}
           </Card>

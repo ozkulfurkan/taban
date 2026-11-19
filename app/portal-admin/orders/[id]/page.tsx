@@ -1,5 +1,6 @@
 'use client';
 
+import { formatQty } from '@/lib/order-units';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
@@ -237,7 +238,7 @@ export default function PortalAdminOrderDetailPage() {
           <dl className="grid grid-cols-2 gap-3 text-sm mb-4">
             {[['Model', order.productCode || order.product?.name || '—'],
               ['Malzeme', order.material || '—'],
-              ['Toplam Adet', order.totalQuantity],
+              ['Toplam Miktar', formatQty(order.totalQuantity, order.unit)],
               ['Portal Kullanıcı', order.portalCustomer?.email || '—'],
             ].map(([k, v]) => (
               <div key={String(k)}>
@@ -277,7 +278,7 @@ export default function PortalAdminOrderDetailPage() {
                             ))}
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 font-semibold text-slate-800 whitespace-nowrap text-xs">{item.totalQuantity}</td>
+                      <td className="px-3 py-2.5 font-semibold text-slate-800 whitespace-nowrap text-xs">{formatQty(item.totalQuantity, item.unit ?? order.unit)}</td>
                       <td className="px-3 py-2.5">
                         <button
                           onClick={() => { setSubModalItem(item); setShowSubModal(true); }}
@@ -481,7 +482,7 @@ export default function PortalAdminOrderDetailPage() {
                               ))}
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-xs font-bold text-slate-800">{item.totalQuantity}</td>
+                        <td className="px-3 py-2 text-xs font-bold text-slate-800">{formatQty(item.totalQuantity, item.unit ?? order.unit)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -507,7 +508,7 @@ export default function PortalAdminOrderDetailPage() {
                       {Object.keys(order.sizeDistribution || {}).filter(sz => (order.sizeDistribution[sz] || 0) > 0).map(sz => (
                         <td key={sz} className="px-3 py-2.5 font-medium text-slate-800 border-r border-slate-200 last:border-0">{order.sizeDistribution[sz]}</td>
                       ))}
-                      <td className="px-3 py-2.5 font-bold text-blue-700 bg-blue-50">{order.totalQuantity}</td>
+                      <td className="px-3 py-2.5 font-bold text-blue-700 bg-blue-50">{formatQty(order.totalQuantity, order.unit)}</td>
                     </tr>
                   </tbody>
                 </table>

@@ -8,7 +8,8 @@ import { Button, Empty, ErrorState, Field, ListRow, Loading, T } from '@/compone
 import { Radius, Spacing } from '@/constants/theme';
 import { api } from '@/core/api';
 import { confirm, notify } from '@/core/dialog';
-import { cartItem, orderBody, sizeSummary, sizesOf, type CatalogProduct, type OrderItem } from '@/core/portal';
+import { cartItem, formatQty, isPairUnit, orderBody, orderUnit, sizeSummary, sizesOf, unitDecimals, type CatalogProduct, type OrderItem } from '@/core/portal';
+import { formatAmountInput } from '@/core/amount';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
 import { matchesText } from '@shared/search';
@@ -31,6 +32,7 @@ export default function Katalog() {
     [q.data, term],
   );
   const total = cart.reduce((s, i) => s + i.totalQuantity, 0);
+  const cartUnit = cart[0]?.unit;
 
   // Gönderilmemiş sepetle geri çıkılırsa onay iste
   const navigation = useNavigation();
@@ -73,8 +75,8 @@ export default function Katalog() {
                 <ListRow
                   testID={`catalog-${item.id}`}
                   title={item.code ? `${item.code} · ${item.name}` : item.name}
-                  subtitle={item.description || `Beden ${sizesOf(item)[0]}–${sizesOf(item).at(-1)}`}
-                  right={inCart ? `${inCart} çift` : undefined}
+                  subtitle={item.description || (isPairUnit(item.unit) ? `Beden ${sizesOf(item)[0]}–${sizesOf(item).at(-1)}` : `Birim: ${orderUnit(item.unit)}`)}
+                  right={inCart ? formatQty(inCart, item.unit) : undefined}
                   rightSub={inCart ? 'sepette' : undefined}
                   rightColor={c.primary}
                   onPress={() => setActive(item)}
@@ -87,7 +89,7 @@ export default function Katalog() {
         {cart.length ? (
           <View style={[styles.cartBar, { backgroundColor: c.card, borderTopColor: c.border, paddingBottom: insets.bottom + 12 }]}>
             <View style={{ flex: 1 }}>
-              <T style={{ fontWeight: '700' }} testID="cart-summary">{cart.length} kalem · {total} çift</T>
+              <T style={{ fontWeight: '700' }} testID="cart-summary">{cart.length} kalem · {formatQty(total, cartUnit)}</T>
               <T variant="small">Sepeti gözden geçirip gönderin</T>
             </View>
             <Button title="Sepet" icon="cart" onPress={() => setCheckout(true)} testID="cart-open" />
@@ -100,6 +102,7 @@ export default function Katalog() {
           key={active.id}
           product={active}
           onClose={() => setActive(null)}
+          cartUnit={cartUnit}
           onAdd={item => { setCart(cs => [...cs, { ...item, key: `${Date.now()}-${cs.length}` }]); setActive(null); }}
         />
       ) : null}
@@ -115,7 +118,7 @@ export default function Katalog() {
             setCart([]);
             await qc.invalidateQueries({ queryKey: ['/api/portal/me/orders'] });
             router.replace(`/siparisler/${order.id}`);
-            notify('Siparişiniz alındı', `${order.orderNo} · ${total} çift`);
+            notify('Siparişiniz alındı', `${order.orderNo} · ${formatQty(total, cartUnit)}`);
           }}
         />
       ) : null}
@@ -143,24 +146,29 @@ function BottomSheet({ title, subtitle, onClose, children, testID }: { title: st
   );
 }
 
-function AddToCart({ product, onAdd, onClose }: { product: CatalogProduct; onAdd: (i: OrderItem) => void; onClose: () => void }) {
+function AddToCart({ product, cartUnit, onAdd, onClose }: { product: CatalogProduct; cartUnit?: string; onAdd: (i: OrderItem) => void; onClose: () => void }) {
   const c = useTheme();
   const sizes = sizesOf(product);
+  const unit = orderUnit(product.unit);
+  const pair = isPairUnit(unit);
   const [color, setColor] = useState('');
   const [raw, setRaw] = useState<Record<string, string>>({});
+  const [qty, setQty] = useState('');
   const [error, setError] = useState('');
   const sum = sizes.reduce((s, sz) => s + (parseInt(raw[sz] || '0', 10) || 0), 0);
 
   const add = () => {
-    const r = cartItem(product, color, raw);
+    // Sepette tek birim: farklı birimli ürünler ayrı siparişte gönderilir
+    if (cartUnit && cartUnit !== unit) return setError(`Sepette ${cartUnit} birimli ürün var. ${unit} birimli ürünü ayrı bir siparişte gönderin.`);
+    const r = cartItem(product, color, raw, qty);
     if (typeof r === 'string') return setError(r);
     onAdd(r);
   };
 
   return (
     <BottomSheet title={product.code ? `${product.code} · ${product.name}` : product.name} subtitle={product.description || undefined} onClose={onClose} testID="add-to-cart">
-      <Field label="Renk" value={color} onChangeText={v => { setColor(v); setError(''); }} placeholder="örn. Siyah" testID="cart-color" />
-      <View style={{ gap: 6 }}>
+      <Field label={pair ? 'Renk' : 'Renk / açıklama (isteğe bağlı)'} value={color} onChangeText={v => { setColor(v); setError(''); }} placeholder="örn. Siyah" testID="cart-color" />
+      {pair ? <View style={{ gap: 6 }}>
         <T variant="label">Beden adetleri (çift)</T>
         <View style={styles.sizes}>
           {sizes.map(sz => (
@@ -179,9 +187,18 @@ function AddToCart({ product, onAdd, onClose }: { product: CatalogProduct; onAdd
             </View>
           ))}
         </View>
-      </View>
+      </View> : (
+        <Field
+          label={`Miktar (${unit})`}
+          value={qty}
+          onChangeText={v => { setQty(formatAmountInput(v, unitDecimals(unit))); setError(''); }}
+          keyboardType={unitDecimals(unit) ? 'decimal-pad' : 'number-pad'}
+          placeholder="0"
+          testID="cart-qty"
+        />
+      )}
       {error ? <T color={c.danger} testID="cart-error">{error}</T> : null}
-      <Button title={sum ? `Sepete ekle · ${sum} çift` : 'Sepete ekle'} icon="plus" onPress={add} testID="cart-add" />
+      <Button title={pair ? (sum ? `Sepete ekle · ${sum} çift` : 'Sepete ekle') : 'Sepete ekle'} icon="plus" onPress={add} testID="cart-add" />
     </BottomSheet>
   );
 }
@@ -212,15 +229,15 @@ function Checkout({ items, onRemove, onClose, onSent }: {
   };
 
   return (
-    <BottomSheet title="Sepet" subtitle={`${items.length} kalem · ${total} çift`} onClose={onClose} testID="checkout">
+    <BottomSheet title="Sepet" subtitle={`${items.length} kalem · ${formatQty(total, items[0]?.unit)}`} onClose={onClose} testID="checkout">
       <View style={[styles.box, { borderColor: c.border }]}>
         {items.map((i, idx) => (
           <View key={i.key} style={[styles.cartRow, idx > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }]}>
             <View style={{ flex: 1, minWidth: 0 }}>
-              <T style={{ fontWeight: '600' }} numberOfLines={1}>{i.productCode || i.productName} · {i.color}</T>
-              <T variant="small" numberOfLines={2}>{sizeSummary(i.sizeDistribution)}</T>
+              <T style={{ fontWeight: '600' }} numberOfLines={1}>{[i.productCode || i.productName, i.color].filter(Boolean).join(' · ')}</T>
+              {isPairUnit(i.unit) ? <T variant="small" numberOfLines={2}>{sizeSummary(i.sizeDistribution)}</T> : null}
             </View>
-            <T style={{ fontWeight: '700' }}>{i.totalQuantity}</T>
+            <T style={{ fontWeight: '700' }}>{formatQty(i.totalQuantity, i.unit)}</T>
             <Pressable onPress={() => onRemove(i.key)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Kalemi sil" testID={`cart-remove-${idx}`}>
               <T color={c.danger}>Sil</T>
             </Pressable>
@@ -230,7 +247,7 @@ function Checkout({ items, onRemove, onClose, onSent }: {
       <Field label="İstenen termin (YYYY-AA-GG)" value={date} onChangeText={setDate} placeholder="İsteğe bağlı" autoCapitalize="none" testID="checkout-date" />
       <Field label="Not" value={notes} onChangeText={setNotes} placeholder="İsteğe bağlı" multiline style={{ minHeight: 60, paddingTop: 12 }} testID="checkout-notes" />
       {error ? <T color={c.danger} testID="checkout-error">{error}</T> : null}
-      <Button title={`Siparişi gönder · ${total} çift`} onPress={send} loading={saving} testID="checkout-send" />
+      <Button title={`Siparişi gönder · ${formatQty(total, items[0]?.unit)}`} onPress={send} loading={saving} testID="checkout-send" />
     </BottomSheet>
   );
 }

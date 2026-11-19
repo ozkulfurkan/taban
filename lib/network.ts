@@ -75,14 +75,14 @@ export async function sellerCatalog(link: { sellerCompanyId: string; sellerCusto
         ...(portal ? [{ portalCustomers: { some: { portalCustomerId: portal.id } } }] : []),
       ],
     },
-    select: { id: true, code: true, name: true, description: true, sizes: true },
+    select: { id: true, code: true, name: true, description: true, sizes: true, unit: true },
     orderBy: { name: 'asc' },
   });
 }
 
 /** Alıcıya gösterilen sipariş alanları (satıcının iç kayıt kimlikleri dönmez) */
 export const BUYER_ORDER_SELECT = {
-  id: true, orderNo: true, status: true, createdAt: true, totalQuantity: true,
+  id: true, orderNo: true, status: true, createdAt: true, totalQuantity: true, unit: true,
   productCode: true, color: true, material: true, notes: true,
   sizeDistribution: true, orderItems: true, colorPartials: true,
   requestedDeliveryDate: true, confirmedDeliveryDate: true,

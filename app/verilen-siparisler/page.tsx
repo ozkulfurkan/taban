@@ -1,5 +1,6 @@
 'use client';
 
+import { formatQty } from '@/lib/order-units';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -8,7 +9,7 @@ import AppShell from '@/app/components/app-shell';
 import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR } from '@/lib/order-status';
 
 type Order = {
-  id: string; orderNo: string; status: string; createdAt: string; totalQuantity: number;
+  id: string; orderNo: string; status: string; createdAt: string; totalQuantity: number; unit: string | null;
   requestedDeliveryDate: string | null; confirmedDeliveryDate: string | null; linkId: string | null;
   orderItems: { productCode?: string; productName?: string }[] | null; productCode: string | null;
   link: { sellerCompany: { name: string } } | null;
@@ -68,7 +69,7 @@ export default function NetworkOrdersPage() {
                       </td>
                       <td className="px-4 py-3 text-slate-700">{o.link?.sellerCompany.name ?? '—'}</td>
                       <td className="px-4 py-3 text-slate-600">{items.length > 1 ? `${items.length} model` : (items[0]?.productCode || items[0]?.productName || o.productCode || '—')}</td>
-                      <td className="px-4 py-3 font-semibold text-slate-800">{o.totalQuantity}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-800">{formatQty(o.totalQuantity, o.unit)}</td>
                       <td className="px-4 py-3 text-slate-600">{fmt(o.confirmedDeliveryDate ?? o.requestedDeliveryDate)}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ORDER_STATUS_COLOR[o.status] ?? 'bg-slate-100 text-slate-600'}`}>{ORDER_STATUS_LABEL[o.status] ?? o.status}</span>
