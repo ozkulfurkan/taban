@@ -2,6 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { Stack, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CekActionModal } from '@/components/cek-actions';
 import { Icon } from '@/components/icon';
@@ -35,6 +36,7 @@ export default function Cekler() {
   const [action, setAction] = useState<{ kind: BulkAction; cekler: Cek[] } | null>(null);
   const [detail, setDetail] = useState<Cek | null>(null);
   const rates = useApi<{ usd: number; eur: number }>('/api/exchange-rates');
+  const insets = useSafeAreaInsets();
 
   const q = useInfiniteQuery({
     queryKey: ['cekler', durum, vade],
@@ -57,6 +59,55 @@ export default function Cekler() {
   const clearSel = () => { setSelected({}); setSelecting(false); };
   const changeTab = (k: string) => { setDurum(k); clearSel(); };
 
+  const list = (
+    <FlatList
+      contentInsetAdjustmentBehavior="automatic"
+      style={{ backgroundColor: c.background }}
+      contentContainerStyle={{ paddingBottom: sel.length ? 260 : 24 }}
+      data={q.isLoading || q.error ? [] : rows}
+      keyExtractor={r => r.id}
+      ListHeaderComponent={
+        <View style={{ gap: 12, paddingVertical: 12 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+            {TABS.map(t => <Chip key={t.key} label={t.label} on={durum === t.key} onPress={() => changeTab(t.key)} />)}
+          </ScrollView>
+          <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16 }}>
+            <Chip label="Vadesi geçmiş" on={vade === 'overdue'} tone="danger" onPress={() => setVade(v => (v === 'overdue' ? '' : 'overdue'))} />
+            <Chip label="Bu hafta" on={vade === 'week'} tone="warning" onPress={() => setVade(v => (v === 'week' ? '' : 'week'))} />
+          </View>
+          {totals.length ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+              {totals.map(t => (
+                <Card key={t.currency} style={{ minWidth: 150, gap: 2, paddingVertical: 10 }} testID={`cek-total-${t.currency}`}>
+                  <T variant="small">{t.count} çek · {t.currency}</T>
+                  <T variant="money">{money(t.total, t.currency)}</T>
+                  {t.avgVadeMs ? <T variant="small">Ort. vade {formatDate(t.avgVadeMs)}</T> : null}
+                </Card>
+              ))}
+            </ScrollView>
+          ) : null}
+        </View>
+      }
+      ListEmptyComponent={
+        q.isLoading ? <Loading /> : q.error
+          ? <ErrorState message={(q.error as Error).message} onRetry={() => { void q.refetch(); }} />
+          : <Empty message="Bu filtrede çek yok." />
+      }
+      renderItem={({ item }) => (
+        <CekRow
+          cek={item}
+          selecting={selecting}
+          checked={!!selected[item.id]}
+          onPress={() => (selecting ? toggle(item) : setDetail(item))}
+          onLongPress={canWrite ? () => { setSelecting(true); toggle(item); } : undefined}
+        />
+      )}
+      onEndReachedThreshold={0.4}
+      onEndReached={() => { if (q.hasNextPage && !q.isFetchingNextPage) void q.fetchNextPage(); }}
+      refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }} />}
+    />
+  );
+
   return (
     <>
       <Stack.Screen
@@ -74,63 +125,31 @@ export default function Cekler() {
           ) : undefined,
         }}
       />
-      <FlatList
-        contentInsetAdjustmentBehavior="automatic"
-        style={{ backgroundColor: c.background }}
-        contentContainerStyle={{ paddingBottom: sel.length ? 160 : 24 }}
-        data={q.isLoading || q.error ? [] : rows}
-        keyExtractor={r => r.id}
-        ListHeaderComponent={
-          <View style={{ gap: 12, paddingVertical: 12 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-              {TABS.map(t => <Chip key={t.key} label={t.label} on={durum === t.key} onPress={() => changeTab(t.key)} />)}
-            </ScrollView>
-            <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16 }}>
-              <Chip label="Vadesi geçmiş" on={vade === 'overdue'} tone="danger" onPress={() => setVade(v => (v === 'overdue' ? '' : 'overdue'))} />
-              <Chip label="Bu hafta" on={vade === 'week'} tone="warning" onPress={() => setVade(v => (v === 'week' ? '' : 'week'))} />
-            </View>
-            {totals.length ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-                {totals.map(t => (
-                  <Card key={t.currency} style={{ minWidth: 150, gap: 2, paddingVertical: 10 }} testID={`cek-total-${t.currency}`}>
-                    <T variant="small">{t.count} çek · {t.currency}</T>
-                    <T variant="money">{money(t.total, t.currency)}</T>
-                    {t.avgVadeMs ? <T variant="small">Ort. vade {formatDate(t.avgVadeMs)}</T> : null}
-                  </Card>
-                ))}
-              </ScrollView>
-            ) : null}
-          </View>
-        }
-        ListEmptyComponent={
-          q.isLoading ? <Loading /> : q.error
-            ? <ErrorState message={(q.error as Error).message} onRetry={() => { void q.refetch(); }} />
-            : <Empty message="Bu filtrede çek yok." />
-        }
-        renderItem={({ item }) => (
-          <CekRow
-            cek={item}
-            selecting={selecting}
-            checked={!!selected[item.id]}
-            onPress={() => (selecting ? toggle(item) : setDetail(item))}
-            onLongPress={canWrite ? () => { setSelecting(true); toggle(item); } : undefined}
-          />
-        )}
-        onEndReachedThreshold={0.4}
-        onEndReached={() => { if (q.hasNextPage && !q.isFetchingNextPage) void q.fetchNextPage(); }}
-        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }} />}
-      />
 
+      {list}
+
+      {/* Seçim çubuğu ekranın altında (alt sekme yok); telefonun alt güvenli alanı kadar boşluk bırakılır */}
       {sel.length ? (
-        <View style={[styles.bar, { backgroundColor: c.card, borderTopColor: c.border }]} testID="cek-selection">
+        <View style={[styles.bar, { backgroundColor: c.card, borderTopColor: c.border, paddingBottom: insets.bottom + 12 }]} testID="cek-selection">
           <View style={styles.between}>
             <T style={{ fontWeight: '700' }}>{sel.length} çek seçildi</T>
             <Pressable onPress={clearSel} hitSlop={8} accessibilityRole="button"><T color={c.primary}>Temizle</T></Pressable>
           </View>
-          <T variant="small" testID="cek-selection-summary">
-            {totalsByCurrency(sel).map(t => money(t.total, t.currency)).join(' + ')}
-            {avg ? ` · Ort. vade ${formatDate(avg.date)} (${avg.days >= 0 ? `${avg.days} gün` : `${-avg.days} gün geçti`})` : ''}
-          </T>
+          <View style={styles.between} testID="cek-selection-summary">
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <T variant="small">Toplam tutar</T>
+              {totalsByCurrency(sel).map(t => (
+                <T key={t.currency} variant="money" style={{ fontSize: 17 }} testID={`cek-selection-total-${t.currency}`}>{money(t.total, t.currency)}</T>
+              ))}
+            </View>
+            {avg ? (
+              <View style={{ alignItems: 'flex-end' }}>
+                <T variant="small">Ortalama vade</T>
+                <T style={{ fontWeight: '700', fontSize: 17 }} testID="cek-selection-avg">{formatDate(avg.date)}</T>
+                <T variant="small" color={avg.days < 0 ? c.danger : undefined}>{avg.days >= 0 ? `${avg.days} gün kaldı` : `${-avg.days} gün geçti`}</T>
+              </View>
+            ) : null}
+          </View>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {acts.bank ? <Button title="Bankaya" variant="secondary" onPress={() => setAction({ kind: 'bank', cekler: sel })} style={{ flex: 1 }} testID="cek-act-bank" /> : null}
             {acts.supplier ? <Button title="Tedarikçiye" variant="secondary" onPress={() => setAction({ kind: 'supplier', cekler: sel })} style={{ flex: 1 }} testID="cek-act-supplier" /> : null}
@@ -145,6 +164,7 @@ export default function Cekler() {
       ) : null}
 
       <Sheet
+        placement="top"
         visible={!!detail}
         onClose={() => setDetail(null)}
         title={detail ? `${detail.borclu} · ${money(detail.tutar, detail.currency)}` : ''}
@@ -227,6 +247,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   check: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   chip: { borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
-  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, gap: 8, borderTopWidth: StyleSheet.hairlineWidth },
+  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, gap: 10, borderTopWidth: StyleSheet.hairlineWidth },
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 });

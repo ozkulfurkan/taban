@@ -1,20 +1,24 @@
-import { router } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
+import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { api } from '@/core/api';
 import { useAuth, useCanWrite } from '@/core/auth';
-import { notify } from '@/core/dialog';
+import { confirm, notify } from '@/core/dialog';
 import { shareDocumentPdf, type PdfDoc } from '@/core/document-pdf';
 import { formatDate, money } from '@/core/format';
 import { useTheme } from '@/hooks/use-theme';
 import { Badge, Button, Card, Screen, Section, T } from './ui';
 
 export type DocView = PdfDoc & {
-  partyHref: string;
+  partyHref: Href;
   status?: { label: string; tone: 'success' | 'warning' | 'neutral' | 'danger' };
   paid?: number;
   /** Aynı cari için yeni belge (örn. satıştan iade) */
-  followUp?: { label: string; href: string };
+  followUp?: { label: string; href: Href };
+  /** Düzenleme ekranı ve silme adresi (stok ve cari bakiyesi sunucuda geri alınır) */
+  manage?: { editHref: Href; deletePath: string };
 };
 
 /** Satış, iade ve alış belgelerinin ortak detay görünümü */
@@ -24,6 +28,25 @@ export function DocumentView({ doc, refreshing, onRefresh }: { doc: DocView; ref
   const canWrite = useCanWrite();
   const [busy, setBusy] = useState(false);
   const companyName = user?.type === 'staff' ? user.companyName : null;
+
+  const [deleting, setDeleting] = useState(false);
+  const qc = useQueryClient();
+
+  const remove = async () => {
+    if (!doc.manage) return;
+    if (!(await confirm(`${doc.title} silinsin mi?`, `${doc.number} · ${money(doc.total, doc.currency)}\nStok ve cari bakiyesi geri alınır. Bu işlem geri alınamaz.`, 'Sil', true))) return;
+    setDeleting(true);
+    try {
+      await api(doc.manage.deletePath, { method: 'DELETE' });
+      await qc.invalidateQueries();
+      router.back();
+      notify(`${doc.number} silindi`);
+    } catch (e: any) {
+      notify('Silinemedi', e?.message || '');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const pdf = async () => {
     setBusy(true);
@@ -86,7 +109,12 @@ export function DocumentView({ doc, refreshing, onRefresh }: { doc: DocView; ref
           <Button title={doc.followUp.label} icon="plus" variant="secondary" onPress={() => router.push(doc.followUp!.href)} style={{ flex: 1 }} />
         ) : null}
       </View>
-      <T variant="small" style={{ textAlign: 'center' }}>Belgeyi düzenlemek ve silmek web uygulamasından yapılır.</T>
+      {canWrite && doc.manage ? (
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Button title="Düzenle" icon="edit" variant="secondary" onPress={() => router.push(doc.manage!.editHref)} style={{ flex: 1 }} testID="doc-edit" />
+          <Button title="Sil" icon="trash" variant="danger" onPress={remove} loading={deleting} style={{ flex: 1 }} testID="doc-delete" />
+        </View>
+      ) : null}
     </Screen>
   );
 }

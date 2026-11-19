@@ -1,8 +1,11 @@
-import { Stack } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { router, type Href } from 'expo-router';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Badge, Card, ErrorState, ListRow, Loading, Screen, Section, T } from '@/components/ui';
-import { useAuth } from '@/core/auth';
+import { Icon, type IconName } from '@/components/icon';
+import { Card, T } from '@/components/ui';
+import { Spacing } from '@/constants/theme';
+import { useAuth, useCanWrite } from '@/core/auth';
 import { formatDate, money } from '@/core/format';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
@@ -15,83 +18,151 @@ type Dashboard = {
   negativeStock: { materials: unknown[]; products: unknown[] };
 };
 
-export default function Panel() {
+type Tone = 'primary' | 'success' | 'warning' | 'danger' | 'neutral';
+type Tile = { label: string; icon: IconName; href: Href; tone: Tone; write?: boolean; testID: string };
+
+// Ana menü: yeni modül eklemek / çıkarmak için bu listeyi düzenlemek yeterli
+const TILES: Tile[] = [
+  { label: 'Müşteriler', icon: 'people', href: '/cariler?kind=customer', tone: 'primary', testID: 'home-customers' },
+  { label: 'Tedarikçiler', icon: 'truck', href: '/cariler?kind=supplier', tone: 'primary', testID: 'home-suppliers' },
+  { label: 'Yeni Satış', icon: 'newDoc', href: '/belgeler/yeni?kind=sale', tone: 'success', write: true, testID: 'home-new-sale' },
+  { label: 'Satışlar', icon: 'doc', href: '/belgeler?tab=sale', tone: 'success', testID: 'home-sales' },
+  { label: 'Alışlar', icon: 'cart', href: '/belgeler?tab=purchase', tone: 'warning', testID: 'home-purchases' },
+  { label: 'İadeler', icon: 'undo', href: '/belgeler?tab=return', tone: 'danger', testID: 'home-returns' },
+  { label: 'Çekler', icon: 'cheque', href: '/cekler', tone: 'success', testID: 'home-cekler' },
+  { label: 'Kasa & Banka', icon: 'bank', href: '/hesaplar', tone: 'primary', testID: 'home-accounts' },
+  { label: 'Ayarlar', icon: 'settings', href: '/ayarlar', tone: 'neutral', testID: 'home-settings' },
+];
+
+export default function Home() {
   const c = useTheme();
   const { user } = useAuth();
+  const canWrite = useCanWrite();
+  // Panel izni olmayan kullanıcıda özet 403 döner; menü yine de çalışır
   const q = useApi<Dashboard>('/api/dashboard');
+  const d = q.data;
   const companyName = user?.type === 'staff' ? user.companyName : null;
+  const tiles = TILES.filter(t => !t.write || canWrite);
+  const tones: Record<Tone, { fg: string; bg: string }> = {
+    primary: { fg: c.primary, bg: c.primarySoft },
+    success: { fg: c.success, bg: c.successSoft },
+    warning: { fg: c.warning, bg: c.warningSoft },
+    danger: { fg: c.danger, bg: c.dangerSoft },
+    neutral: { fg: c.textSecondary, bg: c.border },
+  };
+  const negative = d ? d.negativeStock.materials.length + d.negativeStock.products.length : 0;
 
   return (
-    <>
-      <Stack.Screen options={{ title: 'Panel' }} />
-      {q.isLoading ? <Loading /> : q.error ? (
-        <ErrorState message={(q.error as Error).message} onRetry={() => q.refetch()} />
-      ) : (
-        <Screen refreshing={q.isRefetching} onRefresh={() => q.refetch()}>
-          {companyName ? <T variant="small">{companyName}</T> : null}
-
-          <View style={styles.grid}>
-            <Stat label="Bugünkü satış" value={money(q.data!.dailyCiro)} />
-            <Stat label="Bu ay satış" value={money(q.data!.monthlyCiro)} />
-            <Stat label="Toplam alacak" value={money(q.data!.totalReceivables)} tone="success" />
-            <Stat label="Toplam borç" value={money(q.data!.totalPayables)} tone="danger" />
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: c.background }}>
+      <ScrollView
+        contentContainerStyle={styles.page}
+        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }} />}
+      >
+        <View style={styles.head}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <T variant="small">{user?.name ? `Merhaba, ${user.name}` : 'Hoş geldiniz'}</T>
+            <T variant="title" numberOfLines={1} testID="home-company">{companyName || 'SoleCost'}</T>
           </View>
-          <T variant="small">Döviz tutarları firmanın kayıtlı kuruyla TL karşılığına çevrilmiştir.</T>
+          <Pressable onPress={() => router.push('/ayarlar')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ayarlar"
+            style={[styles.round, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Icon name="settings" size={20} color={c.text} />
+          </Pressable>
+        </View>
 
-          <Section title="Varlıklar">
-            <Card style={{ padding: 0, gap: 0 }}>
-              <ListRow title="Kasa" right={money(q.data!.assets.kasa)} />
-              <ListRow title="Banka / POS" right={money(q.data!.assets.pos)} />
-              <ListRow title="Portföydeki çekler" right={money(q.data!.assets.cek)} />
-              <ListRow title="Stok değeri" right={money(q.data!.assets.stok)} />
-            </Card>
-          </Section>
+        {d ? (
+          <Card style={{ backgroundColor: c.strong, borderColor: c.strong, gap: Spacing.three }} testID="home-summary">
+            <View>
+              <T variant="small" color={c.strongText} style={{ opacity: 0.75 }}>Toplam alacak</T>
+              <T variant="moneyLarge" color={c.strongText} fit>{money(d.totalReceivables)}</T>
+            </View>
+            <View style={styles.summaryRow}>
+              <Summary label="Bu ay satış" value={money(d.monthlyCiro)} />
+              <Summary label="Toplam borç" value={money(d.totalPayables)} />
+              <Summary label="Kasa + banka" value={money(d.assets.kasa + d.assets.pos)} />
+            </View>
+          </Card>
+        ) : null}
 
-          <Section title="Vadesi yaklaşan çekler (30 gün)">
+        <View style={styles.grid}>
+          {tiles.map(t => {
+            const tone = tones[t.tone];
+            return (
+              <Pressable
+                key={t.label}
+                onPress={() => router.push(t.href)}
+                accessibilityRole="button"
+                accessibilityLabel={t.label}
+                testID={t.testID}
+                style={({ pressed }) => [styles.tile, { backgroundColor: c.card, borderColor: c.border }, pressed && { opacity: 0.7, transform: [{ scale: 0.97 }] }]}
+              >
+                <View style={[styles.tileIcon, { backgroundColor: tone.bg }]}>
+                  <Icon name={t.icon} size={26} color={tone.fg} />
+                </View>
+                <T style={styles.tileLabel} numberOfLines={2}>{t.label}</T>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {d && d.upcomingChecks.length ? (
+          <View style={{ gap: Spacing.two }}>
+            <View style={styles.sectionHead}>
+              <T variant="label" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Vadesi yaklaşan çekler</T>
+              <Pressable onPress={() => router.push('/cekler')} hitSlop={8} accessibilityRole="link"><T color={c.primary}>Tümü</T></Pressable>
+            </View>
             <Card style={{ padding: 0, gap: 0 }}>
-              {q.data!.upcomingChecks.length === 0 ? (
-                <View style={{ padding: 16 }}><T variant="small">Önümüzdeki 30 günde vadesi gelen çek yok.</T></View>
-              ) : q.data!.upcomingChecks.map(ch => {
-                const d = daysToVade(ch.vadesi);
+              {d.upcomingChecks.slice(0, 5).map((ch, i) => {
+                const days = daysToVade(ch.vadesi);
                 return (
-                  <ListRow
-                    key={ch.id}
-                    title={ch.customer?.name || ch.borclu}
-                    subtitle={`Vade ${formatDate(ch.vadesi)} · ${d === 0 ? 'bugün' : `${d} gün`}`}
-                    right={money(ch.tutar, ch.currency)}
-                    rightColor={d <= 7 ? c.warning : undefined}
-                  />
+                  <View key={ch.id} style={[styles.cekRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }]}>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <T style={{ fontWeight: '600' }} numberOfLines={1}>{ch.customer?.name || ch.borclu}</T>
+                      <T variant="small" color={days <= 7 ? c.warning : undefined}>
+                        Vade {formatDate(ch.vadesi)} · {days === 0 ? 'bugün' : `${days} gün`}
+                      </T>
+                    </View>
+                    <T variant="money">{money(ch.tutar, ch.currency)}</T>
+                  </View>
                 );
               })}
             </Card>
-          </Section>
+          </View>
+        ) : null}
 
-          {(q.data!.negativeStock.materials.length + q.data!.negativeStock.products.length) > 0 ? (
-            <Card>
-              <Badge label="Uyarı" tone="warning" />
-              <T>
-                {q.data!.negativeStock.materials.length + q.data!.negativeStock.products.length} kalemde stok eksiye düşmüş.
-              </T>
-            </Card>
-          ) : null}
-        </Screen>
-      )}
-    </>
+        {negative > 0 ? (
+          <Card style={{ backgroundColor: c.warningSoft, borderColor: c.warningSoft, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Icon name="alert" color={c.warning} />
+            <T style={{ flex: 1 }}>{negative} kalemde stok eksiye düşmüş.</T>
+          </Card>
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: 'success' | 'danger' }) {
+function Summary({ label, value }: { label: string; value: string }) {
   const c = useTheme();
-  const color = tone === 'success' ? c.success : tone === 'danger' ? c.danger : c.text;
   return (
-    <Card style={styles.stat}>
-      <T variant="small">{label}</T>
-      <T variant="money" color={color} style={{ fontSize: 17 }} fit>{value}</T>
-    </Card>
+    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+      <T variant="small" color={c.strongText} style={{ opacity: 0.75 }} numberOfLines={1}>{label}</T>
+      <T variant="money" color={c.strongText} fit style={{ fontSize: 14 }}>{value}</T>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  page: { padding: Spacing.three, gap: Spacing.four, paddingBottom: Spacing.six, width: '100%', maxWidth: 720, alignSelf: 'center' },
+  head: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  round: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth },
+  summaryRow: { flexDirection: 'row', gap: Spacing.three },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  stat: { flexGrow: 1, flexBasis: '45%', gap: 4 },
+  tile: {
+    // 3 sütun: (100% - 2 boşluk) / 3
+    flexBasis: '30%', flexGrow: 1, maxWidth: '32%', aspectRatio: 1,
+    borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 8,
+  },
+  tileIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  tileLabel: { fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cekRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
 });

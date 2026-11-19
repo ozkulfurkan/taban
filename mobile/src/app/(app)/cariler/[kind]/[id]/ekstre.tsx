@@ -11,7 +11,7 @@ import { shareStatementPdf, useStatement, type PartyKind } from '@/core/statemen
 import { useTheme } from '@/hooks/use-theme';
 import type { StatementRow } from '@shared/statement-rows';
 
-type Range = '3' | '6' | '12' | 'year';
+type Range = '1' | '3' | '6' | '12' | 'year';
 function rangeFrom(r: Range) {
   const d = new Date();
   if (r === 'year') return `${d.getFullYear()}-01-01`;
@@ -24,7 +24,7 @@ export default function Ekstre() {
   const { user } = useAuth();
   const { kind, id } = useLocalSearchParams<{ kind: PartyKind; id: string }>();
   const k: PartyKind = kind === 'supplier' ? 'supplier' : 'customer';
-  const [range, setRange] = useState<Range>('12');
+  const [range, setRange] = useState<Range>('1');
   const from = rangeFrom(range);
   const to = isoDay();
   const st = useStatement(k, id, from, to);
@@ -62,7 +62,7 @@ export default function Ekstre() {
         <Segmented
           value={range}
           onChange={setRange}
-          options={[{ value: '3', label: '3 ay' }, { value: '6', label: '6 ay' }, { value: '12', label: '12 ay' }, { value: 'year', label: 'Bu yıl' }]}
+          options={[{ value: '1', label: '1 ay' }, { value: '3', label: '3 ay' },{ value: '6', label: '6 ay' }, { value: '12', label: '12 ay' }, { value: 'year', label: 'Bu yıl' }]}
         />
         <T variant="small">{formatDate(from)} – {formatDate(to)}</T>
 

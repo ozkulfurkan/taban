@@ -4,7 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
-import { formatAmountInput, parseAmountInput } from '@/core/amount';
+import { amountToInput, formatAmountInput, parseAmountInput } from '@/core/amount';
 import { api } from '@/core/api';
 import { bulkBody, singleCurrency, suggestedSupplierAmounts, type BulkAction, type Cek } from '@/core/cek';
 import { notify } from '@/core/dialog';
@@ -56,7 +56,7 @@ export function CekActionModal({ action, cekler, onDone, onClose }: {
   const amountText = (id: string) => {
     if (edits[id] !== undefined) return edits[id];
     const v = suggested[id];
-    return v == null ? '' : formatAmountInput(String(v));
+    return v == null ? '' : amountToInput(v);
   };
   const amounts: Record<string, number> = Object.fromEntries(cekler.map(ch => [ch.id, parseAmountInput(amountText(ch.id))]));
   const supplierTotal = round2(Object.values(amounts).reduce((s, v) => s + v, 0));

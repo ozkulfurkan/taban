@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Picker } from '@/components/picker';
 import { Button, Card, Field, Screen, T } from '@/components/ui';
-import { formatAmountInput, parseAmountInput } from '@/core/amount';
+import { amountToInput, formatAmountInput, parseAmountInput } from '@/core/amount';
 import { api } from '@/core/api';
 import { notify } from '@/core/dialog';
 import { isoDay, money } from '@/core/format';
@@ -44,7 +44,7 @@ export default function NewCek() {
   const amount = parseAmountInput(tutar);
   // Müşteriye yansıyacak tutar: TCMB kuruyla önerilir, düzenlenebilir
   const suggested = cross && amount > 0 && rates.data ? convertAmount(amount, cur, custCur, rates.data) : null;
-  const customerAmountText = customerAmountEdit ?? (suggested != null ? formatAmountInput(String(round2(suggested))) : '');
+  const customerAmountText = customerAmountEdit ?? (suggested != null ? amountToInput(suggested) : '');
   const customerAmount = parseAmountInput(customerAmountText);
 
   const save = async () => {
@@ -83,7 +83,7 @@ export default function NewCek() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Müşteriden Çek', headerLargeTitle: false, presentation: 'modal' }} />
+      <Stack.Screen options={{ title: 'Müşteriden Çek', headerLargeTitle: false }} />
       <Screen>
         <Card onPress={() => setPicking(true)} testID="cek-customer">
           <T variant="label">Müşteri</T>

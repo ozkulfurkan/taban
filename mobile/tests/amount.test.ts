@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { formatAmountInput as f, parseAmountInput as p } from '../src/core/amount';
+import { amountToInput as n2i, formatAmountInput as f, parseAmountInput as p } from '../src/core/amount';
+
+test('kayıtlı sayı alana doğru çevrilir (nokta binlik sanılmaz)', () => {
+  assert.equal(n2i(0.1234, 4), '0,1234');
+  assert.equal(p(n2i(0.1234, 4)), 0.1234);
+  assert.equal(n2i(12.345, 4), '12,345');
+  assert.equal(n2i(1250.5), '1.250,5');
+  assert.equal(n2i(3500), '3.500');
+  assert.equal(n2i(0.0285, 4), '0,0285');
+  assert.equal(n2i(1.005, 2), '1');
+  assert.equal(n2i(null), '');
+});
 
 test('binlik ayırıcı yazarken eklenir', () => {
   assert.equal(f('3500'), '3.500');

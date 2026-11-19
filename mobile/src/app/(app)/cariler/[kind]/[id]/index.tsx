@@ -1,15 +1,23 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 
 import { Button, Card, ErrorState, ListRow, Loading, Screen, Section, T } from '@/components/ui';
 import { useCanWrite } from '@/core/auth';
-import { formatDate, isoDay, money, yearAgo } from '@/core/format';
+import { formatDate, money } from '@/core/format';
 import { useApi } from '@/core/query';
 import { useLinkSheet } from '@/components/link-sheet';
-import { useStatement, type PartyKind } from '@/core/statement';
+import type { PartyKind } from '@/core/statement';
 import { useTheme } from '@/hooks/use-theme';
 
-type Party = { id: string; name: string; currency: string; phone?: string | null; email?: string | null; address?: string | null; balance: number };
+type Doc = { id: string; invoiceNo: string | null; date: string; total: number; currency?: string | null; isReturn?: boolean; status?: string };
+type Payment = { id: string; date: string; amount: number; method?: string | null; notes?: string | null; currency?: string | null };
+// Cari detay API'si: müşteride satışlar (invoices) ve iadeler (returns) ayrı, tedarikçide alışlar iadeleriyle birlikte (purchases)
+type Party = {
+  id: string; name: string; currency: string; phone?: string | null; email?: string | null; address?: string | null; balance: number;
+  invoices?: Doc[]; returns?: Doc[]; purchases?: Doc[]; payments?: Payment[];
+};
+type ListKey = 'docs' | 'returns' | 'payments';
 
 export default function PartyDetail() {
   const c = useTheme();
@@ -17,14 +25,22 @@ export default function PartyDetail() {
   const { kind, id } = useLocalSearchParams<{ kind: PartyKind; id: string }>();
   const k: PartyKind = kind === 'supplier' ? 'supplier' : 'customer';
   const party = useApi<Party>(`/api/${k === 'customer' ? 'customers' : 'suppliers'}/${id}`);
-  const st = useStatement(k, id, yearAgo(), isoDay());
   const linkSheet = useLinkSheet(k, id, party.data?.name ?? '', canWrite);
+  const [list, setList] = useState<ListKey | null>(null);
 
   if (party.isLoading) return <Loading />;
   if (party.error || !party.data) return <ErrorState message={(party.error as Error)?.message || 'Cari bulunamadı'} onRetry={() => party.refetch()} />;
   const p = party.data;
   const cur = p.currency || 'TRY';
-  const recent = (st.result?.rows ?? []).filter(r => !r.isSubRow).slice(-8).reverse();
+  const docs = k === 'customer' ? (p.invoices ?? []) : (p.purchases ?? []).filter(d => !d.isReturn);
+  const returns = k === 'customer' ? (p.returns ?? []) : (p.purchases ?? []).filter(d => d.isReturn);
+  const payments = p.payments ?? [];
+  const docPath = k === 'customer' ? 'satis' : 'alis';
+  const lists: { key: ListKey; label: string; count: number }[] = [
+    { key: 'docs', label: k === 'customer' ? 'Satışlar' : 'Alışlar', count: docs.length },
+    { key: 'returns', label: 'İadeler', count: returns.length },
+    { key: 'payments', label: 'Ödemeler', count: payments.length },
+  ];
   const settled = Math.abs(p.balance) < 0.005;
   const positiveIsGood = k === 'customer';
   const balanceNote = settled ? 'Hesap kapalı'
@@ -34,7 +50,7 @@ export default function PartyDetail() {
   return (
     <>
       <Stack.Screen options={{ title: p.name, headerLargeTitle: false }} />
-      <Screen refreshing={party.isRefetching} onRefresh={() => { void party.refetch(); void st.refetch(); }}>
+      <Screen refreshing={party.isRefetching} onRefresh={() => { void party.refetch(); }}>
         <Card style={{ backgroundColor: c.strong, borderColor: c.strong }}>
           <T variant="small" color={c.strongText} style={{ opacity: 0.8 }}>Bakiye</T>
           <T variant="moneyLarge" color={c.strongText} testID="party-balance">{money(p.balance, cur)}</T>
@@ -56,7 +72,7 @@ export default function PartyDetail() {
               title={k === 'customer' ? 'Satış' : 'Alış'}
               icon="plus"
               variant="secondary"
-              onPress={() => router.push(`/belgeler/yeni?kind=${k === 'customer' ? 'sale' : 'purchase'}&partyId=${id}`)}
+              onPress={() => router.push(`/cariler/${k}/${id}/yeni`)}
               style={styles.action}
               testID="party-new-doc"
             />
@@ -85,28 +101,58 @@ export default function PartyDetail() {
           </Section>
         ) : null}
 
-        <Section title="Son hareketler">
+        {/* Satış/alış, iade ve ödemeler ayrı listelenir; hepsi bir arada yalnızca ekstrede */}
+        <View style={styles.lists}>
+          {lists.map(l => (
+            <Button
+              key={l.key}
+              title={l.count ? `${l.label} ${l.count}` : l.label}
+              variant={list === l.key ? 'primary' : 'secondary'}
+              onPress={() => setList(v => (v === l.key ? null : l.key))}
+              style={{ flex: 1 }}
+              testID={`party-list-${l.key}`}
+            />
+          ))}
+        </View>
+
+        {list ? (
           <Card style={{ padding: 0, gap: 0 }}>
-            {st.isLoading ? <Loading /> : recent.length === 0 ? (
-              <View style={{ padding: 16 }}><T variant="small">Son 12 ayda hareket yok.</T></View>
-            ) : recent.map(r => (
-              <ListRow
-                key={r.id}
-                title={`${r.hareket}${r.belgeNo ? ` · ${r.belgeNo}` : ''}`}
-                subtitle={formatDate(r.date)}
-                right={r.borc > 0 ? money(r.borc, cur) : `−${money(r.alacak, cur)}`}
-                rightColor={r.borc > 0 ? c.text : c.success}
-              />
-            ))}
+            {list === 'payments' ? (
+              payments.length === 0 ? <Empty text="Ödeme kaydı yok." /> : payments.map(pm => (
+                <ListRow
+                  key={pm.id}
+                  title={pm.method || 'Ödeme'}
+                  subtitle={[formatDate(pm.date), pm.notes].filter(Boolean).join(' · ')}
+                  right={money(pm.amount, pm.currency || cur)}
+                />
+              ))
+            ) : (() => {
+              const rows = list === 'docs' ? docs : returns;
+              if (rows.length === 0) return <Empty text={list === 'returns' ? 'İade kaydı yok.' : k === 'customer' ? 'Satış kaydı yok.' : 'Alış kaydı yok.'} />;
+              return rows.map(d => (
+                <ListRow
+                  key={d.id}
+                  title={d.invoiceNo || (k === 'customer' ? 'Fatura' : 'Alış')}
+                  subtitle={formatDate(d.date)}
+                  right={money(Math.abs(d.total), d.currency || cur)}
+                  onPress={() => router.push(`/cariler/${docPath}/${d.id}`)}
+                />
+              ));
+            })()}
           </Card>
-        </Section>
+        ) : null}
       </Screen>
       {linkSheet.sheet}
     </>
   );
 }
 
+function Empty({ text }: { text: string }) {
+  return <View style={{ padding: 16 }}><T variant="small">{text}</T></View>;
+}
+
 const styles = StyleSheet.create({
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   action: { flexGrow: 1, flexBasis: '40%' },
+  lists: { flexDirection: 'row', gap: 8 },
 });

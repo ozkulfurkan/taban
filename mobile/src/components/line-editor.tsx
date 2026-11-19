@@ -3,7 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
-import { formatAmountInput, parseAmountInput } from '@/core/amount';
+import { amountToInput, formatAmountInput, parseAmountInput } from '@/core/amount';
 import { isPurchaseKind, lineKey, type DocKind, type FormLine, type LineType } from '@/core/documents';
 import { money } from '@/core/format';
 import { useTheme } from '@/hooks/use-theme';
@@ -38,7 +38,7 @@ export function LineEditor({ kind, currency, initial, catalog, onSave, onClose }
 
   const items: PickerItem[] = line.type === 'material'
     ? catalog.materials.map(m => ({
-        id: m.id, title: m.name, subtitle: m.stock != null ? `Stok ${formatAmountInput(String(Math.round(m.stock * 100) / 100))} kg` : undefined,
+        id: m.id, title: m.name, subtitle: m.stock != null ? `Stok ${amountToInput(m.stock)} kg` : undefined,
         right: m.pricePerKg != null ? money(m.pricePerKg, m.currency || '') : undefined,
       }))
     : catalog.products.map(p => {
@@ -55,12 +55,12 @@ export function LineEditor({ kind, currency, initial, catalog, onSave, onClose }
     if (line.type === 'material') {
       const m = catalog.materials.find(x => x.id === id)!;
       const price = m.pricePerKg != null && (!m.currency || m.currency === currency) ? m.pricePerKg : null;
-      set({ materialId: id, productId: undefined, description: m.name, code: undefined, unitPrice: price != null ? formatAmountInput(String(price), 4) : line.unitPrice });
+      set({ materialId: id, productId: undefined, description: m.name, code: undefined, unitPrice: price != null ? amountToInput(price, 4) : line.unitPrice });
     } else {
       const p = catalog.products.find(x => x.id === id)!;
       const sp = !purchase ? catalog.specialPrices[id] : undefined;
       const price = sp && sp.currency === currency ? sp.unitPrice : p.unitPrice != null && p.currency === currency ? p.unitPrice : null;
-      set({ productId: id, materialId: undefined, description: p.name, code: p.code ?? undefined, unitPrice: price != null ? formatAmountInput(String(price), 4) : line.unitPrice });
+      set({ productId: id, materialId: undefined, description: p.name, code: p.code ?? undefined, unitPrice: price != null ? amountToInput(price, 4) : line.unitPrice });
     }
   };
 

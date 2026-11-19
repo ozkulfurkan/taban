@@ -19,6 +19,16 @@ export function formatAmountInput(raw: string, maxDecimals = 2): string {
   return `${group(intPart) || '0'},${dec}`;
 }
 
+/**
+ * Kayıtlı sayıyı alan biçimine çevirir: 0.1234 → "0,1234", 1250.5 → "1.250,5".
+ * formatAmountInput(String(n)) kullanılmaz: "0.1234" içindeki nokta binlik sayılıp 1234 olur.
+ */
+export function amountToInput(n: number | null | undefined, maxDecimals = 2): string {
+  if (n == null || !Number.isFinite(n)) return '';
+  const f = 10 ** maxDecimals;
+  return formatAmountInput(String(Math.round(n * f) / f).replace('.', ','), maxDecimals);
+}
+
 /** formatAmountInput çıktısını sayıya çevirir: "3.500,25" → 3500.25 */
 export function parseAmountInput(s: string): number {
   if (!s) return 0;

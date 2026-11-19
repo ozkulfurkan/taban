@@ -42,7 +42,7 @@ export default function Cariler() {
     <>
       <Stack.Screen
         options={{
-          title: 'Cariler',
+          title: kind === 'customer' ? 'Müşteriler' : 'Tedarikçiler',
           headerSearchBarOptions: {
             placeholder: kind === 'customer' ? 'Müşteri ara' : 'Tedarikçi ara',
             onChangeText: e => setSearch(e.nativeEvent.text),

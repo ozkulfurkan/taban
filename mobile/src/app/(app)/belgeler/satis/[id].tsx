@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useSegments } from 'expo-router';
 
 import { DocumentView } from '@/components/document-view';
 import { ErrorState, Loading } from '@/components/ui';
@@ -20,6 +20,8 @@ const STATUS = {
 export default function InvoiceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const q = useApi<Invoice>(`/api/invoices/${id}`);
+  // Cariler sekmesinden açıldıysa yeni belge de orada açılır (geri tuşu cariye döner)
+  const inCariler = (useSegments() as string[]).includes('cariler');
   if (q.isLoading) return <Loading />;
   if (q.error || !q.data) return <ErrorState message={(q.error as Error)?.message || 'Belge bulunamadı'} onRetry={() => { void q.refetch(); }} />;
   const inv = q.data;
@@ -49,7 +51,11 @@ export default function InvoiceDetail() {
           notes: inv.notes,
           status: inv.isReturn ? undefined : STATUS[inv.status as keyof typeof STATUS],
           paid: inv.isReturn ? undefined : inv.paidAmount,
-          followUp: inv.isReturn ? undefined : { label: 'İade al', href: `/belgeler/yeni?kind=return&partyId=${inv.customer.id}` },
+          manage: { editHref: `/belgeler/duzenle?type=satis&id=${inv.id}`, deletePath: `/api/invoices/${inv.id}` },
+          followUp: inv.isReturn ? undefined : {
+            label: 'İade al',
+            href: inCariler ? `/cariler/customer/${inv.customer.id}/yeni?doc=return` : `/belgeler/yeni?kind=return&partyId=${inv.customer.id}`,
+          },
         }}
       />
     </>

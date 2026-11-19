@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Button, Card, ErrorState, Field, Loading, Screen, T } from '@/components/ui';
 import { api } from '@/core/api';
 import { notify } from '@/core/dialog';
-import { formatAmountInput, parseAmountInput } from '@/core/amount';
+import { amountToInput, formatAmountInput, parseAmountInput } from '@/core/amount';
 import { fmt, isoDay, money } from '@/core/format';
 import { useApi } from '@/core/query';
 import type { PartyKind } from '@/core/statement';
@@ -29,6 +29,7 @@ export default function Hareket() {
   const rates = useApi<{ usd: number; eur: number }>('/api/exchange-rates');
 
   const [pickedAccountId, setAccountId] = useState<string | null>(null);
+  const [accountsOpen, setAccountsOpen] = useState(false);
   const [amount, setAmount] = useState('');
   // Elle girilen kur, hangi hesap için girildiğiyle birlikte tutulur (hesap değişince öneriye döner)
   const [rateEdit, setRateEdit] = useState<{ accountId: string; value: string } | null>(null);
@@ -46,7 +47,7 @@ export default function Hareket() {
   const suggested = cross && rates.data ? crossRate(cur, account!.currency, rates.data) : null;
   const rate = !cross ? '' : rateEdit && rateEdit.accountId === account!.id
     ? rateEdit.value
-    : suggested ? formatAmountInput(String(Math.round(suggested * 10000) / 10000), 4) : '';
+    : suggested ? amountToInput(suggested, 4) : '';
   const setRate = (v: string) => { if (account) setRateEdit({ accountId: account.id, value: v }); };
 
   const amt = parseAmountInput(amount);
@@ -93,7 +94,9 @@ export default function Hareket() {
 
   return (
     <>
-      <Stack.Screen options={{ title, presentation: 'modal', headerLargeTitle: false }} />
+      {/* Native modal olarak sunulmaz: ayar veri yüklendikten sonra geldiği için ekran açıkken
+          sayfadan modala dönüyor ve dokunuşlarda yeniden çiziliyordu */}
+      <Stack.Screen options={{ title, headerLargeTitle: false }} />
       <Screen>
         <T variant="heading">{party.data!.name}</T>
         <T variant="small">Güncel bakiye: {money(party.data!.balance, cur)}</T>
@@ -103,22 +106,40 @@ export default function Hareket() {
           {(accounts.data ?? []).length === 0 ? (
             <T variant="small">Kasa / banka hesabı yok. Web uygulamasından ekleyebilirsiniz.</T>
           ) : (
-            <View style={styles.chips}>
-              {[...accounts.data!].sort((a, b) => Number(b.currency === cur) - Number(a.currency === cur)).map(a => {
+            // Açılır liste: seçili hesap gösterilir, dokununca kasa ve banka hesapları açılır
+            <View style={[styles.dropdown, { borderColor: accountsOpen ? c.primary : c.border, backgroundColor: c.card }]}>
+              <Pressable
+                onPress={() => setAccountsOpen(o => !o)}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: accountsOpen }}
+                style={styles.dropdownHead}
+                testID="payment-account"
+              >
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <T style={{ fontWeight: '600' }} numberOfLines={1}>{account ? account.name : 'Hesap seçin'}</T>
+                  {account ? <T variant="small">{account.type} · {account.currency}</T> : null}
+                </View>
+                <T color={c.primary} style={{ fontSize: 16 }}>{accountsOpen ? '▲' : '▼'}</T>
+              </Pressable>
+              {accountsOpen ? [...accounts.data!].sort((a, b) => Number(b.currency === cur) - Number(a.currency === cur)).map(a => {
                 const on = a.id === accountId;
                 return (
                   <Pressable
                     key={a.id}
-                    onPress={() => setAccountId(a.id)}
+                    onPress={() => { setAccountId(a.id); setAccountsOpen(false); }}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: on }}
-                    style={[styles.chip, { borderColor: on ? c.primary : c.border, backgroundColor: on ? c.primarySoft : c.card }]}
+                    style={({ pressed }) => [styles.option, { borderTopColor: c.border, backgroundColor: on ? c.primarySoft : 'transparent' }, pressed && { opacity: 0.6 }]}
+                    testID={`payment-account-${a.id}`}
                   >
-                    <T style={{ fontWeight: '600' }} color={on ? c.primary : c.text}>{a.name}</T>
-                    <T variant="small">{a.type} · {a.currency}</T>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <T style={{ fontWeight: on ? '700' : '500' }} color={on ? c.primary : c.text} numberOfLines={1}>{a.name}</T>
+                      <T variant="small">{a.type} · {a.currency}</T>
+                    </View>
+                    <T variant="small">{money(a.balance, a.currency)}</T>
                   </Pressable>
                 );
-              })}
+              }) : null}
             </View>
           )}
         </View>
@@ -147,6 +168,7 @@ export default function Hareket() {
 }
 
 const styles = StyleSheet.create({
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, minWidth: 120 },
+  dropdown: { borderWidth: 1.5, borderRadius: 12, overflow: 'hidden' },
+  dropdownHead: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  option: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth },
 });

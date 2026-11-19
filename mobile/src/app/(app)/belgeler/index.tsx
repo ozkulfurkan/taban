@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useLocalSearchParams, type Href } from 'expo-router';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { FlatList, Platform, Pressable, RefreshControl, View } from 'react-native';
 
@@ -26,7 +26,9 @@ const STATUS: Record<string, { label: string; tone: 'success' | 'warning' | 'neu
 export default function Belgeler() {
   const c = useTheme();
   const canWrite = useCanWrite();
-  const [tab, setTab] = useState<Tab>('sale');
+  // Ana menüden ?tab=sale|return|purchase ile açılır
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<Tab>(params.tab === 'purchase' || params.tab === 'return' ? params.tab : 'sale');
   const [search, setSearch] = useState('');
   const q = useDeferredValue(search.trim());
   const [newOpen, setNewOpen] = useState(false);
@@ -41,7 +43,7 @@ export default function Belgeler() {
   });
   const purchases = useApi<Purchase[]>(tab === 'purchase' ? '/api/purchases' : null);
 
-  type Row = { id: string; href: string; no: string; party: string; date: string; total: number; currency: string; badge?: { label: string } };
+  type Row = { id: string; href: Href; no: string; party: string; date: string; total: number; currency: string; badge?: { label: string } };
   const rows = useMemo((): Row[] => {
     if (tab !== 'purchase') return (invoices.data?.pages.flatMap(p => p.items) ?? []).map(i => ({
       id: i.id, href: `/belgeler/satis/${i.id}`, no: i.invoiceNo, party: i.customer?.name ?? '', date: i.date,
@@ -62,7 +64,7 @@ export default function Belgeler() {
     <>
       <Stack.Screen
         options={{
-          title: 'Belgeler',
+          title: tab === 'sale' ? 'Satışlar' : tab === 'return' ? 'İadeler' : 'Alışlar',
           headerSearchBarOptions: { placeholder: 'Belge no ya da cari', onChangeText: e => setSearch(e.nativeEvent.text), hideWhenScrolling: false },
           headerRight: canWrite ? () => (
             <Pressable onPress={() => setNewOpen(true)} accessibilityRole="button" accessibilityLabel="Yeni belge" hitSlop={10} testID="doc-new">

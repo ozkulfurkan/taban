@@ -1,8 +1,9 @@
 import { Stack } from 'expo-router';
+import type { ReactNode } from 'react';
 import { useTheme } from '@/hooks/use-theme';
 
-// Sekme içi gezinme: büyük başlıklı native yığın
-export function TabStack() {
+// Uygulama içi gezinme: tek native yığın (alt sekme yok; ana sayfa menüsünden açılır)
+export function TabStack({ children }: { children?: ReactNode }) {
   const c = useTheme();
   return (
     <Stack
@@ -16,6 +17,8 @@ export function TabStack() {
         headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: c.background },
       }}
-    />
+    >
+      {children}
+    </Stack>
   );
 }

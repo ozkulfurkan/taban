@@ -27,6 +27,13 @@ const ICONS = {
   barcode: ['barcode.viewfinder', 'barcode_scanner'],
   cart: ['cart', 'shopping_cart'],
   calendar: ['calendar', 'calendar_month'],
+  truck: ['truck.box', 'local_shipping'],
+  bank: ['building.columns', 'account_balance'],
+  undo: ['arrow.uturn.backward', 'undo'],
+  newDoc: ['plus.circle', 'add_circle'],
+  transfer: ['arrow.left.arrow.right', 'swap_horiz'],
+  edit: ['pencil', 'edit'],
+  trash: ['trash', 'delete'],
 } as const satisfies Record<string, readonly [SFSymbol, AndroidSymbol]>;
 
 export type IconName = keyof typeof ICONS;

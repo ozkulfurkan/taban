@@ -8,6 +8,13 @@ export type DocKind = 'sale' | 'return' | 'purchase' | 'purchaseReturn';
 export const isPurchaseKind = (k: DocKind) => k === 'purchase' || k === 'purchaseReturn';
 export const isReturnKind = (k: DocKind) => k === 'return' || k === 'purchaseReturn';
 
+export const EDIT_TITLE: Record<DocKind, string> = {
+  sale: 'Satışı Düzenle',
+  return: 'İadeyi Düzenle',
+  purchase: 'Alışı Düzenle',
+  purchaseReturn: 'İadeyi Düzenle',
+};
+
 export const DOC_TITLE: Record<DocKind, string> = {
   sale: 'Yeni Satış',
   return: 'Müşteriden İade',
@@ -26,6 +33,8 @@ export type FormLine = {
   quantity: string;  // ekrandaki Türkçe biçim ("1.250,5")
   unitPrice: string;
   discount: string;  // yüzde
+  /** Alışta fason deposuna giden kalem: mobilde gösterilmez, düzenlemede korunur */
+  subcontractorId?: string | null;
 };
 
 let seq = 0;
@@ -71,6 +80,7 @@ export function purchaseBody(p: { kind: DocKind; supplierId: string; currency: s
     items: p.lines.map(l => ({
       productId: l.type === 'product' ? l.productId : undefined,
       materialId: l.type === 'material' ? l.materialId : undefined,
+      ...(l.subcontractorId ? { subcontractorId: l.subcontractorId } : {}),
       qty: parseAmountInput(l.quantity),
       unitPrice: parseAmountInput(l.unitPrice),
     })),

@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useSegments } from 'expo-router';
 
 import { DocumentView } from '@/components/document-view';
 import { ErrorState, Loading } from '@/components/ui';
@@ -17,6 +17,8 @@ type Purchase = {
 export default function PurchaseDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const q = useApi<Purchase>(`/api/purchases/${id}`);
+  // Cariler sekmesinden açıldıysa yeni belge de orada açılır (geri tuşu cariye döner)
+  const inCariler = (useSegments() as string[]).includes('cariler');
   if (q.isLoading) return <Loading />;
   if (q.error || !q.data) return <ErrorState message={(q.error as Error)?.message || 'Belge bulunamadı'} onRetry={() => { void q.refetch(); }} />;
   const p = q.data;
@@ -46,7 +48,11 @@ export default function PurchaseDetail() {
           subtotal: Math.abs(p.total),
           total: Math.abs(p.total),
           notes: p.notes,
-          followUp: p.isReturn ? undefined : { label: 'İade et', href: `/belgeler/yeni?kind=purchaseReturn&partyId=${p.supplier.id}` },
+          manage: { editHref: `/belgeler/duzenle?type=alis&id=${p.id}`, deletePath: `/api/purchases/${p.id}` },
+          followUp: p.isReturn ? undefined : {
+            label: 'İade et',
+            href: inCariler ? `/cariler/supplier/${p.supplier.id}/yeni?doc=purchaseReturn` : `/belgeler/yeni?kind=purchaseReturn&partyId=${p.supplier.id}`,
+          },
         }}
       />
     </>
