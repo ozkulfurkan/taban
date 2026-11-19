@@ -7,8 +7,10 @@ import AppShell from '@/app/components/app-shell';
 import Link from 'next/link';
 import {
   Loader2, Plus, ClipboardList, CheckCircle, AlertTriangle,
-  Pencil, ChevronDown, Factory, Truck,
+  Pencil, ChevronDown, Factory, Truck, Printer,
 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { ordersHtml } from '@/lib/order-print';
 
 const STATUS_TABS = [
   { key: 'ORDER_RECEIVED', label: 'Bekliyor' },
@@ -67,6 +69,7 @@ const BULK_ACTIONS = [
 
 export default function OrdersPage() {
   const router = useRouter();
+  const { data: session } = useSession() || {};
   const [activeTab, setActiveTab] = useState('ORDER_RECEIVED');
   const [datePreset, setDatePreset] = useState<DatePreset>('1m');
   const [dateFrom, setDateFrom] = useState(defaultDateFrom);
@@ -159,6 +162,26 @@ export default function OrdersPage() {
     });
   };
 
+  // Sipariş föyü: seçili siparişler, seçim yoksa sekmedeki liste. Gizli çerçevede yazdırma penceresi açılır;
+  // "PDF olarak kaydet" ile PDF alınır. Mobil uygulamayla aynı HTML (lib/order-print).
+  const printOrders = () => {
+    const list = selectedIds.size ? orders.filter(o => selectedIds.has(o.id)) : orders;
+    if (!list.length) return;
+    const tab = STATUS_TABS.find(t => t.key === activeTab)?.label ?? '';
+    const title = selectedIds.size ? 'Seçili siparişler'
+      : activeTab === 'ORDER_RECEIVED' ? 'Bekleyen siparişler' : activeTab === 'ALL' ? 'Siparişler' : `Siparişler — ${tab}`;
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    doc.open();
+    doc.write(ordersHtml(list, { title, companyName: (session?.user as any)?.companyName ?? null }));
+    doc.close();
+    frame.contentWindow!.focus();
+    frame.contentWindow!.print();
+    setTimeout(() => frame.remove(), 60_000);
+  };
+
   return (
     <AppShell>
       <div className="space-y-4">
@@ -168,10 +191,17 @@ export default function OrdersPage() {
             <ClipboardList className="w-5 h-5 text-slate-600" />
             <h1 className="text-xl font-bold text-slate-800">Gelen Siparişler</h1>
           </div>
-          <Link href="/orders/new"
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors">
-            <Plus className="w-4 h-4" /> Yeni Sipariş
-          </Link>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={printOrders} disabled={loading || orders.length === 0} data-testid="orders-print"
+              title={selectedIds.size ? 'Seçili siparişleri yazdır' : 'Bu sekmedeki siparişleri yazdır'}
+              className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">
+              <Printer className="w-4 h-4" /> Yazdır / PDF{selectedIds.size ? ` (${selectedIds.size})` : ''}
+            </button>
+            <Link href="/orders/new"
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors">
+              <Plus className="w-4 h-4" /> Yeni Sipariş
+            </Link>
+          </div>
         </div>
 
         {/* Filters */}

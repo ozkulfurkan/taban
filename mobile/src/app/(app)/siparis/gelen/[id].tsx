@@ -10,7 +10,8 @@ import { Button, ErrorState, Field, Loading, Screen, T } from '@/components/ui';
 import { Radius, Spacing } from '@/constants/theme';
 import { formatAmountInput } from '@/core/amount';
 import { api } from '@/core/api';
-import { useCanDelete, useCanWrite } from '@/core/auth';
+import { useAuth, useCanDelete, useCanWrite } from '@/core/auth';
+import { printOrders, shareOrdersPdf } from '@/core/order-pdf';
 import { confirm, notify } from '@/core/dialog';
 import { isoDay } from '@/core/format';
 import { formatDiff, formatQty, orderSteps, statusLabel, unitDecimals, type PortalOrder } from '@/core/portal';
@@ -30,6 +31,8 @@ export default function GelenSiparis() {
   const qc = useQueryClient();
   const canWrite = useCanWrite();
   const canDelete = useCanDelete();
+  const { user } = useAuth();
+  const companyName = user?.type === 'staff' ? user.companyName : null;
   const { id } = useLocalSearchParams<{ id: string }>();
   const q = useApi<Incoming>(`/api/orders/${id}`);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -72,6 +75,13 @@ export default function GelenSiparis() {
               {canDelete && o.status !== 'SHIPPED' ? <Button title="İptal" icon="trash" variant="ghost" onPress={cancel} style={styles.action} testID="order-cancel" /> : null}
             </View>
           ) : null}
+          {/* Sipariş föyü: üretim / depo için PDF ya da doğrudan yazdırma */}
+          <View style={styles.actions}>
+            <Button title="PDF paylaş" icon="pdf" variant="secondary" style={styles.action} testID="order-pdf"
+              onPress={() => { void shareOrdersPdf([o], { title: `Sipariş ${o.orderNo}`, companyName }).catch((e: any) => notify('PDF oluşturulamadı', e?.message ?? '')); }} />
+            <Button title="Yazdır" icon="doc" variant="secondary" style={styles.action} testID="order-print"
+              onPress={() => { void printOrders([o], { title: `Sipariş ${o.orderNo}`, companyName }).catch((e: any) => notify('Yazdırılamadı', e?.message ?? '')); }} />
+          </View>
         </OrderDetailBody>
       </Screen>
 

@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
 import { PRODUCTION_STATUSES } from '@/lib/order-status';
+import { normalizeOrderItems } from '@/lib/orders';
 
 const MAX_ORDERS = 1000;
 
@@ -88,18 +89,26 @@ export async function POST(req: NextRequest) {
   let finalProductId: string | null;
   let finalProductCode: string | null;
 
+  // Paket (çok kalemli) sipariş: portal ve firma ağı siparişleriyle aynı doğrulama. Ürün birimine göre
+  // çift → beden asortisi, kg/metre/adet → miktar; ad, kod ve birim kayıtlı üründen alınır, toplam sunucuda hesaplanır.
+  let finalUnit: string | null = null;
+  let finalItems: any[] | undefined;
   if (isPackage) {
+    const normalized = await normalizeOrderItems(user.companyId, orderItems);
+    if ('error' in normalized) return NextResponse.json({ error: normalized.error }, { status: 400 });
+    finalItems = normalized.items;
+    finalUnit = normalized.unit;
     finalSizeDist = {};
     finalTotalQty = 0;
-    for (const item of orderItems as any[]) {
+    for (const item of finalItems) {
       finalTotalQty += Number(item.totalQuantity) || 0;
-      const sd = item.sizeDistribution as Record<string, number> || {};
-      for (const [sz, qty] of Object.entries(sd)) {
+      for (const [sz, qty] of Object.entries(item.sizeDistribution as Record<string, number>)) {
         finalSizeDist[sz] = (finalSizeDist[sz] || 0) + (Number(qty) || 0);
       }
     }
-    finalProductId = orderItems[0]?.productId || null;
-    finalProductCode = orderItems[0]?.productCode || null;
+    finalTotalQty = Math.round(finalTotalQty * 1000) / 1000;
+    finalProductId = finalItems[0]?.productId || null;
+    finalProductCode = finalItems[0]?.productCode || null;
   } else {
     if (!sizeDistribution || typeof sizeDistribution !== 'object') {
       return NextResponse.json({ error: 'sizeDistribution gerekli' }, { status: 400 });
@@ -131,7 +140,8 @@ export async function POST(req: NextRequest) {
         requestedDeliveryDate: requestedDeliveryDate ? new Date(requestedDeliveryDate) : null,
         notes: notes || null,
         colorPartials: isPackage ? null : (colorPartials || null),
-        orderItems: isPackage ? orderItems : undefined,
+        orderItems: isPackage ? finalItems : undefined,
+        unit: finalUnit,
         partVariantsData: Array.isArray(partVariantsData) && partVariantsData.length > 0 ? partVariantsData : undefined,
         status: 'ORDER_RECEIVED',
         statusHistory: {

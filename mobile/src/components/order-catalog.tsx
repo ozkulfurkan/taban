@@ -26,10 +26,14 @@ export type CatalogProps = {
   ordersKey: string;
   /** Sipariş gönderilince açılacak detay */
   detailHref: (orderId: string) => string;
+  /** Gövdeye eklenecek alanlar (personel siparişinde müşteri: { customerId }) */
+  extraBody?: Record<string, unknown>;
+  /** Gönderilince gösterilecek başlık (varsayılan: "Siparişiniz alındı") */
+  sentTitle?: string;
 };
 
 // Katalog ve sepet: portal müşterisi ve bağlı SoleCost tedarikçisine sipariş veren firma ortak kullanır
-export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKey, detailHref }: CatalogProps) {
+export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKey, detailHref, extraBody, sentTitle = 'Siparişiniz alındı' }: CatalogProps) {
   const c = useTheme();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
@@ -124,6 +128,7 @@ export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKe
       {checkout ? (
         <Checkout
           orderUrl={orderUrl}
+          extraBody={extraBody}
           items={cart}
           onRemove={key => setCart(cs => { const next = cs.filter(i => i.key !== key); if (!next.length) setCheckout(false); return next; })}
           onClose={() => setCheckout(false)}
@@ -133,7 +138,7 @@ export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKe
             setCart([]);
             await qc.invalidateQueries({ queryKey: [ordersKey] });
             router.replace(detailHref(order.id) as any);
-            notify('Siparişiniz alındı', `${order.orderNo} · ${formatQty(total, cartUnit)}`);
+            notify(sentTitle, `${order.orderNo} · ${formatQty(total, cartUnit)}`);
           }}
         />
       ) : null}
@@ -218,8 +223,9 @@ function AddToCart({ product, cartUnit, onAdd, onClose }: { product: CatalogProd
   );
 }
 
-function Checkout({ orderUrl, items, onRemove, onClose, onSent }: {
+function Checkout({ orderUrl, extraBody, items, onRemove, onClose, onSent }: {
   orderUrl: string;
+  extraBody?: Record<string, unknown>;
   items: (OrderItem & { key: string })[]; onRemove: (key: string) => void; onClose: () => void;
   onSent: (o: { id: string; orderNo: string }) => void;
 }) {
@@ -235,7 +241,7 @@ function Checkout({ orderUrl, items, onRemove, onClose, onSent }: {
     if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError('Termini YYYY-AA-GG biçiminde girin ya da boş bırakın.');
     setSaving(true);
     try {
-      const order = await api<{ id: string; orderNo: string }>(orderUrl, { method: 'POST', body: orderBody(items, date, notes) });
+      const order = await api<{ id: string; orderNo: string }>(orderUrl, { method: 'POST', body: { ...orderBody(items, date, notes), ...extraBody } });
       onSent(order);
     } catch (e: any) {
       setError(e?.message || 'Sipariş gönderilemedi');

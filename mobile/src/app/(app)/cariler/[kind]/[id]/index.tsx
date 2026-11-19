@@ -108,6 +108,16 @@ export default function PartyDetail() {
               testID="party-new-cek"
             />
           ) : null}
+          {canWrite && k === 'customer' ? (
+            <Button
+              title="Sipariş al"
+              icon="orders"
+              variant="secondary"
+              onPress={() => router.push(`/siparis/yeni?customerId=${id}`)}
+              style={styles.action}
+              testID="party-new-order"
+            />
+          ) : null}
           <Button title="Ekstre" icon="doc" variant="secondary" onPress={() => router.push(`/cariler/${k}/${id}/ekstre`)} style={styles.action} />
           <Button title="Link Gönder" icon="link" variant="secondary" onPress={linkSheet.open} loading={linkSheet.busy} style={styles.action} testID="party-link" />
           {canWrite && activeLink ? (

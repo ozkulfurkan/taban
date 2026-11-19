@@ -6,6 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import SizeTable from '@/app/portal/components/size-table';
 import { Loader2, Save, AlertTriangle } from 'lucide-react';
 import BackLink from '@/app/components/back-link';
+import { cleanQuantity, formatQty, isPairUnit, orderUnit, unitDecimals } from '@/lib/order-units';
 
 export default function NewOrderPage() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function NewOrderPage() {
   const [sizeDistribution, setSizeDistribution] = useState<Record<string, number>>({});
   const [partMaterials, setPartMaterials] = useState<Record<string, string>>({});
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [qtyText, setQtyText] = useState('');
 
   useEffect(() => {
     fetch('/api/customers').then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : (d.customers ?? [])));
@@ -48,12 +50,16 @@ export default function NewOrderPage() {
     }
   };
 
-  const totalQty = Object.values(sizeDistribution).reduce((s, v) => s + (Number(v) || 0), 0);
+  // Ürün birimi: çift → numara dağılımı; kg / metre / adet → miktar (sunucu aynı kuralı uygular)
+  const pair = !selectedProduct || isPairUnit(selectedProduct.unit);
+  const unit = orderUnit(selectedProduct?.unit);
+  const quantity = pair ? null : cleanQuantity(qtyText, unit);
+  const totalQty = pair ? Object.values(sizeDistribution).reduce((s, v) => s + (Number(v) || 0), 0) : (quantity ?? 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.customerId) { setErrorMsg('Müşteri seçin'); return; }
-    if (totalQty === 0) { setErrorMsg('En az 1 adet girin'); return; }
+    if (totalQty === 0) { setErrorMsg(pair ? 'En az 1 adet girin' : `Geçerli bir miktar girin (${unit})`); return; }
 
     const partVariantsData = Object.entries(partMaterials)
       .filter(([, matId]) => matId)
@@ -64,7 +70,7 @@ export default function NewOrderPage() {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(pair ? {
           customerId: form.customerId,
           productId: form.productId || null,
           productCode: form.productCode || null,
@@ -72,6 +78,12 @@ export default function NewOrderPage() {
           requestedDeliveryDate: form.requestedDeliveryDate || null,
           notes: form.notes || null,
           partVariantsData: partVariantsData.length > 0 ? partVariantsData : null,
+        } : {
+          // kg / metre gibi birimler: kalem olarak gider, birim ve toplam sunucuda üründen belirlenir
+          customerId: form.customerId,
+          orderItems: [{ productId: form.productId, quantity }],
+          requestedDeliveryDate: form.requestedDeliveryDate || null,
+          notes: form.notes || null,
         }),
       });
       const data = await res.json();
@@ -176,16 +188,28 @@ export default function NewOrderPage() {
             </div>
           </div>
 
-          {/* Right — Numara Dağılımı */}
-          <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-700 text-sm">Numara Dağılımı *</h2>
-              {totalQty > 0 && (
-                <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">{totalQty} çift</span>
-              )}
+          {/* Right — Numara Dağılımı (çift) ya da Miktar (kg, metre, adet...) */}
+          {pair ? (
+            <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-slate-700 text-sm">Numara Dağılımı *</h2>
+                {totalQty > 0 && (
+                  <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">{totalQty} çift</span>
+                )}
+              </div>
+              <SizeTable value={sizeDistribution} onChange={setSizeDistribution} sizes={selectedProduct?.sizes} />
             </div>
-            <SizeTable value={sizeDistribution} onChange={setSizeDistribution} sizes={selectedProduct?.sizes} />
-          </div>
+          ) : (
+            <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
+              <h2 className="font-semibold text-slate-700 text-sm">Miktar ({unit}) *</h2>
+              <input value={qtyText} onChange={e => setQtyText(e.target.value)} inputMode="decimal" placeholder={unitDecimals(unit) ? 'örn. 1250,5' : 'örn. 500'}
+                data-testid="order-quantity"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              <p className="text-xs text-slate-500">
+                {quantity ? formatQty(quantity, unit) : unitDecimals(unit) ? 'En fazla 3 ondalık girilebilir.' : 'Tam sayı girin.'}
+              </p>
+            </div>
+          )}
         </div>
       </form>
       {errorMsg && (
