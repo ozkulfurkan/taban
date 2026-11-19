@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
+import { LinkRequests } from '@/app/components/network';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { formatDate } from '@/lib/time';
 import {
@@ -285,6 +286,8 @@ export default function DashboardPage() {
           </h1>
           <p className="text-slate-500 text-sm mt-0.5">{user?.companyName ?? ''}</p>
         </div>
+
+        <LinkRequests />
 
         {/* Onboarding */}
         {isEmpty && (

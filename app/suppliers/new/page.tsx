@@ -15,6 +15,7 @@ export default function NewSupplierPage() {
   const [saveError, setSaveError] = useState('');
   const [form, setForm] = useState({ name: '', taxId: '', email: '', phone: '', address: '', currency: 'USD', notes: '' });
   const [categoryId, setCategoryId] = useState('');
+  const [networkCode, setNetworkCode] = useState('');
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [showAddCat, setShowAddCat] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -68,6 +69,17 @@ export default function NewSupplierPage() {
         data = await res.json();
       }
       if (!res.ok || !data?.id) { setSaveError(data?.error || 'Kayıt oluşturulamadı'); return; }
+      // SoleCost firma kodu girildiyse bağlantı isteği gönder (tedarikçi onaylayınca sipariş verilebilir)
+      if (networkCode.trim()) {
+        const linkRes = await fetch('/api/network/links', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: networkCode, supplierId: data.id }),
+        });
+        if (!linkRes.ok) {
+          const err = await linkRes.json().catch(() => ({}));
+          window.alert(`Tedarikçi kaydedildi ancak bağlantı isteği gönderilemedi: ${err?.error || 'bilinmeyen hata'}. Tedarikçi sayfasından tekrar deneyebilirsiniz.`);
+        }
+      }
       router.replace(`/suppliers/${data.id}`);
     } catch (e) { console.error(e); }
     finally { setSaving(false); }
@@ -86,6 +98,12 @@ export default function NewSupplierPage() {
         )}
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+              <label className="block text-xs font-medium text-emerald-800 mb-1">SoleCost firma kodu (isteğe bağlı)</label>
+              <input value={networkCode} onChange={e => setNetworkCode(e.target.value)} placeholder="SC-XXXXXX" data-testid="new-supplier-code"
+                className="w-full px-3 py-2 border border-emerald-200 rounded-lg text-sm font-mono uppercase focus:ring-2 focus:ring-emerald-500 outline-none bg-white" />
+              <p className="text-xs text-emerald-700 mt-1">Tedarikçiniz SoleCost kullanıyorsa kodunu girin; onaylarsa ona buradan doğrudan sipariş verebilirsiniz.</p>
+            </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-slate-600 mb-1">{t('suppliers', 'companyNameLabel')}</label>
               <input required value={form.name} onChange={e => set('name', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />

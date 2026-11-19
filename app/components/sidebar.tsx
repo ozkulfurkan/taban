@@ -45,6 +45,7 @@ export default function Sidebar() {
       links: [
         { href: '/customers', label: t('nav', 'customers'), icon: Users },
         { href: '/suppliers', label: t('nav', 'suppliers'), icon: Truck },
+        { href: '/verilen-siparisler', label: t('nav', 'networkOrders'), icon: ClipboardList },
         { href: '/invoices', label: t('nav', 'sales'), icon: Receipt },
         { href: '/purchases', label: t('nav', 'purchases'), icon: Package },
       ],

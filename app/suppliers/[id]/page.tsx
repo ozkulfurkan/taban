@@ -13,6 +13,7 @@ import FitText from '@/app/components/fit-text';
 import MoreMenu from '@/app/components/more-menu';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
+import { SupplierNetworkCard } from '@/app/components/network';
 import { convertAmount, type Rates } from '@/lib/fx';
 import { totalsByCurrency } from '@/lib/cek';
 
@@ -1097,6 +1098,8 @@ export default function SupplierDetailPage() {
             </button>
           )}
         </div>
+
+        <SupplierNetworkCard supplierId={params.id as string} />
 
         {/* Balance cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
