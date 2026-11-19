@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     });
 
     if (!calc) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    if (session.user.role !== 'ADMIN' && calc.companyId !== session.user.companyId) {
+    if (calc.companyId !== session.user.companyId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -34,7 +34,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     const existing = await prisma.soleCalculation.findUnique({ where: { id: params.id } });
     if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    if (session.user.role !== 'ADMIN' && existing.companyId !== session.user.companyId) {
+    if (existing.companyId !== session.user.companyId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -120,7 +120,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     const calc = await prisma.soleCalculation.findUnique({ where: { id: params.id } });
     if (!calc) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    if (session.user.role !== 'ADMIN' && calc.companyId !== session.user.companyId) {
+    if (calc.companyId !== session.user.companyId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

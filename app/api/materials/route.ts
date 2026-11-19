@@ -14,12 +14,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') ?? '';
 
-    const where: any = {};
-    if (session.user.role !== 'ADMIN') {
-      where.companyId = session.user.companyId;
-    }
+    // Her rolde yalnızca oturumdaki firmanın hammaddeleri (platform yöneticisi dahil)
+    if (!session.user.companyId) return badRequest('No company assigned');
+    const where: any = { companyId: session.user.companyId };
     if (search) {
-      where.id = { in: await idsMatching('Material', where.companyId ?? null, search) };
+      where.id = { in: await idsMatching('Material', where.companyId, search) };
     }
 
     const materials = await prisma.material.findMany({

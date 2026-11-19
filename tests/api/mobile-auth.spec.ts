@@ -99,11 +99,16 @@ test('portal müşterisi: portal girişi, portal API erişimi, firma API yasak',
   expect((await anon.get('/api/mobile/auth/me', { headers: auth(token) })).status()).toBe(401);
 });
 
-test('çerez varsa Bearer yok sayılır (web oturumu başka hesaba geçemez)', async () => {
+test('Bearer varsa oturumu token belirler; cihazda kalmış eski çerez dikkate alınmaz', async () => {
+  // Uygulamada eski bir oturum çerezi kalsa bile istek token'ın hesabıyla çalışır
+  // (önceden çerez kazanıyordu ve mobilde başka firmanın verisi görünebiliyordu).
+  // Tarayıcı Bearer başlığını kendiliğinden eklemediği için web oturumları etkilenmez.
   const tokenB = await tokenFor(B.ownerEmail);
   const me = await A.owner.get('/api/mobile/auth/me', { headers: auth(tokenB) });
   expect(me.status()).toBe(200);
-  expect((await me.json()).user.email).toBe(A.ownerEmail);
+  expect((await me.json()).user.email).toBe(B.ownerEmail);
+  // Token olmadan aynı istemci kendi (A) oturumuyla devam eder
+  expect((await (await A.owner.get('/api/mobile/auth/me')).json()).user.email).toBe(A.ownerEmail);
 });
 
 test('gizlilik ve destek sayfaları oturumsuz açılır', async () => {
