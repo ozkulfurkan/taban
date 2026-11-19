@@ -1,5 +1,6 @@
 'use client';
 
+import { formatQty } from '@/lib/order-units';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
@@ -100,7 +101,7 @@ export default function PortalOrderDetailPage() {
                             ))}
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-xs font-bold text-slate-800">{item.totalQuantity}</td>
+                      <td className="px-3 py-2.5 text-xs font-bold text-slate-800">{formatQty(item.totalQuantity, item.unit ?? order.unit)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -112,7 +113,7 @@ export default function PortalOrderDetailPage() {
                 [tp('Model Kodu'), order.productCode || order.product?.name || '—'],
                 [tp('Renk'), order.color || '—'],
                 [tp('Malzeme'), order.material || '—'],
-                ['Toplam Adet', order.totalQuantity],
+                ['Toplam Miktar', formatQty(order.totalQuantity, order.unit)],
                 ['Termin Tarihi', order.confirmedDeliveryDate
                   ? new Date(order.confirmedDeliveryDate).toLocaleDateString('tr-TR')
                   : '—'],

@@ -612,7 +612,9 @@ model SoleOrder {
   color                 String?
   material              String?
   sizeDistribution      Json
-  totalQuantity         Int
+  totalQuantity         Float
+  // Sipariş birimi: boş = çift (beden asortisi); kg, metre, adet... miktarla sipariş
+  unit                  String?
   requestedDeliveryDate DateTime?
   confirmedDeliveryDate DateTime?
   notes                 String?

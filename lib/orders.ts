@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
 import { rejectForeignRefs } from '@/lib/tenant';
+import { cleanQuantity, formatQty, isPairUnit, orderUnit } from '@/lib/order-units';
 
 // Satıcı firmada müşteri siparişi (SoleOrder) oluşturur ve üretim emri e-postasını gönderir.
 // Portal müşterisi (/api/portal/me/orders) ve bağlı firma (/api/network/links/:id/orders) aynı mantığı kullanır.
@@ -31,21 +32,26 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
   let finalTotalQty: number;
   let finalProductId: string | null;
   let finalProductCode: string | null;
+  let finalUnit: string | null = null;
+  let finalItems: any[] | undefined;
 
   if (isPackage) {
-    // Aggregate size distribution across all items
+    const normalized = await normalizeOrderItems(opts.companyId, orderItems);
+    if ('error' in normalized) return { error: normalized.error, status: 400 };
+    finalItems = normalized.items;
+    finalUnit = normalized.unit;
+    // Beden dağılımı yalnızca çift birimli siparişte anlamlı
     finalSizeDist = {};
     finalTotalQty = 0;
-    for (const item of orderItems as any[]) {
-      finalTotalQty += Number(item.totalQuantity) || 0;
-      const sd = item.sizeDistribution as Record<string, number> || {};
-      for (const [sz, qty] of Object.entries(sd)) {
-        finalSizeDist[sz] = (finalSizeDist[sz] || 0) + (Number(qty) || 0);
+    for (const item of finalItems) {
+      finalTotalQty += item.totalQuantity;
+      for (const [sz, qty] of Object.entries(item.sizeDistribution as Record<string, number>)) {
+        finalSizeDist[sz] = (finalSizeDist[sz] || 0) + qty;
       }
     }
-    if (finalTotalQty === 0) return { error: 'En az 1 adet girmelisiniz', status: 400 };
-    finalProductId = orderItems[0]?.productId || null;
-    finalProductCode = orderItems[0]?.productCode || null;
+    finalTotalQty = Math.round(finalTotalQty * 1000) / 1000;
+    finalProductId = finalItems[0]?.productId || null;
+    finalProductCode = finalItems[0]?.productCode || null;
   } else {
     if (!sizeDistribution || typeof sizeDistribution !== 'object') {
       return { error: 'sizeDistribution required', status: 400 };
@@ -74,10 +80,11 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
       material: isPackage ? null : (material || null),
       sizeDistribution: finalSizeDist,
       totalQuantity: finalTotalQty,
+      unit: finalUnit,
       requestedDeliveryDate: requestedDeliveryDate ? new Date(requestedDeliveryDate) : null,
       notes: notes || null,
       colorPartials: isPackage ? null : (colorPartials || null),
-      orderItems: isPackage ? orderItems : undefined,
+      orderItems: isPackage ? finalItems : undefined,
       status: 'ORDER_RECEIVED',
       statusHistory: {
         create: { status: 'ORDER_RECEIVED', note: 'Sipariş oluşturuldu' },
@@ -147,7 +154,7 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
   </table>
 
   <div style="margin-bottom:20px;">
-    <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Beden Dağılımı</p>
+    <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">${isPairUnit(finalUnit) ? 'Beden Dağılımı' : 'Miktar'}</p>
     <table style="border-collapse:collapse;width:100%;">
       <thead><tr>
         ${sizeHeaderCells}
@@ -155,7 +162,7 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
       </tr></thead>
       <tbody><tr>
         ${sizeValueCells}
-        <td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#1d4ed8;background:#dbeafe;">${finalTotalQty}</td>
+        <td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#1d4ed8;background:#dbeafe;">${formatQty(finalTotalQty, finalUnit)}</td>
       </tr></tbody>
     </table>
   </div>
@@ -182,17 +189,65 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
       cc: portalCustomer?.email,
       subject: `Yeni Sipariş: ${orderNo} — ${customer?.name ?? ''}`,
       html: productionHtml,
-      text: `Yeni sipariş alındı: ${orderNo}\nMüşteri: ${customer?.name}\nModel: ${productCode || product?.code || '—'}\nRenk: ${color || '—'}\nToplam: ${finalTotalQty} çift`,
+      text: `Yeni sipariş alındı: ${orderNo}\nMüşteri: ${customer?.name}\nModel: ${productCode || product?.code || '—'}\nRenk: ${color || '—'}\nToplam: ${formatQty(finalTotalQty, finalUnit)}`,
     }).catch(() => {});
   } else if (portalCustomer) {
     // Fallback: confirmation only to portal customer
     sendMail({
       to: portalCustomer.email,
       subject: `Siparişiniz alındı: ${orderNo}`,
-      html: `<p>Merhaba ${portalCustomer.name ?? portalCustomer.email},</p><p><strong>${orderNo}</strong> numaralı siparişiniz alındı. Toplam: <strong>${finalTotalQty}</strong> çift</p>`,
-      text: `Siparişiniz alındı: ${orderNo}, Toplam: ${finalTotalQty} çift`,
+      html: `<p>Merhaba ${portalCustomer.name ?? portalCustomer.email},</p><p><strong>${orderNo}</strong> numaralı siparişiniz alındı. Toplam: <strong>${formatQty(finalTotalQty, finalUnit)}</strong></p>`,
+      text: `Siparişiniz alındı: ${orderNo}, Toplam: ${formatQty(finalTotalQty, finalUnit)}`,
     }).catch(() => {});
   }
 
   return { order };
+}
+
+type ItemProduct = { id: string; code: string | null; name: string; unit: string };
+
+/**
+ * Paket sipariş kalemlerini ürün birimine göre doğrular ve sunucuda yeniden kurar:
+ * - çift: beden adetleri pozitif tam sayı, toplam bedenlerden hesaplanır, renk zorunlu
+ * - diğer birimler (kg, metre, adet...): tek miktar, birimin ondalık kuralına göre
+ * Ürün adı, kodu ve birimi veritabanından alınır. Bir siparişte tek birim olur.
+ */
+export async function normalizeOrderItems(companyId: string, raw: any[]):
+  Promise<{ items: any[]; unit: string | null } | { error: string }> {
+  const ids = raw.map(i => i?.productId).filter((x): x is string => typeof x === 'string');
+  const products = new Map<string, ItemProduct>(
+    (await prisma.product.findMany({ where: { companyId, id: { in: ids } }, select: { id: true, code: true, name: true, unit: true } }))
+      .map(p => [p.id, p]),
+  );
+
+  const items: any[] = [];
+  for (const i of raw) {
+    const p = typeof i?.productId === 'string' ? products.get(i.productId) : undefined;
+    const unit = p ? orderUnit(p.unit) : 'çift';
+    const color = typeof i?.color === 'string' ? i.color.trim().slice(0, 100) : '';
+    const base = {
+      productId: p?.id ?? null,
+      productCode: p ? (p.code ?? '') : String(i?.productCode ?? '').slice(0, 100),
+      productName: p ? p.name : String(i?.productName ?? '').slice(0, 200),
+      unit,
+      color,
+    };
+    if (isPairUnit(unit)) {
+      const sizeDistribution: Record<string, number> = {};
+      for (const [size, qty] of Object.entries(i?.sizeDistribution && typeof i.sizeDistribution === 'object' ? i.sizeDistribution : {})) {
+        const n = Math.floor(Number(qty));
+        if (Number.isFinite(n) && n > 0) sizeDistribution[String(size).slice(0, 10)] = n;
+      }
+      const totalQuantity = Object.values(sizeDistribution).reduce((a, b) => a + b, 0);
+      if (!totalQuantity) return { error: `${base.productName || 'Kalem'}: en az 1 çift girin` };
+      items.push({ ...base, sizeDistribution, totalQuantity });
+    } else {
+      const quantity = cleanQuantity(i?.quantity ?? i?.totalQuantity, unit);
+      if (quantity === null) return { error: `${base.productName}: geçerli bir miktar (${unit}) girin` };
+      items.push({ ...base, sizeDistribution: {}, quantity, totalQuantity: quantity });
+    }
+  }
+  const units = Array.from(new Set(items.map(i => i.unit)));
+  if (units.length > 1) return { error: `Farklı birimdeki ürünler (${units.join(', ')}) ayrı siparişlerde verilmeli` };
+  return { items, unit: units[0] === 'çift' ? null : units[0] };
 }

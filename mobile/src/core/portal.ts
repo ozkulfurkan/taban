@@ -1,17 +1,22 @@
 // Müşteri portalı: sipariş durumları, beden dağılımı ve sepetten sipariş gövdesi (web portalıyla aynı)
+import { cleanQuantity, isPairUnit, orderUnit } from '@shared/order-units';
+
+export { formatQty, isPairUnit, orderUnit, unitDecimals } from '@shared/order-units';
 
 export type CatalogProduct = {
-  id: string; code: string | null; name: string; description: string | null; sizes: string[];
+  id: string; code: string | null; name: string; description: string | null; sizes: string[]; unit?: string | null;
   parts?: { id: string; name: string }[];
 };
 
 export type OrderItem = {
   productId: string | null; productCode: string; productName: string; color: string;
   sizeDistribution: Record<string, number>; totalQuantity: number;
+  /** çift dışındaki birimlerde miktar */
+  unit?: string; quantity?: number;
 };
 
 export type PortalOrder = {
-  id: string; orderNo: string; status: string; createdAt: string; totalQuantity: number;
+  id: string; orderNo: string; status: string; createdAt: string; totalQuantity: number; unit?: string | null;
   productCode?: string | null; color?: string | null; material?: string | null; notes?: string | null;
   sizeDistribution: Record<string, number>; orderItems?: OrderItem[] | null;
   colorPartials?: { name: string; color: string }[] | null;
@@ -57,13 +62,19 @@ export function cleanSizes(sizes: string[], raw: Record<string, string>): Record
 
 export const sumSizes = (d: Record<string, number>) => Object.values(d).reduce((s, v) => s + (Number(v) || 0), 0);
 
-/** Sepete eklenecek kalem; hata varsa mesaj döner */
-export function cartItem(p: CatalogProduct, color: string, raw: Record<string, string>): OrderItem | string {
+/** Sepete eklenecek kalem; hata varsa mesaj döner. Çift: renk + beden adetleri; diğer birimler: miktar */
+export function cartItem(p: CatalogProduct, color: string, raw: Record<string, string>, qtyText = ''): OrderItem | string {
+  const unit = orderUnit(p.unit);
+  if (!isPairUnit(unit)) {
+    const quantity = cleanQuantity(qtyText, unit);
+    if (quantity === null) return `Geçerli bir miktar girin (${unit}).`;
+    return { productId: p.id, productCode: p.code || '', productName: p.name, color: color.trim(), sizeDistribution: {}, totalQuantity: quantity, unit, quantity };
+  }
   if (!color.trim()) return 'Renk girin.';
   const sizeDistribution = cleanSizes(sizesOf(p), raw);
   const totalQuantity = sumSizes(sizeDistribution);
   if (totalQuantity === 0) return 'En az 1 adet girin.';
-  return { productId: p.id, productCode: p.code || '', productName: p.name, color: color.trim(), sizeDistribution, totalQuantity };
+  return { productId: p.id, productCode: p.code || '', productName: p.name, color: color.trim(), sizeDistribution, totalQuantity, unit };
 }
 
 /** Sepetten paket sipariş gövdesi (POST /api/portal/me/orders) */
@@ -85,6 +96,7 @@ export function orderLines(o: PortalOrder): OrderItem[] {
     color: o.color || '',
     sizeDistribution: o.sizeDistribution || {},
     totalQuantity: o.totalQuantity,
+    unit: orderUnit(o.unit),
   }];
 }
 

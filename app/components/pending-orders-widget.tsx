@@ -1,5 +1,6 @@
 'use client';
 
+import { formatQty } from '@/lib/order-units';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +16,7 @@ interface OrderRow {
   productName: string;
   productCode: string | null;
   totalQuantity: number;
+  unit?: string | null;
   dueDate: string | null;
   status: string;
   isOverdue: boolean;
@@ -305,9 +307,9 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
                         <td className="px-3 py-3 text-right hidden sm:table-cell">
                           <Link href={`/orders/${order.id}`} className="block">
                             <span className="font-semibold text-slate-700 tabular-nums">
-                              {order.totalQuantity.toLocaleString('tr-TR')}
+                              {formatQty(order.totalQuantity, order.unit).split(' ')[0]}
                             </span>
-                            <span className="text-xs text-slate-400 ml-1">çift</span>
+                            <span className="text-xs text-slate-400 ml-1">{formatQty(0, order.unit).split(' ').slice(1).join(' ')}</span>
                           </Link>
                         </td>
                         <td className="px-3 py-3">

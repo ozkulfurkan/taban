@@ -1,5 +1,6 @@
 'use client';
 
+import { formatQty } from '@/lib/order-units';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -99,7 +100,7 @@ export default function PortalOrdersPage() {
                           : order.productCode || order.product?.name || '—'}
                       </td>
                       <td className="px-4 py-3 text-slate-600">{order.color || '—'}</td>
-                      <td className="px-4 py-3 text-slate-600">{order.totalQuantity}</td>
+                      <td className="px-4 py-3 text-slate-600">{formatQty(order.totalQuantity, order.unit)}</td>
                       <td className="px-4 py-3 text-slate-500 text-xs">
                         {order.requestedDeliveryDate ? new Date(order.requestedDeliveryDate).toLocaleDateString('tr-TR') : '—'}
                       </td>
