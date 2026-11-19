@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { api, setAuthToken, setUnauthorizedHandler } from './api';
+import { registerForPush, unregisterPush } from './push';
 import { TOKEN_KEY, getItem, removeItem, setItem } from './storage';
 
 export type StaffUser = {
@@ -24,11 +25,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
+  // Çıkış sırasında bildirim kaydı silinirken 401 gelirse çıkış yeniden tetiklenmesin
+  const signingOut = useRef(false);
   const signOut = useCallback(async () => {
-    setAuthToken(null);
-    setUser(null);
-    await removeItem(TOKEN_KEY);
+    if (signingOut.current) return;
+    signingOut.current = true;
+    try {
+      await unregisterPush(); // oturum anahtarı silinmeden: bu cihaz artık bu hesaba bildirim almaz
+      setAuthToken(null);
+      setUser(null);
+      await removeItem(TOKEN_KEY);
+    } finally {
+      signingOut.current = false;
+    }
   }, []);
+
+  // Oturum açılınca (girişte ya da kayıtlı oturumla açılışta) bu cihazı bildirimler için kaydet
+  const userId = user?.id;
+  useEffect(() => {
+    if (userId) void registerForPush();
+  }, [userId]);
 
   const refresh = useCallback(async () => {
     const r = await api<{ user: User }>('/api/mobile/auth/me');

@@ -41,17 +41,18 @@ const PORTAL_API_PREFIXES = [
   '/api/auth/',
   '/api/portal/me/',
   '/api/mobile/auth/', // mobil uygulama oturum bilgisi
+  '/api/mobile/push-token', // kendi cihazının bildirim kaydı
   '/api/portal/fason/',
   '/api/portal/auth/verify-email',
   '/api/exchange-rates', // genel kur bilgisi, firma verisi içermez
 ];
 
 // VIEWER rolünün yazma yapabileceği API'ler (kendi profili, destek talepleri).
-const VIEWER_WRITE_ALLOWED = ['/api/auth/', '/api/settings', '/api/support/'];
+const VIEWER_WRITE_ALLOWED = ['/api/auth/', '/api/settings', '/api/support/', '/api/mobile/push-token'];
 
 // Düzenleyicinin silebileceği API'ler (kendi oturumu, kendi destek talepleri).
 // Ekstre linkini kapatmak kayıt silmek değildir; düzenleyici de linki yenileyip kapatabilir.
-const EDITOR_DELETE_ALLOWED = ['/api/auth/', '/api/support/', '/api/statement-links'];
+const EDITOR_DELETE_ALLOWED = ['/api/auth/', '/api/support/', '/api/statement-links', '/api/mobile/push-token'];
 
 export const ASSIGNABLE_ROLES = ['COMPANY_OWNER', 'EDITOR', 'VIEWER'] as const;
 

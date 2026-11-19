@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
+import { orderRecipients, pushToUsers } from '@/lib/push';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { cleanQuantity, formatQty, isPairUnit, orderUnit } from '@/lib/order-units';
 import { esc, itemsTableHtml } from '@/lib/order-email';
@@ -207,6 +208,14 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
       text: `Siparişiniz alındı: ${orderNo}, Toplam: ${formatQty(finalTotalQty, finalUnit)}`,
     }).catch(() => {});
   }
+
+  // Anlık bildirim: siparişleri görebilen firma kullanıcılarına (portal ya da bağlı SoleCost firmasından gelen sipariş).
+  // Sunucusuz ortamda yanıt dönünce iş kesilebileceği için beklenir; hata siparişi etkilemez.
+  await pushToUsers(await orderRecipients(opts.companyId).catch(() => []), {
+    title: opts.linkId ? 'Yeni sipariş (SoleCost ağı)' : 'Yeni portal siparişi',
+    body: `${customer?.name ?? 'Müşteri'} · ${orderNo} · ${formatQty(finalTotalQty, finalUnit)}`,
+    url: `/siparis/gelen/${order.id}`,
+  });
 
   return { order };
 }

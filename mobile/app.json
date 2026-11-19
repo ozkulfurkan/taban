@@ -50,7 +50,8 @@
           "faceIDPermission": "Uygulamayı Face ID ile kilitleyip açmak için kullanılır."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-notifications"
     ],
     "extra": {
       "apiUrl": "https://www.solecost.com",

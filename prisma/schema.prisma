@@ -137,6 +137,7 @@ model User {
   auditLogs        AuditLog[]
   supportTickets   SupportTicket[]  @relation("ticketCreator")
   ticketMessages   TicketMessage[]  @relation("messageAuthor")
+  pushTokens       PushToken[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 }
@@ -581,6 +582,24 @@ model PortalCustomer {
   orders           SoleOrder[]
   productVisibility ProductPortalCustomer[]
   subcontractor    Subcontractor?     @relation("PortalCustomerSubcontractor")
+  pushTokens       PushToken[]
+}
+
+// Mobil anlık bildirim: cihazın Expo push token'ı. Bir cihaz aynı anda tek oturuma bağlıdır
+// (token benzersiz; başka hesapla giriş yapılınca kayıt o hesaba taşınır). Hesap silinince kayıtlar silinir.
+model PushToken {
+  id               String          @id @default(cuid())
+  token            String          @unique
+  platform         String?
+  userId           String?
+  user             User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portalCustomerId String?
+  portalCustomer   PortalCustomer? @relation(fields: [portalCustomerId], references: [id], onDelete: Cascade)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([portalCustomerId])
 }
 
 model ProductPortalCustomer {

@@ -1,5 +1,6 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import * as Notifications from 'expo-notifications';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, router, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -13,7 +14,24 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootNavigator() {
   const { ready, user } = useAuth();
+  const qc = useQueryClient();
   useEffect(() => { if (ready) SplashScreen.hideAsync().catch(() => {}); }, [ready]);
+
+  // Bildirime dokununca ilgili sipariş açılır (uygulama kapalıyken dokunulduysa oturum hazır olunca)
+  const response = Notifications.useLastNotificationResponse();
+  useEffect(() => {
+    const url = response?.notification.request.content.data?.url;
+    if (!ready || !user || typeof url !== 'string' || !url.startsWith('/')) return;
+    router.push(url as Href);
+    void Notifications.clearLastNotificationResponseAsync();
+  }, [response, ready, user]);
+
+  // Uygulama açıkken bildirim gelince sipariş listeleri yenilensin
+  useEffect(() => {
+    const sub = Notifications.addNotificationReceivedListener(() => { void qc.invalidateQueries(); });
+    return () => sub.remove();
+  }, [qc]);
+
   if (!ready) return null;
   const staff = user?.type === 'staff';
   const portal = user?.type === 'portal';

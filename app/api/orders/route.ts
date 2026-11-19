@@ -8,6 +8,8 @@ import { rejectForeignRefs } from '@/lib/tenant';
 import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
 import { PRODUCTION_STATUSES } from '@/lib/order-status';
 import { normalizeOrderItems } from '@/lib/orders';
+import { orderRecipients, pushToUsers } from '@/lib/push';
+import { formatQty } from '@/lib/order-units';
 
 const MAX_ORDERS = 1000;
 
@@ -153,6 +155,14 @@ export async function POST(req: NextRequest) {
         product: { select: { id: true, name: true, code: true } },
       },
     });
+  });
+
+  // Personelin girdiği sipariş: girene değil, firmada siparişleri görebilen diğer kullanıcılara bildirim
+  const others = (await orderRecipients(user.companyId).catch(() => [] as string[])).filter(id => id !== user.id);
+  await pushToUsers(others, {
+    title: 'Yeni sipariş',
+    body: `${order.customer?.name ?? 'Müşteri'} · ${order.orderNo} · ${formatQty(order.totalQuantity, order.unit)}`,
+    url: `/siparis/gelen/${order.id}`,
   });
 
   return NextResponse.json(order, { status: 201 });

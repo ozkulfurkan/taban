@@ -1,6 +1,7 @@
 import type { OrderStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
+import { orderRecipients, pushToPortalCustomer, pushToUsers } from '@/lib/push';
 import { statusLabel } from '@/lib/order-status';
 import { formatQty } from '@/lib/order-units';
 import { buildShipped, formatDiff, shipLines, type ShippedLine } from '@/lib/shipment';
@@ -29,7 +30,33 @@ async function recipientOf(orderId: string) {
   return null;
 }
 
+/** Siparişi verene anlık bildirim: portal müşterisi ya da bağlı firmada siparişi veren + siparişleri görenler */
+async function pushToBuyer(orderId: string, title: (company: string, orderNo: string) => string, body: string) {
+  try {
+    const o = await prisma.soleOrder.findUnique({
+      where: { id: orderId },
+      select: { orderNo: true, portalCustomerId: true, buyerUserId: true, company: { select: { name: true } }, link: { select: { buyerCompanyId: true } } },
+    });
+    if (!o) return;
+    const msg = { title: title(o.company.name, o.orderNo), body };
+    if (o.portalCustomerId) {
+      await pushToPortalCustomer(o.portalCustomerId, { ...msg, url: `/siparisler/${orderId}` });
+    } else if (o.link) {
+      const ids = await orderRecipients(o.link.buyerCompanyId);
+      await pushToUsers([...ids, o.buyerUserId], { ...msg, url: `/siparis/verilen/${orderId}` });
+    }
+  } catch (e) {
+    console.error('pushToBuyer', e);
+  }
+}
+
 export async function notifyOrderStatus(orderId: string, status: string, note?: string | null) {
+  const unit = (await prisma.soleOrder.findUnique({ where: { id: orderId }, select: { unit: true } }).catch(() => null))?.unit;
+  await pushToBuyer(
+    orderId,
+    (company, no) => `${company} · ${no}`,
+    `${status === 'CANCELLED' ? 'Siparişiniz iptal edildi' : `Siparişiniz: ${statusLabel(status, unit)}`}${note ? ` — ${note}` : ''}`,
+  );
   try {
     const r = await recipientOf(orderId);
     if (!r) return;
@@ -57,6 +84,11 @@ export async function notifyOrderStatus(orderId: string, status: string, note?: 
 }
 
 export async function notifyOrderShipped(orderId: string, s: { shipmentDate: Date | string; deliveryNoteNo?: string | null; carrier?: string | null; trackingNo?: string | null }, items?: ShippedLine[]) {
+  await pushToBuyer(
+    orderId,
+    (company, no) => `${company} · ${no}`,
+    `Siparişiniz sevk edildi${s.carrier ? ` (${s.carrier}${s.trackingNo ? ` ${s.trackingNo}` : ''})` : ''}`,
+  );
   try {
     const r = await recipientOf(orderId);
     if (!r) return;

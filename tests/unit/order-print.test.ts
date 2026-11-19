@@ -30,7 +30,7 @@ test('tekli sipariş tek satıra çevrilir', () => {
 
 test('beden sütunları sıralı, toplam ve termin görünür', () => {
   const html = ordersHtml([pairOrder], { title: 'Bekleyen siparişler', companyName: 'Demo', now });
-  const heads = [...html.matchAll(/<th class="n">([^<]+)<\/th>/g)].map(m => m[1]);
+  const heads = Array.from(html.matchAll(/<th class="n">([^<]+)<\/th>/g)).map(m => m[1]);
   assert.deepEqual(heads, ['39', '40', '41', 'Toplam']);
   assert.match(html, /30 çift/);
   assert.match(html, /Termin: <b>01\.12\.2026<\/b>/);
