@@ -16,7 +16,7 @@ export default function Siparisler() {
   const q = useApi<PortalOrder[]>('/api/portal/me/orders');
   const [filter, setFilter] = useState<Filter>('active');
   const rows = useMemo(() => (q.data ?? []).filter(o =>
-    filter === 'all' ? true : filter === 'shipped' ? o.status === 'SHIPPED' : o.status !== 'SHIPPED'), [q.data, filter]);
+    filter === 'all' ? true : filter === 'shipped' ? o.status === 'SHIPPED' : o.status !== 'SHIPPED' && o.status !== 'CANCELLED'), [q.data, filter]);
 
   return (
     <>

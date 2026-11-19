@@ -37,6 +37,9 @@ test('tekli siparişte satır; beden özeti sayısal sırada; durum adımı', ()
   assert.equal(sizeSummary({ '40': 3, '39': 2, '41': 0 }), '39×2 · 40×3');
   assert.equal(stepIndex('MOLDING'), 2);
   assert.equal(stepIndex('YOK'), -1);
+  // Hammadde siparişinde 4 adım: ara üretim durumları "Hazırlanıyor" adımına düşer
+  assert.equal(stepIndex('MOLDING', 'kg'), 1);
+  assert.equal(stepIndex('READY_FOR_SHIPMENT', 'kg'), 2);
 });
 
 test('birime göre sepet kalemi: kg ondalıklı miktar, adet tam sayı, renk isteğe bağlı', () => {

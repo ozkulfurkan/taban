@@ -1,5 +1,6 @@
 'use client';
 
+import { isPairUnit } from '@/lib/order-units';
 import { useEffect, useMemo, useState } from 'react';
 import { X, Plus, Check, Info } from 'lucide-react';
 import { toPriceInput, fromPriceInput, normalizePriceInput, blockDot } from '@/lib/price-input';
@@ -214,7 +215,7 @@ export default function LineModal({
               })}
             </div>
           )}
-          {kind === 'sale' && product && parts.length === 0 && (
+          {kind === 'sale' && product && parts.length === 0 && isPairUnit(product.unit) && (
             <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
               <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-700">{tx('noPartsInfo')}</p>

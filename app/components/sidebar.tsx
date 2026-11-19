@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
   FileText, Users, Truck, BoxIcon, Receipt, Package, Landmark, ScrollText,
-  UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck, LifeBuoy, LogOut
+  UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck, LifeBuoy, LogOut, Send
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,9 +45,17 @@ export default function Sidebar() {
       links: [
         { href: '/customers', label: t('nav', 'customers'), icon: Users },
         { href: '/suppliers', label: t('nav', 'suppliers'), icon: Truck },
-        { href: '/verilen-siparisler', label: t('nav', 'networkOrders'), icon: ClipboardList },
         { href: '/invoices', label: t('nav', 'sales'), icon: Receipt },
         { href: '/purchases', label: t('nav', 'purchases'), icon: Package },
+      ],
+    },
+    {
+      // Gelen: müşterilerden (portal, bağlı SoleCost firmaları, elle) gelen siparişler — hammaddeci dahil herkes
+      // Verilen: bağlı SoleCost tedarikçilerine verilen siparişler
+      title: t('nav', 'ordersSection'),
+      links: [
+        { href: '/orders', label: t('nav', 'incomingOrders'), icon: ClipboardList },
+        { href: '/verilen-siparisler', label: t('nav', 'networkOrders'), icon: Send },
       ],
     },
     {
@@ -62,7 +70,6 @@ export default function Sidebar() {
     {
       title: t('nav', 'operations'),
       links: [
-        ...(!isMaterial ? [{ href: '/orders', label: t('nav', 'orders'), icon: ClipboardList }] : []),
         ...(!isMaterial ? [{ href: '/subcontractors', label: t('nav', 'subcontractors'), icon: Factory }] : []),
         ...(!isMaterial ? [{ href: '/subcontractor-orders', label: t('nav', 'subcontractorOrders'), icon: Factory }] : []),
         { href: '/personnel', label: t('nav', 'personnel'), icon: UserCheck },

@@ -7,7 +7,8 @@ import { Loader2, Truck } from 'lucide-react';
 import AppShell from '@/app/components/app-shell';
 import BackLink from '@/app/components/back-link';
 import OrderStepper from '@/app/portal/components/order-stepper';
-import { ORDER_STATUS_LABEL } from '@/lib/order-status';
+import { statusLabel } from '@/lib/order-status';
+import { isPairUnit } from '@/lib/order-units';
 
 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleDateString('tr-TR') : '—');
 const sizes = (d: Record<string, number> = {}) => Object.entries(d)
@@ -41,27 +42,27 @@ export default function NetworkOrderDetailPage() {
 
         <div className="bg-white rounded-xl p-5 shadow-sm overflow-x-auto">
           <h2 className="font-semibold text-slate-700 mb-3">Sipariş Durumu</h2>
-          <OrderStepper status={order.status} />
+          <OrderStepper status={order.status} unit={order.unit} />
         </div>
 
         <div className="bg-white rounded-xl p-5 shadow-sm">
           <h2 className="font-semibold text-slate-700 mb-3">Kalemler</h2>
           <table className="w-full text-sm">
             <thead><tr className="text-left text-xs text-slate-400 uppercase">
-              <th className="py-2">Model</th><th>Renk</th><th>Beden dağılımı</th><th className="text-right">Adet</th>
+              <th className="py-2">Ürün</th><th>Renk</th>{isPairUnit(order.unit) && <th>Beden dağılımı</th>}<th className="text-right">Miktar</th>
             </tr></thead>
             <tbody className="divide-y divide-slate-100">
               {items.map((it, i) => (
                 <tr key={i}>
                   <td className="py-2.5 font-semibold text-slate-700">{[it.productCode, it.productName].filter(Boolean).join(' · ') || '—'}</td>
                   <td className="text-slate-600">{it.color || '—'}</td>
-                  <td>
+                  {isPairUnit(order.unit) && <td>
                     <div className="flex flex-wrap gap-1">
                       {sizes(it.sizeDistribution).map(([sz, q]) => (
                         <span key={sz} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-xs rounded font-medium"><span className="text-blue-400">{sz}</span>×{q}</span>
                       ))}
                     </div>
-                  </td>
+                  </td>}
                   <td className="text-right font-bold text-slate-800">{formatQty(it.totalQuantity, it.unit ?? order.unit)}</td>
                 </tr>
               ))}
@@ -93,7 +94,7 @@ export default function NetworkOrderDetailPage() {
               {[...order.statusHistory].reverse().map((h: any) => (
                 <li key={h.id} className="flex gap-3 text-sm">
                   <span className="text-slate-400 w-24 flex-shrink-0">{fmt(h.createdAt)}</span>
-                  <span><b className="text-slate-700">{ORDER_STATUS_LABEL[h.status] ?? h.status}</b>{h.note ? <span className="text-slate-500"> — {h.note}</span> : null}</span>
+                  <span><b className="text-slate-700">{statusLabel(h.status, order.unit)}</b>{h.note ? <span className="text-slate-500"> — {h.note}</span> : null}</span>
                 </li>
               ))}
             </ul>

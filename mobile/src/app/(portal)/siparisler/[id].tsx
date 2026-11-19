@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Badge, Card, ErrorState, Loading, Screen, Section, T } from '@/components/ui';
 import { formatDate } from '@/core/format';
-import { ORDER_STEPS, STATUS_LABEL, formatQty, orderLines, sizeSummary, statusTone, stepIndex, type PortalOrder } from '@/core/portal';
+import { formatQty, orderLines, orderSteps, sizeSummary, statusLabel, statusTone, stepIndex, type PortalOrder } from '@/core/portal';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -16,7 +16,9 @@ export default function SiparisDetay() {
   if (q.isLoading) return <Loading />;
   if (q.error || !q.data) return <ErrorState message={(q.error as Error)?.message || 'Sipariş bulunamadı'} onRetry={() => { void q.refetch(); }} />;
   const o = q.data;
-  const current = stepIndex(o.status);
+  const current = stepIndex(o.status, o.unit);
+  const steps = orderSteps(o.unit);
+  const cancelled = o.status === 'CANCELLED';
   const lines = orderLines(o);
   const partials = (o.colorPartials ?? []).filter(p => p.color);
 
@@ -27,10 +29,10 @@ export default function SiparisDetay() {
         <Card style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <T variant="small">{formatDate(o.createdAt)} · {formatQty(o.totalQuantity, o.unit)}</T>
-            <Badge label={STATUS_LABEL[o.status] ?? o.status} tone={statusTone(o.status)} />
+            <Badge label={statusLabel(o.status, o.unit)} tone={statusTone(o.status)} />
           </View>
           <View style={{ gap: 0 }} testID="order-steps">
-            {ORDER_STEPS.map((s, i) => {
+            {cancelled ? <T color={c.danger} style={{ fontWeight: '600' }} testID="order-cancelled">Bu sipariş iptal edildi.</T> : steps.map((s, i) => {
               const done = i <= current;
               return (
                 <View key={s.key} style={styles.step}>
@@ -38,7 +40,7 @@ export default function SiparisDetay() {
                     <View style={[styles.dot, { backgroundColor: done ? c.primary : c.card, borderColor: done ? c.primary : c.border }]}>
                       {done ? <T color={c.primaryText} style={{ fontSize: 11, fontWeight: '700' }}>✓</T> : null}
                     </View>
-                    {i < ORDER_STEPS.length - 1 ? <View style={[styles.line, { backgroundColor: i < current ? c.primary : c.border }]} /> : null}
+                    {i < steps.length - 1 ? <View style={[styles.line, { backgroundColor: i < current ? c.primary : c.border }]} /> : null}
                   </View>
                   <T style={{ fontWeight: i === current ? '700' : '400' }} color={done ? c.text : c.textMuted}>{s.label}</T>
                 </View>
@@ -93,7 +95,7 @@ export default function SiparisDetay() {
                 <View key={h.id} style={{ flexDirection: 'row', gap: 12 }}>
                   <T variant="small" style={{ width: 84 }}>{formatDate(h.createdAt)}</T>
                   <View style={{ flex: 1 }}>
-                    <T style={{ fontWeight: '600' }}>{STATUS_LABEL[h.status] ?? h.status}</T>
+                    <T style={{ fontWeight: '600' }}>{statusLabel(h.status, o.unit)}</T>
                     {h.note ? <T variant="small">{h.note}</T> : null}
                   </View>
                 </View>

@@ -4,17 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
-import { sendMail } from '@/lib/mail';
+import { isOrderStatus, notifyOrderStatus } from '@/lib/order-notify';
 
-const STATUS_LABELS: Record<string, string> = {
-  ORDER_RECEIVED: 'Sipariş Alındı',
-  IN_PRODUCTION: 'Üretime Girdi',
-  MOLDING: 'Kalıplama',
-  PAINTING: 'Boya / Apre',
-  PACKAGING: 'Paketleme',
-  READY_FOR_SHIPMENT: 'Sevkiyata Hazır',
-  SHIPPED: 'Sevk Edildi',
-};
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -22,7 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { status, note, confirmedDeliveryDate } = await req.json();
-  if (!status) return NextResponse.json({ error: 'status required' }, { status: 400 });
+  if (!isOrderStatus(status)) return NextResponse.json({ error: 'Geçersiz durum' }, { status: 400 });
 
   const order = await prisma.soleOrder.findFirst({
     where: { id: params.id, companyId: user.companyId },
@@ -43,24 +34,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     prisma.orderStatusHistory.create({ data: { orderId: params.id, status, note: note || null } }),
   ]);
 
-  // Notify portal customer
-  const label = STATUS_LABELS[status] ?? status;
-  const terminStr = confirmedDeliveryDate
-    ? new Date(confirmedDeliveryDate).toLocaleDateString('tr-TR')
-    : (order.confirmedDeliveryDate ? new Date(order.confirmedDeliveryDate).toLocaleDateString('tr-TR') : null);
-  if (!order.portalCustomer) return NextResponse.json({ ok: true });
-
-  sendMail({
-    to: order.portalCustomer.email,
-    subject: `Siparişiniz güncellendi: ${label}`,
-    html: `
-      <p>Merhaba ${order.portalCustomer.name ?? order.portalCustomer.email},</p>
-      <p><strong>${order.orderNo}</strong> numaralı siparişiniz <strong>${label}</strong> aşamasına geçti.</p>
-      ${note ? `<p>Not: ${note}</p>` : ''}
-      ${terminStr ? `<p>Termin Tarihi: <strong>${terminStr}</strong></p>` : ''}
-    `,
-    text: `Sipariş ${order.orderNo} güncellendi: ${label}`,
-  }).catch(() => {});
+  // Siparişi verene bildirim (portal müşterisi ya da bağlı firma)
+  if (status !== order.status) await notifyOrderStatus(params.id, status, note);
 
   return NextResponse.json({ ok: true });
 }

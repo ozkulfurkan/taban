@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Badge, T } from '@/components/ui';
 import { formatDate } from '@/core/format';
-import { STATUS_LABEL, formatQty, statusTone, type PortalOrder } from '@/core/portal';
+import { formatQty, statusLabel, statusTone, type PortalOrder } from '@/core/portal';
 import { useTheme } from '@/hooks/use-theme';
 
 // Portal sipariş satırı: numara, tarih, model/adet ve durum rozeti
@@ -23,7 +23,7 @@ export function OrderRow({ order: o, first }: { order: PortalOrder; first?: bool
         <T style={{ fontWeight: '600' }} numberOfLines={1}>{o.orderNo}</T>
         <T variant="small" numberOfLines={1}>{formatDate(o.createdAt)} · {model} · {formatQty(o.totalQuantity, o.unit)}</T>
       </View>
-      <Badge label={STATUS_LABEL[o.status] ?? o.status} tone={statusTone(o.status)} />
+      <Badge label={statusLabel(o.status, o.unit)} tone={statusTone(o.status)} />
     </Pressable>
   );
 }

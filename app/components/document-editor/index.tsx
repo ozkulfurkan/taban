@@ -1,5 +1,6 @@
 'use client';
 
+import { isPairUnit } from '@/lib/order-units';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Pencil, Trash2, AlertTriangle, X, ChevronDown, Info } from 'lucide-react';
@@ -554,7 +555,7 @@ function LineName({ l, kind, products, tx }: { l: DocLine; kind: DocKind; produc
       {kind === 'sale' && product && (
         (product.parts ?? []).length
           ? <p className="text-xs text-purple-600 truncate">{product.parts.map((p: any) => p.name).join(', ')}</p>
-          : <p className="text-xs text-amber-600">⚠ {tx('noPartsShort')}</p>
+          : isPairUnit(product.unit) ? <p className="text-xs text-amber-600">⚠ {tx('noPartsShort')}</p> : null
       )}
       {l.notes && <p className="text-xs text-slate-400 truncate">{l.notes}</p>}
     </div>

@@ -26,6 +26,19 @@ export default function NewInvoicePage() {
   }, [orderId]);
 
   const prefillLines = useCallback((products: any[]): DocLine[] => {
+    // Paket sipariş: her kalem kendi ürünü ve miktarıyla ayrı satır (renk açıklamaya eklenir)
+    if (Array.isArray(order?.orderItems) && order.orderItems.length) {
+      return (order.orderItems as any[]).map(item => {
+        const p = item.productId ? products.find(x => x.id === item.productId) : undefined;
+        const name = [item.productCode, item.productName || p?.name].filter(Boolean).join(' ') || 'Ürün';
+        return emptyLine({
+          itemType: p ? 'product' : 'free', productId: p?.id,
+          description: item.color ? `${name} — ${item.color}` : name,
+          quantity: String(item.totalQuantity || 1),
+          unitPrice: p ? toPriceInput(p.unitPrice) : '',
+        });
+      });
+    }
     if (order?.productId) {
       const p = products.find(x => x.id === order.productId);
       return [emptyLine({

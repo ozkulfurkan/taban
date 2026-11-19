@@ -30,3 +30,20 @@ test('gösterim birimle', () => {
   assert.equal(formatQty(1250.5, 'kg'), '1.250,5 kg');
   assert.equal(formatQty(36, null), '36 çift');
 });
+
+test('üretim emri e-postası: hammadde kalemleri miktarla, taban asortiyle; HTML kaçışlı', async () => {
+  const { itemsTableHtml } = await import('../../lib/order-email');
+  const kg = itemsTableHtml([
+    { productCode: 'PVC-01', productName: 'PVC Granül', unit: 'kg', color: '', sizeDistribution: {}, totalQuantity: 1000 },
+    { productCode: 'TPR-02', productName: 'TPR <Granül>', unit: 'kg', color: 'Siyah', sizeDistribution: {}, totalQuantity: 250.5 },
+  ]);
+  assert.match(kg, /PVC-01/);
+  assert.match(kg, /1\.000 kg/);
+  assert.match(kg, /250,5 kg/);
+  assert.match(kg, /TPR &lt;Granül&gt;/);
+  assert.doesNotMatch(kg, /Beden Dağılımı/);
+  const pair = itemsTableHtml([{ productCode: 'TB-1', productName: 'Taban', unit: 'çift', color: 'Beyaz', sizeDistribution: { '40': 24, '38': 12 }, totalQuantity: 36 }]);
+  assert.match(pair, /Beden Dağılımı/);
+  assert.match(pair, /38×12 · 40×24/);
+  assert.match(pair, /36 çift/);
+});
