@@ -1,19 +1,21 @@
 'use client';
 import { usePortalText } from '@/lib/i18n/portal';
 
-const STEPS = [
-  { key: 'ORDER_RECEIVED', label: 'Sipariş Alındı' },
-  { key: 'IN_PRODUCTION', label: 'Üretime Girdi' },
-  { key: 'MOLDING', label: 'Kalıplama' },
-  { key: 'PAINTING', label: 'Boya / Apre' },
-  { key: 'PACKAGING', label: 'Paketleme' },
-  { key: 'READY_FOR_SHIPMENT', label: 'Sevkiyata Hazır' },
-  { key: 'SHIPPED', label: 'Sevk Edildi' },
-];
+import { orderSteps, stepIndexOf } from '@/lib/order-status';
 
-export default function OrderStepper({ status }: { status: string }) {
+// Sipariş adımları ürün birimine göre: taban (çift) 7 üretim adımı, hammadde vb. 4 adım
+export default function OrderStepper({ status, unit }: { status: string; unit?: string | null }) {
   const { tp } = usePortalText();
-  const currentIdx = STEPS.findIndex(s => s.key === status);
+  const STEPS = orderSteps(unit);
+  const currentIdx = stepIndexOf(status, unit);
+
+  if (status === 'CANCELLED') {
+    return (
+      <div className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm font-semibold text-red-700" data-testid="order-cancelled">
+        {tp('Bu sipariş iptal edildi.')}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full overflow-x-auto">

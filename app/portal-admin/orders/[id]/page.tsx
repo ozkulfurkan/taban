@@ -1,6 +1,7 @@
 'use client';
 
 import { formatQty } from '@/lib/order-units';
+import { orderSteps, statusLabel } from '@/lib/order-status';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
@@ -10,15 +11,6 @@ import Link from 'next/link';
 import { Loader2, Save, Truck, ShoppingCart, Printer, X, Factory } from 'lucide-react';
 import BackLink from '@/app/components/back-link';
 
-const ALL_STATUSES = [
-  { key: 'ORDER_RECEIVED', label: 'Sipariş Alındı' },
-  { key: 'IN_PRODUCTION', label: 'Üretime Girdi' },
-  { key: 'MOLDING', label: 'Kalıplama' },
-  { key: 'PAINTING', label: 'Boya / Apre' },
-  { key: 'PACKAGING', label: 'Paketleme' },
-  { key: 'READY_FOR_SHIPMENT', label: 'Sevkiyata Hazır' },
-  { key: 'SHIPPED', label: 'Sevk Edildi' },
-];
 
 export default function PortalAdminOrderDetailPage() {
   const params = useParams();
@@ -149,7 +141,7 @@ export default function PortalAdminOrderDetailPage() {
 
         {/* Stepper */}
         <div className="bg-white rounded-xl p-5 shadow-sm overflow-x-auto">
-          <OrderStepper status={order.status} />
+          <OrderStepper status={order.status} unit={order.unit} />
         </div>
 
         {/* Status update */}
@@ -158,7 +150,7 @@ export default function PortalAdminOrderDetailPage() {
           <form onSubmit={handleStatusUpdate} className="space-y-3">
             <select value={statusForm.status} onChange={e => setStatusForm(f => ({ ...f, status: e.target.value }))}
               className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-              {ALL_STATUSES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+              {orderSteps(order.unit).map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
             </select>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Termin Tarihi</label>
@@ -325,7 +317,7 @@ export default function PortalAdminOrderDetailPage() {
                 <div key={h.id} className="flex items-start gap-3 text-sm">
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
                   <div>
-                    <span className="font-medium text-slate-700">{h.status.replace(/_/g, ' ')}</span>
+                    <span className="font-medium text-slate-700">{statusLabel(h.status, order.unit)}</span>
                     {h.note && <span className="text-slate-500 ml-2">— {h.note}</span>}
                     <p className="text-xs text-slate-400">{new Date(h.createdAt).toLocaleString('tr-TR')}</p>
                   </div>

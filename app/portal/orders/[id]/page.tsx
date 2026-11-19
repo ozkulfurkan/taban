@@ -66,7 +66,7 @@ export default function PortalOrderDetailPage() {
         {/* Stepper */}
         <div className="bg-white rounded-xl p-5 shadow-sm overflow-x-auto">
           <h2 className="font-semibold text-slate-700 mb-3">{tp('Sipariş Durumu')}</h2>
-          <OrderStepper status={order.status} />
+          <OrderStepper status={order.status} unit={order.unit} />
         </div>
 
         {/* Details */}

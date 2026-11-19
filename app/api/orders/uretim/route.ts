@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import { PRODUCTION_STATUSES } from '@/lib/order-status';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest) {
   if (!user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const orders = await prisma.soleOrder.findMany({
-    where: { companyId: user.companyId, status: 'IN_PRODUCTION' },
+    where: { companyId: user.companyId, status: { in: PRODUCTION_STATUSES as any } },
     include: {
       customer: { select: { id: true, name: true } },
       product: {

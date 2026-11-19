@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { cleanQuantity, formatQty, isPairUnit, orderUnit } from '@/lib/order-units';
+import { esc, itemsTableHtml } from '@/lib/order-email';
 
 // Satıcı firmada müşteri siparişi (SoleOrder) oluşturur ve üretim emri e-postasını gönderir.
 // Portal müşterisi (/api/portal/me/orders) ve bağlı firma (/api/network/links/:id/orders) aynı mantığı kullanır.
@@ -109,7 +110,7 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
 
   // Build size distribution table rows
   const sizeEntries = Object.entries(finalSizeDist).filter(([, qty]) => qty > 0);
-  const sizeHeaderCells = sizeEntries.map(([sz]) => `<th style="padding:6px 12px;border:1px solid #e2e8f0;background:#f8fafc;font-weight:600;color:#475569;">${sz}</th>`).join('');
+  const sizeHeaderCells = sizeEntries.map(([sz]) => `<th style="padding:6px 12px;border:1px solid #e2e8f0;background:#f8fafc;font-weight:600;color:#475569;">${esc(sz)}</th>`).join('');
   const sizeValueCells = sizeEntries.map(([, qty]) => `<td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:500;">${qty}</td>`).join('');
 
   const productionHtml = `
@@ -120,7 +121,7 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
   <div style="border-bottom:2px solid #1e293b;padding-bottom:16px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;">
     <div>
       <p style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Üretim Emri</p>
-      <h1 style="font-size:24px;font-weight:700;margin:0;">${orderNo}</h1>
+      <h1 style="font-size:24px;font-weight:700;margin:0;">${esc(orderNo)}</h1>
     </div>
     <div style="text-align:right;font-size:12px;color:#64748b;">
       <p style="margin:0;">Tarih: ${now.toLocaleDateString('tr-TR')}</p>
@@ -132,29 +133,33 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
     <tr>
       <td style="padding:8px 16px 8px 0;vertical-align:top;width:50%;">
         <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Müşteri</p>
-        <p style="font-size:15px;font-weight:600;margin:0;">${customer?.name ?? '—'}</p>
-        ${portalCustomer ? `<p style="font-size:12px;color:#64748b;margin:2px 0 0;">${portalCustomer.email}</p>` : ''}
+        <p style="font-size:15px;font-weight:600;margin:0;">${esc(customer?.name ?? '—')}</p>
+        ${portalCustomer ? `<p style="font-size:12px;color:#64748b;margin:2px 0 0;">${esc(portalCustomer.email)}</p>` : ''}
       </td>
       <td style="padding:8px 0 8px 16px;vertical-align:top;width:50%;">
-        <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Ürün</p>
-        <p style="font-size:15px;font-weight:600;margin:0;">${productCode || product?.code || '—'}</p>
-        ${product?.name ? `<p style="font-size:12px;color:#64748b;margin:2px 0 0;">${product.name}</p>` : ''}
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:8px 16px 8px 0;vertical-align:top;">
-        <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Renk</p>
-        <p style="font-size:15px;font-weight:600;margin:0;">${color || '—'}</p>
-      </td>
-      <td style="padding:8px 0 8px 16px;vertical-align:top;">
-        <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Malzeme</p>
-        <p style="font-size:15px;font-weight:600;margin:0;">${material || '—'}</p>
+        <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Toplam</p>
+        <p style="font-size:15px;font-weight:600;margin:0;">${esc(formatQty(finalTotalQty, finalUnit))}</p>
+        ${finalItems ? `<p style="font-size:12px;color:#64748b;margin:2px 0 0;">${finalItems.length} kalem</p>` : ''}
       </td>
     </tr>
   </table>
 
+  ${finalItems ? itemsTableHtml(finalItems) : `
+  <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+    <tr>
+      <td style="padding:8px 16px 8px 0;vertical-align:top;width:50%;">
+        <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Ürün</p>
+        <p style="font-size:15px;font-weight:600;margin:0;">${esc(productCode || product?.code || '—')}</p>
+        ${product?.name ? `<p style="font-size:12px;color:#64748b;margin:2px 0 0;">${esc(product.name)}</p>` : ''}
+      </td>
+      <td style="padding:8px 0 8px 16px;vertical-align:top;width:50%;">
+        <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Renk / Malzeme</p>
+        <p style="font-size:15px;font-weight:600;margin:0;">${esc(color || '—')} · ${esc(material || '—')}</p>
+      </td>
+    </tr>
+  </table>
   <div style="margin-bottom:20px;">
-    <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">${isPairUnit(finalUnit) ? 'Beden Dağılımı' : 'Miktar'}</p>
+    <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Beden Dağılımı</p>
     <table style="border-collapse:collapse;width:100%;">
       <thead><tr>
         ${sizeHeaderCells}
@@ -162,14 +167,14 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
       </tr></thead>
       <tbody><tr>
         ${sizeValueCells}
-        <td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#1d4ed8;background:#dbeafe;">${formatQty(finalTotalQty, finalUnit)}</td>
+        <td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#1d4ed8;background:#dbeafe;">${esc(formatQty(finalTotalQty, finalUnit))}</td>
       </tr></tbody>
     </table>
-  </div>
+  </div>`}
 
   ${notes ? `<div style="background:#f8fafc;border-radius:8px;padding:12px 16px;margin-bottom:20px;">
     <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Notlar</p>
-    <p style="margin:0;color:#475569;">${notes}</p>
+    <p style="margin:0;color:#475569;">${esc(notes)}</p>
   </div>` : ''}
 
   <div style="border-top:1px solid #e2e8f0;padding-top:16px;display:flex;gap:40px;">
@@ -189,7 +194,9 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
       cc: portalCustomer?.email,
       subject: `Yeni Sipariş: ${orderNo} — ${customer?.name ?? ''}`,
       html: productionHtml,
-      text: `Yeni sipariş alındı: ${orderNo}\nMüşteri: ${customer?.name}\nModel: ${productCode || product?.code || '—'}\nRenk: ${color || '—'}\nToplam: ${formatQty(finalTotalQty, finalUnit)}`,
+      text: `Yeni sipariş alındı: ${orderNo}\nMüşteri: ${customer?.name}\n${finalItems
+        ? finalItems.map(i => `- ${[i.productCode, i.productName].filter(Boolean).join(' ')}${i.color ? ` (${i.color})` : ''}: ${formatQty(i.totalQuantity, i.unit)}`).join('\n')
+        : `Model: ${productCode || product?.code || '—'}\nRenk: ${color || '—'}`}\nToplam: ${formatQty(finalTotalQty, finalUnit)}`,
     }).catch(() => {});
   } else if (portalCustomer) {
     // Fallback: confirmation only to portal customer
@@ -251,3 +258,4 @@ export async function normalizeOrderItems(companyId: string, raw: any[]):
   if (units.length > 1) return { error: `Farklı birimdeki ürünler (${units.join(', ')}) ayrı siparişlerde verilmeli` };
   return { items, unit: units[0] === 'çift' ? null : units[0] };
 }
+

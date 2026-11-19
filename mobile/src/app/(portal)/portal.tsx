@@ -20,7 +20,7 @@ export default function PortalHome() {
   const orders = useApi<PortalOrder[]>(fason ? null : '/api/portal/me/orders');
   const link = useApi<{ url: string | null }>(fason ? null : '/api/portal/me/statement-link');
   const list = orders.data ?? [];
-  const active = list.filter(o => o.status !== 'SHIPPED').length;
+  const active = list.filter(o => o.status !== 'SHIPPED' && o.status !== 'CANCELLED').length;
   const ready = list.filter(o => o.status === 'READY_FOR_SHIPMENT').length;
   const shipped = list.filter(o => o.status === 'SHIPPED').length;
 

@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { nextDocumentNumber, documentYear } from '@/lib/doc-number';
+import { PRODUCTION_STATUSES } from '@/lib/order-status';
 
 const MAX_ORDERS = 1000;
 
@@ -24,7 +25,9 @@ export async function GET(req: NextRequest) {
 
   const where: any = {
     companyId: user.companyId,
-    ...(status ? { status: status as any } : {}),
+    // "Üretimde" sekmesi tüm üretim aşamalarını (kalıplama, boya, paketleme) kapsar
+    ...(status === 'IN_PRODUCTION' ? { status: { in: PRODUCTION_STATUSES as any } }
+      : status && status !== 'ALL' ? { status: status as any } : {}),
     ...(customerId ? { customerId } : {}),
     ...(from || to ? {
       createdAt: {

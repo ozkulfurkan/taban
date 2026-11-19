@@ -1,5 +1,6 @@
 'use client';
 
+import { ORDER_STATUS_COLOR, ORDER_STATUS_LABEL } from '@/lib/order-status';
 import { formatQty } from '@/lib/order-units';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
@@ -9,16 +10,8 @@ import PortalShell from '../components/portal-shell';
 import { Plus, List, Package, Truck, Loader2 } from 'lucide-react';
 import { usePortalText } from '@/lib/i18n/portal';
 
-const STATUS_LABELS: Record<string, string> = {
-  ORDER_RECEIVED: 'Sipariş Alındı', IN_PRODUCTION: 'Üretimde', MOLDING: 'Kalıplama',
-  PAINTING: 'Boya/Apre', PACKAGING: 'Paketleme', READY_FOR_SHIPMENT: 'Sevkiyata Hazır', SHIPPED: 'Sevk Edildi',
-};
-const STATUS_COLOR: Record<string, string> = {
-  ORDER_RECEIVED: 'bg-blue-100 text-blue-700', IN_PRODUCTION: 'bg-orange-100 text-orange-700',
-  MOLDING: 'bg-purple-100 text-purple-700', PAINTING: 'bg-pink-100 text-pink-700',
-  PACKAGING: 'bg-yellow-100 text-yellow-700', READY_FOR_SHIPMENT: 'bg-emerald-100 text-emerald-700',
-  SHIPPED: 'bg-green-100 text-green-700',
-};
+const STATUS_LABELS = ORDER_STATUS_LABEL;
+const STATUS_COLOR = ORDER_STATUS_COLOR;
 
 export default function PortalDashboardPage() {
   const { tp } = usePortalText();
@@ -41,7 +34,7 @@ export default function PortalDashboardPage() {
   }, [status, router]);
 
   const user = session?.user as any;
-  const active = orders.filter(o => o.status !== 'SHIPPED').length;
+  const active = orders.filter(o => !['SHIPPED', 'CANCELLED'].includes(o.status)).length;
   const shipped = orders.filter(o => o.status === 'SHIPPED').length;
 
   if (status === 'loading') return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;

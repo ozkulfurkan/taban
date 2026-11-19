@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ClipboardList, Loader2 } from 'lucide-react';
 import AppShell from '@/app/components/app-shell';
-import { ORDER_STATUS_LABEL, ORDER_STATUS_COLOR } from '@/lib/order-status';
+import { ORDER_STATUS_COLOR, statusLabel } from '@/lib/order-status';
 
 type Order = {
   id: string; orderNo: string; status: string; createdAt: string; totalQuantity: number; unit: string | null;
@@ -21,14 +21,14 @@ const fmt = (d?: string | null) => (d ? new Date(d).toLocaleDateString('tr-TR') 
 export default function NetworkOrdersPage() {
   const linkId = useSearchParams()?.get('linkId');
   const [orders, setOrders] = useState<Order[] | null>(null);
-  const [filter, setFilter] = useState<'active' | 'shipped' | 'all'>('active');
+  const [filter, setFilter] = useState<'active' | 'shipped' | 'cancelled' | 'all'>('active');
 
   useEffect(() => {
     fetch(`/api/network/orders${linkId ? `?linkId=${linkId}` : ''}`).then(r => r.json()).then(d => setOrders(Array.isArray(d) ? d : [])).catch(() => setOrders([]));
   }, [linkId]);
 
   const rows = useMemo(() => (orders ?? []).filter(o =>
-    filter === 'all' ? true : filter === 'shipped' ? o.status === 'SHIPPED' : o.status !== 'SHIPPED'), [orders, filter]);
+    filter === 'all' ? true : filter === 'shipped' ? o.status === 'SHIPPED' : filter === 'cancelled' ? o.status === 'CANCELLED' : !['SHIPPED', 'CANCELLED'].includes(o.status)), [orders, filter]);
 
   return (
     <AppShell>
@@ -38,7 +38,7 @@ export default function NetworkOrdersPage() {
           <p className="text-slate-500 text-sm mt-0.5">SoleCost&apos;ta bağlı olduğunuz tedarikçilere verdiğiniz siparişler. Yeni sipariş için tedarikçi sayfasındaki <b>Sipariş ver</b> düğmesini kullanın.</p>
         </div>
         <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
-          {([['active', 'Aktif'], ['shipped', 'Sevk edilen'], ['all', 'Tümü']] as const).map(([v, l]) => (
+          {([['active', 'Aktif'], ['shipped', 'Sevk edilen'], ['cancelled', 'İptal'], ['all', 'Tümü']] as const).map(([v, l]) => (
             <button key={v} onClick={() => setFilter(v)}
               className={`px-3 py-1.5 rounded-md text-sm font-medium ${filter === v ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'}`}>{l}</button>
           ))}
@@ -72,7 +72,7 @@ export default function NetworkOrdersPage() {
                       <td className="px-4 py-3 font-semibold text-slate-800">{formatQty(o.totalQuantity, o.unit)}</td>
                       <td className="px-4 py-3 text-slate-600">{fmt(o.confirmedDeliveryDate ?? o.requestedDeliveryDate)}</td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ORDER_STATUS_COLOR[o.status] ?? 'bg-slate-100 text-slate-600'}`}>{ORDER_STATUS_LABEL[o.status] ?? o.status}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ORDER_STATUS_COLOR[o.status] ?? 'bg-slate-100 text-slate-600'}`}>{statusLabel(o.status, o.unit)}</span>
                       </td>
                     </tr>
                   );

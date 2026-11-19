@@ -1,5 +1,6 @@
 // Müşteri portalı: sipariş durumları, beden dağılımı ve sepetten sipariş gövdesi (web portalıyla aynı)
 import { cleanQuantity, isPairUnit, orderUnit } from '@shared/order-units';
+import { stepIndexOf } from '@shared/order-status';
 
 export { formatQty, isPairUnit, orderUnit, unitDecimals } from '@shared/order-units';
 
@@ -26,25 +27,16 @@ export type PortalOrder = {
   shipment?: { shipmentDate: string; deliveryNoteNo?: string | null; trackingNo?: string | null; carrier?: string | null; notes?: string | null } | null;
 };
 
-export const ORDER_STEPS = [
-  { key: 'ORDER_RECEIVED', label: 'Sipariş alındı' },
-  { key: 'IN_PRODUCTION', label: 'Üretime girdi' },
-  { key: 'MOLDING', label: 'Kalıplama' },
-  { key: 'PAINTING', label: 'Boya / apre' },
-  { key: 'PACKAGING', label: 'Paketleme' },
-  { key: 'READY_FOR_SHIPMENT', label: 'Sevkiyata hazır' },
-  { key: 'SHIPPED', label: 'Sevk edildi' },
-] as const;
+// Durum adımları ürün birimine göre (web ile aynı kural): taban 7 adım, hammadde vb. 4 adım
+export { orderSteps, statusLabel } from '@shared/order-status';
+export const stepIndex = (status: string, unit?: string | null) => stepIndexOf(status, unit);
 
-export const STATUS_LABEL: Record<string, string> = Object.fromEntries(ORDER_STEPS.map(s => [s.key, s.label]));
-
-export function statusTone(status: string): 'primary' | 'warning' | 'success' {
+export function statusTone(status: string): 'primary' | 'warning' | 'success' | 'danger' {
+  if (status === 'CANCELLED') return 'danger';
   if (status === 'SHIPPED' || status === 'READY_FOR_SHIPMENT') return 'success';
   if (status === 'ORDER_RECEIVED') return 'primary';
   return 'warning';
 }
-
-export const stepIndex = (status: string) => ORDER_STEPS.findIndex(s => s.key === status);
 
 /** Web portalındaki varsayılan beden aralığı (ürüne beden tanımlanmamışsa) */
 export const DEFAULT_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];

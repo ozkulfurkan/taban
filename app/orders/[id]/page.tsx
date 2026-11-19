@@ -1,6 +1,7 @@
 'use client';
 
-import { formatQty } from '@/lib/order-units';
+import { formatQty, isPairUnit } from '@/lib/order-units';
+import { orderSteps, statusLabel } from '@/lib/order-status';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
@@ -10,29 +11,26 @@ import Link from 'next/link';
 import BackLink from '@/app/components/back-link';
 import { Loader2, Save, Truck, ShoppingCart, Printer, X, Factory, CheckCircle, AlertTriangle, Package } from 'lucide-react';
 
-const ALL_STATUSES = [
-  { key: 'ORDER_RECEIVED', label: 'Bekliyor' },
-  { key: 'IN_PRODUCTION', label: 'Üretimde' },
-  { key: 'READY_FOR_SHIPMENT', label: 'Hazır' },
-  { key: 'SHIPPED', label: 'Sevk Edildi' },
-];
 
 const fmt = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString('tr-TR') : '—';
 
 function calcMaterialReqs(order: any, materialsList: any[]): Array<{ materialId: string; name: string; requiredKg: number; currentStock: number }> {
   const map = new Map<string, { materialId: string; name: string; requiredKg: number; currentStock: number }>();
-  if (!order?.product?.parts) return [];
-
   const pvData: Array<{ partId: string; materialId: string }> =
     Array.isArray(order.partVariantsData) ? order.partVariantsData : [];
 
-  for (const part of order.product.parts) {
+  // Paket siparişte her kalem kendi ürün reçetesi ve miktarıyla hesaplanır
+  const jobs: Array<{ product: any; qty: number }> = Array.isArray(order.orderItems) && order.orderItems.length
+    ? (order.orderItems as any[]).map(i => ({ product: (order.itemProducts ?? []).find((p: any) => p.id === i.productId), qty: Number(i.totalQuantity) || 0 }))
+    : [{ product: order.product, qty: order.totalQuantity }];
+
+  for (const { product, qty } of jobs) for (const part of product?.parts ?? []) {
     const matId = pvData.find(pv => pv.partId === part.id)?.materialId ?? part.materialId;
     if (!matId) continue;
     const mat = materialsList.find((m: any) => m.id === matId) ?? part.material;
     if (!mat) continue;
-    const kgNeeded = (part.gramsPerPiece * (1 + part.wasteRate / 100) * order.totalQuantity) / 1000;
+    const kgNeeded = (part.gramsPerPiece * (1 + part.wasteRate / 100) * qty) / 1000;
     const existing = map.get(matId);
     if (existing) {
       existing.requiredKg += kgNeeded;
@@ -56,6 +54,7 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [statusForm, setStatusForm] = useState({ status: '', note: '', confirmedDeliveryDate: '' });
   const [shipForm, setShipForm] = useState({ shipmentDate: '', deliveryNoteNo: '', carrier: '', trackingNo: '', notes: '' });
+  const [actionError, setActionError] = useState('');
   const [saving, setSaving] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [shipping, setShipping] = useState(false);
@@ -112,7 +111,8 @@ export default function OrderDetailPage() {
     e.preventDefault();
     if (!statusForm.status) return;
     setSaving(true);
-    await fetch(`/api/orders/${params?.id}`, {
+    setActionError('');
+    const res = await fetch(`/api/orders/${params?.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -121,6 +121,8 @@ export default function OrderDetailPage() {
         confirmedDeliveryDate: statusForm.confirmedDeliveryDate || null,
       }),
     });
+    if (!res.ok) setActionError((await res.json().catch(() => ({}))).error || 'Durum kaydedilemedi');
+    else setStatusForm(f => ({ ...f, note: '' }));
     setSaving(false);
     loadOrder();
   };
@@ -128,12 +130,14 @@ export default function OrderDetailPage() {
   const handleShipment = async (e: React.FormEvent) => {
     e.preventDefault();
     setShipping(true);
-    await fetch(`/api/orders/${params?.id}`, {
+    setActionError('');
+    const res = await fetch(`/api/orders/${params?.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ shipment: shipForm }),
     });
     setShipping(false);
+    if (!res.ok) { setActionError((await res.json().catch(() => ({}))).error || 'Sevkiyat kaydedilemedi'); return; }
     setShowShipForm(false);
     loadOrder();
   };
@@ -155,6 +159,11 @@ export default function OrderDetailPage() {
   if (!order || order.error) return <AppShell><p className="text-slate-500">Sipariş bulunamadı.</p></AppShell>;
 
   const isPackage = Array.isArray(order.orderItems) && order.orderItems.length > 0;
+  const pair = isPairUnit(order.unit);
+  const steps = orderSteps(order.unit);
+  const source = order.link
+    ? `SoleCost · ${order.link.buyerCompany?.name ?? 'bağlı firma'}`
+    : order.portalCustomer ? `Portal · ${order.portalCustomer.email}` : 'Firma içi kayıt';
   const materialReqs = order.status === 'IN_PRODUCTION' ? calcMaterialReqs(order, materialsList) : [];
 
   return (
@@ -163,12 +172,12 @@ export default function OrderDetailPage() {
       <div className="max-w-5xl mx-auto space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3 flex-wrap">
-          <BackLink variant="icon" href="/orders" label="Siparişler" />
+          <BackLink variant="icon" href="/orders" label="Gelen Siparişler" />
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-slate-800">{order.orderNo}</h1>
             <p className="text-xs text-slate-400">
               {order.customer?.name} · {new Date(order.createdAt).toLocaleDateString('tr-TR')}
-              {!order.portalCustomer && <span className="ml-1 text-blue-500">· Admin</span>}
+              <span className={`ml-1 ${order.link ? 'text-emerald-600 font-semibold' : 'text-blue-500'}`} data-testid="order-source">· {source}</span>
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -182,7 +191,7 @@ export default function OrderDetailPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors">
               <Printer className="w-4 h-4" /> Üretim Çıktısı
             </button>
-            {!isPackage && (
+            {!isPackage && pair && (
               Array.isArray(order.subcontractorOrders) && order.subcontractorOrders.length > 0
                 ? order.subcontractorOrders.map((so: any) => (
                     <Link key={so.id} href={`/subcontractors/${so.subcontractor.id}`}
@@ -211,9 +220,13 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
+        {actionError && (
+          <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2.5 text-sm">{actionError}</div>
+        )}
+
         {/* Stepper */}
         <div className="bg-white rounded-xl p-5 shadow-sm overflow-x-auto">
-          <OrderStepper status={order.status} />
+          <OrderStepper status={order.status} unit={order.unit} />
         </div>
 
         {/* 2-column layout */}
@@ -225,9 +238,9 @@ export default function OrderDetailPage() {
               <h2 className="font-semibold text-slate-700 mb-4">Sipariş Bilgileri</h2>
               <dl className="grid grid-cols-2 gap-3 text-sm mb-4">
                 {[
-                  ['Model', order.productCode || order.product?.name || '—'],
+                  ['Ürün', isPackage ? `${order.orderItems.length} kalem` : (order.productCode || order.product?.name || '—')],
                   ['Toplam Miktar', formatQty(order.totalQuantity, order.unit)],
-                  ['Portal Kullanıcı', order.portalCustomer?.email || 'Admin tarafından oluşturuldu'],
+                  ['Kaynak', source],
                   ['İstenen Termin', fmt(order.requestedDeliveryDate)],
                   ['Onaylanan Termin', fmt(order.confirmedDeliveryDate)],
                 ].map(([k, v]) => (
@@ -281,32 +294,35 @@ export default function OrderDetailPage() {
               {/* Paket İçeriği */}
               {isPackage && (
                 <div className="mt-3 overflow-x-auto">
-                  <p className="text-xs text-slate-400 mb-2 uppercase tracking-wide font-semibold">Paket İçeriği</p>
+                  <p className="text-xs text-slate-400 mb-2 uppercase tracking-wide font-semibold">Sipariş Kalemleri</p>
                   <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
                     <thead className="bg-slate-50">
-                      <tr>{['Model', 'Renk', 'Beden', 'Adet', ''].map(h => (
+                      <tr>{['Ürün', 'Renk', ...(pair ? ['Beden'] : []), 'Miktar', ...(pair ? [''] : [])].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b border-slate-200">{h}</th>
                       ))}</tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {(order.orderItems as any[]).map((item: any, i: number) => (
                         <tr key={i} className="hover:bg-slate-50">
-                          <td className="px-3 py-2 text-xs font-semibold text-blue-600">{item.productCode || item.productName || '—'}</td>
+                          <td className="px-3 py-2 text-xs">
+                            <span className="font-semibold text-blue-600">{item.productCode || '—'}</span>
+                            {item.productName && <span className="block text-slate-500">{item.productName}</span>}
+                          </td>
                           <td className="px-3 py-2 text-slate-600 text-xs">{item.color || '—'}</td>
-                          <td className="px-3 py-2">
+                          {pair && <td className="px-3 py-2">
                             <div className="flex flex-wrap gap-1">
                               {Object.entries(item.sizeDistribution || {}).filter(([, q]) => (q as number) > 0).map(([sz, q]) => (
                                 <span key={sz} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-xs rounded font-medium">{sz}×{q as number}</span>
                               ))}
                             </div>
-                          </td>
-                          <td className="px-3 py-2 font-semibold text-slate-800 text-xs">{formatQty(item.totalQuantity, item.unit ?? order.unit)}</td>
-                          <td className="px-3 py-2">
+                          </td>}
+                          <td className="px-3 py-2 font-semibold text-slate-800 text-xs whitespace-nowrap">{formatQty(item.totalQuantity, item.unit ?? order.unit)}</td>
+                          {pair && <td className="px-3 py-2">
                             <button onClick={() => { setSubModalItem(item); setShowSubModal(true); }}
                               className="flex items-center gap-1 px-2 py-1 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded text-xs font-medium">
                               <Factory className="w-3 h-3" /> Fasoncu
                             </button>
-                          </td>
+                          </td>}
                         </tr>
                       ))}
                     </tbody>
@@ -315,15 +331,15 @@ export default function OrderDetailPage() {
               )}
             </div>
 
-            {/* Beden Dağılımı */}
-            <div className="bg-white rounded-xl p-5 shadow-sm">
+            {/* Beden Dağılımı (yalnızca taban/çift siparişlerinde) */}
+            {pair && <div className="bg-white rounded-xl p-5 shadow-sm">
               <h2 className="font-semibold text-slate-700 mb-3">Beden Dağılımı</h2>
               <SizeTable
                 value={order.sizeDistribution || {}}
                 sizes={Object.keys(order.sizeDistribution || {}).filter(sz => (order.sizeDistribution?.[sz] || 0) > 0)}
                 readOnly
               />
-            </div>
+            </div>}
           </div>
 
           {/* RIGHT — Yönetim */}
@@ -334,7 +350,10 @@ export default function OrderDetailPage() {
               <form onSubmit={handleStatusUpdate} className="space-y-3">
                 <select value={statusForm.status} onChange={e => setStatusForm(f => ({ ...f, status: e.target.value }))}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                  {ALL_STATUSES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                  {steps.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                  {!steps.some(s => s.key === statusForm.status) && statusForm.status && (
+                    <option value={statusForm.status}>{statusLabel(statusForm.status, order.unit)}</option>
+                  )}
                 </select>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">Termin Tarihi</label>
@@ -368,7 +387,8 @@ export default function OrderDetailPage() {
                   {[['Sevk Tarihi', fmt(order.shipment.shipmentDate)],
                     ['İrsaliye No', order.shipment.deliveryNoteNo || '—'],
                     ['Taşıyıcı', order.shipment.carrier || '—'],
-                    ['Takip No', order.shipment.trackingNo || '—']].map(([k, v]) => (
+                    ['Takip No', order.shipment.trackingNo || '—'],
+                    ...(order.shipment.notes ? [['Not', order.shipment.notes]] : [])].map(([k, v]) => (
                     <div key={String(k)}>
                       <dt className="text-xs text-slate-400">{k}</dt>
                       <dd className="font-medium text-slate-700">{v}</dd>
@@ -383,13 +403,14 @@ export default function OrderDetailPage() {
                     <input type="date" required value={shipForm.shipmentDate} onChange={e => setShipForm(f => ({ ...f, shipmentDate: e.target.value }))}
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
-                  {[['deliveryNoteNo', 'İrsaliye No'], ['carrier', 'Taşıyıcı'], ['trackingNo', 'Takip No']].map(([field, label]) => (
+                  {[['deliveryNoteNo', 'İrsaliye No'], ['carrier', 'Taşıyıcı'], ['trackingNo', 'Takip No'], ['notes', 'Not']].map(([field, label]) => (
                     <div key={field}>
                       <label className="block text-xs font-medium text-slate-500 mb-1">{label}</label>
                       <input value={(shipForm as any)[field]} onChange={e => setShipForm(f => ({ ...f, [field]: e.target.value }))}
                         className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                     </div>
                   ))}
+                  <p className="col-span-2 text-xs text-slate-500">Kaydedince sipariş &quot;Sevk Edildi&quot; olur ve müşteriye bildirim gider.</p>
                   <div className="col-span-2 flex gap-2">
                     <button type="button" onClick={() => setShowShipForm(false)}
                       className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
@@ -456,7 +477,7 @@ export default function OrderDetailPage() {
                     <div key={h.id} className="flex items-start gap-3 text-sm">
                       <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
                       <div>
-                        <span className="font-medium text-slate-700">{h.status.replace(/_/g, ' ')}</span>
+                        <span className="font-medium text-slate-700">{statusLabel(h.status, order.unit)}</span>
                         {h.note && <span className="text-slate-500 ml-2">— {h.note}</span>}
                         <p className="text-xs text-slate-400">{new Date(h.createdAt).toLocaleString('tr-TR')}</p>
                       </div>

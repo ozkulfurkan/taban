@@ -15,11 +15,15 @@ const STATUS_TABS = [
   { key: 'IN_PRODUCTION', label: 'Üretimde' },
   { key: 'READY_FOR_SHIPMENT', label: 'Hazır' },
   { key: 'SHIPPED', label: 'Sevk Edildi' },
+  { key: 'CANCELLED', label: 'İptal' },
 ];
 
 const STATUS_BORDER: Record<string, string> = {
   ORDER_RECEIVED: 'border-blue-400',
   IN_PRODUCTION: 'border-amber-400',
+  MOLDING: 'border-amber-400',
+  PAINTING: 'border-amber-400',
+  PACKAGING: 'border-amber-400',
   READY_FOR_SHIPMENT: 'border-green-400',
   SHIPPED: 'border-emerald-400',
   CANCELLED: 'border-red-300',
@@ -162,7 +166,7 @@ export default function OrdersPage() {
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-slate-600" />
-            <h1 className="text-xl font-bold text-slate-800">Siparişler</h1>
+            <h1 className="text-xl font-bold text-slate-800">Gelen Siparişler</h1>
           </div>
           <Link href="/orders/new"
             className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors">
@@ -337,18 +341,22 @@ export default function OrdersPage() {
                 />
                 <span>Sipariş No</span>
                 <span>Müşteri</span>
-                <span className="hidden sm:block">Taban</span>
+                <span className="hidden sm:block">Ürün</span>
                 <span className="hidden sm:block">Sipariş Tarihi</span>
                 <span>Termin</span>
-                <span className="text-right">Adet</span>
+                <span className="text-right">Miktar</span>
                 <span></span>
               </div>
 
               {/* Rows */}
               <div className="divide-y divide-slate-100">
                 {orders.map((order: any) => {
-                  const productCode = order.productCode || order.product?.code;
-                  const productName = order.product?.name;
+                  const items: any[] = Array.isArray(order.orderItems) ? order.orderItems : [];
+                  // Paket siparişte ilk kalemler ve kalem sayısı; tekli siparişte ürün
+                  const productCode = items.length > 1
+                    ? items.slice(0, 2).map(i => i.productCode || i.productName).filter(Boolean).join(', ') + (items.length > 2 ? '…' : '')
+                    : (order.productCode || order.product?.code);
+                  const productName = items.length > 1 ? `${items.length} kalem` : (items[0]?.productName || order.product?.name);
                   const isOverdue = !order.invoiceId && order.requestedDeliveryDate && new Date(order.requestedDeliveryDate) < new Date();
                   const isSelected = selectedIds.has(order.id);
                   return (
