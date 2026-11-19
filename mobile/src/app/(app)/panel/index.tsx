@@ -6,6 +6,7 @@ import { Icon, type IconName } from '@/components/icon';
 import { Card, T } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useAuth, useCanWrite } from '@/core/auth';
+import { useIsManager, useLinks } from '@/core/network';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -17,7 +18,7 @@ type Dashboard = {
 };
 
 type Tone = 'primary' | 'success' | 'warning' | 'danger' | 'neutral';
-type Tile = { label: string; icon: IconName; href: Href; tone: Tone; write?: boolean; page?: string; testID: string };
+type Tile = { label: string; icon: IconName; href: Href; tone: Tone; write?: boolean; page?: string; badge?: 'network'; testID: string };
 
 // Ana menü: yeni modül eklemek / çıkarmak için bu listeyi düzenlemek yeterli
 const TILES: Tile[] = [
@@ -33,6 +34,7 @@ const TILES: Tile[] = [
   { label: 'Siparişler', icon: 'orders', href: '/siparis', tone: 'primary', page: 'orders', testID: 'home-orders' },
   { label: 'Personel', icon: 'people', href: '/personel', tone: 'neutral', page: 'personnel', testID: 'home-personnel' },
   { label: 'Raporlar', icon: 'chart', href: '/raporlar', tone: 'success', page: 'dashboard', testID: 'home-reports' },
+  { label: 'Firma Ağı', icon: 'link', href: '/baglantilar', tone: 'primary', badge: 'network', testID: 'home-network' },
   { label: 'Ayarlar', icon: 'settings', href: '/ayarlar', tone: 'neutral', testID: 'home-settings' },
 ];
 
@@ -56,12 +58,16 @@ export default function Home() {
     neutral: { fg: c.textSecondary, bg: c.border },
   };
   const negative = d ? d.negativeStock.materials.length + d.negativeStock.products.length : 0;
+  // Onay bekleyen firma ağı istekleri (yalnızca onaylayabilecek kullanıcıya rozet)
+  const manager = useIsManager();
+  const links = useLinks(null, manager);
+  const badges = { network: links.data?.asSeller.filter(l => l.status === 'PENDING').length ?? 0 };
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView
         contentContainerStyle={styles.page}
-        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }} />}
+        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); if (manager) void links.refetch(); }} />}
       >
         <View style={styles.head}>
           <View style={{ flex: 1, minWidth: 0 }}>
@@ -89,6 +95,11 @@ export default function Home() {
                 <View style={[styles.tileIcon, { backgroundColor: tone.bg }]}>
                   <Icon name={t.icon} size={26} color={tone.fg} />
                 </View>
+                {t.badge && badges[t.badge] ? (
+                  <View style={[styles.badge, { backgroundColor: c.danger }]} testID={`${t.testID}-badge`}>
+                    <T color="#fff" style={{ fontSize: 12, fontWeight: '700' }}>{badges[t.badge]}</T>
+                  </View>
+                ) : null}
                 <T style={styles.tileLabel} numberOfLines={2}>{t.label}</T>
               </Pressable>
             );
@@ -123,4 +134,5 @@ const styles = StyleSheet.create({
   },
   tileIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   tileLabel: { fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  badge: { position: 'absolute', top: 10, right: 10, minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
 });

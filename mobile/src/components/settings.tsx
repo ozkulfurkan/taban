@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { Linking, Switch, View } from 'react-native';
 
 import { Button, Card, ListRow, Screen, Section, T } from '@/components/ui';
@@ -6,9 +7,30 @@ import { useAuth } from '@/core/auth';
 import { useBiometric } from '@/core/biometric';
 import { WEB_URL } from '@/core/config';
 import { confirm } from '@/core/dialog';
+import { useLinks } from '@/core/network';
+import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
 
 const ROLE: Record<string, string> = { ADMIN: 'Yönetici', COMPANY_OWNER: 'Firma sahibi', EDITOR: 'Düzenleyici', VIEWER: 'Görüntüleyici' };
+
+/** Firma kodu ve bekleyen bağlantı istekleri: Firma Ağı ekranına açılır (yalnızca firma kullanıcısında) */
+function NetworkRow() {
+  const code = useApi<{ code: string }>('/api/network/code');
+  const links = useLinks();
+  const pending = links.data?.asSeller.filter(l => l.status === 'PENDING').length ?? 0;
+  return (
+    <Section title="Firma ağı">
+      <Card style={{ padding: 0, gap: 0 }}>
+        <ListRow
+          title={`Firma kodu: ${code.data?.code ?? '…'}`}
+          subtitle={pending ? `${pending} bağlantı isteği bekliyor` : 'Kodu paylaşın, bağlantı isteklerini yönetin'}
+          onPress={() => router.push('/baglantilar')}
+          testID="settings-network"
+        />
+      </Card>
+    </Section>
+  );
+}
 
 /** Firma ve portal kullanıcıları için ortak ayarlar içeriği */
 export function SettingsBody() {
@@ -31,6 +53,8 @@ export function SettingsBody() {
           <T variant="small">Müşteri portalı</T>
         )}
       </Card>
+
+      {user?.type === 'staff' ? <NetworkRow /> : null}
 
       {bio.available ? (
         <Section title="Güvenlik">

@@ -2,6 +2,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { Button, Card, ErrorState, ListRow, Loading, Screen, Section, T } from '@/components/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '@/core/api';
@@ -34,6 +35,8 @@ export default function PartyDetail() {
   // Tedarikçi SoleCost'ta bağlıysa (onaylı bağlantı) buradan sipariş verilebilir
   const links = useApi<{ asBuyer: { id: string; status: string; sellerCompany: { name: string } }[] }>(k === 'supplier' ? '/api/network/links' : null, { supplierId: id });
   const activeLink = links.data?.asBuyer.find(l => l.status === 'ACTIVE');
+  // En son bağlantı isteği (yanıt sırası yeniden eskiye): bekliyor / reddedildi durumu gösterilir
+  const lastLink = links.data?.asBuyer[0];
   const archive = async () => {
     const what = k === 'customer' ? 'Müşteri' : 'Tedarikçi';
     if (!(await confirm(`${what} silinsin mi?`, `"${party.data?.name}" listelerden kaldırılır. Belgeleri ve ödemeleri silinmez; ekstrede görünmeye devam eder.`, 'Sil', true))) return;
@@ -119,6 +122,35 @@ export default function PartyDetail() {
             <Button title="Sil" icon="trash" variant="ghost" style={styles.action} testID="party-delete" onPress={() => { void archive(); }} />
           ) : null}
         </View>
+
+        {/* Firma ağı: tedarikçi SoleCost kullanıyorsa firma koduyla bağlanır, onaylanınca sipariş verilir */}
+        {k === 'supplier' && links.data ? (
+          activeLink ? (
+            <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.successSoft, borderColor: c.successSoft }} testID="party-link-status">
+              <Icon name="link" color={c.success} />
+              <T style={{ flex: 1 }}>{'SoleCost\'ta bağlı: '}<T style={{ fontWeight: '700' }}>{activeLink.sellerCompany.name}</T></T>
+            </Card>
+          ) : lastLink?.status === 'PENDING' ? (
+            <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.warningSoft, borderColor: c.warningSoft }} testID="party-link-status">
+              <Icon name="link" color={c.warning} />
+              <T style={{ flex: 1 }}>{lastLink.sellerCompany.name} bağlantı isteğinizi henüz onaylamadı.</T>
+            </Card>
+          ) : canWrite ? (
+            <Card onPress={() => router.push(`/cariler/supplier/${id}/bagla`)} testID="party-link-code"
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Icon name="link" color={c.primary} />
+              <View style={{ flex: 1 }}>
+                <T style={{ fontWeight: '600' }} color={c.primary}>Firma koduyla bağla</T>
+                <T variant="small">
+                  {lastLink?.status === 'REJECTED'
+                    ? `${lastLink.sellerCompany.name} önceki isteği reddetti. Yeniden istek gönderebilirsiniz.`
+                    : 'Tedarikçiniz SoleCost kullanıyorsa kataloğundan doğrudan sipariş verin.'}
+                </T>
+              </View>
+              <Icon name="chevron" size={14} />
+            </Card>
+          ) : null
+        ) : null}
 
         {(p.phone || p.email || p.address) ? (
           <Section title="İletişim">
