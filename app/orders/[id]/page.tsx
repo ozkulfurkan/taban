@@ -2,6 +2,8 @@
 
 import { formatQty, isPairUnit } from '@/lib/order-units';
 import { orderSteps, statusLabel } from '@/lib/order-status';
+import { shipLines } from '@/lib/shipment';
+import { ShipQtyInputs, ShippedTable } from '@/app/components/shipment-qty';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
@@ -55,6 +57,7 @@ export default function OrderDetailPage() {
   const [statusForm, setStatusForm] = useState({ status: '', note: '', confirmedDeliveryDate: '' });
   const [shipForm, setShipForm] = useState({ shipmentDate: '', deliveryNoteNo: '', carrier: '', trackingNo: '', notes: '' });
   const [actionError, setActionError] = useState('');
+  const [shipQty, setShipQty] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [shipping, setShipping] = useState(false);
@@ -134,7 +137,13 @@ export default function OrderDetailPage() {
     const res = await fetch(`/api/orders/${params?.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shipment: shipForm }),
+      body: JSON.stringify({
+        shipment: {
+          ...shipForm,
+          // DecimalInput noktalı ondalık tutar ("490.5"); boş = sipariş miktarı
+          items: shipLines(order).map(l => ({ index: l.index, shipped: shipQty[l.index] ? Number(shipQty[l.index]) : undefined })),
+        },
+      }),
     });
     setShipping(false);
     if (!res.ok) { setActionError((await res.json().catch(() => ({}))).error || 'Sevkiyat kaydedilemedi'); return; }
@@ -376,7 +385,16 @@ export default function OrderDetailPage() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-slate-700">Sevkiyat</h2>
                 {!showShipForm && (
-                  <button onClick={() => setShowShipForm(true)}
+                  <button data-testid="ship-open" onClick={() => {
+                    // Mevcut sevkiyat varsa formu onunla doldur
+                    const sh = order.shipment;
+                    setShipForm({
+                      shipmentDate: sh?.shipmentDate ? new Date(sh.shipmentDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                      deliveryNoteNo: sh?.deliveryNoteNo ?? '', carrier: sh?.carrier ?? '', trackingNo: sh?.trackingNo ?? '', notes: sh?.notes ?? '',
+                    });
+                    setShipQty(Array.isArray(sh?.items) ? Object.fromEntries(sh.items.map((i: any) => [i.index, String(i.shipped)])) : {});
+                    setShowShipForm(true);
+                  }}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium">
                     <Truck className="w-4 h-4" /> {order.shipment ? 'Güncelle' : 'Sevkiyat Ekle'}
                   </button>
@@ -396,6 +414,9 @@ export default function OrderDetailPage() {
                   ))}
                 </dl>
               )}
+              {order.shipment && !showShipForm && Array.isArray(order.shipment.items) && (
+                <div className="mt-4 pt-3 border-t border-slate-100"><ShippedTable items={order.shipment.items} testId="shipped-table" /></div>
+              )}
               {showShipForm && (
                 <form onSubmit={handleShipment} className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
@@ -410,6 +431,7 @@ export default function OrderDetailPage() {
                         className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                     </div>
                   ))}
+                  <div className="col-span-2"><ShipQtyInputs lines={shipLines(order)} value={shipQty} onChange={setShipQty} /></div>
                   <p className="col-span-2 text-xs text-slate-500">Kaydedince sipariş &quot;Sevk Edildi&quot; olur ve müşteriye bildirim gider.</p>
                   <div className="col-span-2 flex gap-2">
                     <button type="button" onClick={() => setShowShipForm(false)}

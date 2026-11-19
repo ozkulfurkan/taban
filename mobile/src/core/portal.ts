@@ -1,6 +1,9 @@
 // Müşteri portalı: sipariş durumları, beden dağılımı ve sepetten sipariş gövdesi (web portalıyla aynı)
 import { cleanQuantity, isPairUnit, orderUnit } from '@shared/order-units';
 import { stepIndexOf } from '@shared/order-status';
+import type { ShippedLine } from '@shared/shipment';
+
+export { formatDiff } from '@shared/shipment';
 
 export { formatQty, isPairUnit, orderUnit, unitDecimals } from '@shared/order-units';
 
@@ -24,7 +27,11 @@ export type PortalOrder = {
   requestedDeliveryDate?: string | null; confirmedDeliveryDate?: string | null;
   product?: { id: string; name: string; code: string | null } | null;
   statusHistory?: { id: string; status: string; note?: string | null; createdAt: string }[];
-  shipment?: { shipmentDate: string; deliveryNoteNo?: string | null; trackingNo?: string | null; carrier?: string | null; notes?: string | null } | null;
+  shipment?: {
+    shipmentDate: string; deliveryNoteNo?: string | null; trackingNo?: string | null; carrier?: string | null; notes?: string | null;
+    /** Sevk edilen gerçek miktarlar (sipariş miktarından az/çok olabilir) */
+    items?: ShippedLine[] | null; totalQuantity?: number | null;
+  } | null;
 };
 
 // Durum adımları ürün birimine göre (web ile aynı kural): taban 7 adım, hammadde vb. 4 adım

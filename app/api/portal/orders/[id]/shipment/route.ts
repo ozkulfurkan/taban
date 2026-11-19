@@ -20,7 +20,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const r = await saveShipment(params.id, order.status, { shipmentDate, deliveryNoteNo, trackingNo, carrier, notes });
+  const r = await saveShipment(order, { shipmentDate, deliveryNoteNo, trackingNo, carrier, notes, items: body.items });
   if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
   const shipment = r.shipment;
 

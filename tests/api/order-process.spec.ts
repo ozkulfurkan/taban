@@ -56,7 +56,7 @@ test('sevkiyat kaydı siparişi "Sevk Edildi" yapar ve alıcı görür', async (
   const row = await prisma.soleOrder.findUnique({ where: { id }, include: { shipment: true, statusHistory: true } });
   expect(row?.status).toBe('SHIPPED');
   expect(row?.shipment?.notes).toBe('Paletli');
-  expect(row?.statusHistory.map(h => h.note)).toContain('İrsaliye: IRS-1');
+  expect(row?.statusHistory.map(h => h.note)).toContain('İrsaliye: IRS-1 · 1.250,5 kg');
   const mine = await (await buyer.owner.get(`/api/network/orders/${id}`)).json();
   expect(mine.status).toBe('SHIPPED');
   expect(mine.shipment.deliveryNoteNo).toBe('IRS-1');
@@ -72,4 +72,32 @@ test('satıcı iptal edince alıcı "İptal" olarak görür', async () => {
   const mine = await (await buyer.owner.get(`/api/network/orders/${id}`)).json();
   expect(mine.status).toBe('CANCELLED');
   expect(mine.statusHistory.at(-1).note).toBe('Satıcı tarafından iptal edildi');
+});
+
+test('sevk edilen gerçek miktar: 1000 kg → 990, 250,5 kg → 260; fark geçmişte ve alıcıda', async () => {
+  const id = await placeOrder();
+  // Hatalı miktarlar reddedilir
+  expect((await seller.owner.put(`/api/orders/${id}`, { data: { shipment: { shipmentDate: '2026-11-25', items: [{ index: 0, shipped: -5 }] } } })).status()).toBe(400);
+  expect((await seller.owner.put(`/api/orders/${id}`, { data: { shipment: { shipmentDate: '2026-11-25', items: [{ index: 0, shipped: 0 }, { index: 1, shipped: 0 }] } } })).status()).toBe(400);
+
+  const r = await seller.owner.put(`/api/orders/${id}`, {
+    data: { shipment: { shipmentDate: '2026-11-25', deliveryNoteNo: 'IRS-9', items: [{ index: 0, shipped: 990 }, { index: 1, shipped: 260 }] } },
+  });
+  expect(r.status(), await r.text()).toBe(200);
+  const row = await prisma.soleOrder.findUnique({ where: { id }, include: { shipment: true, statusHistory: true } });
+  expect(row?.shipment?.totalQuantity).toBe(1250);
+  expect((row?.shipment?.items as any[]).map(i => [i.ordered, i.shipped])).toEqual([[1000, 990], [250.5, 260]]);
+  // Toplam 1250,5 sipariş → 1250 sevk: fark −0,5 kg
+  expect(row?.statusHistory.find(h => h.status === 'SHIPPED')?.note).toBe('İrsaliye: IRS-9 · 1.250 kg (−0,5 kg)');
+
+  const mine = await (await buyer.owner.get(`/api/network/orders/${id}`)).json();
+  expect(mine.shipment.items.map((i: any) => i.shipped)).toEqual([990, 260]);
+  expect(mine.shipment.totalQuantity).toBe(1250);
+
+  // Portal yönetimi ucu da aynı kuralı kullanır (boş kalem = sipariş miktarı)
+  const id2 = await placeOrder();
+  const p = await seller.owner.post(`/api/portal/orders/${id2}/shipment`, { data: { shipmentDate: '2026-11-26', items: [{ index: 0, shipped: 1020 }] } });
+  expect(p.status(), await p.text()).toBe(200);
+  const s2 = await prisma.orderShipment.findUnique({ where: { orderId: id2 } });
+  expect((s2?.items as any[]).map(i => i.shipped)).toEqual([1020, 250.5]);
 });

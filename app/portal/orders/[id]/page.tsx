@@ -1,5 +1,6 @@
 'use client';
 
+import { ShippedTable } from '@/app/components/shipment-qty';
 import { formatQty } from '@/lib/order-units';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
@@ -154,6 +155,9 @@ export default function PortalOrderDetailPage() {
                 </div>
               ))}
             </dl>
+            {Array.isArray(order.shipment.items) && (
+              <div className="mt-4 pt-3 border-t border-slate-100"><ShippedTable items={order.shipment.items} /></div>
+            )}
           </div>
         )}
 

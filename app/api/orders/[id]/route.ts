@@ -93,7 +93,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   // Sevkiyat: kaydedilir; sipariş sevk edilmemişse durum "Sevk Edildi" olur ve müşteriye bildirilir
   if (shipment) {
-    const r = await saveShipment(params.id, order.status, shipment);
+    const r = await saveShipment(order, shipment);
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
   }
 

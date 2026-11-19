@@ -9,6 +9,7 @@ import BackLink from '@/app/components/back-link';
 import OrderStepper from '@/app/portal/components/order-stepper';
 import { statusLabel } from '@/lib/order-status';
 import { isPairUnit } from '@/lib/order-units';
+import { ShippedTable } from '@/app/components/shipment-qty';
 
 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleDateString('tr-TR') : '—');
 const sizes = (d: Record<string, number> = {}) => Object.entries(d)
@@ -83,7 +84,11 @@ export default function NetworkOrderDetailPage() {
               {order.shipment.deliveryNoteNo && <div><dt className="text-xs text-slate-400">İrsaliye no</dt><dd className="font-medium">{order.shipment.deliveryNoteNo}</dd></div>}
               {order.shipment.carrier && <div><dt className="text-xs text-slate-400">Taşıyıcı</dt><dd className="font-medium">{order.shipment.carrier}</dd></div>}
               {order.shipment.trackingNo && <div><dt className="text-xs text-slate-400">Takip no</dt><dd className="font-medium">{order.shipment.trackingNo}</dd></div>}
+              {order.shipment.notes && <div><dt className="text-xs text-slate-400">Not</dt><dd className="font-medium">{order.shipment.notes}</dd></div>}
             </dl>
+            {Array.isArray(order.shipment.items) && (
+              <div className="mt-4 pt-3 border-t border-slate-100"><ShippedTable items={order.shipment.items} testId="buyer-shipped-table" /></div>
+            )}
           </div>
         )}
 
