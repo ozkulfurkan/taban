@@ -9,10 +9,9 @@ export async function GET(req: NextRequest) {
     const session = await getAuthSession() as any;
     if (!session?.user) return unauthorized();
 
-    const where: any = {};
-    if (session.user.role !== 'ADMIN') {
-      where.companyId = session.user.companyId;
-    }
+    // Her rolde yalnızca oturumdaki firmanın hesaplamaları (platform yöneticisi dahil)
+    if (!session.user.companyId) return badRequest('No company assigned');
+    const where: any = { companyId: session.user.companyId };
 
     const calculations = await prisma.soleCalculation.findMany({
       where,

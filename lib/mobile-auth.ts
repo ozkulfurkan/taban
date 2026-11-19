@@ -12,14 +12,19 @@ export function bearerToken(header: string | null): string | null {
   return m ? m[1] : null;
 }
 
-/** Bearer token varsa ve istekte oturum çerezi yoksa, çerez başlığına oturum çerezini ekler. */
+/**
+ * Bearer token varsa istekteki oturumu her zaman bu token belirler: çerez başlığındaki
+ * eski NextAuth oturum çerezleri (cihazda kalmış başka bir hesabın oturumu olabilir)
+ * atılır, yerine token konur. Diğer çerezlere dokunulmaz.
+ */
 export function withBearerCookie(headers: Headers): Headers | null {
   const token = bearerToken(headers.get('authorization'));
   if (!token) return null;
-  const cookie = headers.get('cookie') || '';
-  if (SESSION_COOKIES.some(n => cookie.includes(`${n}=`))) return null;
+  const kept = (headers.get('cookie') || '')
+    .split(';')
+    .map(c => c.trim())
+    .filter(c => c && !SESSION_COOKIES.some(n => c.startsWith(`${n}=`) || c.startsWith(`${n}.`)));
   const next = new Headers(headers);
-  const add = SESSION_COOKIES.map(n => `${n}=${token}`).join('; ');
-  next.set('cookie', cookie ? `${cookie}; ${add}` : add);
+  next.set('cookie', [...kept, ...SESSION_COOKIES.map(n => `${n}=${token}`)].join('; '));
   return next;
 }

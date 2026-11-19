@@ -1,15 +1,22 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 import { canSeePage, checkApiAccess } from '@/lib/access';
-import { withBearerCookie } from '@/lib/mobile-auth';
+import { decode } from 'next-auth/jwt';
+import { bearerToken, withBearerCookie } from '@/lib/mobile-auth';
 
 export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token as any;
+  async function middleware(req) {
+    let token = req.nextauth.token as any;
     const { pathname } = req.nextUrl;
 
     // API istekleri: rol, portal ayrımı ve hassas sayfa izinleri
     if (pathname.startsWith('/api/')) {
+      // Mobil uygulama: Bearer token varsa yetki kararı da onunla verilir (çerezdeki eski
+      // bir oturum değil). Route'lar aynı token'ı withBearerCookie ile görür.
+      const bearer = bearerToken(req.headers.get('authorization'));
+      if (bearer) {
+        token = await decode({ token: bearer, secret: process.env.NEXTAUTH_SECRET! }).catch(() => null);
+      }
       const decision = checkApiAccess(token, req.method, pathname);
       if (!decision.ok) {
         return NextResponse.json({ error: decision.error }, { status: decision.status });

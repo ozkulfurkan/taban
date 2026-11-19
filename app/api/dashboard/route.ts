@@ -10,8 +10,11 @@ export async function GET() {
     const session = await getAuthSession() as any;
     if (!session?.user) return unauthorized();
 
+    // Panel her rolde (platform yöneticisi dahil) yalnızca oturumdaki firmanın verisini gösterir.
+    // Başka firmaya bakmak için yönetim panelindeki "firma olarak giriş" kullanılır.
     const companyId = session.user.companyId;
-    const where = session.user.role === 'ADMIN' ? {} : { companyId };
+    if (!companyId) return NextResponse.json({ error: 'Firma bulunamadı' }, { status: 400 });
+    const where = { companyId };
 
     // Gün ve ay sınırları İstanbul saatine göre (sunucu UTC'de çalışır)
     const now = new Date();

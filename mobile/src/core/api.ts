@@ -32,6 +32,8 @@ export async function api<T = any>(path: string, opts: Options = {}): Promise<T>
   try {
     res = await fetch(`${API_URL}${path}${q === '?' ? '' : q}`, {
       method: opts.method ?? 'GET',
+      // Kimlik yalnızca Bearer token: cihazdaki çerezler (başka oturum) asla gönderilmez
+      credentials: 'omit',
       headers: {
         Accept: 'application/json',
         ...(opts.body !== undefined ? { 'Content-Type': 'application/json' } : {}),

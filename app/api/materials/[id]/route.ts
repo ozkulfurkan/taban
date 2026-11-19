@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     const existing = await prisma.material.findUnique({ where: { id: params.id } });
     if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    if (session.user.role !== 'ADMIN' && existing.companyId !== session.user.companyId) {
+    if (existing.companyId !== session.user.companyId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -108,7 +108,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     const existing = await prisma.material.findUnique({ where: { id: params.id } });
     if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    if (session.user.role !== 'ADMIN' && existing.companyId !== session.user.companyId) {
+    if (existing.companyId !== session.user.companyId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
