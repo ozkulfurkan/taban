@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api, setAuthToken, setUnauthorizedHandler } from './api';
-import { getItem, removeItem, setItem } from './storage';
+import { TOKEN_KEY, getItem, removeItem, setItem } from './storage';
 
 export type StaffUser = {
   id: string; name: string | null; email: string; type: 'staff';
@@ -18,7 +18,6 @@ type AuthState = {
   refresh: () => Promise<void>;
 };
 
-const TOKEN_KEY = 'solecost.token';
 const Ctx = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {

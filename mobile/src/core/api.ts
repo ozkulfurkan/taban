@@ -1,4 +1,5 @@
 import { API_URL } from './config';
+import { TOKEN_KEY, getItem } from './storage';
 
 // API istemcisi: her isteğe oturum anahtarı eklenir. 401 gelirse oturum kapatılır
 // (rol değişmiş, kullanıcı silinmiş ya da süre dolmuş olabilir).
@@ -9,7 +10,9 @@ export class ApiError extends Error {
   }
 }
 
-let token: string | null = null;
+// undefined: henüz yüklenmedi (açılış ya da geliştirmede modülün yeniden yüklenmesi) → güvenli depodan okunur.
+// null: oturum kapalı.
+let token: string | null | undefined = undefined;
 let onUnauthorized: (() => void) | null = null;
 
 export function setAuthToken(t: string | null) { token = t; }
@@ -24,6 +27,7 @@ export async function api<T = any>(path: string, opts: Options = {}): Promise<T>
         .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
         .join('&')
     : '';
+  if (token === undefined) token = await getItem(TOKEN_KEY);
   let res: Response;
   try {
     res = await fetch(`${API_URL}${path}${q === '?' ? '' : q}`, {

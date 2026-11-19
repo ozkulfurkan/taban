@@ -5,6 +5,8 @@ import { Platform } from 'react-native';
 // Web önizlemesinde güvenli depo olmadığından localStorage kullanılır.
 const web = Platform.OS === 'web';
 
+export const TOKEN_KEY = 'solecost.token';
+
 export async function getItem(key: string): Promise<string | null> {
   if (web) {
     try { return globalThis.localStorage?.getItem(key) ?? null; } catch { return null; }
