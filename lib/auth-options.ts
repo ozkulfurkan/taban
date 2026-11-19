@@ -5,6 +5,10 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
 import { LIMITS, clientIp, normEmail, isLimited, recordAttempt, clearAttempts } from '@/lib/login-throttle';
+import { subscriptionUntilMs } from '@/lib/subscription';
+
+// Firma abonelik alanları (token'a abonelik bitişi yazmak için)
+const SUBSCRIPTION_SELECT = { subscriptionStatus: true, trialEndsAt: true, proUntil: true, subscriptionSource: true, subscriptionPlan: true } as const;
 
 const sameList = (a: unknown, b: unknown) =>
   JSON.stringify([...((a as string[]) ?? [])].sort()) === JSON.stringify([...((b as string[]) ?? [])].sort());
@@ -27,7 +31,7 @@ async function assertTokenStillValid(token: any) {
 
   const dbUser = await prisma.user.findUnique({
     where: { id: token.sub },
-    select: { role: true, companyId: true, allowedPages: true, company: { select: { name: true, companyType: true } } },
+    select: { role: true, companyId: true, allowedPages: true, company: { select: { name: true, companyType: true, ...SUBSCRIPTION_SELECT } } },
   });
   if (!dbUser) throw new Error('SESSION_REVOKED');
   if (
@@ -39,6 +43,8 @@ async function assertTokenStillValid(token: any) {
   }
   token.companyName = dbUser.company?.name ?? token.companyName;
   token.companyType = dbUser.company?.companyType ?? token.companyType;
+  // Abonelik bitişi (ms; süresizde null). Middleware yazma isteklerinde buna bakar.
+  token.subUntil = dbUser.company ? subscriptionUntilMs(dbUser.company) : null;
 }
 
 export async function authorizePortalCustomer(credentials: Record<string, string> | undefined, req?: any) {
@@ -113,7 +119,7 @@ export async function authorizeStaff(credentials: Record<string, string> | undef
   try {
     const user = await prisma.user.findUnique({
       where: { email: credentials.email },
-      include: { company: { select: { name: true, companyType: true } } },
+      include: { company: { select: { name: true, companyType: true, ...SUBSCRIPTION_SELECT } } },
     });
     if (!user) {
       await recordAttempt(acctKey, ipKey);
@@ -156,6 +162,7 @@ export async function authorizeStaff(credentials: Record<string, string> | undef
       companyId: user.companyId,
       companyName: user.company?.name ?? null,
       companyType: user.company?.companyType ?? 'SOLE_MANUFACTURER',
+      subUntil: user.company ? subscriptionUntilMs(user.company) : null,
       language: user.language,
       currency: user.currency,
       allowedPages: (user as any).allowedPages ?? [],
@@ -182,7 +189,7 @@ export const authOptions: NextAuthOptions = {
         if (credentials?.impersonateToken) {
           const user = await prisma.user.findUnique({
             where: { impersonateToken: credentials.impersonateToken },
-            include: { company: { select: { name: true, companyType: true } } },
+            include: { company: { select: { name: true, companyType: true, ...SUBSCRIPTION_SELECT } } },
           });
           if (!user || !user.impersonateTokenExpiry || user.impersonateTokenExpiry < new Date()) {
             return null;
@@ -199,6 +206,7 @@ export const authOptions: NextAuthOptions = {
             companyId: user.companyId,
             companyName: user.company?.name ?? null,
             companyType: user.company?.companyType ?? 'SOLE_MANUFACTURER',
+            subUntil: user.company ? subscriptionUntilMs(user.company) : null,
             language: user.language,
             currency: user.currency,
             allowedPages: (user as any).allowedPages ?? [],
@@ -235,6 +243,7 @@ export const authOptions: NextAuthOptions = {
           token.language = user.language;
           token.currency = user.currency;
           token.allowedPages = (user as any).allowedPages ?? [];
+          token.subUntil = (user as any).subUntil ?? null;
         }
       }
       if (trigger === 'update' && session) {
@@ -271,6 +280,7 @@ export const authOptions: NextAuthOptions = {
           (session.user as any).companyType = token.companyType ?? 'SOLE_MANUFACTURER';
           session.user.language = token.language;
           session.user.currency = token.currency;
+          (session.user as any).subUntil = token.subUntil ?? null;
           (session.user as any).allowedPages = token.allowedPages ?? [];
         }
       }

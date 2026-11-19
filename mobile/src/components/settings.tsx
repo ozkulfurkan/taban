@@ -8,10 +8,29 @@ import { useBiometric } from '@/core/biometric';
 import { WEB_URL } from '@/core/config';
 import { confirm } from '@/core/dialog';
 import { useLinks } from '@/core/network';
+import { formatDate } from '@/core/format';
+import { subscriptionSummary, useSubscription } from '@/core/subscription';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
 
 const ROLE: Record<string, string> = { ADMIN: 'Yönetici', COMPANY_OWNER: 'Firma sahibi', EDITOR: 'Düzenleyici', VIEWER: 'Görüntüleyici' };
+
+/** Firma aboneliğinin durumu: Abonelik ekranına açılır */
+function SubscriptionRow() {
+  const s = useSubscription();
+  return (
+    <Section title="Abonelik">
+      <Card style={{ padding: 0, gap: 0 }}>
+        <ListRow
+          title="SoleCost Pro"
+          subtitle={s.data ? subscriptionSummary(s.data, formatDate) : '…'}
+          onPress={() => router.push('/abonelik')}
+          testID="settings-subscription"
+        />
+      </Card>
+    </Section>
+  );
+}
 
 /** Firma kodu ve bekleyen bağlantı istekleri: Firma Ağı ekranına açılır (yalnızca firma kullanıcısında) */
 function NetworkRow() {
@@ -54,6 +73,7 @@ export function SettingsBody() {
         )}
       </Card>
 
+      {user?.type === 'staff' ? <SubscriptionRow /> : null}
       {user?.type === 'staff' ? <NetworkRow /> : null}
 
       {bio.available ? (

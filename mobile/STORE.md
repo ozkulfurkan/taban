@@ -40,6 +40,7 @@ Uygulamada reklam, analitik, konum, rehber, kamera ya da üçüncü taraf takip 
 | Financial Info → Other Financial Info | Evet (bakiye, fatura, çek, personel maaşı) | App Functionality | Evet | Hayır |
 | User Content → Other User Content | Evet (sipariş, not, belge) | App Functionality | Evet | Hayır |
 | Identifiers → User ID | Evet (hesap kimliği) | App Functionality | Evet | Hayır |
+| Purchases → Purchase History | Evet (1.1 ve sonrası: abonelik; Apple + RevenueCat) | App Functionality | Evet | Hayır |
 | Diğer tüm türler (Location, Health, Browsing, Search, Diagnostics, Usage Data, Contacts, Photos…) | Hayır | — | — | — |
 
 Notlar:
@@ -48,7 +49,36 @@ Notlar:
 - Gizlilik politikası: https://www.solecost.com/gizlilik · Destek: https://www.solecost.com/destek
 
 ## 5. İnceleme riskleri (kontrol edildi)
-- Uygulama içinde kayıt / satın alma yok; giriş ekranında web kayıt bağlantısı kaldırıldı (Kural 3.1.1).
+- Uygulamada kayıt yok; giriş ekranında web kayıt bağlantısı kaldırıldı (Kural 3.1.1). 1.0'da satın alma yok;
+  1.1'de abonelik yalnızca Apple uygulama içi satın almayla, web fiyatı ya da web'e yönlendirme gösterilmeden (3.1.1, 3.1.3(b)).
+- Abonelik ekranında fiyat, süre, otomatik yenileme, Kullanım Koşulları, Gizlilik ve "Satın alımları geri yükle" var (3.1.2).
 - Hesap uygulamada açılmadığı için hesap silme zorunluluğu (5.1.1(v)) doğrudan uygulanmaz; Ayarlar'da "Hesap ve veri silme talebi" bağlantısı vardır.
 - Şifreleme beyanı: `usesNonExemptEncryption: false` (yalnızca HTTPS).
 - İzin metinleri: Face ID (`app.json`). Kamera kullanılmıyor, izin istenmiyor.
+
+## 6. Abonelik (1.1)
+Firma başına abonelik: aylık 499 TL, yıllık 4.999 TL. Satın alma iPhone'da Apple ile, doğrulama RevenueCat ile;
+abonelik firmanın tüm kullanıcılarında ve web'de geçerlidir. Yeni firmalara 30 gün deneme; süre dolunca salt okunur.
+Abonelik sistemi öncesi firmalar süresiz ücretsiz (LEGACY).
+
+**App Store Connect**
+- Agreements, Tax, and Banking → **Paid Apps** sözleşmesi (banka + vergi bilgileri). Onaylanmadan abonelik çalışmaz.
+- Monetization → Subscriptions → grup **SoleCost Pro**:
+  - `solecost_pro_monthly` · 1 ay · 499 TL
+  - `solecost_pro_yearly` · 1 yıl · 4.999 TL
+  - Her ürüne Türkçe görünen ad/açıklama ve inceleme için abonelik ekranının görüntüsü.
+- Users and Access → Integrations → **In-App Purchase** anahtarı (.p8) → RevenueCat'e yüklenir.
+
+**RevenueCat** (revenuecat.com)
+- Proje → iOS uygulaması (`com.solecost.app`), In-App Purchase anahtarı.
+- Entitlement: **`pro`** · iki ürün buna bağlı.
+- Offering: **default** (current) · paketler: Monthly → `solecost_pro_monthly`, Annual → `solecost_pro_yearly`.
+- Webhook: `https://www.solecost.com/api/subscription/revenuecat`, Authorization başlığı = `REVENUECAT_WEBHOOK_AUTH`.
+
+**Ortam değişkenleri**
+- Vercel: `REVENUECAT_SECRET_KEY` (sk_…), `REVENUECAT_WEBHOOK_AUTH` (uzun rastgele değer)
+- EAS / eas.json production env: `EXPO_PUBLIC_REVENUECAT_IOS_KEY` (appl_… · herkese açık SDK anahtarı)
+
+**Canlı veritabanı:** `prisma/migrations/20261121000001_subscriptions` (mevcut firmaları LEGACY yapar).
+
+**Test:** Satın alma Expo Go'da çalışmaz; TestFlight'ta Apple Sandbox hesabıyla denenir.

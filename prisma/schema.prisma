@@ -69,6 +69,10 @@ model Company {
   name               String
   subscriptionStatus SubscriptionStatus @default(TRIAL)
   trialEndsAt        DateTime?
+  // Abonelik: PRO + proUntil (boşsa süresiz). Kaynak: APPLE (RevenueCat), MANUAL (yönetici), LEGACY (abonelik öncesi firmalar)
+  proUntil           DateTime?
+  subscriptionPlan   String?
+  subscriptionSource String?
   address            String?
   taxId              String?
   phone              String?

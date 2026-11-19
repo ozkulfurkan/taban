@@ -19,7 +19,7 @@ export default withAuth(
       }
       const decision = checkApiAccess(token, req.method, pathname);
       if (!decision.ok) {
-        return NextResponse.json({ error: decision.error }, { status: decision.status });
+        return NextResponse.json({ error: decision.error, ...(decision.code ? { code: decision.code } : {}) }, { status: decision.status });
       }
       // Mobil uygulama: Bearer token route'lara oturum çerezi olarak iletilir (getServerSession çerez okur)
       const headers = withBearerCookie(req.headers);

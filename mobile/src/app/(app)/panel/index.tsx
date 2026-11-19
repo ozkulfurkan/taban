@@ -7,6 +7,7 @@ import { Card, T } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useAuth, useCanWrite } from '@/core/auth';
 import { useIsManager, useLinks } from '@/core/network';
+import { useSubscription } from '@/core/subscription';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -58,6 +59,7 @@ export default function Home() {
     neutral: { fg: c.textSecondary, bg: c.border },
   };
   const negative = d ? d.negativeStock.materials.length + d.negativeStock.products.length : 0;
+  const sub = useSubscription();
   // Onay bekleyen firma ağı istekleri (yalnızca onaylayabilecek kullanıcıya rozet)
   const manager = useIsManager();
   const links = useLinks(null, manager);
@@ -67,7 +69,7 @@ export default function Home() {
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView
         contentContainerStyle={styles.page}
-        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); if (manager) void links.refetch(); }} />}
+        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); void sub.refetch(); if (manager) void links.refetch(); }} />}
       >
         <View style={styles.head}>
           <View style={{ flex: 1, minWidth: 0 }}>
@@ -105,6 +107,22 @@ export default function Home() {
             );
           })}
         </View>
+
+        {/* Abonelik: deneme son 7 gün ya da süre dolmuşsa bant (salt okunur uyarısı) */}
+        {sub.data && (sub.data.kind === 'expired' || (sub.data.kind === 'trial' && (sub.data.daysLeft ?? 99) <= 7)) ? (
+          <Card
+            onPress={() => router.push('/abonelik')}
+            testID="home-subscription"
+            style={{ backgroundColor: sub.data.kind === 'expired' ? c.dangerSoft : c.warningSoft, borderColor: 'transparent', flexDirection: 'row', alignItems: 'center', gap: 12 }}
+          >
+            <Icon name="alert" color={sub.data.kind === 'expired' ? c.danger : c.warning} />
+            <View style={{ flex: 1 }}>
+              <T style={{ fontWeight: '700' }}>{sub.data.kind === 'expired' ? 'Abonelik süreniz doldu' : `Deneme sürenizin bitmesine ${sub.data.daysLeft} gün kaldı`}</T>
+              <T variant="small">{sub.data.kind === 'expired' ? 'Kayıtlar salt okunur. Abone olmak için dokunun.' : 'Kesintisiz kullanım için abone olun.'}</T>
+            </View>
+            <Icon name="chevron" size={14} />
+          </Card>
+        ) : null}
 
         {negative > 0 ? (
           <Card

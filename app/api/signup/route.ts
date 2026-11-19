@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
+import { TRIAL_DAYS } from '@/lib/subscription';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
@@ -34,14 +35,15 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const trialEnd = new Date();
-    trialEnd.setFullYear(trialEnd.getFullYear() + 1);
+    // Yeni firma: TRIAL_DAYS gün ücretsiz deneme, sonra abonelik (süre dolunca salt okunur)
+    const trialEnd = new Date(Date.now() + TRIAL_DAYS * 86_400_000);
 
     const company = await prisma.company.create({
       data: {
         name: companyName || `${name || email}'s Company`,
         subscriptionStatus: 'TRIAL',
         trialEndsAt: trialEnd,
+        subscriptionSource: 'TRIAL',
       },
     });
 

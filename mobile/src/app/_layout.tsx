@@ -7,7 +7,9 @@ import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { setSubscriptionRequiredHandler } from '@/core/api';
 import { AuthProvider, useAuth } from '@/core/auth';
+import { confirm } from '@/core/dialog';
 import { BiometricGate } from '@/core/biometric';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -25,6 +27,20 @@ function RootNavigator() {
     router.push(url as Href);
     void Notifications.clearLastNotificationResponseAsync();
   }, [response, ready, user]);
+
+  // Abonelik süresi dolmuş firmada yazma denenince: tek seferde bir uyarı, "Abone ol" ile abonelik ekranı
+  useEffect(() => {
+    let open = false;
+    setSubscriptionRequiredHandler(message => {
+      if (open || user?.type !== 'staff') return;
+      open = true;
+      void confirm('Abonelik gerekli', message, 'Abone ol').then(ok => {
+        open = false;
+        if (ok) router.push('/abonelik');
+      });
+    });
+    return () => setSubscriptionRequiredHandler(null);
+  }, [user?.type]);
 
   // Uygulama açıkken bildirim gelince sipariş listeleri yenilensin
   useEffect(() => {

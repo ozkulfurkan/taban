@@ -295,6 +295,31 @@ function IdleWarningModal({ countdown, onContinue }: { countdown: number; onCont
   );
 }
 
+// Abonelik süresi dolmuş ya da denemenin son 7 günü: üstte uyarı. Satın alma şimdilik iPhone uygulamasında;
+// abonelik firma başınadır, web'de de aynı süre geçerlidir (lib/subscription).
+function SubscriptionBanner() {
+  const { data: session } = useSession() || {};
+  const user = session?.user as any;
+  const until: number | null | undefined = user?.subUntil;
+  if (!user || user.type === 'portal' || user.role === 'ADMIN' || until === null || until === undefined) return null;
+  const daysLeft = Math.ceil((until - Date.now()) / 86_400_000);
+  if (daysLeft > 7) return null;
+  const expired = daysLeft <= 0;
+  return (
+    <div data-testid="subscription-banner"
+      className={`mb-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${expired ? 'border-red-200 bg-red-50 text-red-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+      <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+      <div>
+        <p className="font-semibold">{expired ? 'Abonelik süreniz doldu' : `Deneme sürenizin bitmesine ${daysLeft} gün kaldı`}</p>
+        <p>
+          {expired ? 'Kayıtlarınızı görebilir, ekstre ve PDF alabilirsiniz; yeni kayıt eklemek ve değiştirmek için abone olun. ' : ''}
+          Abonelik SoleCost iPhone uygulamasından (Ayarlar → Abonelik) başlatılır ve web&apos;de de aynı süre geçerlidir.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession() || {};
   const router = useRouter();
@@ -350,6 +375,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <div className="max-w-[1200px] mx-auto p-4 pb-20 md:p-6 lg:p-8 lg:pb-8">
+          <SubscriptionBanner />
           {children}
         </div>
       </main>

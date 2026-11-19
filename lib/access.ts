@@ -1,3 +1,5 @@
+import { tokenSubscriptionActive } from './subscription';
+
 // Erişim kuralları: middleware (edge), menü ve API'ler aynı kaynağı kullanır.
 // Burada veritabanı erişimi yoktur; oturumdaki bilgilerin güncelliği
 // lib/auth-options.ts içindeki jwt callback'inde her istekte doğrulanır.
@@ -7,6 +9,8 @@ export type AccessUser = {
   role?: string;
   allowedPages?: string[];
   portalType?: string;
+  /** Firma aboneliğinin bitişi (ms); null/undefined = süresiz (lib/subscription) */
+  subUntil?: number | null;
 };
 
 // Sayfa yolu öneki → izin anahtarı. Listede olmayan sayfalar herkese açıktır.
@@ -81,7 +85,11 @@ export function canSeePage(user: AccessUser | null | undefined, pathname: string
   return (user.allowedPages ?? []).includes(key);
 }
 
-export type ApiDecision = { ok: true } | { ok: false; status: 401 | 403; error: string };
+export type ApiDecision = { ok: true } | { ok: false; status: 401 | 402 | 403; error: string; code?: string };
+
+// Abonelik süresi dolan firmada da yazılabilen API'ler: oturum, bildirim kaydı, abonelik işlemleri,
+// destek, profil ayarları ve ekstre linki (kayıt değiştirmez, paylaşım içindir).
+const SUBSCRIPTION_FREE_WRITE = ['/api/auth/', '/api/mobile/', '/api/subscription', '/api/support/', '/api/settings', '/api/statement-links'];
 
 const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -93,6 +101,12 @@ export function checkApiAccess(user: AccessUser | null | undefined, method: stri
   if (user.type === 'portal') {
     if (PORTAL_API_PREFIXES.some(p => pathname.startsWith(p))) return { ok: true };
     return { ok: false, status: 403, error: 'Bu işlem için yetkiniz yok' };
+  }
+
+  // Abonelik süresi dolan firma salt okunur (platform yöneticisi hariç)
+  if (!READ_METHODS.has(method.toUpperCase()) && user.role !== 'ADMIN' && !tokenSubscriptionActive(user.subUntil)
+    && !SUBSCRIPTION_FREE_WRITE.some(p => pathname.startsWith(p))) {
+    return { ok: false, status: 402, code: 'SUBSCRIPTION_REQUIRED', error: 'Abonelik süreniz doldu. Kayıtları görebilirsiniz; eklemek ve değiştirmek için abone olun.' };
   }
 
   if (!READ_METHODS.has(method.toUpperCase()) && user.role === 'VIEWER') {
