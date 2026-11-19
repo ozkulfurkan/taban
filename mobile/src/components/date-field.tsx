@@ -1,6 +1,7 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
 import { Icon } from './icon';
@@ -10,7 +11,7 @@ import { dateFromIso, displayDate, isoFromDate, isoFromDisplay } from '@/core/da
 export { dateFromIso, displayDate, isoFromDate, isoFromDisplay };
 
 // Tarih alanı: değer API biçiminde (YYYY-AA-GG) tutulur, ekranda GG.AA.YYYY görünür, klavye yerine takvimden seçilir.
-// iOS: takvim alanın altında açılır (Modal açmaz; sayfa ya da pencere içinde aynı çalışır). Android: sistem tarih penceresi.
+// iOS: takvim alttan açılan tam genişlik panelde (alan dar bir sütunda olsa da sığar). Android: sistem tarih penceresi.
 
 export function DateField({ label, value, onChange, optional, placeholder, minimumDate, testID }: {
   label: string;
@@ -24,6 +25,7 @@ export function DateField({ label, value, onChange, optional, placeholder, minim
   testID?: string;
 }) {
   const c = useTheme();
+  const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
   const [webText, setWebText] = useState(displayDate(value));
   const current = dateFromIso(value) ?? new Date();
@@ -68,8 +70,14 @@ export function DateField({ label, value, onChange, optional, placeholder, minim
           </Pressable>
         ) : null}
       </Pressable>
-      {open ? (
-        <View style={[styles.calendar, { backgroundColor: c.card, borderColor: c.border }]}>
+      {/* Takvim alttan açılan tam genişlik panelde: alan yarım genişlikte (ör. Tutar | Vade) olsa da sığar */}
+      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+        <Pressable style={styles.backdrop} onPress={() => setOpen(false)} accessibilityLabel="Kapat" />
+        <View style={[styles.sheet, { backgroundColor: c.card, paddingBottom: insets.bottom + 12 }]} testID={testID ? `${testID}-sheet` : undefined}>
+          <View style={styles.sheetHead}>
+            <T variant="heading">{label}</T>
+            <Pressable onPress={() => setOpen(false)} hitSlop={12} accessibilityRole="button"><T color={c.primary}>Kapat</T></Pressable>
+          </View>
           <DateTimePicker
             value={current}
             mode="date"
@@ -77,15 +85,31 @@ export function DateField({ label, value, onChange, optional, placeholder, minim
             locale="tr-TR"
             minimumDate={minimumDate}
             accentColor={c.primary}
+            style={{ alignSelf: 'stretch' }}
             onValueChange={(_e, d) => { onChange(isoFromDate(d)); setOpen(false); }}
           />
+          <View style={styles.sheetActions}>
+            {!minimumDate || new Date() >= minimumDate ? (
+              <Pressable onPress={() => { onChange(isoFromDate(new Date())); setOpen(false); }} hitSlop={8} accessibilityRole="button">
+                <T color={c.primary} style={{ fontWeight: '600' }}>Bugün</T>
+              </Pressable>
+            ) : <View />}
+            {optional && value ? (
+              <Pressable onPress={() => { onChange(''); setOpen(false); }} hitSlop={8} accessibilityRole="button">
+                <T color={c.danger} style={{ fontWeight: '600' }}>Temizle</T>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
-      ) : null}
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   box: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13 },
-  calendar: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, overflow: 'hidden' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: 16, paddingTop: 16, width: '100%', maxWidth: 520, alignSelf: 'center' },
+  sheetHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  sheetActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
 });
