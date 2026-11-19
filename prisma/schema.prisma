@@ -78,9 +78,13 @@ model Company {
   eurToTry           Float              @default(1)
   vatRate            Float              @default(20)
   companyType        CompanyType        @default(SOLE_MANUFACTURER)
+  // Firmalar arası bağlantı kodu (örn. SC-7K4P9Q); başka firma bununla tedarikçi olarak ekler
+  code               String?            @unique
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   users              User[]
+  buyerLinks         CompanyLink[]      @relation("LinkBuyer")
+  sellerLinks        CompanyLink[]      @relation("LinkSeller")
   auditLogs          AuditLog[]
   employees          Employee[]
   personnelDocuments PersonnelDocument[]
@@ -324,6 +328,7 @@ model Customer {
   soleOrders            SoleOrder[]
   customerProductPrices CustomerProductPrice[]
   statementShareLinks   StatementShareLink[]
+  companyLinks          CompanyLink[]
   @@index([companyId])
 }
 
@@ -359,6 +364,7 @@ model Supplier {
   payments  Payment[]
   cekler    Cek[]
   statementShareLinks StatementShareLink[]
+  companyLinks        CompanyLink[]
   @@index([companyId])
 }
 
@@ -595,6 +601,10 @@ model SoleOrder {
   customer              Customer             @relation(fields: [customerId], references: [id])
   portalCustomerId      String?
   portalCustomer        PortalCustomer?      @relation(fields: [portalCustomerId], references: [id])
+  // Bağlı SoleCost firmasının verdiği sipariş (firma ağı)
+  linkId                String?
+  link                  CompanyLink?         @relation(fields: [linkId], references: [id], onDelete: SetNull)
+  buyerUserId           String?
   orderNo               String
   productId             String?
   product               Product?             @relation(fields: [productId], references: [id])
@@ -622,6 +632,8 @@ model SoleOrder {
   @@unique([companyId, orderNo])
   @@index([companyId, createdAt])
   @@index([customerId])
+
+  @@index([linkId])
 }
 
 model OrderStatusHistory {
@@ -1116,4 +1128,34 @@ model StatementShareLink {
   @@index([companyId])
   @@index([customerId])
   @@index([supplierId])
+}
+
+enum CompanyLinkStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  REVOKED
+}
+
+// Firmalar arası bağlantı: alıcı firma (buyer) satıcı firmayı (seller) firma koduyla tedarikçi
+// olarak ekler; satıcı onaylayınca alıcı kendi panelinden satıcıya sipariş verebilir.
+model CompanyLink {
+  id               String            @id @default(cuid())
+  buyerCompanyId   String
+  buyerCompany     Company           @relation("LinkBuyer", fields: [buyerCompanyId], references: [id], onDelete: Cascade)
+  sellerCompanyId  String
+  sellerCompany    Company           @relation("LinkSeller", fields: [sellerCompanyId], references: [id], onDelete: Cascade)
+  buyerSupplierId  String?
+  buyerSupplier    Supplier?         @relation(fields: [buyerSupplierId], references: [id], onDelete: SetNull)
+  sellerCustomerId String?
+  sellerCustomer   Customer?         @relation(fields: [sellerCustomerId], references: [id], onDelete: SetNull)
+  status           CompanyLinkStatus @default(PENDING)
+  requestedById    String?
+  approvedById     String?
+  createdAt        DateTime          @default(now())
+  respondedAt      DateTime?
+  orders           SoleOrder[]
+
+  @@unique([buyerCompanyId, sellerCompanyId])
+  @@index([sellerCompanyId, status])
 }

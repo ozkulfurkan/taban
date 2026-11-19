@@ -46,6 +46,8 @@ export async function GET(req: NextRequest) {
     include: {
       customer: { select: { id: true, name: true } },
       portalCustomer: { select: { id: true, name: true, email: true } },
+      // Bağlı SoleCost firmasından gelen sipariş (firma ağı)
+      link: { select: { id: true, buyerCompany: { select: { name: true } } } },
       product: { select: { id: true, name: true, code: true } },
       shipment: true,
     },

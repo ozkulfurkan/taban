@@ -7,6 +7,7 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { Settings, Save, Loader2, Globe, DollarSign, User, Building2, CreditCard, Plus, Trash2, Image, RefreshCw, QrCode, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import DecimalInput from '@/app/components/decimal-input';
+import { CompanyCodeCard } from '@/app/components/network';
 
 interface BankEntry {
   bankName: string;
@@ -261,6 +262,8 @@ export default function SettingsPage() {
             {t('common', 'save')}
           </button>
         </motion.div>
+
+        {user?.companyId ? <CompanyCodeCard /> : null}
 
         {/* Company Info */}
         {!companyLoading && (

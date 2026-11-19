@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
+import { LinkRequests } from '@/app/components/network';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { Users, Plus, Loader2, Search, Upload, Download, X, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import Link from 'next/link';
@@ -158,6 +159,7 @@ export default function CustomersPage() {
   return (
     <AppShell>
       <div className="space-y-5">
+        <LinkRequests />
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>

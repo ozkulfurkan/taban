@@ -378,6 +378,9 @@ export default function OrdersPage() {
                       {/* Müşteri */}
                       <div className="text-sm text-slate-700 font-medium truncate pr-2">
                         {order.customer?.name ?? '—'}
+                        {order.link && (
+                          <span className="block text-[11px] font-semibold text-emerald-600" data-testid={`order-source-${order.id}`}>SoleCost · {order.link.buyerCompany?.name}</span>
+                        )}
                       </div>
 
                       {/* Taban */}

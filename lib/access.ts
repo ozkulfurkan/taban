@@ -14,6 +14,7 @@ export const PAGE_KEYS: Array<[string, string]> = [
   ['/dashboard', 'dashboard'],
   ['/customers', 'customers'],
   ['/suppliers', 'suppliers'],
+  ['/verilen-siparisler', 'suppliers'],
   ['/invoices', 'invoices'],
   ['/payments', 'payments'],
   ['/products', 'products'],
