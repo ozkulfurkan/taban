@@ -3,7 +3,10 @@ import { useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 
 import { Button, Card, ErrorState, ListRow, Loading, Screen, Section, T } from '@/components/ui';
-import { useCanWrite } from '@/core/auth';
+import { useQueryClient } from '@tanstack/react-query';
+import { api } from '@/core/api';
+import { useCanDelete, useCanWrite } from '@/core/auth';
+import { confirm, notify } from '@/core/dialog';
 import { formatDate, money } from '@/core/format';
 import { useApi } from '@/core/query';
 import { useLinkSheet } from '@/components/link-sheet';
@@ -26,6 +29,21 @@ export default function PartyDetail() {
   const k: PartyKind = kind === 'supplier' ? 'supplier' : 'customer';
   const party = useApi<Party>(`/api/${k === 'customer' ? 'customers' : 'suppliers'}/${id}`);
   const linkSheet = useLinkSheet(k, id, party.data?.name ?? '', canWrite);
+  const canDelete = useCanDelete();
+  const qc = useQueryClient();
+  // Tedarikçi SoleCost'ta bağlıysa (onaylı bağlantı) buradan sipariş verilebilir
+  const links = useApi<{ asBuyer: { id: string; status: string; sellerCompany: { name: string } }[] }>(k === 'supplier' ? '/api/network/links' : null, { supplierId: id });
+  const activeLink = links.data?.asBuyer.find(l => l.status === 'ACTIVE');
+  const archive = async () => {
+    const what = k === 'customer' ? 'Müşteri' : 'Tedarikçi';
+    if (!(await confirm(`${what} silinsin mi?`, `"${party.data?.name}" listelerden kaldırılır. Belgeleri ve ödemeleri silinmez; ekstrede görünmeye devam eder.`, 'Sil', true))) return;
+    try {
+      await api(`/api/${k === 'customer' ? 'customers' : 'suppliers'}/${id}`, { method: 'DELETE' });
+      await qc.invalidateQueries();
+      router.back();
+      notify(`${what} silindi`, party.data?.name ?? '');
+    } catch (e: any) { notify('Silinemedi', e?.message ?? ''); }
+  };
   const [list, setList] = useState<ListKey | null>(null);
 
   if (party.isLoading) return <><Stack.Screen options={{ title: k === 'customer' ? 'Müşteri' : 'Tedarikçi' }} /><Loading /></>;
@@ -89,6 +107,17 @@ export default function PartyDetail() {
           ) : null}
           <Button title="Ekstre" icon="doc" variant="secondary" onPress={() => router.push(`/cariler/${k}/${id}/ekstre`)} style={styles.action} />
           <Button title="Link Gönder" icon="link" variant="secondary" onPress={linkSheet.open} loading={linkSheet.busy} style={styles.action} testID="party-link" />
+          {canWrite && activeLink ? (
+            <Button title="Sipariş ver" icon="cart" variant="secondary" style={styles.action} testID="party-network-order"
+              onPress={() => router.push(`/siparis/ver?linkId=${activeLink.id}&name=${encodeURIComponent(activeLink.sellerCompany.name)}`)} />
+          ) : null}
+          {canWrite ? (
+            <Button title="Düzenle" icon="edit" variant="secondary" style={styles.action} testID="party-edit"
+              onPress={() => router.push(`/cariler/${k}/form?id=${id}`)} />
+          ) : null}
+          {canDelete ? (
+            <Button title="Sil" icon="trash" variant="ghost" style={styles.action} testID="party-delete" onPress={() => { void archive(); }} />
+          ) : null}
         </View>
 
         {(p.phone || p.email || p.address) ? (

@@ -34,6 +34,11 @@ const ICONS = {
   transfer: ['arrow.left.arrow.right', 'swap_horiz'],
   edit: ['pencil', 'edit'],
   trash: ['trash', 'delete'],
+  orders: ['list.clipboard', 'assignment'],
+  chart: ['chart.bar', 'bar_chart'],
+  send: ['paperplane', 'send'],
+  userAdd: ['person.badge.plus', 'person_add'],
+  person: ['person', 'person'],
 } as const satisfies Record<string, readonly [SFSymbol, AndroidSymbol]>;
 
 export type IconName = keyof typeof ICONS;

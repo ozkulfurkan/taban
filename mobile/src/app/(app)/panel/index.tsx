@@ -6,10 +6,8 @@ import { Icon, type IconName } from '@/components/icon';
 import { Card, T } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useAuth, useCanWrite } from '@/core/auth';
-import { formatDate, money } from '@/core/format';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
-import { daysToVade } from '@shared/cek';
 
 type Dashboard = {
   dailyCiro: number; monthlyCiro: number; totalReceivables: number; totalPayables: number;
@@ -19,7 +17,7 @@ type Dashboard = {
 };
 
 type Tone = 'primary' | 'success' | 'warning' | 'danger' | 'neutral';
-type Tile = { label: string; icon: IconName; href: Href; tone: Tone; write?: boolean; testID: string };
+type Tile = { label: string; icon: IconName; href: Href; tone: Tone; write?: boolean; page?: string; testID: string };
 
 // Ana menü: yeni modül eklemek / çıkarmak için bu listeyi düzenlemek yeterli
 const TILES: Tile[] = [
@@ -32,6 +30,9 @@ const TILES: Tile[] = [
   { label: 'Çekler', icon: 'cheque', href: '/cekler', tone: 'success', testID: 'home-cekler' },
   { label: 'Kasa & Banka', icon: 'bank', href: '/hesaplar', tone: 'primary', testID: 'home-accounts' },
   { label: 'Stok', icon: 'box', href: '/stok', tone: 'warning', testID: 'home-stock' },
+  { label: 'Siparişler', icon: 'orders', href: '/siparis', tone: 'primary', page: 'orders', testID: 'home-orders' },
+  { label: 'Personel', icon: 'people', href: '/personel', tone: 'neutral', page: 'personnel', testID: 'home-personnel' },
+  { label: 'Raporlar', icon: 'chart', href: '/raporlar', tone: 'success', page: 'dashboard', testID: 'home-reports' },
   { label: 'Ayarlar', icon: 'settings', href: '/ayarlar', tone: 'neutral', testID: 'home-settings' },
 ];
 
@@ -43,7 +44,10 @@ export default function Home() {
   const q = useApi<Dashboard>('/api/dashboard');
   const d = q.data;
   const companyName = user?.type === 'staff' ? user.companyName : null;
-  const tiles = TILES.filter(t => !t.write || canWrite);
+  const owner = user?.type === 'staff' && (user.role === 'ADMIN' || user.role === 'COMPANY_OWNER');
+  const pages = user?.type === 'staff' ? user.allowedPages ?? [] : [];
+  // Web'deki sayfa izinleriyle aynı: sahip her kutuyu, diğerleri izin verilen sayfaları görür
+  const tiles = TILES.filter(t => (!t.write || canWrite) && (!t.page || owner || pages.includes(t.page)));
   const tones: Record<Tone, { fg: string; bg: string }> = {
     primary: { fg: c.primary, bg: c.primarySoft },
     success: { fg: c.success, bg: c.successSoft },
@@ -70,20 +74,6 @@ export default function Home() {
           </Pressable>
         </View>
 
-        {d ? (
-          <Card style={{ backgroundColor: c.strong, borderColor: c.strong, gap: Spacing.three }} testID="home-summary">
-            <View>
-              <T variant="small" color={c.strongText} style={{ opacity: 0.75 }}>Toplam alacak</T>
-              <T variant="moneyLarge" color={c.strongText} fit>{money(d.totalReceivables)}</T>
-            </View>
-            <View style={styles.summaryRow}>
-              <Summary label="Bu ay satış" value={money(d.monthlyCiro)} />
-              <Summary label="Toplam borç" value={money(d.totalPayables)} />
-              <Summary label="Kasa + banka" value={money(d.assets.kasa + d.assets.pos)} />
-            </View>
-          </Card>
-        ) : null}
-
         <View style={styles.grid}>
           {tiles.map(t => {
             const tone = tones[t.tone];
@@ -105,31 +95,6 @@ export default function Home() {
           })}
         </View>
 
-        {d && d.upcomingChecks.length ? (
-          <View style={{ gap: Spacing.two }}>
-            <View style={styles.sectionHead}>
-              <T variant="label" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Vadesi yaklaşan çekler</T>
-              <Pressable onPress={() => router.push('/cekler')} hitSlop={8} accessibilityRole="link"><T color={c.primary}>Tümü</T></Pressable>
-            </View>
-            <Card style={{ padding: 0, gap: 0 }}>
-              {d.upcomingChecks.slice(0, 5).map((ch, i) => {
-                const days = daysToVade(ch.vadesi);
-                return (
-                  <View key={ch.id} style={[styles.cekRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }]}>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <T style={{ fontWeight: '600' }} numberOfLines={1}>{ch.customer?.name || ch.borclu}</T>
-                      <T variant="small" color={days <= 7 ? c.warning : undefined}>
-                        Vade {formatDate(ch.vadesi)} · {days === 0 ? 'bugün' : `${days} gün`}
-                      </T>
-                    </View>
-                    <T variant="money">{money(ch.tutar, ch.currency)}</T>
-                  </View>
-                );
-              })}
-            </Card>
-          </View>
-        ) : null}
-
         {negative > 0 ? (
           <Card
             onPress={() => router.push(d?.negativeStock.products.length ? '/stok?negative=1' : '/stok?kind=material&negative=1')}
@@ -146,21 +111,10 @@ export default function Home() {
   );
 }
 
-function Summary({ label, value }: { label: string; value: string }) {
-  const c = useTheme();
-  return (
-    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-      <T variant="small" color={c.strongText} style={{ opacity: 0.75 }} numberOfLines={1}>{label}</T>
-      <T variant="money" color={c.strongText} fit style={{ fontSize: 14 }}>{value}</T>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   page: { padding: Spacing.three, gap: Spacing.four, paddingBottom: Spacing.six, width: '100%', maxWidth: 720, alignSelf: 'center' },
   head: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   round: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth },
-  summaryRow: { flexDirection: 'row', gap: Spacing.three },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   tile: {
     // 3 sütun: (100% - 2 boşluk) / 3
@@ -169,6 +123,4 @@ const styles = StyleSheet.create({
   },
   tileIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   tileLabel: { fontSize: 14, fontWeight: '600', textAlign: 'center' },
-  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cekRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
 });
