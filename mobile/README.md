@@ -19,4 +19,10 @@ Yerel sunucuya bağlanmak için: `EXPO_PUBLIC_API_URL=http://<bilgisayar-ip>:300
 Kontroller: `npm run typecheck`, `npx expo lint`, `npm test`.
 
 ## Derleme ve mağaza (EAS)
-`eas.json` ve mağaza gönderimi ayrı adımda eklenecek (bundle id: `com.solecost.app`).
+EAS projesi: `@ozkulfurkan/solecost` (bundle id: `com.solecost.app`). Build numarası EAS'ta tutulur, her üretim derlemesinde artar.
+
+```bash
+npx eas-cli build -p ios --profile production --auto-submit   # derle + TestFlight'a gönder
+npx eas-cli build -p ios --profile preview                    # kayıtlı cihazlara iç dağıtım
+```
+İlk derlemede Apple ID girişi ve imzalama sertifikası sorulur (etkileşimli). Sürüm (`version`) `app.json`'dadır.
