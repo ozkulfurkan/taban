@@ -2,12 +2,13 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { Linking, Switch, View } from 'react-native';
 
-import { Button, Card, ListRow, Screen, Section, T } from '@/components/ui';
+import { Button, Card, ListRow, Screen, Section, Segmented, T } from '@/components/ui';
 import { useAuth } from '@/core/auth';
 import { useBiometric } from '@/core/biometric';
 import { WEB_URL } from '@/core/config';
 import { confirm } from '@/core/dialog';
 import { useLinks } from '@/core/network';
+import { useThemePreference } from '@/core/theme-pref';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -37,6 +38,7 @@ export function SettingsBody() {
   const c = useTheme();
   const { user, signOut } = useAuth();
   const bio = useBiometric();
+  const themePref = useThemePreference();
 
   const logout = async () => {
     if (await confirm('Çıkış yapılsın mı?', 'Tekrar girişte e-posta ve şifreniz istenir.', 'Çıkış yap', true)) await signOut();
@@ -55,6 +57,14 @@ export function SettingsBody() {
       </Card>
 
       {user?.type === 'staff' ? <NetworkRow /> : null}
+
+      <Section title="Görünüm">
+        <Segmented
+          value={themePref.pref}
+          onChange={themePref.setPref}
+          options={[{ value: 'light', label: 'Açık' }, { value: 'dark', label: 'Koyu' }, { value: 'system', label: 'Sistem' }]}
+        />
+      </Section>
 
       {bio.available ? (
         <Section title="Güvenlik">

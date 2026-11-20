@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useScheme, useTheme } from '@/hooks/use-theme';
 import { Icon, type IconName } from './icon';
 
 type TextVariant = 'title' | 'heading' | 'body' | 'label' | 'small' | 'money' | 'moneyLarge';
@@ -59,7 +59,7 @@ export function Screen({ children, refreshing, onRefresh, scroll = true, padded 
 
 export function Card({ children, style, onPress, testID }: { children: ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void; testID?: string }) {
   const c = useTheme();
-  const s = [styles.card, { backgroundColor: c.card, borderColor: c.border }, style];
+  const s = [styles.card, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.shadow }, style];
   if (!onPress) return <View testID={testID} style={s}>{children}</View>;
   return (
     <Pressable testID={testID} onPress={onPress} accessibilityRole="button" style={({ pressed }) => [s, pressed && { opacity: 0.7 }]}>
@@ -97,11 +97,13 @@ export function Button({ title, onPress, variant = 'primary', icon, loading, dis
 
 export function Field({ label, error, style, ...props }: TextInputProps & { label: string; error?: string }) {
   const c = useTheme();
+  const scheme = useScheme();
   return (
     <View style={{ gap: 6 }}>
       <T variant="label">{label}</T>
       <TextInput
         placeholderTextColor={c.textMuted}
+        keyboardAppearance={scheme}
         accessibilityLabel={label}
         {...props}
         style={[styles.input, { color: c.text, backgroundColor: c.card, borderColor: error ? c.danger : c.border }, style]}
@@ -125,9 +127,9 @@ export function Segmented<V extends string>({ value, options, onChange }: {
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
             onPress={() => onChange(o.value)}
-            style={[styles.segmentItem, on && { backgroundColor: c.card }]}
+            style={[styles.segmentItem, on && [styles.segmentOn, { backgroundColor: c.card, shadowColor: c.shadow }]]}
           >
-            <Text style={{ color: on ? c.text : c.textSecondary, fontWeight: on ? '600' : '500' }}>{o.label}</Text>
+            <Text style={{ color: on ? c.primary : c.textSecondary, fontWeight: on ? '700' : '500' }}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -220,7 +222,11 @@ const text: Record<TextVariant, TextStyle> = {
 const styles = StyleSheet.create({
   content: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', gap: Spacing.three },
   padded: { padding: Spacing.three, paddingBottom: Spacing.six },
-  card: { borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth, padding: Spacing.three, gap: Spacing.two },
+  card: {
+    borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth, padding: Spacing.three, gap: Spacing.two,
+    // Yumuşak gölge: kart yüzeyi zeminden ayrılsın (renk temadan: shadowColor)
+    shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2,
+  },
   button: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     paddingHorizontal: 16, minHeight: 46, borderRadius: Radius.md, borderWidth: 1,
@@ -229,6 +235,7 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: Radius.md, paddingHorizontal: 12, minHeight: 46, fontSize: 16 },
   segment: { flexDirection: 'row', borderRadius: Radius.md, padding: 3 },
   segmentItem: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: Radius.sm },
+  segmentOn: { shadowOpacity: 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: Spacing.three,
     borderBottomWidth: StyleSheet.hairlineWidth, minHeight: 56,
