@@ -80,6 +80,9 @@ model Company {
   companyType        CompanyType        @default(SOLE_MANUFACTURER)
   // Firmalar arası bağlantı kodu (örn. SC-7K4P9Q); başka firma bununla tedarikçi olarak ekler
   code               String?            @unique
+  // Firma sahibi hesabını silince: firma pasif, bu tarihte tüm verisiyle silinir (talep eden giriş yaparsa iptal)
+  deletionScheduledAt   DateTime?
+  deletionRequestedById String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   users              User[]
@@ -130,6 +133,10 @@ model User {
   emailVerifyToken       String?          @unique
   impersonateToken       String?          @unique
   impersonateTokenExpiry DateTime?
+  // Hesap silme: e-postaya giden onay kodu (sha256) ve silinme tarihi (pasif dönem; girişte iptal olur)
+  deleteCodeHash         String?
+  deleteCodeExpiry       DateTime?
+  deletionScheduledAt    DateTime?
   companyId              String?
   company          Company?         @relation(fields: [companyId], references: [id])
   soleCalculations SoleCalculation[]

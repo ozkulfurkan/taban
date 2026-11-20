@@ -101,6 +101,8 @@ export default function LoginPage() {
       if (result?.error) {
         if (result.error === 'TOO_MANY_ATTEMPTS') {
           setError('Çok fazla hatalı deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin veya şifrenizi sıfırlayın.');
+        } else if (result.error === 'COMPANY_DELETION_PENDING') {
+          setError('Firma hesabı silinme sürecinde olduğu için giriş yapılamıyor. Firma sahibiyle iletişime geçin.');
         } else if (result.error === 'EMAIL_NOT_VERIFIED') {
           setUnverifiedEmail(email);
         } else {

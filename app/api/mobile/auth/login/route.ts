@@ -11,6 +11,7 @@ const ERRORS: Record<string, [number, string]> = {
   TOO_MANY_ATTEMPTS: [429, 'Çok fazla hatalı deneme. 15 dakika sonra tekrar deneyin.'],
   EMAIL_NOT_VERIFIED: [403, 'E-posta adresiniz doğrulanmamış. Gelen kutunuza doğrulama bağlantısı gönderdik.'],
   ACCOUNT_INACTIVE: [403, 'Hesabınız pasif. Firma ile iletişime geçin.'],
+  COMPANY_DELETION_PENDING: [403, 'Firma hesabı silinme sürecinde olduğu için giriş yapılamıyor. Firma sahibiyle iletişime geçin.'],
 };
 
 const fail = (code: string) => {

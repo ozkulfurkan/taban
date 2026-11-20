@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendMail } from '@/lib/mail';
 import { LIMITS, clientIp, normEmail, isLimited, recordAttempt, clearAttempts } from '@/lib/login-throttle';
+import { sendCancelledMail } from '@/lib/account-deletion';
 
 const sameList = (a: unknown, b: unknown) =>
   JSON.stringify([...((a as string[]) ?? [])].sort()) === JSON.stringify([...((b as string[]) ?? [])].sort());
@@ -27,9 +28,11 @@ async function assertTokenStillValid(token: any) {
 
   const dbUser = await prisma.user.findUnique({
     where: { id: token.sub },
-    select: { role: true, companyId: true, allowedPages: true, company: { select: { name: true, companyType: true } } },
+    select: { role: true, companyId: true, allowedPages: true, deletionScheduledAt: true, company: { select: { name: true, companyType: true, deletionScheduledAt: true } } },
   });
   if (!dbUser) throw new Error('SESSION_REVOKED');
+  // Silme talebiyle pasife alınan hesap ya da firma: tüm açık oturumlar düşer
+  if (dbUser.deletionScheduledAt || dbUser.company?.deletionScheduledAt) throw new Error('SESSION_REVOKED');
   if (
     dbUser.role !== token.role ||
     (dbUser.companyId ?? null) !== (token.companyId ?? null) ||
@@ -113,7 +116,7 @@ export async function authorizeStaff(credentials: Record<string, string> | undef
   try {
     const user = await prisma.user.findUnique({
       where: { email: credentials.email },
-      include: { company: { select: { name: true, companyType: true } } },
+      include: { company: { select: { name: true, companyType: true, deletionScheduledAt: true, deletionRequestedById: true } } },
     });
     if (!user) {
       await recordAttempt(acctKey, ipKey);
@@ -148,6 +151,18 @@ export async function authorizeStaff(credentials: Record<string, string> | undef
       }).catch(() => {});
       throw new Error('EMAIL_NOT_VERIFIED');
     }
+    // Hesap silme pasif dönemi: talep eden giriş yaparsa silme iptal olur; firma silinirken diğer kullanıcılar giremez
+    if (user.company?.deletionScheduledAt) {
+      if (user.company.deletionRequestedById !== user.id) throw new Error('COMPANY_DELETION_PENDING');
+      await prisma.$transaction([
+        prisma.company.update({ where: { id: user.companyId! }, data: { deletionScheduledAt: null, deletionRequestedById: null } }),
+        prisma.user.update({ where: { id: user.id }, data: { deletionScheduledAt: null } }),
+      ]);
+      await sendCancelledMail(user.email, user.name);
+    } else if (user.deletionScheduledAt) {
+      await prisma.user.update({ where: { id: user.id }, data: { deletionScheduledAt: null } });
+      await sendCancelledMail(user.email, user.name);
+    }
     return {
       id: user.id,
       email: user.email,
@@ -163,6 +178,7 @@ export async function authorizeStaff(credentials: Record<string, string> | undef
   } catch (error) {
     if (error instanceof Error && error.message === 'EMAIL_NOT_VERIFIED') throw error;
     if (error instanceof Error && error.message === 'TOO_MANY_ATTEMPTS') throw error;
+    if (error instanceof Error && error.message === 'COMPANY_DELETION_PENDING') throw error;
     console.error('Auth error:', error);
     return null;
   }
@@ -182,7 +198,7 @@ export const authOptions: NextAuthOptions = {
         if (credentials?.impersonateToken) {
           const user = await prisma.user.findUnique({
             where: { impersonateToken: credentials.impersonateToken },
-            include: { company: { select: { name: true, companyType: true } } },
+            include: { company: { select: { name: true, companyType: true, deletionScheduledAt: true, deletionRequestedById: true } } },
           });
           if (!user || !user.impersonateTokenExpiry || user.impersonateTokenExpiry < new Date()) {
             return null;
