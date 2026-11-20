@@ -98,6 +98,7 @@ const EN: Record<string, string> = {
   'Katalog henüz yüklenmedi.': 'The catalog has not been published yet.',
   'Mevcut Numaralar': 'Available Sizes',
   'Birim': 'Unit',
+  'Daha önce aldınız': 'Bought before',
   'Bu sipariş iptal edildi.': 'This order has been cancelled.',
   'Hazırlanıyor': 'Preparing',
   'Miktar': 'Quantity',
