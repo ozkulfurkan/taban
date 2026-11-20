@@ -24,7 +24,7 @@ type Tile = { label: string; icon: IconName; href: Href; tone: Tone; write?: boo
 const TILES: Tile[] = [
   { label: 'Müşteriler', icon: 'people', href: '/cariler?kind=customer', tone: 'primary', testID: 'home-customers' },
   { label: 'Tedarikçiler', icon: 'truck', href: '/cariler?kind=supplier', tone: 'primary', testID: 'home-suppliers' },
-  { label: 'Yeni Satış', icon: 'newDoc', href: '/belgeler/yeni?kind=sale', tone: 'success', write: true, testID: 'home-new-sale' },
+  { label: 'Ürünler', icon: 'tag', href: '/urunler', tone: 'primary', testID: 'home-products' },
   { label: 'Satışlar', icon: 'doc', href: '/belgeler?tab=sale', tone: 'success', testID: 'home-sales' },
   { label: 'Alışlar', icon: 'cart', href: '/belgeler?tab=purchase', tone: 'warning', testID: 'home-purchases' },
   { label: 'İadeler', icon: 'undo', href: '/belgeler?tab=return', tone: 'danger', testID: 'home-returns' },

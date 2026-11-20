@@ -40,6 +40,7 @@ const ICONS = {
   userAdd: ['person.badge.plus', 'person_add'],
   person: ['person', 'person'],
   check: ['checkmark.circle', 'check_circle'],
+  tag: ['tag', 'sell'],
   back: ['chevron.left', 'chevron_left'],
 } as const satisfies Record<string, readonly [SFSymbol, AndroidSymbol]>;
 
