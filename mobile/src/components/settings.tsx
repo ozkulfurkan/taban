@@ -82,7 +82,12 @@ export function SettingsBody() {
         <Card style={{ padding: 0, gap: 0 }}>
           <ListRow title="Destek" onPress={() => Linking.openURL(`${WEB_URL}/destek`)} />
           <ListRow title="Gizlilik Politikası ve KVKK" onPress={() => Linking.openURL(`${WEB_URL}/gizlilik`)} />
-          <ListRow title="Hesap ve veri silme talebi" onPress={() => Linking.openURL(`${WEB_URL}/destek`)} />
+          {user?.type === 'staff' ? (
+            <ListRow title="Hesabımı sil" subtitle="E-posta koduyla onaylanır, 15 gün sonra silinir"
+              onPress={() => router.push('/ayarlar/hesap-sil')} testID="settings-delete-account" />
+          ) : (
+            <ListRow title="Hesap ve veri silme talebi" subtitle="Portal hesabınızı firmanız yönetir" onPress={() => Linking.openURL(`${WEB_URL}/destek`)} />
+          )}
         </Card>
       </Section>
 
