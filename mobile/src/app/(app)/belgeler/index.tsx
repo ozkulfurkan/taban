@@ -59,6 +59,8 @@ export default function Belgeler() {
 
   const active = tab === 'purchase' ? purchases : invoices;
   const create = (kind: string) => router.push(`/belgeler/yeni?kind=${kind}`);
+  // +: Satışlar'da doğrudan satış, Alışlar'da doğrudan alış; İadeler'de iade yönü seçilir
+  const onNew = () => (tab === 'sale' ? create('sale') : tab === 'purchase' ? create('purchase') : setNewOpen(true));
 
   return (
     <>
@@ -67,7 +69,8 @@ export default function Belgeler() {
           title: tab === 'sale' ? 'Satışlar' : tab === 'return' ? 'İadeler' : 'Alışlar',
           headerSearchBarOptions: { placeholder: 'Belge no ya da cari', onChangeText: e => setSearch(e.nativeEvent.text), hideWhenScrolling: false, placement: 'stacked' },
           headerRight: canWrite ? () => (
-            <Pressable onPress={() => setNewOpen(true)} accessibilityRole="button" accessibilityLabel="Yeni belge" hitSlop={10} testID="doc-new">
+            <Pressable onPress={onNew} accessibilityRole="button"
+              accessibilityLabel={tab === 'sale' ? 'Yeni satış' : tab === 'purchase' ? 'Yeni alış' : 'Yeni iade'} hitSlop={10} testID="doc-new">
               <Icon name="plus" size={24} color={c.primary} />
             </Pressable>
           ) : undefined,
@@ -109,12 +112,10 @@ export default function Belgeler() {
       <Sheet
         visible={newOpen}
         onClose={() => setNewOpen(false)}
-        title="Yeni belge"
+        title="Yeni iade"
         actions={[
-          { label: 'Satış faturası', icon: 'doc', onPress: () => create('sale'), testID: 'new-sale' },
-          { label: 'Müşteriden iade', icon: 'arrowDown', onPress: () => create('return') },
-          { label: 'Alış', icon: 'cart', onPress: () => create('purchase'), testID: 'new-purchase' },
-          { label: 'Tedarikçiye iade', icon: 'arrowUp', onPress: () => create('purchaseReturn') },
+          { label: 'Müşteriden iade', icon: 'arrowDown', onPress: () => create('return'), testID: 'new-return' },
+          { label: 'Tedarikçiye iade', icon: 'arrowUp', onPress: () => create('purchaseReturn'), testID: 'new-purchase-return' },
         ]}
       />
     </>
