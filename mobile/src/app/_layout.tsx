@@ -3,12 +3,15 @@ import * as Notifications from 'expo-notifications';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, router, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/core/auth';
 import { BiometricGate } from '@/core/biometric';
+import { ThemePreferenceProvider } from '@/core/theme-pref';
+import { Welcome } from '@/components/welcome';
+import { useScheme, useTheme } from '@/hooks/use-theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -53,8 +56,27 @@ function RootNavigator() {
   );
 }
 
+// Tema tercihine göre navigasyon renkleri, durum çubuğu ve açılış karşılaması
+function ThemedApp() {
+  const scheme = useScheme();
+  const c = useTheme();
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const navTheme = useMemo(() => ({
+    ...base,
+    colors: { ...base.colors, primary: c.primary, background: c.background, card: c.background, text: c.text, border: c.border },
+  }), [base, c]);
+  return (
+    <ThemeProvider value={navTheme}>
+      <AuthProvider>
+        <RootNavigator />
+        <Welcome />
+      </AuthProvider>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+    </ThemeProvider>
+  );
+}
+
 export default function RootLayout() {
-  const scheme = useColorScheme();
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
@@ -66,12 +88,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <AuthProvider>
-            <RootNavigator />
-          </AuthProvider>
-          <StatusBar style="auto" />
-        </ThemeProvider>
+        <ThemePreferenceProvider>
+          <ThemedApp />
+        </ThemePreferenceProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
   );

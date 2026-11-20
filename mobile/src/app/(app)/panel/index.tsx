@@ -1,6 +1,6 @@
 import { router, type Href } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/icon';
 import { Card, T } from '@/components/ui';
@@ -40,6 +40,7 @@ const TILES: Tile[] = [
 
 export default function Home() {
   const c = useTheme();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const canWrite = useCanWrite();
   // Panel izni olmayan kullanıcıda özet 403 döner; menü yine de çalışır
@@ -64,22 +65,27 @@ export default function Home() {
   const badges = { network: links.data?.asSeller.filter(l => l.status === 'PENDING').length ?? 0 };
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: c.background }}>
+    <SafeAreaView edges={['left', 'right']} style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView
-        contentContainerStyle={styles.page}
+        contentContainerStyle={{ paddingBottom: Spacing.six }}
         refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); if (manager) void links.refetch(); }} />}
       >
-        <View style={styles.head}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <T variant="small">{user?.name ? `Merhaba, ${user.name}` : 'Hoş geldiniz'}</T>
-            <T variant="title" numberOfLines={1} testID="home-company">{companyName || 'SoleCost'}</T>
+        {/* Bordo karşılama bandı: durum çubuğunun arkasına kadar uzanır */}
+        <View style={[styles.hero, { backgroundColor: c.strong, paddingTop: insets.top + Spacing.three }]}>
+          <View style={styles.head}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <T variant="small" color={c.strongMuted}>{user?.name ? `Merhaba, ${user.name}` : 'Hoş geldiniz'}</T>
+              <T variant="title" color={c.strongText} numberOfLines={1} testID="home-company">{companyName || 'SoleCost'}</T>
+            </View>
+            <Pressable onPress={() => router.push('/ayarlar')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ayarlar"
+              style={[styles.round, { backgroundColor: 'rgba(255,255,255,0.14)', borderColor: 'rgba(255,255,255,0.22)' }]}>
+              <Icon name="settings" size={20} color={c.strongText} />
+            </Pressable>
           </View>
-          <Pressable onPress={() => router.push('/ayarlar')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ayarlar"
-            style={[styles.round, { backgroundColor: c.card, borderColor: c.border }]}>
-            <Icon name="settings" size={20} color={c.text} />
-          </Pressable>
+          <T variant="small" color={c.strongMuted}>{new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}</T>
         </View>
 
+        <View style={styles.page}>
         <View style={styles.grid}>
           {tiles.map(t => {
             const tone = tones[t.tone];
@@ -90,7 +96,7 @@ export default function Home() {
                 accessibilityRole="button"
                 accessibilityLabel={t.label}
                 testID={t.testID}
-                style={({ pressed }) => [styles.tile, { backgroundColor: c.card, borderColor: c.border }, pressed && { opacity: 0.7, transform: [{ scale: 0.97 }] }]}
+                style={({ pressed }) => [styles.tile, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.shadow }, pressed && { opacity: 0.7, transform: [{ scale: 0.97 }] }]}
               >
                 <View style={[styles.tileIcon, { backgroundColor: tone.bg }]}>
                   <Icon name={t.icon} size={26} color={tone.fg} />
@@ -117,13 +123,18 @@ export default function Home() {
             <Icon name="chevron" size={14} color={c.warning} />
           </Card>
         ) : null}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { padding: Spacing.three, gap: Spacing.four, paddingBottom: Spacing.six, width: '100%', maxWidth: 720, alignSelf: 'center' },
+  hero: {
+    paddingHorizontal: Spacing.three, paddingBottom: Spacing.five, gap: Spacing.two,
+    borderBottomLeftRadius: 28, borderBottomRightRadius: 28,
+  },
+  page: { padding: Spacing.three, gap: Spacing.four, width: '100%', maxWidth: 720, alignSelf: 'center' },
   head: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   round: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
@@ -131,6 +142,7 @@ const styles = StyleSheet.create({
     // 3 sütun: (100% - 2 boşluk) / 3
     flexBasis: '30%', flexGrow: 1, maxWidth: '32%', aspectRatio: 1,
     borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 8,
+    shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 2,
   },
   tileIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   tileLabel: { fontSize: 14, fontWeight: '600', textAlign: 'center' },

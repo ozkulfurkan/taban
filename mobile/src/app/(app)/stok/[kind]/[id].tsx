@@ -44,8 +44,8 @@ export default function StockDetail() {
       <Screen refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }}>
         <Card style={{ backgroundColor: c.strong, borderColor: c.strong }}>
           <T variant="small" color={c.strongText} style={{ opacity: 0.8 }}>{kind === 'product' ? 'Ürün stoku' : 'Hammadde stoku (ana depo)'}</T>
-          <T variant="moneyLarge" color={head.stock < 0 ? '#FCA5A5' : c.strongText} fit testID="stock-current">{formatQty(head.stock)} {unit}</T>
-          {head.stock < 0 ? <T variant="small" color="#FCA5A5">Stok eksiye düşmüş</T> : null}
+          <T variant="moneyLarge" color={head.stock < 0 ? c.strongNegative : c.strongText} fit testID="stock-current">{formatQty(head.stock)} {unit}</T>
+          {head.stock < 0 ? <T variant="small" color={c.strongNegative}>Stok eksiye düşmüş</T> : null}
         </Card>
 
         {canWrite ? (

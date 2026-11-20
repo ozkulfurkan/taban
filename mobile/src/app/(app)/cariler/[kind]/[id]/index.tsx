@@ -75,7 +75,7 @@ export default function PartyDetail() {
         <Card style={{ backgroundColor: c.strong, borderColor: c.strong }}>
           <T variant="small" color={c.strongText} style={{ opacity: 0.8 }}>Bakiye</T>
           <T variant="moneyLarge" color={c.strongText} testID="party-balance">{money(p.balance, cur)}</T>
-          <T variant="small" color={settled ? c.strongText : (p.balance > 0) === positiveIsGood ? '#6EE7B7' : '#FCA5A5'}>{balanceNote}</T>
+          <T variant="small" color={settled ? c.strongText : (p.balance > 0) === positiveIsGood ? c.strongPositive : c.strongNegative}>{balanceNote}</T>
         </Card>
 
         <View style={styles.actions}>

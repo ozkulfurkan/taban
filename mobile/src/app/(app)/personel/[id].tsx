@@ -50,7 +50,7 @@ export default function PersonelDetay() {
         <Card style={{ backgroundColor: c.strong, borderColor: c.strong }}>
           <T variant="small" color={c.strongText} style={{ opacity: 0.8 }}>Bakiye</T>
           <T variant="moneyLarge" color={c.strongText} testID="employee-balance">{money(balance, e.currency)}</T>
-          <T variant="small" color={Math.abs(balance) < 0.005 ? c.strongText : balance > 0 ? '#FCA5A5' : '#6EE7B7'}>{balanceNote(balance)}</T>
+          <T variant="small" color={Math.abs(balance) < 0.005 ? c.strongText : balance > 0 ? c.strongNegative : c.strongPositive}>{balanceNote(balance)}</T>
         </Card>
 
         {canWrite ? (
