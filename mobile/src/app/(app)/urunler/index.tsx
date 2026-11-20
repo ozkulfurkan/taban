@@ -1,9 +1,10 @@
 import { Stack, router } from 'expo-router';
 import { useDeferredValue, useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, RefreshControl, View } from 'react-native';
+import { FlatList, Platform, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
-import { Empty, ErrorState, Field, ListRow, Loading } from '@/components/ui';
+import { ProductThumb } from '@/components/product-image';
+import { Empty, ErrorState, Field, Loading, T } from '@/components/ui';
 import { useCanWrite } from '@/core/auth';
 import { money } from '@/core/format';
 import { useApi } from '@/core/query';
@@ -13,7 +14,7 @@ import { matchesText } from '@shared/search';
 
 type Product = {
   id: string; name: string; code?: string | null; unit?: string | null; stock: number;
-  unitPrice?: number | null; currency?: string | null; category?: { name: string } | null;
+  unitPrice?: number | null; currency?: string | null; category?: { name: string } | null; imageUpdatedAt?: string | null;
 };
 
 // Ürünler: liste, arama, + ile yeni ürün. Satıra dokununca ürün/stok detayı açılır.
@@ -59,18 +60,29 @@ export default function Urunler() {
             : <Empty message={q ? 'Aramaya uyan ürün yok.' : canWrite ? 'Henüz ürün yok. Sağ üstteki + ile ekleyin.' : 'Henüz ürün yok.'} />
         }
         renderItem={({ item }) => (
-          <View style={{ backgroundColor: c.card }}>
-            <ListRow
-              testID={`product-${item.id}`}
-              title={item.name}
-              subtitle={[item.code, item.category?.name, `Stok ${formatQty(item.stock)} ${item.unit || 'çift'}`].filter(Boolean).join(' · ')}
-              right={item.unitPrice ? money(item.unitPrice, item.currency || 'TRY') : undefined}
-              onPress={() => router.push(`/stok/product/${item.id}`)}
-            />
-          </View>
+          <Pressable
+            testID={`product-${item.id}`}
+            accessibilityRole="button"
+            onPress={() => router.push(`/stok/product/${item.id}`)}
+            style={({ pressed }) => [styles.row, { backgroundColor: pressed ? c.background : c.card, borderBottomColor: c.border }]}
+          >
+            <ProductThumb productId={item.id} imageUpdatedAt={item.imageUpdatedAt} size={52} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <T style={{ fontWeight: '600' }} numberOfLines={1}>{item.name}</T>
+              <T variant="small" numberOfLines={1}>
+                {[item.code, item.category?.name, `Stok ${formatQty(item.stock)} ${item.unit || 'çift'}`].filter(Boolean).join(' · ')}
+              </T>
+            </View>
+            {item.unitPrice ? <T variant="money">{money(item.unitPrice, item.currency || 'TRY')}</T> : null}
+            <Icon name="chevron" size={14} color={c.textMuted} />
+          </Pressable>
         )}
         refreshControl={<RefreshControl refreshing={products.isRefetching} onRefresh={() => { void products.refetch(); }} />}
       />
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+});

@@ -25,6 +25,7 @@ const TILES: Tile[] = [
   { label: 'Müşteriler', icon: 'people', href: '/cariler?kind=customer', tone: 'primary', testID: 'home-customers' },
   { label: 'Tedarikçiler', icon: 'truck', href: '/cariler?kind=supplier', tone: 'primary', testID: 'home-suppliers' },
   { label: 'Ürünler', icon: 'tag', href: '/urunler', tone: 'primary', testID: 'home-products' },
+  { label: 'Katalog', icon: 'catalog', href: '/katalog', tone: 'success', testID: 'home-catalog' },
   { label: 'Satışlar', icon: 'doc', href: '/belgeler?tab=sale', tone: 'success', testID: 'home-sales' },
   { label: 'Alışlar', icon: 'cart', href: '/belgeler?tab=purchase', tone: 'warning', testID: 'home-purchases' },
   { label: 'İadeler', icon: 'undo', href: '/belgeler?tab=return', tone: 'danger', testID: 'home-returns' },

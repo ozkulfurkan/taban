@@ -50,7 +50,7 @@ export default function DeleteAccount() {
     setBusy(true); setError('');
     try {
       await api('/api/account/deletion', { method: 'POST', body: { step: 'confirm', code } });
-      notify('Hesabınız pasif duruma alındı', '15 gün içinde tekrar giriş yapmazsanız hesabınız tamamen silinecek. Bilgilendirme e-postası gönderildi.');
+      notify('Hesabınız pasif duruma alındı', '15 gün içinde tekrar giriş yapmazsanız hesabınız tamamen silinecek. Bilgilendirme e-postası gönderildi.', 'info');
       await signOut();
     } catch (e: any) { setError(e?.message || 'Onaylanamadı'); setBusy(false); }
   };

@@ -2,9 +2,12 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { ProductImageField, ProductThumb } from '@/components/product-image';
 import { StockAdjustModal } from '@/components/stock-adjust';
 import { Button, Card, ErrorState, ListRow, Loading, Screen, Section, T } from '@/components/ui';
 import { useCanWrite } from '@/core/auth';
+import { notify } from '@/core/dialog';
+import { uploadProductImage } from '@/core/product-image';
 import { formatDate } from '@/core/format';
 import { useApi } from '@/core/query';
 import { KIND_PATH, MOVE_LABEL, formatQty, type AdjustMode, type StockKind } from '@/core/stock';
@@ -15,7 +18,7 @@ type Entry = {
   qty?: number; kgAmount?: number; notes?: string | null; product?: string | null;
 };
 type Ekstre = {
-  product?: { id: string; name: string; stock: number; unit: string };
+  product?: { id: string; name: string; stock: number; unit: string; imageUpdatedAt?: string | null };
   material?: { id: string; name: string; stock: number; category?: string | null };
   entries: Entry[];
 };
@@ -30,6 +33,13 @@ export default function StockDetail() {
   const kind: StockKind = k === 'material' ? 'material' : 'product';
   const q = useApi<Ekstre>(`/api/${KIND_PATH[kind]}/${id}/ekstre`);
   const [adjust, setAdjust] = useState<AdjustMode | null>(null);
+  const [imageBusy, setImageBusy] = useState(false);
+  const setImage = async (base64: string | null) => {
+    setImageBusy(true);
+    try { await uploadProductImage(id, base64); await q.refetch(); notify(base64 ? 'Fotoğraf kaydedildi' : 'Fotoğraf kaldırıldı'); }
+    catch (e: any) { notify('Fotoğraf kaydedilemedi', e?.message || ''); }
+    finally { setImageBusy(false); }
+  };
 
   if (q.isLoading) return <><Stack.Screen options={{ title: kind === 'product' ? 'Ürün' : 'Hammadde' }} /><Loading /></>;
   const head = q.data?.product ?? q.data?.material;
@@ -42,6 +52,21 @@ export default function StockDetail() {
     <>
       <Stack.Screen options={{ title: head.name }} />
       <Screen refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }}>
+        {kind === 'product' ? (
+          canWrite ? (
+            <ProductImageField
+              productId={id}
+              imageUpdatedAt={q.data!.product!.imageUpdatedAt}
+              busy={imageBusy}
+              onPicked={img => { void setImage(img.base64); }}
+              onRemove={() => { void setImage(null); }}
+            />
+          ) : q.data!.product!.imageUpdatedAt ? (
+            <View style={{ alignItems: 'center' }}>
+              <ProductThumb productId={id} imageUpdatedAt={q.data!.product!.imageUpdatedAt} size={180} />
+            </View>
+          ) : null
+        ) : null}
         <Card style={{ backgroundColor: c.strong, borderColor: c.strong }}>
           <T variant="small" color={c.strongText} style={{ opacity: 0.8 }}>{kind === 'product' ? 'Ürün stoku' : 'Hammadde stoku (ana depo)'}</T>
           <T variant="moneyLarge" color={head.stock < 0 ? c.strongNegative : c.strongText} fit testID="stock-current">{formatQty(head.stock)} {unit}</T>
