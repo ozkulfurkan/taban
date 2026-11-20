@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { matchesText } from '@/lib/search';
 import { stockTextClass, fmtQty } from '@/lib/stock-display';
 import MoreMenu from '@/app/components/more-menu';
+import { ProductThumb } from '@/app/components/product-image';
 
 interface PortalModalState {
   productId: string;
@@ -303,8 +304,13 @@ export default function ProductsPage() {
                     >
                       <td className="px-4 py-3 text-slate-500">{p.code || '—'}</td>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-slate-800">{p.name}</p>
-                        {p.description && <p className="text-xs text-slate-400 mt-0.5">{p.description}</p>}
+                        <div className="flex items-center gap-3">
+                          <ProductThumb productId={p.id} imageUpdatedAt={p.imageUpdatedAt} />
+                          <div className="min-w-0">
+                            <p className="font-medium text-slate-800">{p.name}</p>
+                            {p.description && <p className="text-xs text-slate-400 mt-0.5">{p.description}</p>}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-slate-500 text-xs">{p.category?.name ?? '—'}</td>
                       <td className="px-4 py-3 text-slate-500">{p.unit}</td>

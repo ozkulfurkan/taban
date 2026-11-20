@@ -16,6 +16,8 @@ interface Product {
   unit?: string | null;
   /** Alıcının bu ürünü daha önce alması (sipariş + fatura); sunucu sıralar, en son alınan üstte */
   purchased?: { count: number; lastAt: string } | null;
+  /** Fotoğraf sürümü (yoksa fotoğraf yok): {catalogUrl}/{id}/image */
+  imageUpdatedAt?: string | null;
 }
 
 interface CartItem {
@@ -198,7 +200,12 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
               const pair = isPairUnit(unit);
 
               return (
-                <div key={product.id} id={`catalog-card-${product.id}`} className={`bg-white rounded-xl shadow-sm flex flex-col transition-all ${isActive ? 'ring-2 ring-blue-500' : ''}`}>
+                <div key={product.id} id={`catalog-card-${product.id}`} className={`bg-white rounded-xl shadow-sm flex flex-col overflow-hidden transition-all ${isActive ? 'ring-2 ring-blue-500' : ''}`}>
+                  {product.imageUpdatedAt && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={`${catalogUrl}/${product.id}/image?v=${encodeURIComponent(product.imageUpdatedAt)}`} alt={product.name}
+                      loading="lazy" className="w-full aspect-[4/3] object-cover bg-slate-100" data-testid={`catalog-image-${product.id}`} />
+                  )}
                   <div className="p-5 flex flex-col gap-3">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">

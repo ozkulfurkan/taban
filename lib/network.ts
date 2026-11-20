@@ -76,7 +76,7 @@ export async function sellerCatalog(link: { sellerCompanyId: string; sellerCusto
         ...(portal ? [{ portalCustomers: { some: { portalCustomerId: portal.id } } }] : []),
       ],
     },
-    select: { id: true, code: true, name: true, description: true, sizes: true, unit: true },
+    select: { id: true, code: true, name: true, description: true, sizes: true, unit: true, imageUpdatedAt: true },
     orderBy: { name: 'asc' },
   });
 }

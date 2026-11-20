@@ -11,11 +11,11 @@ import { Sheet } from './sheet';
 import { T } from './ui';
 
 /** Küçük ürün görseli (liste satırı, katalog seçimi); fotoğraf yoksa simge */
-export function ProductThumb({ productId, imageUpdatedAt, size = 48, localUri }: {
-  productId: string; imageUpdatedAt?: string | null; size?: number; localUri?: string | null;
+export function ProductThumb({ productId, imageUpdatedAt, size = 48, localUri, base }: {
+  productId: string; imageUpdatedAt?: string | null; size?: number; localUri?: string | null; base?: string;
 }) {
   const c = useTheme();
-  const url = localUri ?? productImageUrl(productId, imageUpdatedAt);
+  const url = localUri ?? productImageUrl(productId, imageUpdatedAt, base);
   const box = { width: size, height: size, borderRadius: Math.round(size / 5), backgroundColor: c.primarySoft };
   if (!url) {
     return (

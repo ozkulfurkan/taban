@@ -9,6 +9,7 @@ import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/l
 import { buildPrintHtml, type BarcodeTemplateSettings } from '@/lib/barcode-print';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
+import { ProductImageEditor } from '@/app/components/product-image';
 
 const ALL_UNITS = ['çift', 'adet', 'kg', 'ton', 'lt', 'metre', 'paket'];
 
@@ -48,6 +49,7 @@ export default function ProductDetailPage() {
   const costRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
   const companyType = (session?.user as any)?.companyType ?? 'SOLE_MANUFACTURER';
+  const canEditImage = !!(session?.user as any)?.role && (session?.user as any)?.role !== 'VIEWER';
   const isMaterial = companyType === 'MATERIAL_SUPPLIER';
   const UNITS = isMaterial ? ['kg', 'ton', 'lt', 'adet'] : ALL_UNITS;
 
@@ -399,6 +401,11 @@ export default function ProductDetailPage() {
 
         {/* Back */}
         <BackLink href="/products" label="Ürünler" />
+
+        {product && (
+          <ProductImageEditor productId={product.id} imageUpdatedAt={product.imageUpdatedAt ?? null} canEdit={canEditImage}
+            onChange={v => setProduct((p: any) => ({ ...p, imageUpdatedAt: v }))} />
+        )}
 
         {!isMaterial && !showCost && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
