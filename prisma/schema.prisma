@@ -161,6 +161,7 @@ model Material {
   materialTransfers   MaterialTransfer[]
   subcontractorScraps SubcontractorScrap[]
   stockAdjustments    StockAdjustment[]
+  supplierProducts    MaterialSupplierProduct[]
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
   @@index([companyId])
@@ -260,6 +261,7 @@ model Product {
   customerProductPrices CustomerProductPrice[]
   purchaseMaterials     PurchaseMaterial[]
   stockAdjustments      ProductStockAdjustment[]
+  buyerMaterialMaps     MaterialSupplierProduct[]
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
   @@index([companyId])
@@ -1180,7 +1182,26 @@ model CompanyLink {
   createdAt        DateTime          @default(now())
   respondedAt      DateTime?
   orders           SoleOrder[]
+  materialMaps     MaterialSupplierProduct[]
 
   @@unique([buyerCompanyId, sellerCompanyId])
   @@index([sellerCompanyId, status])
+}
+
+// Firma ağı: alıcının hammaddesi ↔ bağlı satıcının kataloğundaki ürün (ör. tabancının "PU Sistem"i = hammaddecinin HM-PU60).
+// Sipariş verirken "Tabanlarım" görünümünde taban reçetesindeki hammaddenin tedarikçideki karşılığı gösterilir.
+model MaterialSupplierProduct {
+  id              String      @id @default(cuid())
+  companyId       String
+  materialId      String
+  material        Material    @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  linkId          String
+  link            CompanyLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  sellerProductId String
+  sellerProduct   Product     @relation(fields: [sellerProductId], references: [id], onDelete: Cascade)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([materialId, linkId])
+  @@index([linkId])
 }

@@ -37,6 +37,8 @@ export default function SupplierOrderPage() {
             catalogUrl={`/api/network/links/${link.id}/catalog`}
             orderUrl={`/api/network/links/${link.id}/orders`}
             onSubmitted={o => router.push(`/verilen-siparisler/${o.id}`)}
+            solesUrl={`/api/network/links/${link.id}/soles`}
+            mapUrl={`/api/network/links/${link.id}/material-map`}
           />
         )}
       </div>

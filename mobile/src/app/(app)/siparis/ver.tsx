@@ -12,6 +12,8 @@ export default function TedarikciyeSiparis() {
       orderUrl={`/api/network/links/${linkId}/orders`}
       ordersKey="/api/network/orders"
       detailHref={id => `/siparis/verilen/${id}`}
+      solesUrl={`/api/network/links/${linkId}/soles`}
+      mapUrl={`/api/network/links/${linkId}/material-map`}
     />
   );
 }
