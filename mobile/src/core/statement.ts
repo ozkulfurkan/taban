@@ -10,14 +10,17 @@ import { useApi } from './query';
 export type PartyKind = 'customer' | 'supplier';
 const plural = (k: PartyKind) => (k === 'customer' ? 'customers' : 'suppliers');
 
-/** Ekstre verisi ve satırları (web ile aynı hesap: lib/statement-rows) */
-export function useStatement(kind: PartyKind, id: string, from: string, to: string) {
-  const q = useApi<any>(`/api/${plural(kind)}/${id}/ekstre`, { from, to });
+/** Ekstre verisi ve satırları (web ile aynı hesap: lib/statement-rows).
+ * linkId verilirse firma ağındaki karşı tarafın sizin için tuttuğu ekstre gelir (tür yanıttan okunur). */
+export function useStatement(kind: PartyKind, id: string, from: string, to: string, linkId?: string | null) {
+  const q = useApi<any>(linkId ? `/api/network/links/${linkId}/statement` : `/api/${plural(kind)}/${id}/ekstre`, { from, to });
+  const k: PartyKind = linkId ? (q.data?.kind === 'supplier' ? 'supplier' : 'customer') : kind;
   const result: StatementResult | null = q.data
-    ? (kind === 'customer' ? buildCustomerRows(q.data) : buildSupplierRows(q.data))
+    ? (k === 'customer' ? buildCustomerRows(q.data) : buildSupplierRows(q.data))
     : null;
-  const party = q.data ? (kind === 'customer' ? q.data.customer : q.data.supplier) : null;
-  return { ...q, result, party: party as { name: string; currency: string; phone?: string | null; email?: string | null } | null };
+  const party = q.data ? (linkId ? q.data.party : k === 'customer' ? q.data.customer : q.data.supplier) : null;
+  const owner = linkId && q.data?.company ? (q.data.company as { name: string }) : null;
+  return { ...q, result, owner, party: party as { name: string; currency: string; phone?: string | null; email?: string | null } | null };
 }
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]!));

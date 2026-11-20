@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Check, Copy, Link2, Loader2, RefreshCw, ShoppingCart, X, Network } from 'lucide-react';
+import { Check, Copy, FileText, Link2, Loader2, RefreshCw, ShoppingCart, X, Network } from 'lucide-react';
 
 type BuyerLink = { id: string; status: 'PENDING' | 'ACTIVE' | 'REJECTED' | 'REVOKED'; buyerSupplierId: string | null; sellerCompany: { name: string } };
 type SellerLink = {
@@ -111,6 +111,10 @@ export function SupplierNetworkCard({ supplierId }: { supplierId: string }) {
       </div>
       {active && (
         <>
+          <Link href={`/suppliers/${supplierId}/karsi-ekstre`} data-testid="supplier-link-statement"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-white rounded-lg">
+            <FileText className="w-4 h-4" /> Karşı ekstre
+          </Link>
           <Link href={`/verilen-siparisler?linkId=${link!.id}`} className="px-3 py-2 text-sm text-slate-600 hover:bg-white rounded-lg">Siparişlerim</Link>
           {canWrite && (
             <Link href={`/suppliers/${supplierId}/siparis`} data-testid="supplier-order"
@@ -138,6 +142,30 @@ export function SupplierNetworkCard({ supplierId }: { supplierId: string }) {
           <p className="w-full text-xs text-slate-400">Kodu tedarikçinizden isteyin (SoleCost → Ayarlar → Firma kodu). İstek onaylanınca sipariş verebilirsiniz.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Müşteri detayı (satıcı tarafı): müşteri SoleCost'ta bağlıysa bilgi ve karşı ekstre bağlantısı */
+export function CustomerNetworkCard({ customerId }: { customerId: string }) {
+  const [link, setLink] = useState<SellerLink | null>(null);
+  useEffect(() => {
+    call(`/api/network/links?customerId=${customerId}`)
+      .then(d => setLink((d.asSeller as SellerLink[]).find(l => l.status === 'ACTIVE') ?? null))
+      .catch(() => setLink(null));
+  }, [customerId]);
+  if (!link) return null;
+  return (
+    <div className="rounded-xl border p-4 flex flex-wrap items-center gap-3 bg-emerald-50 border-emerald-200" data-testid="customer-network">
+      <Link2 className="w-5 h-5 text-emerald-600" />
+      <div className="flex-1 min-w-[200px]">
+        <p className="text-sm font-semibold text-slate-700">SoleCost · {link.buyerCompany.name}</p>
+        <p className="text-xs text-slate-500">Bağlı firma: siparişleri doğrudan size gelir, ekstrenizi karşılıklı görebilirsiniz.</p>
+      </div>
+      <Link href={`/customers/${customerId}/karsi-ekstre`} data-testid="customer-link-statement"
+        className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-white rounded-lg">
+        <FileText className="w-4 h-4" /> Karşı ekstre
+      </Link>
     </div>
   );
 }
