@@ -22,7 +22,7 @@ export async function GET() {
       ],
     },
     select: {
-      id: true, code: true, name: true, description: true, sizes: true, unit: true,
+      id: true, code: true, name: true, description: true, sizes: true, unit: true, imageUpdatedAt: true,
       parts: { select: { id: true, name: true }, orderBy: { sortOrder: 'asc' } },
     },
     orderBy: { name: 'asc' },

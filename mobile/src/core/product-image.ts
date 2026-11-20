@@ -44,6 +44,7 @@ export async function uploadProductImage(productId: string, base64: string | nul
 }
 
 /** Ürün fotoğrafının adresi (sürüm parametresi önbelleği yeniler); fotoğraf yoksa null */
-export function productImageUrl(productId: string, imageUpdatedAt?: string | null) {
-  return imageUpdatedAt ? `${API_URL}/api/products/${productId}/image?v=${encodeURIComponent(imageUpdatedAt)}` : null;
+/** base: fotoğrafı sunan katalog adresi (kendi ürünleri /api/products; portal ve firma ağı kendi kataloğu) */
+export function productImageUrl(productId: string, imageUpdatedAt?: string | null, base = '/api/products') {
+  return imageUpdatedAt ? `${API_URL}${base}/${productId}/image?v=${encodeURIComponent(imageUpdatedAt)}` : null;
 }

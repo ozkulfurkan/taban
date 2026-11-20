@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { decodeImage } from '@/lib/product-image';
+import { productImageResponse } from '@/lib/product-image-serve';
 
 // Ürün fotoğrafı
 //  GET                       görsel (yalnızca ürünün firmasına)
@@ -23,11 +24,7 @@ async function own(productId: string) {
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const r = await own(params.id);
   if ('error' in r) return r.error;
-  const img = await prisma.productImage.findUnique({ where: { productId: r.product.id }, select: { mimeType: true, data: true } });
-  if (!img) return NextResponse.json({ error: 'Fotoğraf yok' }, { status: 404 });
-  return new NextResponse(Buffer.from(img.data), {
-    headers: { 'Content-Type': img.mimeType, 'Cache-Control': 'private, max-age=31536000, immutable' },
-  });
+  return productImageResponse(r.product.id);
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {

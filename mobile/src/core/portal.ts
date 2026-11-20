@@ -12,6 +12,8 @@ export type CatalogProduct = {
   parts?: { id: string; name: string }[];
   /** Alıcının bu ürünü daha önce alması (sunucu en son alınanı üste sıralar) */
   purchased?: { count: number; lastAt: string } | null;
+  /** Fotoğraf sürümü (yoksa fotoğraf yok); katalog adresinin altında /{id}/image */
+  imageUpdatedAt?: string | null;
 };
 
 export type OrderItem = {

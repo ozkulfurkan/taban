@@ -5,6 +5,7 @@ import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DateField } from './date-field';
+import { ProductThumb } from '@/components/product-image';
 import { Button, Empty, ErrorState, Field, ListRow, Loading, Segmented, T } from '@/components/ui';
 import { SolesView } from '@/components/soles-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -45,6 +46,8 @@ export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKe
   const qc = useQueryClient();
   const q = useApi<CatalogProduct[] | { products: CatalogProduct[] }>(catalogUrl);
   const products: CatalogProduct[] = useMemo(() => (Array.isArray(q.data) ? q.data : q.data?.products ?? []), [q.data]);
+  // Katalogda en az bir fotoğraf varsa satırlarda görsel sütunu gösterilir (hiç yoksa liste eskisi gibi sade)
+  const hasImages = products.some(p => p.imageUpdatedAt);
   const [search, setSearch] = useState('');
   const term = useDeferredValue(search.trim());
   const [active, setActive] = useState<CatalogProduct | null>(null);
@@ -107,7 +110,13 @@ export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKe
           renderItem={({ item }) => {
             const inCart = cart.filter(i => i.productId === item.id).reduce((s, i) => s + i.totalQuantity, 0);
             return (
-              <View style={{ backgroundColor: c.card }}>
+              <View style={{ backgroundColor: c.card, flexDirection: 'row', alignItems: 'center' }}>
+                {hasImages ? (
+                  <View style={{ paddingLeft: 16 }}>
+                    <ProductThumb productId={item.id} imageUpdatedAt={item.imageUpdatedAt} base={catalogUrl} size={52} />
+                  </View>
+                ) : null}
+                <View style={{ flex: 1, minWidth: 0 }}>
                 <ListRow
                   testID={`catalog-${item.id}`}
                   title={item.code ? `${item.code} · ${item.name}` : item.name}
@@ -119,6 +128,7 @@ export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKe
                   rightColor={c.primary}
                   onPress={() => setActive(item)}
                 />
+                </View>
               </View>
             );
           }}
