@@ -39,6 +39,8 @@ const ICONS = {
   send: ['paperplane', 'send'],
   userAdd: ['person.badge.plus', 'person_add'],
   person: ['person', 'person'],
+  check: ['checkmark.circle', 'check_circle'],
+  back: ['chevron.left', 'chevron_left'],
 } as const satisfies Record<string, readonly [SFSymbol, AndroidSymbol]>;
 
 export type IconName = keyof typeof ICONS;

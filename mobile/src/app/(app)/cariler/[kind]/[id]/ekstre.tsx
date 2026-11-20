@@ -22,12 +22,14 @@ function rangeFrom(r: Range) {
 export default function Ekstre() {
   const c = useTheme();
   const { user } = useAuth();
-  const { kind, id } = useLocalSearchParams<{ kind: PartyKind; id: string }>();
+  // link: firma ağı karşı ekstresi (bağlı firmanın sizin için tuttuğu kayıtlar)
+  const { kind, id, link } = useLocalSearchParams<{ kind: PartyKind; id: string; link?: string }>();
   const k: PartyKind = kind === 'supplier' ? 'supplier' : 'customer';
   const [range, setRange] = useState<Range>('1');
   const from = rangeFrom(range);
   const to = isoDay();
-  const st = useStatement(k, id, from, to);
+  const st = useStatement(k, id, from, to, link || null);
+  const title = link ? 'Karşı ekstre' : 'Ekstre';
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
   const canWrite = useCanWrite();
@@ -39,13 +41,13 @@ export default function Ekstre() {
     return m;
   }, [st.result]);
 
-  if (st.isLoading) return <><Stack.Screen options={{ title: 'Ekstre' }} /><Loading /></>;
-  if (st.error || !st.result || !st.party) return <><Stack.Screen options={{ title: 'Ekstre' }} /><ErrorState message={(st.error as Error)?.message || 'Ekstre yüklenemedi'} onRetry={() => st.refetch()} /></>;
+  if (st.isLoading) return <><Stack.Screen options={{ title }} /><Loading /></>;
+  if (st.error || !st.result || !st.party) return <><Stack.Screen options={{ title }} /><ErrorState message={(st.error as Error)?.message || 'Ekstre yüklenemedi'} onRetry={() => st.refetch()} /></>;
 
   const cur = st.party.currency || 'TRY';
   const { rows, totalBorc, totalAlacak, lastBalance } = st.result;
   const main = rows.filter(r => !r.isSubRow);
-  const companyName = user?.type === 'staff' ? user.companyName : null;
+  const companyName = st.owner?.name ?? (user?.type === 'staff' ? user.companyName : null);
 
   const pdf = async () => {
     setBusy(true);
@@ -56,9 +58,14 @@ export default function Ekstre() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Ekstre' }} />
+      <Stack.Screen options={{ title }} />
       <Screen refreshing={st.isRefetching} onRefresh={() => { void st.refetch(); }}>
-        <T variant="heading">{st.party.name}</T>
+        {st.owner ? (
+          <Card style={{ backgroundColor: c.primarySoft, borderColor: c.primarySoft }} testID="link-statement-info">
+            <T style={{ fontWeight: '700' }}>{st.owner.name}</T>
+            <T variant="small">Bu firmanın sizin için tuttuğu hesap ekstresi. Kendi kayıtlarınızla karşılaştırarak mutabakat yapabilirsiniz.</T>
+          </Card>
+        ) : <T variant="heading">{st.party.name}</T>}
         <Segmented
           value={range}
           onChange={setRange}
@@ -74,7 +81,7 @@ export default function Ekstre() {
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Button title="PDF" icon="pdf" variant="secondary" onPress={pdf} loading={busy} style={{ flex: 1 }} />
-          <Button title="Link Gönder" icon="link" variant="secondary" onPress={linkSheet.open} loading={linkSheet.busy} style={{ flex: 1 }} />
+          {link ? null : <Button title="Link Gönder" icon="link" variant="secondary" onPress={linkSheet.open} loading={linkSheet.busy} style={{ flex: 1 }} />}
         </View>
 
         {main.length === 0 ? <Empty message="Bu dönemde hareket yok." /> : main.map(r => {

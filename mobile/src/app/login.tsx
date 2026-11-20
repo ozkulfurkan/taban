@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Field, Segmented, T } from '@/components/ui';
-import { WEB_URL } from '@/core/config';
 import { useAuth } from '@/core/auth';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -56,14 +56,21 @@ export default function Login() {
         </View>
 
         <View style={styles.links}>
-          <Pressable onPress={() => Linking.openURL(`${WEB_URL}/forgot-password`)} accessibilityRole="link">
-            <T color={c.primary}>Şifremi unuttum</T>
-          </Pressable>
-          {/* App Store 3.1.1: abonelik satılan siteye kayıt bağlantısı verilmez; yalnızca mevcut hesapla giriş */}
           {kind === 'staff' ? (
-            <T variant="small" style={{ textAlign: 'center' }}>SoleCost firma hesabınızla giriş yapın.</T>
+            <>
+              <Pressable onPress={() => router.push({ pathname: '/sifremi-unuttum', params: email.trim() ? { email: email.trim() } : {} })}
+                accessibilityRole="link" testID="login-forgot">
+                <T color={c.primary}>Şifremi unuttum</T>
+              </Pressable>
+              <Pressable onPress={() => router.push('/kayit')} accessibilityRole="link" testID="login-register">
+                <T>Hesabınız yok mu? <T color={c.primary} style={{ fontWeight: '700' }}>Kayıt olun</T></T>
+              </Pressable>
+            </>
           ) : (
-            <T variant="small" style={{ textAlign: 'center' }}>Portal hesabınızı çalıştığınız firma açar.</T>
+            // Portal hesabını ve şifresini satıcı firma yönetir
+            <T variant="small" style={{ textAlign: 'center' }}>
+              Portal hesabınızı çalıştığınız firma açar. Şifrenizi unuttuysanız firmadan yenilemesini isteyin.
+            </T>
           )}
         </View>
       </KeyboardAvoidingView>
