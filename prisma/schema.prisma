@@ -269,8 +269,24 @@ model Product {
   purchaseMaterials     PurchaseMaterial[]
   stockAdjustments      ProductStockAdjustment[]
   buyerMaterialMaps     MaterialSupplierProduct[]
+  // Ürün fotoğrafı ayrı tabloda (listeler şişmesin); dolu ise fotoğraf var, değeri önbellek sürümü
+  imageUpdatedAt        DateTime?
+  image                 ProductImage?
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
+  @@index([companyId])
+}
+
+// Ürün fotoğrafı (cihazda küçültülmüş JPEG/PNG/WebP; katalog PDF'inde ve ürün ekranında gösterilir)
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String   @unique
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  companyId String
+  mimeType  String
+  data      Bytes
+  size      Int
+  updatedAt DateTime @updatedAt
   @@index([companyId])
 }
 

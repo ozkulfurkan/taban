@@ -41,6 +41,11 @@ const ICONS = {
   person: ['person', 'person'],
   check: ['checkmark.circle', 'check_circle'],
   tag: ['tag', 'sell'],
+  camera: ['camera', 'photo_camera'],
+  image: ['photo.on.rectangle', 'photo_library'],
+  catalog: ['book.closed', 'menu_book'],
+  checkbox: ['checkmark.circle.fill', 'check_circle'],
+  circle: ['circle', 'radio_button_unchecked'],
   back: ['chevron.left', 'chevron_left'],
 } as const satisfies Record<string, readonly [SFSymbol, AndroidSymbol]>;
 

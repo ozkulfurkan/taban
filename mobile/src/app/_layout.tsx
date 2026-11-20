@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/core/auth';
 import { BiometricGate } from '@/core/biometric';
 import { ThemePreferenceProvider } from '@/core/theme-pref';
+import { DialogHost } from '@/components/dialog-host';
 import { Welcome } from '@/components/welcome';
 import { useScheme, useTheme } from '@/hooks/use-theme';
 
@@ -72,6 +73,7 @@ function ThemedApp() {
       <AuthProvider>
         <RootNavigator />
         <Welcome />
+        <DialogHost />
       </AuthProvider>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>

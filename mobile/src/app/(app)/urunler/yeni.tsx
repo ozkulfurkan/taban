@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Picker } from '@/components/picker';
+import { ProductImageField } from '@/components/product-image';
+import { uploadProductImage, type PickedImage } from '@/core/product-image';
 import { Button, Card, Field, ListRow, Screen, Segmented, T } from '@/components/ui';
 import { formatAmountInput, parseAmountInput } from '@/core/amount';
 import { api } from '@/core/api';
@@ -26,6 +28,7 @@ export default function NewProduct() {
 
   const [f, setF] = useState({ name: '', code: '', unit: units[0], unitPrice: '', currency: 'TRY', stock: '', description: '' });
   const [category, setCategory] = useState<Category | null>(null);
+  const [photo, setPhoto] = useState<PickedImage | null>(null);
   const [pickCategory, setPickCategory] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -44,9 +47,12 @@ export default function NewProduct() {
           description: f.description.trim(), categoryId: category?.id ?? null,
         },
       });
+      let photoFailed = '';
+      if (photo) await uploadProductImage(p.id, photo.base64).catch((e: any) => { photoFailed = e?.message || ''; });
       await qc.invalidateQueries();
       router.replace(`/stok/product/${p.id}`);
-      notify('Ürün eklendi', p.name);
+      if (photoFailed) notify('Fotoğraf yüklenemedi', `Ürün kaydedildi; fotoğrafı ürün sayfasından tekrar ekleyebilirsiniz. ${photoFailed}`);
+      else notify('Ürün eklendi', p.name);
     } catch (e: any) {
       setError(e?.message || 'Kaydedilemedi');
     } finally {
@@ -58,6 +64,7 @@ export default function NewProduct() {
     <>
       <Stack.Screen options={{ title: 'Yeni ürün' }} />
       <Screen>
+        <ProductImageField localUri={photo?.uri} onPicked={setPhoto} onRemove={() => setPhoto(null)} />
         <Field label="Ürün adı *" value={f.name} onChangeText={set('name')}
           placeholder={isMaterial ? 'örn. PU Sistem 60 Shore' : 'örn. Klasik Erkek Taban'} testID="product-name" />
         <Field label="Ürün kodu" value={f.code} onChangeText={set('code')} autoCapitalize="characters" placeholder="örn. TB-101" testID="product-code" />
