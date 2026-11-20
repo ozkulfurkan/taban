@@ -9,6 +9,7 @@ import { Button, Empty, ErrorState, Field, ListRow, Loading, T } from '@/compone
 import { Radius, Spacing } from '@/constants/theme';
 import { api } from '@/core/api';
 import { confirm, notify } from '@/core/dialog';
+import { formatDate } from '@/core/format';
 import { cartItem, formatQty, isPairUnit, orderBody, orderUnit, sizeSummary, sizesOf, unitDecimals, type CatalogProduct, type OrderItem } from '@/core/portal';
 import { formatAmountInput } from '@/core/amount';
 import { useApi } from '@/core/query';
@@ -94,7 +95,9 @@ export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKe
                 <ListRow
                   testID={`catalog-${item.id}`}
                   title={item.code ? `${item.code} · ${item.name}` : item.name}
-                  subtitle={item.description || (isPairUnit(item.unit) ? `Beden ${sizesOf(item)[0]}–${sizesOf(item).at(-1)}` : `Birim: ${orderUnit(item.unit)}`)}
+                  subtitle={item.purchased
+                    ? `Daha önce aldınız · ${formatDate(item.purchased.lastAt)}${item.purchased.count > 1 ? ` · ${item.purchased.count} kez` : ''}`
+                    : item.description || (isPairUnit(item.unit) ? `Beden ${sizesOf(item)[0]}–${sizesOf(item).at(-1)}` : `Birim: ${orderUnit(item.unit)}`)}
                   right={inCart ? formatQty(inCart, item.unit) : undefined}
                   rightSub={inCart ? 'sepette' : undefined}
                   rightColor={c.primary}

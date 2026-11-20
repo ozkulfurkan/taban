@@ -10,6 +10,8 @@ export { formatQty, isPairUnit, orderUnit, unitDecimals } from '@shared/order-un
 export type CatalogProduct = {
   id: string; code: string | null; name: string; description: string | null; sizes: string[]; unit?: string | null;
   parts?: { id: string; name: string }[];
+  /** Alıcının bu ürünü daha önce alması (sunucu en son alınanı üste sıralar) */
+  purchased?: { count: number; lastAt: string } | null;
 };
 
 export type OrderItem = {

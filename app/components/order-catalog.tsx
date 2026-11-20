@@ -13,6 +13,8 @@ interface Product {
   description: string | null;
   sizes: string[];
   unit?: string | null;
+  /** Alıcının bu ürünü daha önce alması (sipariş + fatura); sunucu sıralar, en son alınan üstte */
+  purchased?: { count: number; lastAt: string } | null;
 }
 
 interface CartItem {
@@ -180,6 +182,11 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
                         <Package className="w-5 h-5 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
+                        {product.purchased && (
+                          <p className="inline-flex items-center gap-1 mb-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold" data-testid={`catalog-purchased-${product.id}`}>
+                            {tp('Daha önce aldınız')} · {new Date(product.purchased.lastAt).toLocaleDateString('tr-TR')}{product.purchased.count > 1 ? ` · ${product.purchased.count}×` : ''}
+                          </p>
+                        )}
                         {product.code && <p className="text-xs font-semibold text-blue-600 mb-0.5">{product.code}</p>}
                         <p className="font-semibold text-slate-800 text-sm leading-tight">{product.name}</p>
                         {product.description && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{product.description}</p>}
