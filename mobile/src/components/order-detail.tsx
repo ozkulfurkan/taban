@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Badge, Card, Section, T } from '@/components/ui';
 import { formatDate } from '@/core/format';
-import { formatDiff, formatQty, orderLines, orderSteps, sizeSummary, statusLabel, statusTone, stepIndex, type PortalOrder } from '@/core/portal';
+import { formatDiff, formatQty, orderLines, orderSteps, sizeSummary, stageLabel, statusLabel, statusTone, stepIndex, type PortalOrder } from '@/core/portal';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
@@ -27,7 +27,7 @@ export function OrderDetailBody({ order: o, subtitle, children }: { order: Porta
             {subtitle ? <T style={{ fontWeight: '600' }} numberOfLines={2} testID="order-subtitle">{subtitle}</T> : null}
             <T variant="small">{formatDate(o.createdAt)} · {formatQty(o.totalQuantity, o.unit)}</T>
           </View>
-          <Badge label={statusLabel(o.status, o.unit)} tone={statusTone(o.status)} />
+          <Badge label={stageLabel(o)} tone={statusTone(o.status, o.confirmedAt)} />
         </View>
         <View style={{ gap: 0 }} testID="order-steps">
           {cancelled ? <T color={c.danger} style={{ fontWeight: '600' }} testID="order-cancelled">Bu sipariş iptal edildi.</T> : steps.map((s, i) => {
@@ -40,7 +40,9 @@ export function OrderDetailBody({ order: o, subtitle, children }: { order: Porta
                   </View>
                   {i < steps.length - 1 ? <View style={[styles.line, { backgroundColor: i < current ? c.primary : c.border }]} /> : null}
                 </View>
-                <T style={{ fontWeight: i === current ? '700' : '400' }} color={done ? c.text : c.textMuted}>{s.label}</T>
+                <T style={{ fontWeight: i === current ? '700' : '400' }} color={done ? c.text : c.textMuted}>
+                  {s.key === 'ORDER_RECEIVED' && o.status === 'ORDER_RECEIVED' ? `${s.label} · ${o.confirmedAt ? 'Onaylandı' : 'Onay bekliyor'}` : s.label}
+                </T>
               </View>
             );
           })}

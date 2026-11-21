@@ -665,6 +665,8 @@ model SoleOrder {
   unit                  String?
   requestedDeliveryDate DateTime?
   confirmedDeliveryDate DateTime?
+  /// Satıcının siparişi onayladığı an ("Alındı" adımının alt durumu); onaydan önce durum ilerletilirse otomatik dolar
+  confirmedAt           DateTime?
   notes                 String?
   colorPartials         Json?
   orderItems            Json?

@@ -10,7 +10,7 @@ import { isOrderStatus, notifyOrderStatus } from '@/lib/order-notify';
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   const user = session?.user as any;
-  if (!user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user?.companyId || user.type === 'portal') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { status, note, confirmedDeliveryDate } = await req.json();
   if (!isOrderStatus(status)) return NextResponse.json({ error: 'Geçersiz durum' }, { status: 400 });
@@ -26,6 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       where: { id: params.id },
       data: {
         status,
+        ...(status !== 'CANCELLED' && status !== 'ORDER_RECEIVED' && !order.confirmedAt ? { confirmedAt: new Date() } : {}),
         ...(confirmedDeliveryDate !== undefined
           ? { confirmedDeliveryDate: confirmedDeliveryDate ? new Date(confirmedDeliveryDate) : null }
           : {}),

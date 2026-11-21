@@ -7,7 +7,7 @@ import { useAuth, useCanWrite } from '@/core/auth';
 import { notify } from '@/core/dialog';
 import { formatDate } from '@/core/format';
 import { printOrders, printProducts, shareOrdersPdf, shareProductsPdf } from '@/core/order-pdf';
-import { formatQty, sizeSummary, statusLabel, statusTone, type PortalOrder } from '@/core/portal';
+import { formatQty, sizeSummary, stageLabel, statusTone, type PortalOrder } from '@/core/portal';
 import { summarizeByProduct, type ProductSummary } from '@shared/order-summary';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
@@ -80,7 +80,7 @@ function OrderRowView({ o, title, sub, onPress, testID }: { o: PortalOrder; titl
       </View>
       <View style={{ alignItems: 'flex-end', gap: 4 }}>
         <T variant="money">{formatQty(o.totalQuantity, o.unit)}</T>
-        <Badge label={statusLabel(o.status, o.unit)} tone={statusTone(o.status)} />
+        <Badge label={stageLabel(o)} tone={statusTone(o.status, o.confirmedAt)} />
       </View>
     </Pressable>
   );

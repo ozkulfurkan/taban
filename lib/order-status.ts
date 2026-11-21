@@ -53,3 +53,14 @@ export function stepIndexOf(status: string, unit?: string | null) {
 export function statusLabel(status: string, unit?: string | null) {
   return orderSteps(unit).find(s => s.key === status)?.label ?? ORDER_STATUS_LABEL[status] ?? status;
 }
+
+/** Sipariş satıcı tarafından onaylanmış mı (ilerlemiş siparişler onaylı sayılır) */
+export function isConfirmed(o: { status: string; confirmedAt?: string | Date | null }) {
+  return !!o.confirmedAt || (o.status !== 'ORDER_RECEIVED' && o.status !== 'CANCELLED');
+}
+
+/** "Alındı" adımında onay beklenip beklenmediğine göre okunur durum: "Onay bekliyor" / "Onaylandı" */
+export function stageLabel(o: { status: string; unit?: string | null; confirmedAt?: string | Date | null }) {
+  if (o.status === 'ORDER_RECEIVED') return o.confirmedAt ? 'Onaylandı' : 'Onay bekliyor';
+  return statusLabel(o.status, o.unit);
+}

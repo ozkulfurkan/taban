@@ -1,6 +1,6 @@
 'use client';
 
-import { ORDER_STATUS_COLOR, ORDER_STATUS_LABEL } from '@/lib/order-status';
+import { ORDER_STATUS_COLOR, ORDER_STATUS_LABEL, stageLabel } from '@/lib/order-status';
 import { formatQty } from '@/lib/order-units';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
@@ -99,7 +99,7 @@ export default function PortalOrdersPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLOR[order.status] ?? 'bg-slate-100 text-slate-600'}`}>
-                          {tp(STATUS_LABELS[order.status] ?? order.status)}
+                          {tp(order.status === 'ORDER_RECEIVED' ? stageLabel(order) : STATUS_LABELS[order.status] ?? order.status)}
                         </span>
                       </td>
                       <td className="px-4 py-3">

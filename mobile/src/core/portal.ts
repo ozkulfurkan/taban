@@ -29,6 +29,8 @@ export type PortalOrder = {
   sizeDistribution: Record<string, number>; orderItems?: OrderItem[] | null;
   colorPartials?: { name: string; color: string }[] | null;
   requestedDeliveryDate?: string | null; confirmedDeliveryDate?: string | null;
+  /** Satıcının onay zamanı ("Alındı" adımında onay bekliyor / onaylandı) */
+  confirmedAt?: string | null;
   product?: { id: string; name: string; code: string | null } | null;
   statusHistory?: { id: string; status: string; note?: string | null; createdAt: string }[];
   shipment?: {
@@ -39,11 +41,12 @@ export type PortalOrder = {
 };
 
 // Durum adımları ürün birimine göre (web ile aynı kural): taban 7 adım, hammadde vb. 4 adım
-export { orderSteps, statusLabel } from '@shared/order-status';
+export { isConfirmed, orderSteps, stageLabel, statusLabel } from '@shared/order-status';
 export const stepIndex = (status: string, unit?: string | null) => stepIndexOf(status, unit);
 
-export function statusTone(status: string): 'primary' | 'warning' | 'success' | 'danger' {
+export function statusTone(status: string, confirmedAt?: string | null): 'primary' | 'warning' | 'success' | 'danger' {
   if (status === 'CANCELLED') return 'danger';
+  if (status === 'ORDER_RECEIVED' && !confirmedAt) return 'warning';
   if (status === 'SHIPPED' || status === 'READY_FOR_SHIPMENT') return 'success';
   if (status === 'ORDER_RECEIVED') return 'primary';
   return 'warning';

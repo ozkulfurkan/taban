@@ -21,7 +21,7 @@ export const PORTAL_ORDER_SELECT = {
   id: true, orderNo: true, status: true, createdAt: true, totalQuantity: true, unit: true,
   productCode: true, color: true, material: true, notes: true,
   sizeDistribution: true, orderItems: true, colorPartials: true,
-  requestedDeliveryDate: true, confirmedDeliveryDate: true,
+  requestedDeliveryDate: true, confirmedDeliveryDate: true, confirmedAt: true,
   productId: true,
   product: { select: { id: true, name: true, code: true } },
   statusHistory: { select: { id: true, status: true, note: true, createdAt: true }, orderBy: { createdAt: 'asc' as const } },

@@ -11,7 +11,7 @@ import OrderStepper from '@/app/portal/components/order-stepper';
 import SizeTable from '@/app/portal/components/size-table';
 import Link from 'next/link';
 import BackLink from '@/app/components/back-link';
-import { Loader2, Save, Truck, ShoppingCart, Printer, X, Factory, CheckCircle, AlertTriangle, Package } from 'lucide-react';
+import { Loader2, Save, Truck, ShoppingCart, Printer, X, Factory, CheckCircle, AlertTriangle, Package, Check } from 'lucide-react';
 
 
 const fmt = (d: string | null | undefined) =>
@@ -108,6 +108,21 @@ export default function OrderDetailPage() {
     const productId = subModalItem?.productId ?? order.productId;
     if (productId) p.set('productId', productId);
     router.push(`/subcontractor-orders/new?${p.toString()}`);
+  };
+
+  // Yeni gelen sipariş önce onaylanır (isteğe bağlı termin + not); sipariş verene bildirim gider
+  const [confirmForm, setConfirmForm] = useState({ termin: '', note: '' });
+  const handleConfirm = async () => {
+    setSaving(true);
+    setActionError('');
+    const res = await fetch(`/api/orders/${params?.id}/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmedDeliveryDate: confirmForm.termin || undefined, note: confirmForm.note || undefined }),
+    });
+    if (!res.ok) setActionError((await res.json().catch(() => ({}))).error || 'Sipariş onaylanamadı');
+    setSaving(false);
+    loadOrder();
   };
 
   const handleStatusUpdate = async (e: React.FormEvent) => {
@@ -353,6 +368,24 @@ export default function OrderDetailPage() {
 
           {/* RIGHT — Yönetim */}
           <div className="space-y-4">
+            {order.status === 'ORDER_RECEIVED' && !order.confirmedAt && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-3" data-testid="order-confirm-card">
+                <h2 className="font-semibold text-amber-800">Sipariş onay bekliyor</h2>
+                <p className="text-xs text-amber-700">Onaylayınca sipariş verene bildirim ve e-posta gider.</p>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Termin (isteğe bağlı)</label>
+                  <input type="date" value={confirmForm.termin} onChange={e => setConfirmForm(f => ({ ...f, termin: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-white" data-testid="confirm-termin" />
+                </div>
+                <input placeholder="Not (isteğe bağlı)" value={confirmForm.note} onChange={e => setConfirmForm(f => ({ ...f, note: e.target.value }))}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-white" />
+                <button type="button" onClick={handleConfirm} disabled={saving} data-testid="order-confirm"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-lg text-sm font-semibold">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Siparişi onayla
+                </button>
+              </div>
+            )}
+
             {/* Status update */}
             <div className="bg-white rounded-xl p-5 shadow-sm">
               <h2 className="font-semibold text-slate-700 mb-4">Durum Güncelle</h2>

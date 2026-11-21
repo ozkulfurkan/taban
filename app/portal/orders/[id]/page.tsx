@@ -11,6 +11,7 @@ import SizeTable from '../../components/size-table';
 import { Loader2, RefreshCw, Truck } from 'lucide-react';
 import { usePortalText } from '@/lib/i18n/portal';
 import BackLink from '@/app/components/back-link';
+import { stageLabel } from '@/lib/order-status';
 
 export default function PortalOrderDetailPage() {
   const { tp } = usePortalText();
@@ -68,6 +69,11 @@ export default function PortalOrderDetailPage() {
         <div className="bg-white rounded-xl p-5 shadow-sm overflow-x-auto">
           <h2 className="font-semibold text-slate-700 mb-3">{tp('Sipariş Durumu')}</h2>
           <OrderStepper status={order.status} unit={order.unit} />
+          {order.status === 'ORDER_RECEIVED' && (
+            <p className={`mt-3 text-sm font-medium ${order.confirmedAt ? 'text-emerald-600' : 'text-amber-600'}`} data-testid="order-confirm-state">
+              {tp(stageLabel(order))}
+            </p>
+          )}
         </div>
 
         {/* Details */}

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ClipboardList, Loader2 } from 'lucide-react';
 import AppShell from '@/app/components/app-shell';
-import { ORDER_STATUS_COLOR, statusLabel } from '@/lib/order-status';
+import { ORDER_STATUS_COLOR, stageLabel } from '@/lib/order-status';
 
 type Order = {
   id: string; orderNo: string; status: string; createdAt: string; totalQuantity: number; unit: string | null;
@@ -72,7 +72,7 @@ export default function NetworkOrdersPage() {
                       <td className="px-4 py-3 font-semibold text-slate-800">{formatQty(o.totalQuantity, o.unit)}</td>
                       <td className="px-4 py-3 text-slate-600">{fmt(o.confirmedDeliveryDate ?? o.requestedDeliveryDate)}</td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ORDER_STATUS_COLOR[o.status] ?? 'bg-slate-100 text-slate-600'}`}>{statusLabel(o.status, o.unit)}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ORDER_STATUS_COLOR[o.status] ?? 'bg-slate-100 text-slate-600'}`}>{stageLabel(o)}</span>
                       </td>
                     </tr>
                   );

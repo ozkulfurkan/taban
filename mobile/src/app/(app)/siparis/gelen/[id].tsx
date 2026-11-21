@@ -37,6 +37,8 @@ export default function GelenSiparis() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const q = useApi<Incoming>(`/api/orders/${id}`);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [termin, setTermin] = useState('');
   const [note, setNote] = useState('');
   const [shipOpen, setShipOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -58,6 +60,17 @@ export default function GelenSiparis() {
       notify('Durum güncellendi', statusLabel(status, o.unit));
     } catch (e: any) { notify('Kaydedilemedi', e?.message ?? ''); } finally { setBusy(false); }
   };
+  // Yeni gelen sipariş önce onaylanır: sipariş verene "onaylandı" bildirimi (isteğe bağlı termin ve not)
+  const approve = async () => {
+    setBusy(true);
+    try {
+      await api(`/api/orders/${o.id}/confirm`, { method: 'POST', body: { confirmedDeliveryDate: termin || undefined, note: note.trim() || undefined } });
+      setConfirmOpen(false); setNote(''); setTermin('');
+      await refresh();
+      notify('Sipariş onaylandı', 'Sipariş verene bildirim gönderildi.', 'success');
+    } catch (e: any) { notify('Onaylanamadı', e?.message ?? '', 'error'); } finally { setBusy(false); }
+  };
+  const needsConfirm = o.status === 'ORDER_RECEIVED' && !o.confirmedAt;
   const cancel = async () => {
     if (!(await confirm('Sipariş iptal edilsin mi?', `${o.orderNo} iptal edilir; müşteriye bildirim gider.`, 'İptal et', true))) return;
     setBusy(true);
@@ -69,9 +82,12 @@ export default function GelenSiparis() {
       <Stack.Screen options={{ title: o.orderNo }} />
       <Screen refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); }}>
         <OrderDetailBody order={o} subtitle={`${o.customer?.name ?? '—'} · ${source}`}>
+          {canWrite && needsConfirm ? (
+            <Button title="Siparişi onayla" icon="check" onPress={() => setConfirmOpen(true)} loading={busy} testID="order-confirm" />
+          ) : null}
           {canWrite && !closed ? (
             <View style={styles.actions}>
-              <Button title="Durum" icon="edit" onPress={() => setStatusOpen(true)} loading={busy} style={styles.action} testID="order-status" />
+              {needsConfirm ? null : <Button title="Durum" icon="edit" onPress={() => setStatusOpen(true)} loading={busy} style={styles.action} testID="order-status" />}
               <Button title={o.shipment ? 'Sevkiyatı düzenle' : 'Sevk et'} icon="truck" variant="secondary" onPress={() => setShipOpen(true)} style={styles.action} testID="order-ship" />
               {canDelete && o.status !== 'SHIPPED' ? <Button title="İptal" icon="trash" variant="ghost" onPress={cancel} style={styles.action} testID="order-cancel" /> : null}
             </View>
@@ -97,6 +113,17 @@ export default function GelenSiparis() {
       >
         <Field label="Not (isteğe bağlı)" value={note} onChangeText={setNote} placeholder="Müşteriye iletilecek not" testID="status-note" />
         <T variant="small">Sevk edildi durumu sevkiyat kaydıyla verilir.</T>
+      </Sheet>
+
+      <Sheet
+        visible={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Siparişi onayla"
+        description={`${o.orderNo} · ${o.customer?.name ?? ''}. Sipariş verene bildirim ve e-posta gider.`}
+        actions={[{ label: 'Onayla ve bildir', icon: 'check', onPress: () => { void approve(); }, testID: 'order-confirm-send' }]}
+      >
+        <DateField label="Termin (isteğe bağlı)" value={termin} onChange={setTermin} optional placeholder="Termin seçin" testID="confirm-termin" />
+        <Field label="Not (isteğe bağlı)" value={note} onChangeText={setNote} placeholder="Sipariş verene iletilecek not" testID="confirm-note" />
       </Sheet>
 
       {shipOpen ? <ShipModal order={o} onClose={() => setShipOpen(false)} onSaved={refresh} /> : null}
