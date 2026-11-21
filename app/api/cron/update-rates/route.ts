@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendDailySummaries } from '@/lib/daily-summary';
 
 export async function GET(req: NextRequest) {
   // Vercel Cron Jobs sends Authorization: Bearer <CRON_SECRET>
@@ -11,6 +12,9 @@ export async function GET(req: NextRequest) {
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  // Günlük özet e-postası (TR 10:00): kur sonucundan bağımsız gönderilir
+  const summary = await sendDailySummaries().catch(e => { console.error('daily-summary', e); return { error: String(e) }; });
 
   try {
     const res = await fetch('https://www.tcmb.gov.tr/kurlar/today.xml', {
@@ -48,9 +52,10 @@ export async function GET(req: NextRequest) {
       eur,
       tcmbDate: dateMatch?.[1] ?? null,
       updatedAt: new Date().toISOString(),
+      summary,
     });
   } catch (e: any) {
     console.error('Cron update-rates error:', e);
-    return NextResponse.json({ error: e.message }, { status: 502 });
+    return NextResponse.json({ error: e.message, summary }, { status: 502 });
   }
 }

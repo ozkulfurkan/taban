@@ -85,6 +85,8 @@ model Company {
   deletionRequestedById String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  /// Her sabah TR 10:00'da firma sahibi/yöneticilere özet e-postası (bekleyen siparişler, kasa/banka)
+  dailySummaryEmail  Boolean   @default(true)
   users              User[]
   buyerLinks         CompanyLink[]      @relation("LinkBuyer")
   sellerLinks        CompanyLink[]      @relation("LinkSeller")
