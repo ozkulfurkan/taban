@@ -5,17 +5,17 @@ Bildirilen hatalar burada toplanır. Durum: **Bekliyor** → **Yapılıyor** →
 
 | No | Başlık | Öncelik | Durum |
 | --- | --- | --- | --- |
-| H-1 | Mobil portalda "Yeni sipariş" açılmıyor, ürünler gelmiyor | Acil | Bekliyor |
-| H-2 | Bir e-posta yalnızca tek firmanın portal kullanıcısı olabiliyor | Normal | Bekliyor |
-| H-3 | Mobilde portal hesabı açınca "Paylaş" hiçbir şey yapmıyor | Acil | Bekliyor |
-| H-4 | Bazı e-postalar gönderilmeden kesiliyor (portal hesabı, doğrulama, yeni sipariş) | Acil | Bekliyor |
+| H-1 | Mobil portalda "Yeni sipariş" açılmıyor, ürünler gelmiyor | Acil | Düzeltildi [#37](https://github.com/ozkulfurkan/taban/pull/37) |
+| H-2 | Bir e-posta yalnızca tek firmanın portal kullanıcısı olabiliyor | Normal | Yapılıyor [#38](https://github.com/ozkulfurkan/taban/pull/38) |
+| H-3 | Mobilde portal hesabı açınca "Paylaş" hiçbir şey yapmıyor | Acil | Düzeltildi [#37](https://github.com/ozkulfurkan/taban/pull/37) |
+| H-4 | Bazı e-postalar gönderilmeden kesiliyor (portal hesabı, doğrulama, yeni sipariş) | Acil | Düzeltildi [#37](https://github.com/ozkulfurkan/taban/pull/37) |
 
 ---
 
 ## H-1 · Mobil portalda "Yeni sipariş" açılmıyor, ürünler gelmiyor
 - **Tarih:** 21.11.2026
 - **Öncelik:** Acil (portal müşterisi mobilden sipariş veremiyor)
-- **Durum:** Bekliyor
+- **Durum:** Düzeltildi ([#37](https://github.com/ozkulfurkan/taban/pull/37))
 - **Belirti:** Portal müşterisi mobil uygulamada "Yeni sipariş"e dokununca ekran değişmiyor, katalog ve ürünler gelmiyor. Ürünler portalda tüm müşterilere açık, yani sorun veride değil.
 - **Nasıl tekrar edilir:** Mobilde portal müşterisi olarak giriş yapın → ana sayfada "Yeni sipariş"e dokunun → hiçbir şey olmaz.
 - **Kök neden:**
@@ -32,7 +32,7 @@ Bildirilen hatalar burada toplanır. Durum: **Bekliyor** → **Yapılıyor** →
 ## H-2 · Bir e-posta yalnızca tek firmanın portal kullanıcısı olabiliyor
 - **Tarih:** 21.11.2026
 - **Öncelik:** Normal (aynı müşteri birden fazla tedarikçiyle çalışınca portal hesabı açılamıyor)
-- **Durum:** Bekliyor
+- **Durum:** Yapılıyor ([#38](https://github.com/ozkulfurkan/taban/pull/38); veritabanı SQL'i bekleniyor)
 - **Beklenen kural:**
   - **Firma hesabı** (personel kullanıcısı): bir e-posta sistemde yalnızca bir kez kullanılabilir (bugünkü gibi).
   - **Portal kullanıcısı:** aynı e-posta birden fazla firmanın portal müşterisi olabilir (her firmada ayrı hesap). Aynı firmada aynı e-posta yine tek olmalı.
@@ -79,7 +79,7 @@ Bildirilen hatalar burada toplanır. Durum: **Bekliyor** → **Yapılıyor** →
 ## H-3 · Mobilde portal hesabı açınca "Paylaş" hiçbir şey yapmıyor
 - **Tarih:** 21.11.2026
 - **Öncelik:** Acil (müşteriye davet ve şifre iletilemiyor)
-- **Durum:** Bekliyor
+- **Durum:** Düzeltildi ([#37](https://github.com/ozkulfurkan/taban/pull/37))
 - **Belirti:** Mobilde müşteri → Portal / davet → "Portal hesabı aç" sonrası çıkan pencerede **Paylaş**'a basınca paylaşım ekranı açılmıyor. Şifre sıfırladıktan sonraki "Paylaş" da aynı.
 - **Kök neden:**
   - Onay penceresi (`mobile/src/components/dialog-host.tsx`, React Native `Modal`) kapanırken paylaşım ekranı (`Share.share`) hemen açılmaya çalışılıyor.
@@ -98,7 +98,7 @@ Bildirilen hatalar burada toplanır. Durum: **Bekliyor** → **Yapılıyor** →
 ## H-4 · Bazı e-postalar gönderilmeden kesiliyor
 - **Tarih:** 21.11.2026
 - **Öncelik:** Acil (müşteri doğrulama e-postası almazsa portala giremez)
-- **Durum:** Bekliyor
+- **Durum:** Düzeltildi ([#37](https://github.com/ozkulfurkan/taban/pull/37))
 - **Belirti:** Portal hesabı açıldığında müşteriye doğrulama ve geçici şifre e-postası gitmiyor olabilir.
 - **Kök neden:**
   - Birçok yerde e-posta gönderimi **beklenmeden** başlatılıyor ve yanıt hemen dönüyor (`sendMail(...).catch(() => {})`).
