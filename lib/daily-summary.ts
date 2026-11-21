@@ -144,10 +144,10 @@ export function summaryHtml(s: DailySummary, settingsUrl: string) {
 }
 
 /** Ayarı açık tüm firmalara özet gönderir; gönderilen firma sayısını döndürür */
-export async function sendDailySummaries(now = new Date()) {
+export async function sendDailySummaries(now = new Date(), onlyCompanyIds?: string[]) {
   const baseUrl = process.env.NEXTAUTH_URL ?? 'https://www.solecost.com';
   const companies = await prisma.company.findMany({
-    where: { dailySummaryEmail: true, deletionScheduledAt: null },
+    where: { dailySummaryEmail: true, deletionScheduledAt: null, ...(onlyCompanyIds?.length ? { id: { in: onlyCompanyIds } } : {}) },
     select: { id: true, users: { where: { role: { in: ['ADMIN', 'COMPANY_OWNER'] }, deletionScheduledAt: null }, select: { email: true } } },
   });
   let sent = 0;

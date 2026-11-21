@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import DecimalInput from '@/app/components/decimal-input';
 import { CompanyCodeCard } from '@/app/components/network';
 import { ChangePasswordCard } from '@/app/components/change-password-card';
+import { DailySummaryCard } from '@/app/components/daily-summary-card';
 
 interface BankEntry {
   bankName: string;
@@ -270,6 +271,8 @@ export default function SettingsPage() {
         <ChangePasswordCard />
 
         {user?.companyId ? <CompanyCodeCard /> : null}
+
+        {canEditCompany ? <DailySummaryCard /> : null}
 
         {/* Company Info */}
         {!companyLoading && (

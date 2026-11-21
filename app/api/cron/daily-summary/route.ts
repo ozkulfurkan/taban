@@ -10,6 +10,8 @@ export async function GET(req: NextRequest) {
   if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const r = await sendDailySummaries();
+  // ?companyId=… ile tek firmaya (elle deneme / test)
+  const only = new URL(req.url).searchParams.getAll('companyId').filter(Boolean);
+  const r = await sendDailySummaries(new Date(), only.length ? only : undefined);
   return NextResponse.json({ ok: true, ...r });
 }
