@@ -35,3 +35,17 @@ export async function sendMail({ to, subject, html, text, cc }: SendMailOptions)
   console.log('✅ Mail gönderildi:', info.messageId);
   return { info, previewUrl: null };
 }
+
+/**
+ * Gönderimi bekler ama işlemi asla bozmaz: hata loglanır, sonuç true/false döner.
+ * Sunucusuz ortamda (Vercel) yanıt dönünce iş kesilebildiği için e-postalar her zaman beklenmeli.
+ */
+export async function sendMailSafe(opts: SendMailOptions): Promise<boolean> {
+  try {
+    await sendMail(opts);
+    return true;
+  } catch (e) {
+    console.error('sendMail failed:', (e as Error)?.message ?? e, '| konu:', opts.subject);
+    return false;
+  }
+}

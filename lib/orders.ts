@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { sendMail } from '@/lib/mail';
+import { sendMailSafe } from '@/lib/mail';
 import { orderRecipients, pushToUsers } from '@/lib/push';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { cleanQuantity, formatQty, isPairUnit, orderUnit } from '@/lib/order-units';
@@ -190,7 +190,7 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
 
   // Send production sheet to company admins, CC portal customer
   if (adminEmails.length > 0) {
-    sendMail({
+    await sendMailSafe({
       to: adminEmails,
       cc: portalCustomer?.email,
       subject: `Yeni Sipariş: ${orderNo} — ${customer?.name ?? ''}`,
@@ -198,15 +198,15 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
       text: `Yeni sipariş alındı: ${orderNo}\nMüşteri: ${customer?.name}\n${finalItems
         ? finalItems.map(i => `- ${[i.productCode, i.productName].filter(Boolean).join(' ')}${i.color ? ` (${i.color})` : ''}: ${formatQty(i.totalQuantity, i.unit)}`).join('\n')
         : `Model: ${productCode || product?.code || '—'}\nRenk: ${color || '—'}`}\nToplam: ${formatQty(finalTotalQty, finalUnit)}`,
-    }).catch(() => {});
+    });
   } else if (portalCustomer) {
     // Fallback: confirmation only to portal customer
-    sendMail({
+    await sendMailSafe({
       to: portalCustomer.email,
       subject: `Siparişiniz alındı: ${orderNo}`,
       html: `<p>Merhaba ${portalCustomer.name ?? portalCustomer.email},</p><p><strong>${orderNo}</strong> numaralı siparişiniz alındı. Toplam: <strong>${formatQty(finalTotalQty, finalUnit)}</strong></p>`,
       text: `Siparişiniz alındı: ${orderNo}, Toplam: ${formatQty(finalTotalQty, finalUnit)}`,
-    }).catch(() => {});
+    });
   }
 
   // Anlık bildirim: siparişleri görebilen firma kullanıcılarına (portal ya da bağlı SoleCost firmasından gelen sipariş).

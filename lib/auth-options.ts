@@ -3,7 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { sendMail } from '@/lib/mail';
+import { sendMailSafe } from '@/lib/mail';
 import { LIMITS, clientIp, normEmail, isLimited, recordAttempt, clearAttempts } from '@/lib/login-throttle';
 import { sendCancelledMail } from '@/lib/account-deletion';
 
@@ -90,14 +90,14 @@ export async function authorizePortalCustomer(credentials: Record<string, string
     }
     const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
     const verifyUrl = `${baseUrl}/portal/verify-email?token=${token}`;
-    sendMail({
+    await sendMailSafe({
       to: portalCustomer.email,
       subject: 'Portal - E-posta adresinizi doğrulayın',
       html: `<p>Merhaba ${portalCustomer.name ?? portalCustomer.email},</p>
         <p>Giriş yapabilmek için e-posta adresinizi doğrulayın:</p>
         <p><a href="${verifyUrl}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>`,
       text: `Doğrulama linki: ${verifyUrl}`,
-    }).catch(() => {});
+    });
     throw new Error('EMAIL_NOT_VERIFIED');
   }
 
@@ -147,7 +147,7 @@ export async function authorizeStaff(credentials: Record<string, string> | undef
       }
       const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
       const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
-      sendMail({
+      await sendMailSafe({
         to: user.email,
         subject: 'SoleCost - E-posta adresinizi doğrulayın',
         html: `
@@ -157,7 +157,7 @@ export async function authorizeStaff(credentials: Record<string, string> | undef
           <p>Butona tıklayamıyorsanız şu bağlantıyı kopyalayın: ${verifyUrl}</p>
         `,
         text: `E-postanızı doğrulamak için: ${verifyUrl}`,
-      }).catch(() => {});
+      });
       throw new Error('EMAIL_NOT_VERIFIED');
     }
     // Hesap silme pasif dönemi: talep eden giriş yaparsa silme iptal olur; firma silinirken diğer kullanıcılar giremez

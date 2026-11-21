@@ -65,7 +65,11 @@ export default function SubcontractorDetailPage() {
       const res = await fetch(`/api/subcontractors/${params.id}/portal-register`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(portalForm),
       });
-      if (res.ok) { setShowPortalModal(false); load(); }
+      if (res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setShowPortalModal(false); load();
+        if (d.emailSent === false) alert('Hesap açıldı ama doğrulama e-postası gönderilemedi. Giriş bilgilerini fasoncuya ayrıca iletin.');
+      }
       else { const d = await res.json(); setErrorMsg(d.error); }
     } finally { setPortalSaving(false); }
   };

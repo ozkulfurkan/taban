@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { sendMail } from '@/lib/mail';
+import { sendMailSafe } from '@/lib/mail';
 import { passwordError } from '@/lib/password';
 import { esc } from '@/lib/order-email';
 
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
   const verifyUrl = `${baseUrl}/portal/verify-email?token=${emailVerifyToken}`;
 
-  sendMail({
+  const emailSent = await sendMailSafe({
     to: email,
     subject: 'Müşteri Portalı - Hesabınız oluşturuldu',
     html: `
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       <p>Mobil uygulama: <a href="${baseUrl}/indir">${baseUrl}/indir</a></p>
     `,
     text: `Doğrulama: ${verifyUrl} | Şifre: ${password}`,
-  }).catch(() => {});
+  });
 
-  return NextResponse.json({ id: portalCustomer.id, email: portalCustomer.email }, { status: 201 });
+  return NextResponse.json({ id: portalCustomer.id, email: portalCustomer.email, emailSent }, { status: 201 });
 }

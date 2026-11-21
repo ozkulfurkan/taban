@@ -4,7 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { sendMail } from '@/lib/mail';
+import { sendMailSafe } from '@/lib/mail';
+import { esc } from '@/lib/order-email';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -46,20 +47,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
   const verifyUrl = `${baseUrl}/portal/fason/verify-email?token=${emailVerifyToken}`;
 
-  sendMail({
+  const emailSent = await sendMailSafe({
     to: email.trim(),
     subject: 'Fasoncu Portalı — Hesabınız Oluşturuldu',
     html: `
-      <p>Merhaba ${portalCustomer.name},</p>
+      <p>Merhaba ${esc(portalCustomer.name)},</p>
       <p>Fasoncu portal hesabınız oluşturuldu.</p>
-      <p><strong>E-posta:</strong> ${email.trim()}</p>
-      <p><strong>Şifre:</strong> ${password}</p>
+      <p><strong>E-posta:</strong> ${esc(email.trim())}</p>
+      <p><strong>Şifre:</strong> ${esc(password)}</p>
       <p>Giriş yapmadan önce e-posta adresinizi doğrulayın:</p>
       <p><a href="${verifyUrl}" style="background:#d97706;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
       <p>Giriş adresi: ${baseUrl}/portal/fason/login</p>
     `,
     text: `Doğrulama linki: ${verifyUrl}`,
-  }).catch(() => {});
+  });
 
-  return NextResponse.json({ ok: true, portalCustomerId: portalCustomer.id }, { status: 201 });
+  return NextResponse.json({ ok: true, portalCustomerId: portalCustomer.id, emailSent }, { status: 201 });
 }

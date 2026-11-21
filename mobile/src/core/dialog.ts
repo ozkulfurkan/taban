@@ -39,3 +39,11 @@ export function notify(title: string, message = '', tone?: Tone) {
   if (!listener) { Alert.alert(title, message); return; }
   listener({ kind: 'notify', id: ++seq, title, message, tone: tone ?? toneOf(title) });
 }
+
+/**
+ * Onay/uyarı penceresi kapandıktan sonra sistem ekranı (paylaşım, fotoğraf seçici) açmak için:
+ * iOS kapanmakta olan bir pencerenin üstüne yeni ekran açmayı sessizce reddeder.
+ */
+export function afterDialog(fn: () => unknown, ms = 450) {
+  setTimeout(() => { Promise.resolve().then(fn).catch(() => {}); }, ms);
+}
