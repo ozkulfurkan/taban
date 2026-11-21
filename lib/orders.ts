@@ -4,6 +4,7 @@ import { orderRecipients, pushToUsers } from '@/lib/push';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { cleanQuantity, formatQty, isPairUnit, orderUnit } from '@/lib/order-units';
 import { esc, itemsTableHtml } from '@/lib/order-email';
+import { cleanShore, variantText } from '@/lib/shore';
 
 // Satıcı firmada müşteri siparişi (SoleOrder) oluşturur ve üretim emri e-postasını gönderir.
 // Portal müşterisi (/api/portal/me/orders) ve bağlı firma (/api/network/links/:id/orders) aynı mantığı kullanır.
@@ -196,7 +197,7 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
       subject: `Yeni Sipariş: ${orderNo} — ${customer?.name ?? ''}`,
       html: productionHtml,
       text: `Yeni sipariş alındı: ${orderNo}\nMüşteri: ${customer?.name}\n${finalItems
-        ? finalItems.map(i => `- ${[i.productCode, i.productName].filter(Boolean).join(' ')}${i.color ? ` (${i.color})` : ''}: ${formatQty(i.totalQuantity, i.unit)}`).join('\n')
+        ? finalItems.map(i => `- ${[i.productCode, i.productName].filter(Boolean).join(' ')}${variantText(i) ? ` (${variantText(i)})` : ''}: ${formatQty(i.totalQuantity, i.unit)}`).join('\n')
         : `Model: ${productCode || product?.code || '—'}\nRenk: ${color || '—'}`}\nToplam: ${formatQty(finalTotalQty, finalUnit)}`,
     });
   } else if (portalCustomer) {
@@ -260,7 +261,10 @@ export async function normalizeOrderItems(companyId: string, raw: any[]):
     } else {
       const quantity = cleanQuantity(i?.quantity ?? i?.totalQuantity, unit);
       if (quantity === null) return { error: `${base.productName}: geçerli bir miktar (${unit}) girin` };
-      items.push({ ...base, sizeDistribution: {}, quantity, totalQuantity: quantity });
+      // Hammaddede renk yok; shore seviyesi (Yumuşak/Standart/Sert) ve değeri (varsayılan 65, ±2)
+      const shore = cleanShore(i?.shoreLevel, i?.shoreValue);
+      if ('error' in shore) return { error: `${base.productName}: ${shore.error}` };
+      items.push({ ...base, color: '', ...shore, sizeDistribution: {}, quantity, totalQuantity: quantity });
     }
   }
   const units = Array.from(new Set(items.map(i => i.unit)));

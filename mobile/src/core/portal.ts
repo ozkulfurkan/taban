@@ -1,9 +1,11 @@
 // Müşteri portalı: sipariş durumları, beden dağılımı ve sepetten sipariş gövdesi (web portalıyla aynı)
 import { cleanQuantity, isPairUnit, orderUnit } from '@shared/order-units';
 import { stepIndexOf } from '@shared/order-status';
+import { cleanShore } from '@shared/shore';
 import type { ShippedLine } from '@shared/shipment';
 
 export { formatDiff } from '@shared/shipment';
+export { DEFAULT_SHORE_LEVEL, DEFAULT_SHORE_VALUE, SHORE_LEVELS, SHORE_NOTE, variantText } from '@shared/shore';
 
 export { formatQty, isPairUnit, orderUnit, unitDecimals } from '@shared/order-units';
 
@@ -21,6 +23,8 @@ export type OrderItem = {
   sizeDistribution: Record<string, number>; totalQuantity: number;
   /** çift dışındaki birimlerde miktar */
   unit?: string; quantity?: number;
+  /** hammaddede renk yerine shore: seviye ve değer (varsayılan Standart · 65, ±2) */
+  shoreLevel?: string; shoreValue?: number;
 };
 
 export type PortalOrder = {
@@ -69,12 +73,17 @@ export function cleanSizes(sizes: string[], raw: Record<string, string>): Record
 export const sumSizes = (d: Record<string, number>) => Object.values(d).reduce((s, v) => s + (Number(v) || 0), 0);
 
 /** Sepete eklenecek kalem; hata varsa mesaj döner. Çift: renk + beden adetleri; diğer birimler: miktar */
-export function cartItem(p: CatalogProduct, color: string, raw: Record<string, string>, qtyText = ''): OrderItem | string {
+export function cartItem(
+  p: CatalogProduct, color: string, raw: Record<string, string>, qtyText = '', shore?: { level?: string; value?: string | number },
+): OrderItem | string {
   const unit = orderUnit(p.unit);
   if (!isPairUnit(unit)) {
     const quantity = cleanQuantity(qtyText, unit);
     if (quantity === null) return `Geçerli bir miktar girin (${unit}).`;
-    return { productId: p.id, productCode: p.code || '', productName: p.name, color: color.trim(), sizeDistribution: {}, totalQuantity: quantity, unit, quantity };
+    // Hammaddede renk yok: shore seviyesi ve değeri
+    const sh = cleanShore(shore?.level, shore?.value);
+    if ('error' in sh) return sh.error;
+    return { productId: p.id, productCode: p.code || '', productName: p.name, color: '', sizeDistribution: {}, totalQuantity: quantity, unit, quantity, ...sh };
   }
   if (!color.trim()) return 'Renk girin.';
   const sizeDistribution = cleanSizes(sizesOf(p), raw);

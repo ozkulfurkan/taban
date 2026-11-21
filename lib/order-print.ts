@@ -4,10 +4,12 @@
 import { formatQty, isPairUnit, orderUnit } from './order-units';
 import { statusLabel } from './order-status';
 import { formatDate } from './time';
+import { variantText } from './shore';
 
 export type PrintLine = {
   productId?: string | null; productCode?: string | null; productName?: string | null; color?: string | null;
   sizeDistribution?: Record<string, number> | null; totalQuantity: number; unit?: string | null;
+  shoreLevel?: string | null; shoreValue?: number | null;
 };
 
 export type PrintableOrder = {
@@ -46,7 +48,7 @@ function orderBlock(o: PrintableOrder) {
   const rows = lines.map(l => {
     const pair = isPairUnit(l.unit);
     return `<tr>
-      <td>${l.productCode ? `<b>${esc(l.productCode)}</b> ` : ''}${esc(l.productName)}${l.color ? `<div class="muted">${esc(l.color)}</div>` : ''}</td>
+      <td>${l.productCode ? `<b>${esc(l.productCode)}</b> ` : ''}${esc(l.productName)}${variantText(l) ? `<div class="muted">${esc(variantText(l))}</div>` : ''}</td>
       ${sizes.map(s => `<td class="n">${pair && l.sizeDistribution?.[s] ? l.sizeDistribution[s] : ''}</td>`).join('')}
       <td class="n b">${esc(formatQty(l.totalQuantity, l.unit))}</td>
     </tr>`;
