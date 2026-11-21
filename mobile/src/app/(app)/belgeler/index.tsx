@@ -97,7 +97,7 @@ export default function Belgeler() {
           <View style={{ backgroundColor: c.card }}>
             <ListRow
               testID={`doc-${item.id}`}
-              title={`${item.no} · ${item.party}`}
+              title={item.party || '—'}
               subtitle={formatDate(item.date)}
               right={money(item.total, item.currency)}
               rightSub={item.badge?.label}

@@ -132,6 +132,10 @@ export default function PartyDetail() {
               onPress={() => router.push(`/cariler/${k}/${id}/ekstre?link=${counterLinkId}`)} />
           ) : null}
           <Button title="Link Gönder" icon="link" variant="secondary" onPress={linkSheet.open} loading={linkSheet.busy} style={styles.action} testID="party-link" />
+          {canWrite && k === 'customer' ? (
+            <Button title="Portal / davet" icon="people" variant="secondary" style={styles.action} testID="party-portal"
+              onPress={() => router.push(`/cariler/customer/${id}/portal`)} />
+          ) : null}
           {canWrite && activeLink ? (
             <Button title="Sipariş ver" icon="cart" variant="secondary" style={styles.action} testID="party-network-order"
               onPress={() => router.push(`/siparis/ver?linkId=${activeLink.id}&name=${encodeURIComponent(activeLink.sellerCompany.name)}`)} />
