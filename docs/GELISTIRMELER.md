@@ -6,10 +6,10 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 | No | Başlık | Alan | Büyüklük | Durum |
 | --- | --- | --- | --- | --- |
 | G-1 | Mobil uygulamada dil seçimi (Türkçe / İngilizce) | Mobil | L | Bekliyor |
-| G-2 | Portal müşterisi kendi şifresini değiştirebilsin (mobilde "yetkiniz yok" hatası + web portal) | Web + mobil | S | Bekliyor |
-| G-3 | Hammadde siparişinde renk yerine shore seçimi (Yumuşak / Standart / Sert) | Web + mobil + API | M | Bekliyor |
-| G-4 | Shore değeri elle girilebilsin (örn. 65), "±2 shore oynayabilir" notu | Web + mobil + API | S | Bekliyor |
-| G-5 | Mobilde ürünleri portalda göster/gizle (tekli ve çoklu); daha önce alınanlar üstte | Web + mobil + API | M | Bekliyor |
+| G-2 | Portal müşterisi kendi şifresini değiştirebilsin (mobilde "yetkiniz yok" hatası + web portal) | Web + mobil | S | Tamamlandı [#39](https://github.com/ozkulfurkan/taban/pull/39) |
+| G-3 | Hammadde siparişinde renk yerine shore seçimi (Yumuşak / Standart / Sert) | Web + mobil + API | M | Yapılıyor [#40](https://github.com/ozkulfurkan/taban/pull/40) |
+| G-4 | Shore değeri elle girilebilsin (örn. 65), "±2 shore oynayabilir" notu | Web + mobil + API | S | Yapılıyor [#40](https://github.com/ozkulfurkan/taban/pull/40) |
+| G-5 | Mobilde ürünleri portalda göster/gizle (tekli ve çoklu); daha önce alınanlar üstte | Web + mobil + API | M | Tamamlandı [#39](https://github.com/ozkulfurkan/taban/pull/39) |
 
 ---
 
@@ -51,7 +51,7 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
   - Türkçe/İngilizce metinler `lib/i18n/portal.ts`'e eklenir.
 - **Etkilenen alanlar:** web portal
 - **Büyüklük:** S
-- **Durum:** Bekliyor
+- **Durum:** Tamamlandı [#39](https://github.com/ozkulfurkan/taban/pull/39)
 
 ---
 
@@ -73,7 +73,7 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 - **Karar (21.11):** Hammadde siparişinde renk **tamamen kalkar**. Taban (çift) siparişinde renk aynen kalır.
 - **Etkilenen alanlar:** web, mobil, API (veritabanı değişikliği yok; kalemler JSON)
 - **Büyüklük:** M
-- **Durum:** Bekliyor
+- **Durum:** Yapılıyor [#40](https://github.com/ozkulfurkan/taban/pull/40)
 
 ---
 
@@ -89,7 +89,7 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 - **Karar (21.11):** Alan **65 hazır değeriyle** gelir; kullanıcı değiştirebilir.
 - **Etkilenen alanlar:** web, mobil, API (G-3 ile birlikte yapılır)
 - **Büyüklük:** S
-- **Durum:** Bekliyor
+- **Durum:** Yapılıyor [#40](https://github.com/ozkulfurkan/taban/pull/40)
 
 ---
 
@@ -109,10 +109,10 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
     - Ürün listesinde "Seç" modu: birden çok ürün işaretlenip tek seferde "Portalda göster" ya da "Portalda gizle" yapılır.
     - Kullanılan uçlar: mevcut `PUT /api/products/[id]/portal-visibility`; toplu işlem için yeni `POST /api/products/portal-visibility { ids, visible }` (yalnızca kendi firmasının ürünleri).
   - Gerekirse portal ana sayfasına (web + mobil) "Daha önce aldıklarınız" kısa listesi eklenir; dokununca katalogda o ürün açılır.
-- **Açık nokta:** Daha önce alınan ürünler bugün yalnızca "Yeni sipariş" ekranındaki listede üstte çıkıyor. Portal ana sayfasında (müşterinin girişte ilk gördüğü ekran) da ayrıca listelensin mi?
+- **Karar (21.11):** Portal ana sayfasında ayrıca liste gerekmiyor; sipariş kataloğunda üstte olması yeterli.
 - **Etkilenen alanlar:** web portal, mobil portal
 - **Büyüklük:** S
-- **Durum:** Bekliyor
+- **Durum:** Tamamlandı [#39](https://github.com/ozkulfurkan/taban/pull/39)
 
 <!--
 Kayıt şablonu:
