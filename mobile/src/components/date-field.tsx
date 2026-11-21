@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTheme } from '@/hooks/use-theme';
+import { useScheme, useTheme } from '@/hooks/use-theme';
 import { Icon } from './icon';
 import { Field, T } from './ui';
 import { dateFromIso, displayDate, isoFromDate, isoFromDisplay } from '@/core/dates';
@@ -26,6 +26,7 @@ export function DateField({ label, value, onChange, optional, placeholder, minim
 }) {
   const c = useTheme();
   const insets = useSafeAreaInsets();
+  const scheme = useScheme();
   const [open, setOpen] = useState(false);
   const [webText, setWebText] = useState(displayDate(value));
   const current = dateFromIso(value) ?? new Date();
@@ -85,6 +86,7 @@ export function DateField({ label, value, onChange, optional, placeholder, minim
             locale="tr-TR"
             minimumDate={minimumDate}
             accentColor={c.primary}
+            themeVariant={scheme}
             style={{ alignSelf: 'stretch' }}
             onValueChange={(_e, d) => { onChange(isoFromDate(d)); setOpen(false); }}
           />

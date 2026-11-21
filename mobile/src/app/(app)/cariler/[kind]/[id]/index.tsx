@@ -32,11 +32,16 @@ export default function PartyDetail() {
   const linkSheet = useLinkSheet(k, id, party.data?.name ?? '', canWrite);
   const canDelete = useCanDelete();
   const qc = useQueryClient();
-  // Tedarikçi SoleCost'ta bağlıysa (onaylı bağlantı) buradan sipariş verilebilir
-  const links = useApi<{ asBuyer: { id: string; status: string; sellerCompany: { name: string } }[] }>(k === 'supplier' ? '/api/network/links' : null, { supplierId: id });
-  const activeLink = links.data?.asBuyer.find(l => l.status === 'ACTIVE');
+  // Firma ağı: tedarikçi bağlıysa sipariş verilir; iki tarafta da karşı ekstre görülebilir
+  const links = useApi<{
+    asBuyer: { id: string; status: string; sellerCompany: { name: string } }[];
+    asSeller: { id: string; status: string; sellerCustomerId: string | null; buyerCompany: { name: string } }[];
+  }>('/api/network/links', k === 'supplier' ? { supplierId: id } : { customerId: id });
+  const activeLink = k === 'supplier' ? links.data?.asBuyer.find(l => l.status === 'ACTIVE') : undefined;
+  const sellerLink = k === 'customer' ? links.data?.asSeller.find(l => l.status === 'ACTIVE' && l.sellerCustomerId === id) : undefined;
+  const counterLinkId = activeLink?.id ?? sellerLink?.id;
   // En son bağlantı isteği (yanıt sırası yeniden eskiye): bekliyor / reddedildi durumu gösterilir
-  const lastLink = links.data?.asBuyer[0];
+  const lastLink = k === 'supplier' ? links.data?.asBuyer[0] : undefined;
   const archive = async () => {
     const what = k === 'customer' ? 'Müşteri' : 'Tedarikçi';
     if (!(await confirm(`${what} silinsin mi?`, `"${party.data?.name}" listelerden kaldırılır. Belgeleri ve ödemeleri silinmez; ekstrede görünmeye devam eder.`, 'Sil', true))) return;
@@ -75,7 +80,7 @@ export default function PartyDetail() {
         <Card style={{ backgroundColor: c.strong, borderColor: c.strong }}>
           <T variant="small" color={c.strongText} style={{ opacity: 0.8 }}>Bakiye</T>
           <T variant="moneyLarge" color={c.strongText} testID="party-balance">{money(p.balance, cur)}</T>
-          <T variant="small" color={settled ? c.strongText : (p.balance > 0) === positiveIsGood ? '#6EE7B7' : '#FCA5A5'}>{balanceNote}</T>
+          <T variant="small" color={settled ? c.strongText : (p.balance > 0) === positiveIsGood ? c.strongPositive : c.strongNegative}>{balanceNote}</T>
         </Card>
 
         <View style={styles.actions}>
@@ -119,6 +124,10 @@ export default function PartyDetail() {
             />
           ) : null}
           <Button title="Ekstre" icon="doc" variant="secondary" onPress={() => router.push(`/cariler/${k}/${id}/ekstre`)} style={styles.action} />
+          {counterLinkId ? (
+            <Button title="Karşı ekstre" icon="doc" variant="secondary" style={styles.action} testID="party-counter-statement"
+              onPress={() => router.push(`/cariler/${k}/${id}/ekstre?link=${counterLinkId}`)} />
+          ) : null}
           <Button title="Link Gönder" icon="link" variant="secondary" onPress={linkSheet.open} loading={linkSheet.busy} style={styles.action} testID="party-link" />
           {canWrite && activeLink ? (
             <Button title="Sipariş ver" icon="cart" variant="secondary" style={styles.action} testID="party-network-order"
@@ -132,6 +141,13 @@ export default function PartyDetail() {
             <Button title="Sil" icon="trash" variant="ghost" style={styles.action} testID="party-delete" onPress={() => { void archive(); }} />
           ) : null}
         </View>
+
+        {sellerLink ? (
+          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.successSoft, borderColor: c.successSoft }} testID="party-link-status">
+            <Icon name="link" color={c.success} />
+            <T style={{ flex: 1 }}>{'SoleCost\'ta bağlı: '}<T style={{ fontWeight: '700' }}>{sellerLink.buyerCompany.name}</T></T>
+          </Card>
+        ) : null}
 
         {/* Firma ağı: tedarikçi SoleCost kullanıyorsa firma koduyla bağlanır, onaylanınca sipariş verilir */}
         {k === 'supplier' && links.data ? (

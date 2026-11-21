@@ -1,5 +1,6 @@
 import { randomInt } from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { historyFromRecords, sortByHistory, type PurchaseRecord, type PurchaseStat } from '@/lib/catalog-history';
 
 // Firmalar arası bağlantı (firma ağı): firma kodu, bağlantı erişimi, katalog ve sipariş görünümü.
 // Bir firmanın başka firmanın verisine eriştiği her yol buradan geçer.
@@ -75,9 +76,44 @@ export async function sellerCatalog(link: { sellerCompanyId: string; sellerCusto
         ...(portal ? [{ portalCustomers: { some: { portalCustomerId: portal.id } } }] : []),
       ],
     },
-    select: { id: true, code: true, name: true, description: true, sizes: true, unit: true },
+    select: { id: true, code: true, name: true, description: true, sizes: true, unit: true, imageUpdatedAt: true },
     orderBy: { name: 'asc' },
   });
+}
+
+/**
+ * Müşterinin satıcıdan alım geçmişi (ürün başına adet + son tarih): satıcıdaki iptal edilmemiş siparişler
+ * (portal, firma ağı, telefonla girilen) ve satıcının o müşteriye kestiği iade olmayan faturalar.
+ * Katalogda "daha önce aldıklarınız" sıralaması için.
+ */
+export async function purchaseHistory(sellerCompanyId: string, customerId: string | null | undefined) {
+  if (!customerId) return new Map<string, PurchaseStat>();
+  const [orders, invoiceItems] = await Promise.all([
+    prisma.soleOrder.findMany({
+      where: { companyId: sellerCompanyId, customerId, status: { not: 'CANCELLED' } },
+      select: { createdAt: true, productId: true, orderItems: true },
+      orderBy: { createdAt: 'desc' }, take: 500,
+    }),
+    prisma.invoiceItem.findMany({
+      where: { productId: { not: null }, invoice: { companyId: sellerCompanyId, customerId, isReturn: false } },
+      select: { productId: true, invoice: { select: { date: true } } },
+      orderBy: { invoice: { date: 'desc' } }, take: 1000,
+    }),
+  ]);
+  const records: PurchaseRecord[] = [];
+  for (const o of orders) {
+    const items = Array.isArray(o.orderItems) ? (o.orderItems as { productId?: string | null }[]) : [];
+    if (items.length) for (const i of items) records.push({ productId: i?.productId, at: o.createdAt });
+    else records.push({ productId: o.productId, at: o.createdAt });
+  }
+  for (const i of invoiceItems) records.push({ productId: i.productId, at: i.invoice.date });
+  return historyFromRecords(records);
+}
+
+/** Satıcı kataloğu, alıcının daha önce aldıkları üstte */
+export async function sellerCatalogWithHistory(link: { sellerCompanyId: string; sellerCustomerId: string | null }) {
+  const [products, history] = await Promise.all([sellerCatalog(link), purchaseHistory(link.sellerCompanyId, link.sellerCustomerId)]);
+  return sortByHistory(products, history);
 }
 
 /** Alıcıya gösterilen sipariş alanları (satıcının iç kayıt kimlikleri dönmez) */

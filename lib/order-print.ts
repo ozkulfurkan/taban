@@ -6,16 +6,17 @@ import { statusLabel } from './order-status';
 import { formatDate } from './time';
 
 export type PrintLine = {
-  productCode?: string | null; productName?: string | null; color?: string | null;
+  productId?: string | null; productCode?: string | null; productName?: string | null; color?: string | null;
   sizeDistribution?: Record<string, number> | null; totalQuantity: number; unit?: string | null;
 };
 
 export type PrintableOrder = {
+  id?: string; productId?: string | null;
   orderNo: string; status: string; createdAt: string | Date; totalQuantity: number; unit?: string | null;
   requestedDeliveryDate?: string | Date | null; notes?: string | null;
   productCode?: string | null; color?: string | null; sizeDistribution?: Record<string, number> | null;
   orderItems?: PrintLine[] | null;
-  product?: { name: string; code?: string | null } | null;
+  product?: { id?: string; name: string; code?: string | null } | null;
   customer?: { name: string } | null;
   link?: { buyerCompany?: { name: string } | null } | null;
 };
@@ -27,6 +28,7 @@ const bySize = (a: string, b: string) => a.localeCompare(b, 'tr', { numeric: tru
 export function printLines(o: PrintableOrder): PrintLine[] {
   if (Array.isArray(o.orderItems) && o.orderItems.length) return o.orderItems;
   return [{
+    productId: o.productId ?? o.product?.id ?? null,
     productCode: o.productCode || o.product?.code || '',
     productName: o.product?.name || '',
     color: o.color || '',
@@ -72,7 +74,16 @@ export function ordersHtml(orders: PrintableOrder[], opts: { title: string; comp
     totals.set(u, (totals.get(u) ?? 0) + (Number(l.totalQuantity) || 0));
   }
   const summary = Array.from(totals.entries()).map(([u, n]) => formatQty(Math.round(n * 1000) / 1000, u)).join(' + ');
-  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(opts.title)}</title><style>
+  return printDocument({
+    ...opts,
+    headline: `${orders.length} sipariş${summary ? ` · ${summary}` : ''}`,
+    body: orders.length ? orders.map(orderBlock).join('') : '<p>Sipariş yok.</p>',
+  });
+}
+
+/** Föy iskeleti: başlık, firma, sağda özet satırı ve tarih (sipariş ve ürün föyü aynı görünür) */
+export function printDocument(o: { title: string; companyName?: string | null; now?: Date; headline: string; body: string }) {
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(o.title)}</title><style>
     body{font-family:-apple-system,Roboto,Helvetica,Arial,sans-serif;font-size:11px;color:#0f172a;margin:24px}
     .top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #0f172a;padding-bottom:8px;margin-bottom:12px}
     h1{font-size:18px;margin:0} .muted{color:#64748b;font-size:10px}
@@ -85,9 +96,11 @@ export function ordersHtml(orders: PrintableOrder[], opts: { title: string; comp
     @page{margin:12mm}
   </style></head><body>
     <div class="top">
-      <div>${opts.companyName ? `<div class="muted">${esc(opts.companyName)}</div>` : ''}<h1>${esc(opts.title)}</h1></div>
-      <div style="text-align:right"><div>${orders.length} sipariş${summary ? ` · ${esc(summary)}` : ''}</div><div class="muted">${formatDate(opts.now ?? new Date())}</div></div>
+      <div>${o.companyName ? `<div class="muted">${esc(o.companyName)}</div>` : ''}<h1>${esc(o.title)}</h1></div>
+      <div style="text-align:right"><div>${esc(o.headline)}</div><div class="muted">${formatDate(o.now ?? new Date())}</div></div>
     </div>
-    ${orders.length ? orders.map(orderBlock).join('') : '<p>Sipariş yok.</p>'}
+    ${o.body}
   </body></html>`;
 }
+
+export { esc as escapeHtml };

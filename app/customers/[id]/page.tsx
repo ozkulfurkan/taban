@@ -11,6 +11,7 @@ import FitText from '@/app/components/fit-text';
 import MoreMenu from '@/app/components/more-menu';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
+import { CustomerNetworkCard } from '@/app/components/network';
 import { totalsByCurrency } from '@/lib/cek';
 
 function nowIstanbulISO(): string {
@@ -954,6 +955,8 @@ export default function CustomerDetailPage() {
             </button>
           )}
         </div>
+
+        <CustomerNetworkCard customerId={params.id as string} />
 
         {/* Balance Cards */}
         {(() => {

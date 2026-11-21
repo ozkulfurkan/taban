@@ -80,6 +80,9 @@ model Company {
   companyType        CompanyType        @default(SOLE_MANUFACTURER)
   // Firmalar arası bağlantı kodu (örn. SC-7K4P9Q); başka firma bununla tedarikçi olarak ekler
   code               String?            @unique
+  // Firma sahibi hesabını silince: firma pasif, bu tarihte tüm verisiyle silinir (talep eden giriş yaparsa iptal)
+  deletionScheduledAt   DateTime?
+  deletionRequestedById String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   users              User[]
@@ -132,6 +135,10 @@ model User {
   emailVerifyToken       String?          @unique
   impersonateToken       String?          @unique
   impersonateTokenExpiry DateTime?
+  // Hesap silme: e-postaya giden onay kodu (sha256) ve silinme tarihi (pasif dönem; girişte iptal olur)
+  deleteCodeHash         String?
+  deleteCodeExpiry       DateTime?
+  deletionScheduledAt    DateTime?
   companyId              String?
   company          Company?         @relation(fields: [companyId], references: [id])
   soleCalculations SoleCalculation[]
@@ -163,6 +170,7 @@ model Material {
   materialTransfers   MaterialTransfer[]
   subcontractorScraps SubcontractorScrap[]
   stockAdjustments    StockAdjustment[]
+  supplierProducts    MaterialSupplierProduct[]
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
   @@index([companyId])
@@ -262,8 +270,25 @@ model Product {
   customerProductPrices CustomerProductPrice[]
   purchaseMaterials     PurchaseMaterial[]
   stockAdjustments      ProductStockAdjustment[]
+  buyerMaterialMaps     MaterialSupplierProduct[]
+  // Ürün fotoğrafı ayrı tabloda (listeler şişmesin); dolu ise fotoğraf var, değeri önbellek sürümü
+  imageUpdatedAt        DateTime?
+  image                 ProductImage?
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
+  @@index([companyId])
+}
+
+// Ürün fotoğrafı (cihazda küçültülmüş JPEG/PNG/WebP; katalog PDF'inde ve ürün ekranında gösterilir)
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String   @unique
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  companyId String
+  mimeType  String
+  data      Bytes
+  size      Int
+  updatedAt DateTime @updatedAt
   @@index([companyId])
 }
 
@@ -1184,7 +1209,26 @@ model CompanyLink {
   createdAt        DateTime          @default(now())
   respondedAt      DateTime?
   orders           SoleOrder[]
+  materialMaps     MaterialSupplierProduct[]
 
   @@unique([buyerCompanyId, sellerCompanyId])
   @@index([sellerCompanyId, status])
+}
+
+// Firma ağı: alıcının hammaddesi ↔ bağlı satıcının kataloğundaki ürün (ör. tabancının "PU Sistem"i = hammaddecinin HM-PU60).
+// Sipariş verirken "Tabanlarım" görünümünde taban reçetesindeki hammaddenin tedarikçideki karşılığı gösterilir.
+model MaterialSupplierProduct {
+  id              String      @id @default(cuid())
+  companyId       String
+  materialId      String
+  material        Material    @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  linkId          String
+  link            CompanyLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  sellerProductId String
+  sellerProduct   Product     @relation(fields: [sellerProductId], references: [id], onDelete: Cascade)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([materialId, linkId])
+  @@index([linkId])
 }

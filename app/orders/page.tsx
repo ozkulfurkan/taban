@@ -1,7 +1,7 @@
 'use client';
 
 import { formatQty } from '@/lib/order-units';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import Link from 'next/link';
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { ordersHtml } from '@/lib/order-print';
+import { productsHtml, summarizeByProduct, type ProductSummary } from '@/lib/order-summary';
 
 const STATUS_TABS = [
   { key: 'ORDER_RECEIVED', label: 'Bekliyor' },
@@ -80,6 +81,9 @@ export default function OrdersPage() {
   const [customerFilter, setCustomerFilter] = useState('');
   const [customers, setCustomers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  // Görünüm: sipariş sipariş ya da ürün bazında (bekleyen siparişlerde hangi üründen toplam ne kadar)
+  const [view, setView] = useState<'order' | 'product'>('order');
+  const productSummary = useMemo(() => (view === 'product' ? summarizeByProduct(orders) : []), [orders, view]);
   const [ordersTotal, setOrdersTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [uretimData, setUretimData] = useState<{ orders: any[]; materialRequirements: any[] } | null>(null);
@@ -174,8 +178,9 @@ export default function OrdersPage() {
     frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
     document.body.appendChild(frame);
     const doc = frame.contentDocument!;
+    const opts = { title: view === 'product' ? `${title} — ürün bazında` : title, companyName: (session?.user as any)?.companyName ?? null };
     doc.open();
-    doc.write(ordersHtml(list, { title, companyName: (session?.user as any)?.companyName ?? null }));
+    doc.write(view === 'product' ? productsHtml(summarizeByProduct(list), opts) : ordersHtml(list, opts));
     doc.close();
     frame.contentWindow!.focus();
     frame.contentWindow!.print();
@@ -315,8 +320,18 @@ export default function OrdersPage() {
             ))}
           </div>
 
+          {/* Görünüm: sipariş sipariş ya da ürün bazında toplam */}
+          <div className="flex flex-shrink-0 rounded-lg border border-slate-200 bg-white p-0.5" role="tablist" data-testid="orders-view">
+            {([['order', 'Sipariş'], ['product', 'Ürün bazında']] as const).map(([k, label]) => (
+              <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${view === k ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Bulk action dropdown */}
-          {selectedIds.size > 0 && (
+          {view === 'order' && selectedIds.size > 0 && (
             <div className="relative flex-shrink-0" ref={bulkRef}>
               <button
                 onClick={() => setBulkOpen(o => !o)}
@@ -357,6 +372,8 @@ export default function OrdersPage() {
               <Plus className="w-4 h-4" /> İlk siparişi oluştur
             </Link>
           </div>
+        ) : view === 'product' ? (
+          <ProductSummaryTable summary={productSummary} />
         ) : (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -512,5 +529,49 @@ export default function OrdersPage() {
         )}
       </div>
     </AppShell>
+  );
+}
+
+// Ürün bazında görünüm: ürün başına toplam, beden dağılımı, en yakın termin; satıra tıklayınca siparişler açılır
+function ProductSummaryTable({ summary }: { summary: ProductSummary[] }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const sizeText = (d: Record<string, number>) => Object.entries(d)
+    .sort(([a], [b]) => a.localeCompare(b, 'tr', { numeric: true })).map(([s, q]) => `${s}×${q}`).join(' · ');
+  return (
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden" data-testid="orders-product-table">
+      <div className="grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_2fr_90px_130px_120px] gap-3 px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide">
+        <span>Ürün</span><span className="hidden sm:block">Bedenler</span><span className="hidden sm:block text-center">Sipariş</span>
+        <span className="hidden sm:block">En yakın termin</span><span className="text-right">Toplam</span>
+      </div>
+      {summary.map(s => (
+        <div key={s.key} className="border-b border-slate-100 last:border-0">
+          <button type="button" onClick={() => setOpen(k => (k === s.key ? null : s.key))} aria-expanded={open === s.key}
+            className="w-full grid grid-cols-[1fr_120px] sm:grid-cols-[1fr_2fr_90px_130px_120px] gap-3 items-center px-4 py-3 text-left hover:bg-slate-50 text-sm">
+            <span className="min-w-0">
+              <span className="font-semibold text-slate-800">{s.productCode ? `${s.productCode} · ` : ''}{s.productName || 'Ürün'}</span>
+              <span className="block text-xs text-slate-500">{s.customers.length} müşteri</span>
+            </span>
+            <span className="hidden sm:block text-xs text-slate-600 truncate">{sizeText(s.sizeDistribution) || '—'}</span>
+            <span className="hidden sm:block text-center text-slate-700">{s.orderCount}</span>
+            <span className="hidden sm:block text-slate-600">{s.earliestDue ? new Date(s.earliestDue).toLocaleDateString('tr-TR') : '—'}</span>
+            <span className="text-right font-bold text-slate-800">{formatQty(s.totalQuantity, s.unit)}</span>
+          </button>
+          {open === s.key && (
+            <div className="px-4 pb-3 space-y-1">
+              {s.orders.map(o => (
+                <Link key={o.orderNo} href={o.id ? `/orders/${o.id}` : '#'}
+                  className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm bg-slate-50 hover:bg-blue-50">
+                  <span className="truncate"><span className="font-medium text-slate-800">{o.orderNo}</span> · {o.customer || '—'}</span>
+                  <span className="flex items-center gap-4 text-slate-600 shrink-0">
+                    {o.due ? <span className="text-xs">Termin {new Date(o.due).toLocaleDateString('tr-TR')}</span> : null}
+                    <span className="font-semibold text-slate-800">{formatQty(o.quantity, s.unit)}</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }

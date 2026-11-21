@@ -22,9 +22,10 @@ export async function GET(req: NextRequest) {
   const user = await staff();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const supplierId = req.nextUrl.searchParams.get('supplierId');
+  const customerId = req.nextUrl.searchParams.get('customerId');
 
   const [asBuyer, asSeller] = await Promise.all([
-    prisma.companyLink.findMany({
+    customerId ? Promise.resolve([]) : prisma.companyLink.findMany({
       where: { buyerCompanyId: user.companyId, ...(supplierId ? { buyerSupplierId: supplierId } : {}) },
       select: {
         id: true, status: true, createdAt: true, respondedAt: true, buyerSupplierId: true,
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     }),
     supplierId ? Promise.resolve([]) : prisma.companyLink.findMany({
-      where: { sellerCompanyId: user.companyId, status: { in: ['PENDING', 'ACTIVE'] } },
+      where: { sellerCompanyId: user.companyId, status: { in: ['PENDING', 'ACTIVE'] }, ...(customerId ? { sellerCustomerId: customerId } : {}) },
       select: {
         id: true, status: true, createdAt: true, respondedAt: true, sellerCustomerId: true,
         buyerCompany: { select: { name: true, taxId: true, phone: true, address: true } },

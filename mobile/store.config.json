@@ -1,0 +1,60 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "version": "1.0.0",
+    "copyright": "2026 SoleCost",
+    "categories": [
+      "BUSINESS",
+      "PRODUCTIVITY"
+    ],
+    "info": {
+      "tr": {
+        "title": "SoleCost",
+        "subtitle": "Taban üretimi: maliyet ve cari",
+        "promoText": "Taban ve hammadde firmaları için sipariş, cari, çek ve kasa takibi cebinizde. Siparişler gelince anında bildirim.",
+        "description": "SoleCost, ayakkabı tabanı üreticileri ve taban hammaddesi tedarikçileri için geliştirilmiş işletme yönetimi uygulamasıdır. solecost.com hesabınızla giriş yapın; web ile aynı veriler, aynı kurallar.\n\nCARİ HESAPLAR\n• Müşteri ve tedarikçi bakiyeleri, satışlar, iadeler ve ödemeler\n• Tarih aralıklı ekstre, PDF olarak paylaşma ve müşteriye ekstre linki gönderme\n• Tahsilat ve ödeme girişi; döviz hesaplarında kur ile çevirme\n\nSATIŞ VE ALIŞ\n• Satış faturası, müşteri iadesi, alış ve tedarikçiye iade\n• Müşteriye özel fiyatlar, iskonto ve KDV\n• Belgeleri düzenleme, silme ve PDF paylaşma\n\nSİPARİŞLER\n• Portal ve firma ağından gelen siparişler, elle sipariş girişi\n• Çift ürünlerde beden asortisi, kg / metre ürünlerde miktar\n• Durum takibi, sevkiyat ve gerçek sevk edilen miktar\n• Bekleyen siparişleri yazdırma ve PDF alma\n• Yeni sipariş ve durum değişikliğinde anlık bildirim\n\nFİRMA AĞI\n• SoleCost kullanan tedarikçinize firma koduyla bağlanın, kataloğundan doğrudan sipariş verin\n• Gelen bağlantı isteklerini onaylayın, siparişler müşteri kaydınıza düşsün\n\nÇEK VE KASA\n• Çek portföyü: vadesi geçen ve yaklaşan çekler, toplu bankaya verme, tahsil etme, tedarikçiye ciro\n• Seçilen çeklerin toplamı ve ortalama vadesi\n• Kasa ve banka hesapları, para girişi / çıkışı ve hesaplar arası transfer\n\nSTOK, PERSONEL VE RAPORLAR\n• Ürün ve hammadde stokları, stok düzeltme\n• Personel kartları ve hareketleri\n• Satış, alacak ve borç özetleri\n\nGÜVENLİK\n• Oturum cihazın güvenli deposunda saklanır\n• İsteğe bağlı Face ID / parmak izi kilidi\n• Kullanıcı rolleri ve sayfa izinleri web ile aynı\n\nSoleCost hesabı web sitesinden firma tarafından açılır. Müşteri portalı hesabını çalıştığınız firma oluşturur.",
+        "keywords": [
+          "taban",
+          "ayakkabı",
+          "maliyet",
+          "cari",
+          "ekstre",
+          "çek",
+          "sipariş",
+          "stok",
+          "fatura",
+          "hammadde",
+          "muhasebe"
+        ],
+        "marketingUrl": "https://www.solecost.com",
+        "supportUrl": "https://www.solecost.com/destek",
+        "privacyPolicyUrl": "https://www.solecost.com/gizlilik"
+      },
+      "en-US": {
+        "title": "SoleCost",
+        "subtitle": "Sole production: cost & ledger",
+        "promoText": "Orders, accounts, cheques and cash for sole and material companies, in your pocket. Instant alerts for new orders.",
+        "description": "SoleCost is a business management app for shoe-sole manufacturers and sole raw-material suppliers. Sign in with your solecost.com account; the same data and rules as the web app.\n\nACCOUNTS\n• Customer and supplier balances, sales, returns and payments\n• Date-range statements, PDF sharing and statement links for customers\n• Collections and payments, with currency conversion for foreign-currency accounts\n\nSALES AND PURCHASES\n• Sales invoices, customer returns, purchases and returns to suppliers\n• Customer-specific prices, discounts and VAT\n• Edit, delete and share documents as PDF\n\nORDERS\n• Orders from the customer portal and the company network, plus manual order entry\n• Size breakdowns for paired products, quantities for kg / metre products\n• Status tracking, shipments and actual shipped quantities\n• Print pending orders or export them as PDF\n• Instant notifications for new orders and status changes\n\nCOMPANY NETWORK\n• Connect to suppliers that use SoleCost with their company code and order from their catalog\n• Approve incoming connection requests; orders land on your customer record\n\nCHEQUES AND CASH\n• Cheque portfolio: overdue and upcoming cheques, bulk deposit, collection, endorsement to suppliers\n• Total and average due date of selected cheques\n• Cash and bank accounts, deposits / withdrawals and transfers between accounts\n\nSTOCK, STAFF AND REPORTS\n• Product and raw-material stock, stock adjustments\n• Staff records and transactions\n• Sales, receivables and payables summaries\n\nSECURITY\n• Session stored in the device secure storage\n• Optional Face ID / fingerprint lock\n• Same user roles and page permissions as the web app\n\nSoleCost accounts are created by companies on the website. Customer portal accounts are created by the company you work with.",
+        "keywords": [
+          "shoe sole",
+          "footwear",
+          "cost",
+          "accounts",
+          "statement",
+          "cheque",
+          "orders",
+          "stock",
+          "invoice",
+          "raw material"
+        ],
+        "marketingUrl": "https://www.solecost.com",
+        "supportUrl": "https://www.solecost.com/destek",
+        "privacyPolicyUrl": "https://www.solecost.com/gizlilik"
+      }
+    },
+    "release": {
+      "automaticRelease": false,
+      "phasedRelease": false
+    }
+  }
+}

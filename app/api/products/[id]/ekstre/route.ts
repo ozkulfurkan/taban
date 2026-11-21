@@ -10,7 +10,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
   const product = await prisma.product.findFirst({
     where: { id: params.id, companyId: user.companyId },
-    select: { id: true, name: true, stock: true, unit: true, currency: true },
+    select: { id: true, name: true, stock: true, unit: true, currency: true, code: true, imageUpdatedAt: true },
   });
   if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 

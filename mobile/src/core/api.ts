@@ -17,6 +17,10 @@ let onUnauthorized: (() => void) | null = null;
 
 export function setAuthToken(t: string | null) { token = t; }
 export function setUnauthorizedHandler(fn: (() => void) | null) { onUnauthorized = fn; }
+/** Kimlik gerektiren görseller için (Image source headers); oturum yoksa boş */
+export function authHeaders(): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 type Options = { method?: string; body?: unknown; query?: Record<string, string | number | undefined | null>; signal?: AbortSignal };
 

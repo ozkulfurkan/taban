@@ -5,10 +5,13 @@ import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DateField } from './date-field';
-import { Button, Empty, ErrorState, Field, ListRow, Loading, T } from '@/components/ui';
+import { ProductThumb } from '@/components/product-image';
+import { Button, Empty, ErrorState, Field, ListRow, Loading, Segmented, T } from '@/components/ui';
+import { SolesView } from '@/components/soles-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { api } from '@/core/api';
 import { confirm, notify } from '@/core/dialog';
+import { formatDate } from '@/core/format';
 import { cartItem, formatQty, isPairUnit, orderBody, orderUnit, sizeSummary, sizesOf, unitDecimals, type CatalogProduct, type OrderItem } from '@/core/portal';
 import { formatAmountInput } from '@/core/amount';
 import { useApi } from '@/core/query';
@@ -31,20 +34,37 @@ export type CatalogProps = {
   extraBody?: Record<string, unknown>;
   /** Gönderilince gösterilecek başlık (varsayılan: "Siparişiniz alındı") */
   sentTitle?: string;
+  /** Firma ağı: alıcının tabanları ve hammadde eşleştirme ("Tabanlarım" görünümü) */
+  solesUrl?: string;
+  mapUrl?: string;
 };
 
 // Katalog ve sepet: portal müşterisi ve bağlı SoleCost tedarikçisine sipariş veren firma ortak kullanır
-export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKey, detailHref, extraBody, sentTitle = 'Siparişiniz alındı' }: CatalogProps) {
+export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKey, detailHref, extraBody, sentTitle = 'Siparişiniz alındı', solesUrl, mapUrl }: CatalogProps) {
   const c = useTheme();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const q = useApi<CatalogProduct[] | { products: CatalogProduct[] }>(catalogUrl);
   const products: CatalogProduct[] = useMemo(() => (Array.isArray(q.data) ? q.data : q.data?.products ?? []), [q.data]);
+  // Katalogda en az bir fotoğraf varsa satırlarda görsel sütunu gösterilir (hiç yoksa liste eskisi gibi sade)
+  const hasImages = products.some(p => p.imageUpdatedAt);
   const [search, setSearch] = useState('');
   const term = useDeferredValue(search.trim());
   const [active, setActive] = useState<CatalogProduct | null>(null);
   const [cart, setCart] = useState<(OrderItem & { key: string })[]>([]);
   const [checkout, setCheckout] = useState(false);
+  const [mode, setMode] = useState<'products' | 'soles'>('products');
+  // Liste başlığı: web'de arama alanı; firma ağında "Ürünler | Tabanlarım" seçici
+  const listHeader = (
+    <View style={{ padding: 16, paddingBottom: 8, gap: 12 }}>
+      {Platform.OS === 'web' ? (
+        <Field label="Ara" value={search} onChangeText={setSearch} placeholder="Model kodu veya adı" testID="catalog-search" />
+      ) : null}
+      {solesUrl && mapUrl ? (
+        <Segmented value={mode} onChange={setMode} options={[{ value: 'products', label: 'Ürünler' }, { value: 'soles', label: 'Tabanlarım' }]} />
+      ) : null}
+    </View>
+  );
 
   const rows = useMemo(
     () => products.filter(p => !term || matchesText(`${p.code ?? ''} ${p.name} ${p.description ?? ''}`, term)),
@@ -71,17 +91,17 @@ export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKe
         }}
       />
       <View style={{ flex: 1, backgroundColor: c.background }}>
+        {solesUrl && mapUrl && mode === 'soles' ? (
+          <SolesView solesUrl={solesUrl} mapUrl={mapUrl} products={products} search={term} header={listHeader}
+            bottomPad={cart.length ? 120 : 24} onAdd={setActive} />
+        ) : (
         <FlatList
           contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
           data={q.isLoading || q.error ? [] : rows}
           keyExtractor={p => p.id}
           contentContainerStyle={{ paddingBottom: cart.length ? 120 : 24 }}
-          ListHeaderComponent={Platform.OS === 'web' ? (
-            <View style={{ padding: 16 }}>
-              <Field label="Ara" value={search} onChangeText={setSearch} placeholder="Model kodu veya adı" testID="catalog-search" />
-            </View>
-          ) : <View style={{ height: 8 }} />}
+          ListHeaderComponent={listHeader}
           ListEmptyComponent={
             q.isLoading ? <Loading /> : q.error
               ? <ErrorState message={(q.error as Error).message} onRetry={() => { void q.refetch(); }} />
@@ -90,20 +110,30 @@ export function OrderCatalog({ catalogUrl, orderUrl, title = 'Katalog', ordersKe
           renderItem={({ item }) => {
             const inCart = cart.filter(i => i.productId === item.id).reduce((s, i) => s + i.totalQuantity, 0);
             return (
-              <View style={{ backgroundColor: c.card }}>
+              <View style={{ backgroundColor: c.card, flexDirection: 'row', alignItems: 'center' }}>
+                {hasImages ? (
+                  <View style={{ paddingLeft: 16 }}>
+                    <ProductThumb productId={item.id} imageUpdatedAt={item.imageUpdatedAt} base={catalogUrl} size={52} />
+                  </View>
+                ) : null}
+                <View style={{ flex: 1, minWidth: 0 }}>
                 <ListRow
                   testID={`catalog-${item.id}`}
                   title={item.code ? `${item.code} · ${item.name}` : item.name}
-                  subtitle={item.description || (isPairUnit(item.unit) ? `Beden ${sizesOf(item)[0]}–${sizesOf(item).at(-1)}` : `Birim: ${orderUnit(item.unit)}`)}
+                  subtitle={item.purchased
+                    ? `Daha önce aldınız · ${formatDate(item.purchased.lastAt)}${item.purchased.count > 1 ? ` · ${item.purchased.count} kez` : ''}`
+                    : item.description || (isPairUnit(item.unit) ? `Beden ${sizesOf(item)[0]}–${sizesOf(item).at(-1)}` : `Birim: ${orderUnit(item.unit)}`)}
                   right={inCart ? formatQty(inCart, item.unit) : undefined}
                   rightSub={inCart ? 'sepette' : undefined}
                   rightColor={c.primary}
                   onPress={() => setActive(item)}
                 />
+                </View>
               </View>
             );
           }}
         />
+        )}
 
         {cart.length ? (
           <View style={[styles.cartBar, { backgroundColor: c.card, borderTopColor: c.border, paddingBottom: insets.bottom + 12 }]}>

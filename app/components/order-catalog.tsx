@@ -5,6 +5,7 @@ import { Loader2, Package, Plus, ShoppingCart, Trash2, Send, ChevronUp } from 'l
 import { usePortalText } from '@/lib/i18n/portal';
 import DecimalInput from '@/app/components/decimal-input';
 import { cleanQuantity, formatQty, isPairUnit, orderUnit, unitDecimals } from '@/lib/order-units';
+import SolesPanel from '@/app/components/soles-panel';
 
 interface Product {
   id: string;
@@ -13,6 +14,10 @@ interface Product {
   description: string | null;
   sizes: string[];
   unit?: string | null;
+  /** Alıcının bu ürünü daha önce alması (sipariş + fatura); sunucu sıralar, en son alınan üstte */
+  purchased?: { count: number; lastAt: string } | null;
+  /** Fotoğraf sürümü (yoksa fotoğraf yok): {catalogUrl}/{id}/image */
+  imageUpdatedAt?: string | null;
 }
 
 interface CartItem {
@@ -31,9 +36,12 @@ const ALL_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '
 
 // Katalog + sepet: portal müşterisi (/portal/catalog) ve bağlı SoleCost firması
 // (/suppliers/:id/siparis) aynı ekranı kullanır; yalnızca veri adresleri değişir.
-export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title }: {
+export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title, solesUrl, mapUrl }: {
   catalogUrl: string; orderUrl: string; onSubmitted: (order: { id: string }) => void; title?: string;
+  /** Firma ağı: alıcının tabanları ve hammadde eşleştirme ("Tabanlarım" görünümü) */
+  solesUrl?: string; mapUrl?: string;
 }) {
+  const [mode, setMode] = useState<'products' | 'soles'>('products');
   const { tp } = usePortalText();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -154,7 +162,26 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
       <div className="space-y-6">
         <h1 className="text-xl font-bold text-slate-800">{title ?? tp('Ürün Kataloğu')}</h1>
 
-        {loading ? (
+        {/* Firma ağı: "Ürünler | Tabanlarım" (tabandan sepete ekleyince ilgili ürünün formu açılır) */}
+        {solesUrl && mapUrl && (
+          <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5" role="tablist" data-testid="catalog-mode">
+            {([['products', 'Ürünler'], ['soles', 'Tabanlarım']] as const).map(([k, label]) => (
+              <button key={k} type="button" role="tab" aria-selected={mode === k} onClick={() => setMode(k)}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium ${mode === k ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>{label}</button>
+            ))}
+          </div>
+        )}
+
+        {solesUrl && mapUrl && mode === 'soles' ? (
+          <SolesPanel solesUrl={solesUrl} mapUrl={mapUrl} products={products}
+            onAdd={id => {
+              const p = products.find(x => x.id === id);
+              if (!p) return;
+              setMode('products');
+              openOrderForm(p);
+              setTimeout(() => document.getElementById(`catalog-card-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+            }} />
+        ) : loading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
           </div>
@@ -173,13 +200,23 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title 
               const pair = isPairUnit(unit);
 
               return (
-                <div key={product.id} className={`bg-white rounded-xl shadow-sm flex flex-col transition-all ${isActive ? 'ring-2 ring-blue-500' : ''}`}>
+                <div key={product.id} id={`catalog-card-${product.id}`} className={`bg-white rounded-xl shadow-sm flex flex-col overflow-hidden transition-all ${isActive ? 'ring-2 ring-blue-500' : ''}`}>
+                  {product.imageUpdatedAt && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={`${catalogUrl}/${product.id}/image?v=${encodeURIComponent(product.imageUpdatedAt)}`} alt={product.name}
+                      loading="lazy" className="w-full aspect-[4/3] object-cover bg-slate-100" data-testid={`catalog-image-${product.id}`} />
+                  )}
                   <div className="p-5 flex flex-col gap-3">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Package className="w-5 h-5 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
+                        {product.purchased && (
+                          <p className="inline-flex items-center gap-1 mb-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold" data-testid={`catalog-purchased-${product.id}`}>
+                            {tp('Daha önce aldınız')} · {new Date(product.purchased.lastAt).toLocaleDateString('tr-TR')}{product.purchased.count > 1 ? ` · ${product.purchased.count}×` : ''}
+                          </p>
+                        )}
                         {product.code && <p className="text-xs font-semibold text-blue-600 mb-0.5">{product.code}</p>}
                         <p className="font-semibold text-slate-800 text-sm leading-tight">{product.name}</p>
                         {product.description && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{product.description}</p>}

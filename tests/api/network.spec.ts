@@ -81,7 +81,7 @@ test('istek → onay → katalog → sipariş → durum takibi', async () => {
   // Katalog: yalnızca portalda açık ve kısıtsız ürün; fiyat ve firma kimliği yok
   const cat = await (await A.owner.get(`/api/network/links/${link.id}/catalog`)).json();
   expect(cat.products.map((p: any) => p.id)).toEqual([shown]);
-  expect(Object.keys(cat.products[0]).sort()).toEqual(['code', 'description', 'id', 'name', 'sizes', 'unit']);
+  expect(Object.keys(cat.products[0]).sort()).toEqual(['code', 'description', 'id', 'imageUpdatedAt', 'name', 'purchased', 'sizes', 'unit']);
 
   // Katalog dışı ürün ve görüntüleyici reddedilir
   expect((await order(link.id, hidden)).status()).toBe(400);

@@ -35,8 +35,8 @@ export default function Raporlar() {
       <Screen refreshing={d.isRefetching} onRefresh={refresh}>
         <Card style={{ backgroundColor: c.strong, borderColor: c.strong, gap: 12 }} testID="report-balance">
           <View style={styles.row}>
-            <Metric label="Toplam alacak" value={money(r.totalReceivables)} color="#6EE7B7" testID="report-receivables" />
-            <Metric label="Toplam borç" value={money(r.totalPayables)} color="#FCA5A5" testID="report-payables" />
+            <Metric label="Toplam alacak" value={money(r.totalReceivables)} color={c.strongPositive} testID="report-receivables" />
+            <Metric label="Toplam borç" value={money(r.totalPayables)} color={c.strongNegative} testID="report-payables" />
           </View>
           <View style={[styles.divider, { backgroundColor: c.strongText }]} />
           <Metric label="Net (alacak − borç)" value={money(net)} color={c.strongText} big />

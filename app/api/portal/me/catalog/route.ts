@@ -5,6 +5,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { portalCatalogWhere } from '@/lib/portal-public';
+import { purchaseHistory } from '@/lib/network';
+import { sortByHistory } from '@/lib/catalog-history';
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -16,11 +18,13 @@ export async function GET() {
       ...portalCatalogWhere(user),
     },
     select: {
-      id: true, code: true, name: true, description: true, sizes: true, unit: true,
+      id: true, code: true, name: true, description: true, sizes: true, unit: true, imageUpdatedAt: true,
       parts: { select: { id: true, name: true }, orderBy: { sortOrder: 'asc' } },
     },
     orderBy: { name: 'asc' },
   });
 
-  return NextResponse.json(products);
+  // Daha önce aldıkları üstte (satıcıdaki siparişler + faturalar)
+  const history = await purchaseHistory(user.companyId, user.customerId ?? null);
+  return NextResponse.json(sortByHistory(products, history));
 }

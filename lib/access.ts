@@ -48,7 +48,7 @@ const PORTAL_API_PREFIXES = [
 ];
 
 // VIEWER rolünün yazma yapabileceği API'ler (kendi profili, destek talepleri).
-const VIEWER_WRITE_ALLOWED = ['/api/auth/', '/api/settings', '/api/support/', '/api/mobile/push-token'];
+const VIEWER_WRITE_ALLOWED = ['/api/auth/', '/api/settings', '/api/support/', '/api/mobile/push-token', '/api/account/deletion'];
 
 // Düzenleyicinin silebileceği API'ler (kendi oturumu, kendi destek talepleri).
 // Ekstre linkini kapatmak kayıt silmek değildir; düzenleyici de linki yenileyip kapatabilir.
