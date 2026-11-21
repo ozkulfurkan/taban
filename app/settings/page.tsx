@@ -8,6 +8,7 @@ import { Settings, Save, Loader2, Globe, DollarSign, User, Building2, CreditCard
 import { motion } from 'framer-motion';
 import DecimalInput from '@/app/components/decimal-input';
 import { CompanyCodeCard } from '@/app/components/network';
+import { ChangePasswordCard } from '@/app/components/change-password-card';
 
 interface BankEntry {
   bankName: string;
@@ -116,6 +117,9 @@ export default function SettingsPage() {
       if (res.ok) {
         setCompanySuccess(true);
         setTimeout(() => setCompanySuccess(false), 3000);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        alert(d?.error || 'Firma bilgileri kaydedilemedi');
       }
     } catch (e) {
       console.error(e);
@@ -263,6 +267,8 @@ export default function SettingsPage() {
           </button>
         </motion.div>
 
+        <ChangePasswordCard />
+
         {user?.companyId ? <CompanyCodeCard /> : null}
 
         {/* Company Info */}
@@ -299,7 +305,7 @@ export default function SettingsPage() {
                     </button>
                   )}
                 </div>
-                <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleLogoUpload} />
               </div>
             </div>
 

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
+import { Sheet } from '@/components/sheet';
 import { Button, Card, ErrorState, ListRow, Loading, Screen, Section, T } from '@/components/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '@/core/api';
@@ -53,6 +54,8 @@ export default function PartyDetail() {
     } catch (e: any) { notify('Silinemedi', e?.message ?? ''); }
   };
   const [list, setList] = useState<ListKey | null>(null);
+  // Tahsilat / ödeme butonu açılır menü: para hareketi, borç/alacak fişi, çek
+  const [payOpen, setPayOpen] = useState(false);
 
   if (party.isLoading) return <><Stack.Screen options={{ title: k === 'customer' ? 'Müşteri' : 'Tedarikçi' }} /><Loading /></>;
   if (party.error || !party.data) return <><Stack.Screen options={{ title: k === 'customer' ? 'Müşteri' : 'Tedarikçi' }} /><ErrorState message={(party.error as Error)?.message || 'Cari bulunamadı'} onRetry={() => party.refetch()} /></>;
@@ -88,7 +91,7 @@ export default function PartyDetail() {
             <Button
               title={k === 'customer' ? 'Tahsilat' : 'Ödeme'}
               icon={k === 'customer' ? 'arrowDown' : 'arrowUp'}
-              onPress={() => router.push(`/cariler/${k}/${id}/hareket`)}
+              onPress={() => setPayOpen(true)}
               style={styles.action}
               testID="party-payment"
             />
@@ -229,6 +232,21 @@ export default function PartyDetail() {
           </Card>
         ) : null}
       </Screen>
+      <Sheet
+        visible={payOpen}
+        onClose={() => setPayOpen(false)}
+        title={k === 'customer' ? 'Tahsilat' : 'Ödeme'}
+        description={p.name}
+        actions={[
+          { label: k === 'customer' ? 'Tahsilat gir' : 'Ödeme gir', icon: k === 'customer' ? 'arrowDown' : 'arrowUp', testID: 'pay-money',
+            onPress: () => router.push(`/cariler/${k}/${id}/hareket`) },
+          { label: 'Alacak fişi', icon: 'doc', testID: 'pay-credit-note',
+            onPress: () => router.push(`/cariler/${k}/${id}/fis?tip=${encodeURIComponent('Alacak Fişi')}`) },
+          { label: 'Borç fişi', icon: 'doc', testID: 'pay-debit-note',
+            onPress: () => router.push(`/cariler/${k}/${id}/fis?tip=${encodeURIComponent('Borç Fişi')}`) },
+          ...(k === 'customer' ? [{ label: 'Çek al', icon: 'cheque' as const, testID: 'pay-cek', onPress: () => router.push(`/cekler/yeni?customerId=${id}`) }] : []),
+        ]}
+      />
       {linkSheet.sheet}
     </>
   );
