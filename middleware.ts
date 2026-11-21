@@ -59,6 +59,7 @@ export default withAuth(
         pathname.startsWith('/portal/orders') ||
         pathname.startsWith('/portal/catalog') ||
         pathname.startsWith('/portal/hesap') ||
+        pathname.startsWith('/portal/bildirimler') ||
         pathname.startsWith('/portal/fason/');
       if (isPortalCustomerRoute) {
         return NextResponse.redirect(new URL('/dashboard', req.url));
@@ -127,6 +128,8 @@ export const config = {
     '/logs/:path*',
     '/logs',
     '/yetkisiz',
+    '/bildirimler',
+    '/portal/bildirimler',
     '/api/:path*',
   ],
 };

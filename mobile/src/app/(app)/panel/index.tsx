@@ -4,10 +4,12 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { BrandMark } from '@/components/brand-mark';
 import { Icon, type IconName } from '@/components/icon';
+import { BellButton } from '@/components/notification-inbox';
 import { Card, T } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useAuth, useCanWrite } from '@/core/auth';
 import { useIsManager, useLinks } from '@/core/network';
+import { useUnreadCount } from '@/core/notifications-inbox';
 import { useApi } from '@/core/query';
 import { homeRates } from '@/core/rates';
 import { useTheme } from '@/hooks/use-theme';
@@ -68,13 +70,14 @@ export default function Home() {
   // Onay bekleyen firma ağı istekleri (yalnızca onaylayabilecek kullanıcıya rozet)
   const manager = useIsManager();
   const links = useLinks(null, manager);
+  const unread = useUnreadCount();
   const badges = { network: links.data?.asSeller.filter(l => l.status === 'PENDING').length ?? 0 };
 
   return (
     <SafeAreaView edges={['left', 'right']} style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: Spacing.six }}
-        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); void tcmb.refetch(); if (manager) void links.refetch(); }} />}
+        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); void tcmb.refetch(); void unread.refetch(); if (manager) void links.refetch(); }} />}
       >
         {/* Bordo karşılama bandı: durum çubuğunun arkasına kadar uzanır */}
         <View style={[styles.hero, { backgroundColor: c.strong, paddingTop: insets.top + Spacing.three }]}>
@@ -84,6 +87,8 @@ export default function Home() {
               <T color={c.strongText} numberOfLines={1} style={styles.brand} testID="home-brand">SOLE COST</T>
               <T variant="small" color={c.strongMuted} numberOfLines={1} testID="home-user">{user?.name ? `Merhaba, ${user.name}` : 'Hoş geldiniz'}</T>
             </View>
+            <BellButton href="/bildirimler" unread={unread.data ?? 0} color={c.strongText}
+              background="rgba(255,255,255,0.14)" border="rgba(255,255,255,0.22)" />
             <Pressable onPress={() => router.push('/ayarlar')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ayarlar"
               style={[styles.round, { backgroundColor: 'rgba(255,255,255,0.14)', borderColor: 'rgba(255,255,255,0.22)' }]}>
               <Icon name="settings" size={20} color={c.strongText} />

@@ -46,10 +46,11 @@ const PORTAL_API_PREFIXES = [
   '/api/portal/auth/verify-email',
   '/api/account/password', // kendi şifresini değiştirme (web ve mobil portal)
   '/api/exchange-rates', // genel kur bilgisi, firma verisi içermez
+  '/api/notifications', // kendi bildirim kutusu
 ];
 
 // VIEWER rolünün yazma yapabileceği API'ler (kendi profili, destek talepleri).
-const VIEWER_WRITE_ALLOWED = ['/api/auth/', '/api/settings', '/api/support/', '/api/mobile/push-token', '/api/account/deletion'];
+const VIEWER_WRITE_ALLOWED = ['/api/auth/', '/api/settings', '/api/support/', '/api/mobile/push-token', '/api/account/deletion', '/api/notifications'];
 
 // Düzenleyicinin silebileceği API'ler (kendi oturumu, kendi destek talepleri).
 // Ekstre linkini kapatmak kayıt silmek değildir; düzenleyici de linki yenileyip kapatabilir.

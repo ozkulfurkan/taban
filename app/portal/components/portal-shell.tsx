@@ -3,6 +3,7 @@
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import NotificationBell from '@/app/components/notification-bell';
 import { ShoppingBag, List, BookOpen, LogOut, Menu, X, KeyRound } from 'lucide-react';
 import { useState } from 'react';
 import { usePortalText } from '@/lib/i18n/portal';
@@ -55,6 +56,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
                 </button>
               ))}
             </div>
+            <NotificationBell portal texts={{ title: tp('Bildirimler'), empty: tp('Henüz bildirim yok'), markAll: tp('Tümünü okundu yap'), seeAll: tp('Tümünü gör') }} />
             <span className="text-sm text-slate-600 hidden sm:block">{user?.name}</span>
             <button onClick={() => signOut({ callbackUrl: '/portal/login' })}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">

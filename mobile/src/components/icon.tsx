@@ -47,6 +47,7 @@ const ICONS = {
   checkbox: ['checkmark.circle.fill', 'check_circle'],
   circle: ['circle', 'radio_button_unchecked'],
   back: ['chevron.left', 'chevron_left'],
+  bell: ['bell', 'notifications'],
 } as const satisfies Record<string, readonly [SFSymbol, AndroidSymbol]>;
 
 export type IconName = keyof typeof ICONS;

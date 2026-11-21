@@ -6,6 +6,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Sidebar from './sidebar';
+import NotificationBell from './notification-bell';
 import { Loader2, ChevronDown, LogOut, User, Clock, AlertTriangle, LifeBuoy, X, Sparkles, Wrench } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/language-context';
 
@@ -346,6 +347,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="sticky top-0 z-30 bg-slate-50/80 backdrop-blur border-b border-slate-200/60">
           <div className="max-w-[1200px] mx-auto px-4 md:px-6 lg:px-8 h-14 flex items-center justify-end gap-2">
             <DestekLink />
+            <NotificationBell />
             <UserMenu />
           </div>
         </div>
