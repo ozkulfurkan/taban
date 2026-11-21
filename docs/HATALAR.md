@@ -6,7 +6,7 @@ Bildirilen hatalar burada toplanır. Durum: **Bekliyor** → **Yapılıyor** →
 | No | Başlık | Öncelik | Durum |
 | --- | --- | --- | --- |
 | H-1 | Mobil portalda "Yeni sipariş" açılmıyor, ürünler gelmiyor | Acil | Düzeltildi [#37](https://github.com/ozkulfurkan/taban/pull/37) |
-| H-2 | Bir e-posta yalnızca tek firmanın portal kullanıcısı olabiliyor | Normal | Yapılıyor [#38](https://github.com/ozkulfurkan/taban/pull/38) |
+| H-2 | Bir e-posta yalnızca tek firmanın portal kullanıcısı olabiliyor | Normal | Düzeltildi [#38](https://github.com/ozkulfurkan/taban/pull/38) |
 | H-3 | Mobilde portal hesabı açınca "Paylaş" hiçbir şey yapmıyor | Acil | Düzeltildi [#37](https://github.com/ozkulfurkan/taban/pull/37) |
 | H-4 | Bazı e-postalar gönderilmeden kesiliyor (portal hesabı, doğrulama, yeni sipariş) | Acil | Düzeltildi [#37](https://github.com/ozkulfurkan/taban/pull/37) |
 
@@ -32,7 +32,7 @@ Bildirilen hatalar burada toplanır. Durum: **Bekliyor** → **Yapılıyor** →
 ## H-2 · Bir e-posta yalnızca tek firmanın portal kullanıcısı olabiliyor
 - **Tarih:** 21.11.2026
 - **Öncelik:** Normal (aynı müşteri birden fazla tedarikçiyle çalışınca portal hesabı açılamıyor)
-- **Durum:** Yapılıyor ([#38](https://github.com/ozkulfurkan/taban/pull/38); veritabanı SQL'i bekleniyor)
+- **Durum:** Düzeltildi ([#38](https://github.com/ozkulfurkan/taban/pull/38))
 - **Beklenen kural:**
   - **Firma hesabı** (personel kullanıcısı): bir e-posta sistemde yalnızca bir kez kullanılabilir (bugünkü gibi).
   - **Portal kullanıcısı:** aynı e-posta birden fazla firmanın portal müşterisi olabilir (her firmada ayrı hesap). Aynı firmada aynı e-posta yine tek olmalı.
