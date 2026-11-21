@@ -7,6 +7,8 @@ Bildirilen hatalar burada toplanır. Durum: **Bekliyor** → **Yapılıyor** →
 | --- | --- | --- | --- |
 | H-1 | Mobil portalda "Yeni sipariş" açılmıyor, ürünler gelmiyor | Acil | Bekliyor |
 | H-2 | Bir e-posta yalnızca tek firmanın portal kullanıcısı olabiliyor | Normal | Bekliyor |
+| H-3 | Mobilde portal hesabı açınca "Paylaş" hiçbir şey yapmıyor | Acil | Bekliyor |
+| H-4 | Bazı e-postalar gönderilmeden kesiliyor (portal hesabı, doğrulama, yeni sipariş) | Acil | Bekliyor |
 
 ---
 
@@ -71,3 +73,46 @@ Bildirilen hatalar burada toplanır. Durum: **Bekliyor** → **Yapılıyor** →
   - web portal girişi: `app/portal/login/page.tsx`, `app/portal/fason/login/page.tsx`
   - mobil giriş: `mobile/src/app/login.tsx`, `mobile/src/core/auth.tsx`
 - **Büyüklük:** M–L (giriş akışı ve veritabanı değişikliği içerdiği için dikkatli test gerekir)
+
+---
+
+## H-3 · Mobilde portal hesabı açınca "Paylaş" hiçbir şey yapmıyor
+- **Tarih:** 21.11.2026
+- **Öncelik:** Acil (müşteriye davet ve şifre iletilemiyor)
+- **Durum:** Bekliyor
+- **Belirti:** Mobilde müşteri → Portal / davet → "Portal hesabı aç" sonrası çıkan pencerede **Paylaş**'a basınca paylaşım ekranı açılmıyor. Şifre sıfırladıktan sonraki "Paylaş" da aynı.
+- **Kök neden:**
+  - Onay penceresi (`mobile/src/components/dialog-host.tsx`, React Native `Modal`) kapanırken paylaşım ekranı (`Share.share`) hemen açılmaya çalışılıyor.
+  - iOS kapanmakta olan bir pencerenin üstüne yeni ekran açmayı sessizce reddediyor. Aynı sorun fotoğraf seçicide de vardı; orada 400 ms beklemeyle çözülmüştü.
+  - Yer: `mobile/src/app/(app)/cariler/[kind]/[id]/portal.tsx`, `create` ve `update` içindeki `confirm(...)` ardından `invite(...)` çağrıları.
+- **Önerilen düzeltme:**
+  - Paylaşım, onay penceresi tamamen kapandıktan sonra açılır (kısa bekleme ya da pencerenin kapanma olayından sonra).
+  - Ortak bir `shareAfterDialog` yardımcısı yazılır; bu desen başka yerlerde de kullanılabilir.
+  - `Share.share` hatası yakalanıp kullanıcıya gösterilir.
+  - Doğrudan "Davet gönder" butonu (pencere yok) zaten çalışıyor; ona dokunulmaz.
+- **Etkilenen dosyalar:** `mobile/src/app/(app)/cariler/[kind]/[id]/portal.tsx`, `mobile/src/core/dialog.ts` (yardımcı)
+- **Büyüklük:** S
+
+---
+
+## H-4 · Bazı e-postalar gönderilmeden kesiliyor
+- **Tarih:** 21.11.2026
+- **Öncelik:** Acil (müşteri doğrulama e-postası almazsa portala giremez)
+- **Durum:** Bekliyor
+- **Belirti:** Portal hesabı açıldığında müşteriye doğrulama ve geçici şifre e-postası gitmiyor olabilir.
+- **Kök neden:**
+  - Birçok yerde e-posta gönderimi **beklenmeden** başlatılıyor ve yanıt hemen dönüyor (`sendMail(...).catch(() => {})`).
+  - Vercel'de istek yanıtlanınca işlem durdurulabildiği için e-posta yarıda kalabiliyor. Hata da yutulduğu için iz bırakmıyor.
+  - Etkilenen yerler:
+    - `app/api/portal/auth/register/route.ts`: portal hesabı açılınca doğrulama ve geçici şifre;
+    - `app/api/subcontractors/[id]/portal-register/route.ts`: fason portal hesabı;
+    - `lib/auth-options.ts` (iki yer) ve `lib/portal-auth-options.ts`: doğrulanmamış hesaba yeniden doğrulama e-postası;
+    - `lib/orders.ts`: yeni siparişte üretim emri e-postası (firma yöneticilerine) ve müşteriye "siparişiniz alındı".
+  - Sipariş durum, onay ve sevk e-postaları zaten bekleniyor; onlar etkilenmiyor.
+- **Önerilen düzeltme:**
+  - Bu çağrılar `await` ile beklenir. Hata durumunda işlem bozulmaz ama hata loglanır (`console.error`).
+  - Portal hesabı açma yanıtına `emailSent: true/false` eklenir. Mobil ve web, e-posta gitmediyse "E-posta gönderilemedi, davet mesajını paylaşın" uyarısı gösterir.
+  - Test bildirim kutusuyla (`NOTIFY_OUTBOX`) her akışta e-postanın gerçekten gönderildiği doğrulanır.
+- **Ayrıca kontrol edilecek (sizin tarafınızda):** Vercel → Settings → Environment Variables'da `SMTP_USER`, `SMTP_PASS` (Gmail uygulama şifresi) ve `SMTP_FROM` tanımlı mı. Değilse hiçbir e-posta gitmez. Vercel → Logs'ta "Mail gönderildi" ya da SMTP hatası satırları görülür.
+- **Etkilenen dosyalar:** yukarıdaki API ve lib dosyaları; `mobile/src/app/(app)/cariler/[kind]/[id]/portal.tsx` ve `app/portal-admin/page.tsx` (uyarı)
+- **Büyüklük:** S–M
