@@ -1,6 +1,6 @@
 'use client';
 
-import { ORDER_STATUS_COLOR, ORDER_STATUS_LABEL } from '@/lib/order-status';
+import { ORDER_STATUS_COLOR, ORDER_STATUS_LABEL, stageLabel } from '@/lib/order-status';
 import { formatQty } from '@/lib/order-units';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
@@ -107,7 +107,7 @@ export default function PortalDashboardPage() {
                     <p className="text-xs text-slate-400">{order.productCode || order.product?.name || '—'} · {formatQty(order.totalQuantity, order.unit)}</p>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLOR[order.status] ?? 'bg-slate-100 text-slate-600'}`}>
-                    {tp(STATUS_LABELS[order.status] ?? order.status)}
+                    {tp(order.status === 'ORDER_RECEIVED' ? stageLabel(order) : STATUS_LABELS[order.status] ?? order.status)}
                   </span>
                 </Link>
               ))}

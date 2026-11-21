@@ -424,6 +424,9 @@ export default function OrdersPage() {
                       {/* Sipariş No */}
                       <div className="flex flex-col gap-0.5">
                         <span className="font-bold text-slate-800 text-sm">{order.orderNo}</span>
+                        {order.status === 'ORDER_RECEIVED' && !order.confirmedAt && (
+                          <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-semibold align-middle" data-testid={`order-unconfirmed-${order.id}`}>Onay bekliyor</span>
+                        )}
                         {order.invoiceId && (
                           <span className="inline-flex items-center gap-0.5 text-emerald-600 text-[10px] font-medium">
                             <CheckCircle className="w-3 h-3" /> Faturalandı

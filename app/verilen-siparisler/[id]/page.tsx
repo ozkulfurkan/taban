@@ -7,7 +7,7 @@ import { Loader2, Truck } from 'lucide-react';
 import AppShell from '@/app/components/app-shell';
 import BackLink from '@/app/components/back-link';
 import OrderStepper from '@/app/portal/components/order-stepper';
-import { statusLabel } from '@/lib/order-status';
+import { stageLabel, statusLabel } from '@/lib/order-status';
 import { isPairUnit } from '@/lib/order-units';
 import { ShippedTable } from '@/app/components/shipment-qty';
 
@@ -44,6 +44,11 @@ export default function NetworkOrderDetailPage() {
         <div className="bg-white rounded-xl p-5 shadow-sm overflow-x-auto">
           <h2 className="font-semibold text-slate-700 mb-3">Sipariş Durumu</h2>
           <OrderStepper status={order.status} unit={order.unit} />
+          {order.status === 'ORDER_RECEIVED' && (
+            <p className={`mt-3 text-sm font-medium ${order.confirmedAt ? 'text-emerald-600' : 'text-amber-600'}`} data-testid="order-confirm-state">
+              {stageLabel(order)}
+            </p>
+          )}
         </div>
 
         <div className="bg-white rounded-xl p-5 shadow-sm">

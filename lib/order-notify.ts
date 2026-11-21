@@ -38,7 +38,7 @@ async function pushToBuyer(orderId: string, title: (company: string, orderNo: st
     const o = await prisma.soleOrder.findUnique({
       where: { id: orderId },
       select: {
-        orderNo: true, portalCustomerId: true, buyerUserId: true, company: { select: { name: true } },
+        orderNo: true, portalCustomerId: true, buyerUserId: true, companyId: true, company: { select: { name: true } },
         portalCustomer: { select: { isActive: true } }, link: { select: { buyerCompanyId: true, status: true } },
       },
     });
@@ -52,7 +52,9 @@ async function pushToBuyer(orderId: string, title: (company: string, orderNo: st
       const buyer = o.buyerUserId
         ? await prisma.user.findFirst({ where: { id: o.buyerUserId, companyId: o.link.buyerCompanyId }, select: { id: true } })
         : null;
-      await pushToUsers([...ids, buyer?.id], { ...msg, url: `/siparis/verilen/${orderId}` });
+      // Siparişi alan (satıcı) firmanın kullanıcıları alıcı bildirimini hiçbir koşulda almaz
+      const sellerIds = new Set((await prisma.user.findMany({ where: { companyId: o.companyId }, select: { id: true } })).map(u => u.id));
+      await pushToUsers([...ids, buyer?.id].filter((id): id is string => !!id && !sellerIds.has(id)), { ...msg, url: `/siparis/verilen/${orderId}` });
     }
   } catch (e) {
     console.error('pushToBuyer', e);
@@ -89,6 +91,54 @@ export async function notifyOrderStatus(orderId: string, status: string, note?: 
     });
   } catch (e) {
     console.error('notifyOrderStatus', e);
+  }
+}
+
+/** Satıcı siparişi onayladı: sipariş verene push + e-posta (termin varsa yazılır) */
+export async function notifyOrderConfirmed(orderId: string, note?: string | null) {
+  const o = await prisma.soleOrder.findUnique({ where: { id: orderId }, select: { confirmedDeliveryDate: true } }).catch(() => null);
+  const termin = o?.confirmedDeliveryDate ? new Date(o.confirmedDeliveryDate).toLocaleDateString('tr-TR') : null;
+  await pushToBuyer(
+    orderId,
+    (company, no) => `${company} · ${no}`,
+    `Siparişiniz onaylandı${termin ? ` · Termin: ${termin}` : ''}${note ? ` — ${note}` : ''}`,
+  );
+  try {
+    const r = await recipientOf(orderId);
+    if (!r) return;
+    const { order } = r;
+    await sendMail({
+      to: r.to,
+      subject: `${order.company.name} · Siparişiniz onaylandı (${order.orderNo})`,
+      html: `
+        <p>Merhaba ${esc(r.name ?? r.to)},</p>
+        <p>${esc(order.company.name)} firmasına verdiğiniz <strong>${esc(order.orderNo)}</strong> numaralı sipariş <strong>onaylandı</strong>.</p>
+        <p>Miktar: <strong>${esc(formatQty(order.totalQuantity, order.unit))}</strong></p>
+        ${termin ? `<p>Termin: <strong>${termin}</strong></p>` : ''}
+        ${note ? `<p>Not: ${esc(note)}</p>` : ''}
+      `,
+      text: `${order.company.name} · Sipariş ${order.orderNo} onaylandı${termin ? `. Termin: ${termin}` : ''}`,
+    });
+  } catch (e) {
+    console.error('notifyOrderConfirmed', e);
+  }
+}
+
+/** Termin tarihi değişti (durum aynı): sipariş verene push + e-posta */
+export async function notifyOrderTermin(orderId: string, date: Date | null) {
+  const termin = date ? date.toLocaleDateString('tr-TR') : null;
+  await pushToBuyer(orderId, (company, no) => `${company} · ${no}`, termin ? `Termin tarihi: ${termin}` : 'Termin tarihi kaldırıldı');
+  try {
+    const r = await recipientOf(orderId);
+    if (!r) return;
+    await sendMail({
+      to: r.to,
+      subject: `${r.order.company.name} · Termin güncellendi (${r.order.orderNo})`,
+      html: `<p>Merhaba ${esc(r.name ?? r.to)},</p><p><strong>${esc(r.order.orderNo)}</strong> numaralı siparişinizin termin tarihi ${termin ? `<strong>${termin}</strong> olarak güncellendi` : 'kaldırıldı'}.</p>`,
+      text: `Sipariş ${r.order.orderNo} termin: ${termin ?? 'kaldırıldı'}`,
+    });
+  } catch (e) {
+    console.error('notifyOrderTermin', e);
   }
 }
 

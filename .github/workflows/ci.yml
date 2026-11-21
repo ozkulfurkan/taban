@@ -39,6 +39,9 @@ jobs:
       NEXTAUTH_SECRET: ci-only-secret-not-used-anywhere-else
       NEXTAUTH_URL: http://localhost:3000
       PGTZ: UTC
+      # Testlerde e-posta ve anlık bildirim gönderilmez, bu dosyaya yazılır (kime gittiği doğrulanır)
+      NOTIFY_OUTBOX: /tmp/notify-outbox.jsonl
+      CRON_SECRET: ci-only-cron-secret
 
     steps:
       - uses: actions/checkout@v4

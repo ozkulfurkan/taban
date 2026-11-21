@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
-import { isOrderStatus, notifyOrderStatus, saveShipment } from '@/lib/order-notify';
+import { isOrderStatus, notifyOrderStatus, notifyOrderTermin, saveShipment } from '@/lib/order-notify';
 import { partVariantMaterialIds, rejectForeignRefs } from '@/lib/tenant';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
@@ -78,7 +78,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       create: { status, note: body.statusNote || null },
     };
   }
-  if (confirmedDeliveryDate !== undefined) updateData.confirmedDeliveryDate = confirmedDeliveryDate ? new Date(confirmedDeliveryDate) : null;
+  // Onaylanmadan ilerletilen sipariş onaylanmış sayılır (iptal hariç)
+  if (statusChanged && status !== 'CANCELLED' && status !== 'ORDER_RECEIVED' && !existing.confirmedAt) updateData.confirmedAt = new Date();
+  let terminChanged = false;
+  if (confirmedDeliveryDate !== undefined) {
+    const next = confirmedDeliveryDate ? new Date(confirmedDeliveryDate) : null;
+    if (next && Number.isNaN(next.getTime())) return NextResponse.json({ error: 'Geçersiz termin tarihi' }, { status: 400 });
+    updateData.confirmedDeliveryDate = next;
+    terminChanged = (existing.confirmedDeliveryDate?.getTime() ?? null) !== (next?.getTime() ?? null);
+  }
   if (notes !== undefined) updateData.notes = notes;
   if (partVariantsData !== undefined) updateData.partVariantsData = partVariantsData;
 
@@ -95,6 +103,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   });
 
   if (statusChanged) await notifyOrderStatus(params.id, status, body.statusNote || null);
+  // Yalnızca termin değiştiyse (durum aynı) sipariş verene ayrıca bildirilir
+  else if (terminChanged && existing.status !== 'CANCELLED' && existing.status !== 'SHIPPED') await notifyOrderTermin(params.id, updateData.confirmedDeliveryDate);
 
   // Sevkiyat: kaydedilir; sipariş sevk edilmemişse durum "Sevk Edildi" olur ve müşteriye bildirilir
   if (shipment) {

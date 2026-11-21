@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { writeOutbox } from '@/lib/outbox';
 
 interface SendMailOptions {
   to: string | string[];
@@ -19,6 +20,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendMail({ to, subject, html, text, cc }: SendMailOptions) {
+  if (writeOutbox({ kind: 'mail', to, cc: cc ?? null, subject, html })) return { info: null, previewUrl: null };
   const from = process.env.SMTP_FROM ?? `SoleCost <${process.env.SMTP_USER}>`;
 
   const info = await transporter.sendMail({

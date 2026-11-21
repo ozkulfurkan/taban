@@ -41,6 +41,8 @@ const EN: Record<string, string> = {
 
   // Sipariş durumları
   'Sipariş Alındı': 'Order Received',
+  'Onay bekliyor': 'Awaiting confirmation',
+  'Onaylandı': 'Confirmed',
   'Üretimde': 'In Production',
   'Üretime Girdi': 'In Production',
   'Kalıplama': 'Molding',

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { buildPushBatches, type PushMessage } from '@/lib/push-message';
+import { writeOutbox } from '@/lib/outbox';
 
 export { isExpoToken, type PushMessage } from '@/lib/push-message';
 
@@ -12,6 +13,7 @@ const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 type Ticket = { status: 'ok' | 'error'; message?: string; details?: { error?: string } };
 
 async function send(tokens: string[], msg: PushMessage) {
+  if (writeOutbox({ kind: 'push', tokens, title: msg.title, body: msg.body, url: msg.url ?? null })) return;
   const batches = buildPushBatches(tokens, msg);
   const dead: string[] = [];
   for (const batch of batches) {
