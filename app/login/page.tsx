@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LogIn, Eye, EyeOff, Loader2, ExternalLink, CheckCircle2, MailWarning, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/language-context';
+import { BrandMark } from '@/app/components/brand-mark';
 
 function UnverifiedEmailBanner({ email }: { email: string }) {
   const [resendLoading, setResendLoading] = useState(false);
@@ -127,9 +128,7 @@ export default function LoginPage() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-blue-600/30">
-            <span className="text-white font-bold text-2xl">SC</span>
-          </div>
+          <BrandMark size={64} className="mb-4" />
           <h1 className="text-3xl font-bold text-white mb-2">SoleCost</h1>
           <p className="text-blue-300 text-sm">{t('auth', 'loginDesc')}</p>
         </div>

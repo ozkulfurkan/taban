@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { MAX_LOGO_BYTES, decodeImage, toDataUrl } from '@/lib/product-image';
 import { getAuthSession, unauthorized } from '@/lib/helpers';
 
 export async function GET(req: NextRequest) {
@@ -36,6 +37,19 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { name, address, taxId, phone, bankInfo, logoUrl, usdToTry, eurToTry, vatRate, companyType } = body ?? {};
 
+    // Logo: yalnızca gerçek JPEG/PNG/WebP (tür içerikten okunur); SVG ve dış adres kabul edilmez
+    let logo: string | null | undefined = undefined;
+    if (logoUrl !== undefined) {
+      if (logoUrl === null || logoUrl === '') logo = null;
+      else if (logoUrl === (await prisma.company.findUnique({ where: { id: companyId }, select: { logoUrl: true } }))?.logoUrl) {
+        logo = undefined; // değişmeyen (eski) logo yeniden doğrulanmaz; diğer alanlar kaydedilebilsin
+      } else {
+        const img = decodeImage(logoUrl, MAX_LOGO_BYTES);
+        if ('error' in img) return NextResponse.json({ error: img.error }, { status: 400 });
+        logo = toDataUrl(img.mime, img.bytes);
+      }
+    }
+
     const VALID_COMPANY_TYPES = ['SOLE_MANUFACTURER', 'MATERIAL_SUPPLIER'];
     const updated = await prisma.company.update({
       where: { id: companyId },
@@ -45,7 +59,7 @@ export async function PUT(req: NextRequest) {
         ...(taxId !== undefined ? { taxId } : {}),
         ...(phone !== undefined ? { phone } : {}),
         ...(bankInfo !== undefined ? { bankInfo } : {}),
-        ...(logoUrl !== undefined ? { logoUrl } : {}),
+        ...(logo !== undefined ? { logoUrl: logo } : {}),
         ...(usdToTry !== undefined ? { usdToTry: parseFloat(usdToTry) || 1 } : {}),
         ...(eurToTry !== undefined ? { eurToTry: parseFloat(eurToTry) || 1 } : {}),
         ...(vatRate !== undefined ? { vatRate: parseFloat(vatRate) || 0 } : {}),

@@ -17,6 +17,8 @@ type AuthState = {
   signIn: (email: string, password: string, kind: 'staff' | 'portal') => Promise<void>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
+  /** Kendi şifresini değiştirir; sunucunun verdiği yeni token saklanır (oturum düşmez) */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 };
 
 const Ctx = createContext<AuthState | null>(null);
@@ -83,7 +85,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(r.user);
   }, []);
 
-  const value = useMemo(() => ({ ready, user, signIn, signOut, refresh }), [ready, user, signIn, signOut, refresh]);
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    const r = await api<{ ok: true; token?: string }>('/api/account/password', { method: 'POST', body: { currentPassword, newPassword } });
+    if (r.token) {
+      await setItem(TOKEN_KEY, r.token);
+      setAuthToken(r.token);
+    } else {
+      await signOut(); // yeni token alınamadıysa yeni şifreyle tekrar giriş
+    }
+  }, [signOut]);
+
+  const value = useMemo(() => ({ ready, user, signIn, signOut, refresh, changePassword }), [ready, user, signIn, signOut, refresh, changePassword]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

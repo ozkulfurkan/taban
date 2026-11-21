@@ -6,14 +6,20 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { PORTAL_CUSTOMER_PUBLIC } from '@/lib/portal-public';
 import bcrypt from 'bcryptjs';
+import { passwordError } from '@/lib/password';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   const user = session?.user as any;
-  if (!user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user?.companyId || user.type === 'portal') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (user.role === 'VIEWER') return NextResponse.json({ error: 'Portal hesabını değiştirme yetkiniz yok' }, { status: 403 });
 
-  const body = await req.json();
-  const { isActive, newPassword } = body;
+  const body = await req.json().catch(() => ({}));
+  const { isActive, newPassword } = body ?? {};
+  if (newPassword) {
+    const rule = passwordError(newPassword);
+    if (rule) return NextResponse.json({ error: rule }, { status: 400 });
+  }
 
   const pc = await prisma.portalCustomer.findFirst({
     where: { id: params.id, customer: { companyId: user.companyId } },

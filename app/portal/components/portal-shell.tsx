@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { ShoppingBag, List, BookOpen, LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { usePortalText } from '@/lib/i18n/portal';
+import { BrandMark } from '@/app/components/brand-mark';
 
 const NAV = [
   { href: '/portal/dashboard', label: 'Ana Sayfa', icon: ShoppingBag },
@@ -27,7 +28,7 @@ export default function PortalShell({ children }: { children: React.ReactNode })
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/portal/dashboard" className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">SC</div>
+              <BrandMark size={28} />
               <span className="font-semibold text-slate-800 hidden sm:block">{tp('Müşteri Portalı')}</span>
             </Link>
             <nav className="hidden md:flex items-center gap-1">

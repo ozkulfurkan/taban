@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { encode } from 'next-auth/jwt';
-import { authOptions, authorizeStaff, authorizePortalCustomer } from '@/lib/auth-options';
-import { MOBILE_TOKEN_MAX_AGE } from '@/lib/mobile-auth';
+import { authorizeStaff, authorizePortalCustomer } from '@/lib/auth-options';
+import { issueMobileToken } from '@/lib/mobile-token';
 
 // Mobil giriş: web girişiyle aynı doğrulama (deneme sınırı, e-posta doğrulaması, portal ayrımı).
 // Dönen token "Authorization: Bearer" başlığıyla kullanılır.
@@ -35,17 +34,11 @@ export async function POST(req: NextRequest) {
   }
   if (!user) return fail('INVALID_CREDENTIALS');
 
-  const token = await authOptions.callbacks!.jwt!({
-    token: { sub: user.id, name: user.name, email: user.email },
-    user,
-    account: null,
-  } as any);
-  const secret = process.env.NEXTAUTH_SECRET!;
-  const jwt = await encode({ token, secret, maxAge: MOBILE_TOKEN_MAX_AGE });
+  const { jwt, token, expiresAt } = await issueMobileToken(user);
 
   return NextResponse.json({
     token: jwt,
-    expiresAt: new Date(Date.now() + MOBILE_TOKEN_MAX_AGE * 1000).toISOString(),
+    expiresAt,
     user: publicUser(token),
   }, { headers: { 'Cache-Control': 'no-store' } });
 }
