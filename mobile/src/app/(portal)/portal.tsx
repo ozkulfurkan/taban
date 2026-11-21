@@ -54,7 +54,7 @@ export default function PortalHome() {
               <Stat label="Sevk edilen" value={shipped} />
             </Card>
 
-            <Button title="Yeni sipariş" icon="plus" onPress={() => router.push('/katalog')} testID="portal-new-order" />
+            <Button title="Yeni sipariş" icon="plus" onPress={() => router.push('/portal-katalog')} testID="portal-new-order" />
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Button title="Siparişlerim" icon="doc" variant="secondary" onPress={() => router.push('/siparisler')} style={{ flex: 1 }} testID="portal-orders" />
               {link.data?.url ? (

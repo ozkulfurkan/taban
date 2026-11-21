@@ -7,7 +7,7 @@ import { Button, Card, ErrorState, Field, Loading, Screen, Section, T } from '@/
 import { api } from '@/core/api';
 import { useAuth } from '@/core/auth';
 import { WEB_URL } from '@/core/config';
-import { confirm } from '@/core/dialog';
+import { afterDialog, confirm, notify } from '@/core/dialog';
 import { inviteMessage } from '@/core/invite';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
@@ -41,9 +41,13 @@ export default function PortalAccountScreen() {
   const mail = email ?? cust.email ?? '';
   const companyName = user?.type === 'staff' ? user.companyName : null;
   const refresh = () => qc.invalidateQueries({ queryKey: ['/api/portal/customers'] });
-  const invite = (portalEmail?: string, pw?: string) => {
+  const invite = async (portalEmail?: string, pw?: string) => {
     const msg = inviteMessage(WEB_URL, { companyName, customerName: cust.name, portalEmail });
-    void Share.share({ message: pw ? msg.replace('Şifrenizi sizinle ayrıca paylaşacağız.', `Geçici şifreniz: ${pw}`) : msg });
+    try {
+      await Share.share({ message: pw ? msg.replace('Şifrenizi sizinle ayrıca paylaşacağız.', `Geçici şifreniz: ${pw}`) : msg });
+    } catch (e: any) {
+      notify('Paylaşılamadı', e?.message || 'Tekrar deneyin.', 'error');
+    }
   };
 
   const create = async () => {
@@ -52,11 +56,16 @@ export default function PortalAccountScreen() {
     if (!passwordOk(password)) return setError('Şifre en az 6 karakter, 1 harf ve 1 rakam içermelidir.');
     setBusy(true);
     try {
-      await api('/api/portal/auth/register', { method: 'POST', body: { customerId: id, email: mail.trim(), name: cust.name, password } });
+      const r = await api<{ emailSent?: boolean }>('/api/portal/auth/register', { method: 'POST', body: { customerId: id, email: mail.trim(), name: cust.name, password } });
       await refresh();
       const pw = password;
+      const to = mail.trim();
       setPassword('');
-      if (await confirm('Portal hesabı açıldı', `${mail.trim()} adresine doğrulama e-postası gönderildi. Davet mesajı şimdi paylaşılsın mı?`, 'Paylaş')) invite(mail.trim(), pw);
+      const text = r.emailSent === false
+        ? `Hesap açıldı ama ${to} adresine doğrulama e-postası gönderilemedi. Davet mesajını mutlaka paylaşın.`
+        : `${to} adresine doğrulama e-postası gönderildi. Davet mesajı şimdi paylaşılsın mı?`;
+      // Paylaşım ekranı onay penceresi kapandıktan sonra açılır (iOS aksi halde açmaz)
+      if (await confirm('Portal hesabı açıldı', text, 'Paylaş')) afterDialog(() => invite(to, pw));
     } catch (e: any) {
       setError(e?.message || 'Hesap açılamadı');
     } finally {
@@ -74,7 +83,7 @@ export default function PortalAccountScreen() {
       if (body.newPassword) {
         const pw = body.newPassword;
         setPassword('');
-        if (await confirm('Şifre değiştirildi', 'Müşterinin açık oturumları kapatıldı. Yeni şifre davet mesajıyla paylaşılsın mı?', 'Paylaş')) invite(acc.email, pw);
+        if (await confirm('Şifre değiştirildi', 'Müşterinin açık oturumları kapatıldı. Yeni şifre davet mesajıyla paylaşılsın mı?', 'Paylaş')) afterDialog(() => invite(acc.email, pw));
       }
     } catch (e: any) {
       setError(e?.message || 'Kaydedilemedi');
@@ -107,7 +116,7 @@ export default function PortalAccountScreen() {
               <Button title="Şifreyi değiştir" variant="secondary" loading={busy}
                 onPress={() => { if (!passwordOk(password)) setError('Şifre en az 6 karakter, 1 harf ve 1 rakam içermelidir.'); else void update({ newPassword: password }); }} testID="portal-reset" />
             </Section>
-            <Button title="Davet gönder" icon="link" onPress={() => invite(acc.email)} testID="portal-invite" />
+            <Button title="Davet gönder" icon="link" onPress={() => { void invite(acc.email); }} testID="portal-invite" />
           </>
         ) : (
           <>
@@ -117,7 +126,7 @@ export default function PortalAccountScreen() {
               <Field label="Geçici şifre" value={password} onChangeText={setPassword} autoCapitalize="none" autoComplete="off" testID="portal-password" />
             </Card>
             <Button title="Portal hesabı aç" onPress={create} loading={busy} testID="portal-create" />
-            <Button title="Hesap açmadan davet gönder" variant="secondary" icon="link" onPress={() => invite()} testID="portal-invite-only" />
+            <Button title="Hesap açmadan davet gönder" variant="secondary" icon="link" onPress={() => { void invite(); }} testID="portal-invite-only" />
           </>
         )}
         {error ? <T color={c.danger} testID="portal-error">{error}</T> : null}

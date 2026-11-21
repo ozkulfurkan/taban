@@ -96,6 +96,7 @@ export default function PortalAdminPage() {
       setShowForm(false);
       setFormData({ customerId: '', email: '', name: '', password: '' });
       setCustomerQuery(''); setSelectedCustomerName(''); setCustomerResults([]);
+      if (data.emailSent === false) alert(`Hesap açıldı ama ${data.email} adresine doğrulama e-postası gönderilemedi. Giriş bilgilerini müşteriye ayrıca iletin.`);
     } finally { setFormLoading(false); }
   };
 

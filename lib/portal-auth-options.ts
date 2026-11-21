@@ -3,7 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { sendMail } from '@/lib/mail';
+import { sendMailSafe } from '@/lib/mail';
 
 export const portalAuthOptions: NextAuthOptions = {
   providers: [
@@ -43,14 +43,14 @@ export const portalAuthOptions: NextAuthOptions = {
           }
           const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
           const verifyUrl = `${baseUrl}/portal/verify-email?token=${token}`;
-          sendMail({
+          await sendMailSafe({
             to: portalCustomer.email,
             subject: 'Portal - E-posta adresinizi doğrulayın',
             html: `<p>Merhaba ${portalCustomer.name ?? portalCustomer.email},</p>
               <p>Giriş yapabilmek için e-posta adresinizi doğrulayın:</p>
               <p><a href="${verifyUrl}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>`,
             text: `Doğrulama linki: ${verifyUrl}`,
-          }).catch(() => {});
+          });
           throw new Error('EMAIL_NOT_VERIFIED');
         }
 
