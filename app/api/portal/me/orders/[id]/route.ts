@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { PORTAL_ORDER_SELECT } from '@/lib/portal-public';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -12,11 +13,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const order = await prisma.soleOrder.findFirst({
     where: { id: params.id, portalCustomerId: user.id },
-    include: {
-      product: { select: { id: true, name: true, code: true } },
-      statusHistory: { orderBy: { createdAt: 'asc' } },
-      shipment: true,
-    },
+    select: PORTAL_ORDER_SELECT,
   });
 
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });

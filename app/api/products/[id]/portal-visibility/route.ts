@@ -48,6 +48,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   });
   if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+  // Yalnızca bu firmanın portal müşterileri atanabilir
+  const ids = Array.isArray(assignedCustomerIds) ? Array.from(new Set(assignedCustomerIds.filter(x => typeof x === 'string'))) : [];
+  if (ids.length) {
+    const own = await prisma.portalCustomer.count({ where: { id: { in: ids }, customer: { companyId: user.companyId } } });
+    if (own !== ids.length) return NextResponse.json({ error: 'Portal müşterisi bulunamadı' }, { status: 404 });
+  }
+
   await prisma.$transaction([
     // Update portalVisible flag
     prisma.product.update({
@@ -56,9 +63,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }),
     // Replace all customer assignments
     prisma.productPortalCustomer.deleteMany({ where: { productId: params.id } }),
-    ...(portalVisible && assignedCustomerIds?.length > 0
+    ...(portalVisible && ids.length > 0
       ? [prisma.productPortalCustomer.createMany({
-          data: assignedCustomerIds.map(portalCustomerId => ({
+          data: ids.map(portalCustomerId => ({
             productId: params.id,
             portalCustomerId,
           })),

@@ -27,6 +27,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
   if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
+  // Personel bu firmaya ait olmalı (başka firmanın personeline kayıt eklenemez)
+  const employee = await (prisma.employee as any).findFirst({ where: { id: params.id, companyId: user.companyId }, select: { id: true } });
+  if (!employee) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const body = await req.json();
   const { content } = body;

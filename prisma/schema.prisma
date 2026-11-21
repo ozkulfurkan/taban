@@ -129,6 +129,8 @@ model User {
   allowedPages     String[]         @default([])
   resetToken             String?          @unique
   resetTokenExpiry       DateTime?
+  /// Şifre değişince bu tarihten önce açılmış oturumlar (web ve mobil) geçersiz olur
+  passwordChangedAt      DateTime?
   emailVerified          Boolean          @default(false)
   emailVerifyToken       String?          @unique
   impersonateToken       String?          @unique
@@ -602,6 +604,8 @@ model PortalCustomer {
   emailVerified    Boolean            @default(false)
   emailVerifyToken String?            @unique
   isActive         Boolean            @default(true)
+  /// Şifre değişince bu tarihten önce açılmış oturumlar (web ve mobil) geçersiz olur
+  passwordChangedAt DateTime?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   orders           SoleOrder[]

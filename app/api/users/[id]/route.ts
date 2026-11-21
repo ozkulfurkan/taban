@@ -43,6 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (allowedPages !== undefined) data.allowedPages = allowedPages;
   if (newPassword) {
     data.password = await bcrypt.hash(newPassword, 12);
+    data.passwordChangedAt = new Date(); // açık oturumlar kapanır
   }
   if (generateResetToken) {
     const token = crypto.randomBytes(32).toString('hex');

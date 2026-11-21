@@ -10,6 +10,13 @@ import { sendCancelledMail } from '@/lib/account-deletion';
 const sameList = (a: unknown, b: unknown) =>
   JSON.stringify([...((a as string[]) ?? [])].sort()) === JSON.stringify([...((b as string[]) ?? [])].sort());
 
+// Şifre değiştiyse ondan önce verilmiş oturumlar (çalınmış çerez veya mobil token dahil) geçersizdir.
+// Token'daki iat saniye hassasiyetinde; aynı saniyede yeniden giriş yapan kullanıcı atılmasın.
+function issuedBeforePasswordChange(token: any, changedAt: Date | null | undefined) {
+  if (!changedAt || typeof token?.iat !== 'number') return false;
+  return token.iat < Math.floor(changedAt.getTime() / 1000);
+}
+
 // Hata fırlatmak next-auth'ta oturumu geçersiz kılar: getServerSession null döner,
 // /api/auth/session çerezi temizler ve kullanıcı yeniden giriş yapar.
 async function assertTokenStillValid(token: any) {
@@ -18,9 +25,10 @@ async function assertTokenStillValid(token: any) {
   if (token.type === 'portal') {
     const pc = await prisma.portalCustomer.findUnique({
       where: { id: token.sub },
-      select: { isActive: true, customerId: true, subcontractor: { select: { id: true } } },
+      select: { isActive: true, customerId: true, passwordChangedAt: true, subcontractor: { select: { id: true } } },
     });
     if (!pc || !pc.isActive) throw new Error('SESSION_REVOKED');
+    if (issuedBeforePasswordChange(token, pc.passwordChangedAt)) throw new Error('SESSION_REVOKED');
     if ((pc.customerId ?? null) !== (token.customerId ?? null)) throw new Error('SESSION_CHANGED');
     if ((pc.subcontractor?.id ?? null) !== (token.subcontractorId ?? null)) throw new Error('SESSION_CHANGED');
     return;
@@ -28,9 +36,10 @@ async function assertTokenStillValid(token: any) {
 
   const dbUser = await prisma.user.findUnique({
     where: { id: token.sub },
-    select: { role: true, companyId: true, allowedPages: true, deletionScheduledAt: true, company: { select: { name: true, companyType: true, deletionScheduledAt: true } } },
+    select: { role: true, companyId: true, allowedPages: true, passwordChangedAt: true, deletionScheduledAt: true, company: { select: { name: true, companyType: true, deletionScheduledAt: true } } },
   });
   if (!dbUser) throw new Error('SESSION_REVOKED');
+  if (issuedBeforePasswordChange(token, dbUser.passwordChangedAt)) throw new Error('SESSION_REVOKED');
   // Silme talebiyle pasife alınan hesap ya da firma: tüm açık oturumlar düşer
   if (dbUser.deletionScheduledAt || dbUser.company?.deletionScheduledAt) throw new Error('SESSION_REVOKED');
   if (

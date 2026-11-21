@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { isOrderStatus, notifyOrderStatus, saveShipment } from '@/lib/order-notify';
+import { partVariantMaterialIds, rejectForeignRefs } from '@/lib/tenant';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -62,6 +63,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const body = await req.json();
   const { status, confirmedDeliveryDate, notes, partVariantsData, shipment } = body;
 
+  if (partVariantsData !== undefined) {
+    const foreign = await rejectForeignRefs(user.companyId, { material: partVariantMaterialIds(partVariantsData) });
+    if (foreign) return foreign;
+  }
   if (status !== undefined && !isOrderStatus(status)) return NextResponse.json({ error: 'Geçersiz durum' }, { status: 400 });
   if (shipment && !shipment.shipmentDate) return NextResponse.json({ error: 'Sevk tarihi gerekli' }, { status: 400 });
 

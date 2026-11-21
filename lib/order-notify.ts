@@ -17,14 +17,16 @@ async function recipientOf(orderId: string) {
     select: {
       orderNo: true, unit: true, totalQuantity: true, buyerUserId: true, confirmedDeliveryDate: true,
       company: { select: { name: true } },
-      portalCustomer: { select: { email: true, name: true } },
-      link: { select: { status: true } },
+      portalCustomer: { select: { email: true, name: true, isActive: true } },
+      link: { select: { status: true, buyerCompanyId: true } },
     },
   });
   if (!order) return null;
-  if (order.portalCustomer) return { order, to: order.portalCustomer.email, name: order.portalCustomer.name };
-  if (order.buyerUserId) {
-    const u = await prisma.user.findUnique({ where: { id: order.buyerUserId }, select: { email: true, name: true } });
+  // Pasif portal hesabına ve kaldırılmış bağlantıya bildirim gitmez
+  if (order.portalCustomer) return order.portalCustomer.isActive ? { order, to: order.portalCustomer.email, name: order.portalCustomer.name } : null;
+  if (order.buyerUserId && order.link?.status === 'ACTIVE') {
+    // Siparişi veren kullanıcı hâlâ alıcı firmada olmalı
+    const u = await prisma.user.findFirst({ where: { id: order.buyerUserId, companyId: order.link.buyerCompanyId }, select: { email: true, name: true } });
     if (u?.email) return { order, to: u.email, name: u.name };
   }
   return null;
@@ -35,15 +37,22 @@ async function pushToBuyer(orderId: string, title: (company: string, orderNo: st
   try {
     const o = await prisma.soleOrder.findUnique({
       where: { id: orderId },
-      select: { orderNo: true, portalCustomerId: true, buyerUserId: true, company: { select: { name: true } }, link: { select: { buyerCompanyId: true } } },
+      select: {
+        orderNo: true, portalCustomerId: true, buyerUserId: true, company: { select: { name: true } },
+        portalCustomer: { select: { isActive: true } }, link: { select: { buyerCompanyId: true, status: true } },
+      },
     });
     if (!o) return;
     const msg = { title: title(o.company.name, o.orderNo), body };
     if (o.portalCustomerId) {
-      await pushToPortalCustomer(o.portalCustomerId, { ...msg, url: `/siparisler/${orderId}` });
-    } else if (o.link) {
+      if (o.portalCustomer?.isActive) await pushToPortalCustomer(o.portalCustomerId, { ...msg, url: `/siparisler/${orderId}` });
+    } else if (o.link?.status === 'ACTIVE') {
+      // Alıcı firmada siparişleri görenler + siparişi veren (hâlâ o firmadaysa)
       const ids = await orderRecipients(o.link.buyerCompanyId);
-      await pushToUsers([...ids, o.buyerUserId], { ...msg, url: `/siparis/verilen/${orderId}` });
+      const buyer = o.buyerUserId
+        ? await prisma.user.findFirst({ where: { id: o.buyerUserId, companyId: o.link.buyerCompanyId }, select: { id: true } })
+        : null;
+      await pushToUsers([...ids, buyer?.id], { ...msg, url: `/siparis/verilen/${orderId}` });
     }
   } catch (e) {
     console.error('pushToBuyer', e);

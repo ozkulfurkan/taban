@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { password: hashed, resetToken: null, resetTokenExpiry: null },
+    data: { password: hashed, resetToken: null, resetTokenExpiry: null, passwordChangedAt: new Date() },
   });
 
   return NextResponse.json({ ok: true });
