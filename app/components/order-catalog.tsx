@@ -6,6 +6,7 @@ import { usePortalText } from '@/lib/i18n/portal';
 import DecimalInput from '@/app/components/decimal-input';
 import { cleanQuantity, formatQty, isPairUnit, orderUnit, unitDecimals } from '@/lib/order-units';
 import SolesPanel from '@/app/components/soles-panel';
+import { DEFAULT_SHORE_LEVEL, DEFAULT_SHORE_VALUE, SHORE_LEVELS, SHORE_NOTE, cleanShore, variantText } from '@/lib/shore';
 
 interface Product {
   id: string;
@@ -30,6 +31,8 @@ interface CartItem {
   sizeDistribution: Record<string, number>;
   totalQuantity: number;
   unit: string;
+  shoreLevel?: string;
+  shoreValue?: number;
 }
 
 const ALL_SIZES = ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46'];
@@ -48,6 +51,9 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
 
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
   const [orderColor, setOrderColor] = useState('');
+  // Hammadde siparişinde renk yerine shore: seviye + değer (varsayılan 65, ±2)
+  const [orderShoreLevel, setOrderShoreLevel] = useState<string>(DEFAULT_SHORE_LEVEL);
+  const [orderShoreValue, setOrderShoreValue] = useState(String(DEFAULT_SHORE_VALUE));
   const [orderSizes, setOrderSizes] = useState<Record<string, number>>({});
   const [orderQty, setOrderQty] = useState('');
   const [formError, setFormError] = useState('');
@@ -71,6 +77,8 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
   const openOrderForm = (product: Product) => {
     setActiveProductId(product.id);
     setOrderColor('');
+    setOrderShoreLevel(DEFAULT_SHORE_LEVEL);
+    setOrderShoreValue(String(DEFAULT_SHORE_VALUE));
     setOrderSizes({});
     setOrderQty('');
     setFormError('');
@@ -95,10 +103,12 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
         setFormError(unitDecimals(unit) ? `Geçerli bir miktar girin (${unit}).` : `Tam sayı bir miktar girin (${unit}).`);
         return;
       }
+      const shore = cleanShore(orderShoreLevel, orderShoreValue);
+      if ('error' in shore) { setFormError(shore.error); return; }
       setCart(prev => [...prev, {
         cartId: Math.random().toString(36).slice(2),
         productId: product.id, productCode: product.code || '', productName: product.name,
-        availableSizes: [], color: orderColor.trim(), sizeDistribution: {}, totalQuantity: qty, unit,
+        availableSizes: [], color: '', sizeDistribution: {}, totalQuantity: qty, unit, ...shore,
       }]);
       closeOrderForm();
       return;
@@ -136,7 +146,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
         color: item.color,
         sizeDistribution: item.sizeDistribution,
         totalQuantity: item.totalQuantity,
-        ...(isPairUnit(item.unit) ? {} : { quantity: item.totalQuantity }),
+        ...(isPairUnit(item.unit) ? {} : { quantity: item.totalQuantity, shoreLevel: item.shoreLevel, shoreValue: item.shoreValue }),
       }));
       const res = await fetch(orderUrl, {
         method: 'POST',
@@ -252,8 +262,9 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
 
                   {isActive && (
                     <div className="px-5 pb-5 border-t border-slate-100 pt-4 space-y-4">
+                      {pair ? (
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">{pair ? tp('Renk *') : tp('Renk / açıklama (isteğe bağlı)')}</label>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">{tp('Renk *')}</label>
                         <input
                           value={orderColor}
                           onChange={e => { setOrderColor(e.target.value); setFormError(''); }}
@@ -262,6 +273,28 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
                           autoFocus
                         />
                       </div>
+                      ) : (
+                      <div className="space-y-2" data-testid={`catalog-shore-${product.id}`}>
+                        <label className="block text-xs font-medium text-slate-600">{tp('Shore')} *</label>
+                        <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label={tp('Shore')}>
+                          {SHORE_LEVELS.map(l => (
+                            <button key={l} type="button" role="radio" aria-checked={orderShoreLevel === l}
+                              onClick={() => { setOrderShoreLevel(l); setFormError(''); }}
+                              className={`py-2 rounded-lg text-sm font-medium border ${orderShoreLevel === l ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                              {tp(l)}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-slate-500" htmlFor={`shore-${product.id}`}>{tp('Shore değeri')}</label>
+                          <input id={`shore-${product.id}`} inputMode="numeric" value={orderShoreValue}
+                            onChange={e => { setOrderShoreValue(e.target.value.replace(/[^0-9]/g, '').slice(0, 3)); setFormError(''); }}
+                            className="w-20 px-2 py-1.5 border border-slate-200 rounded-lg text-sm text-center focus:ring-2 focus:ring-blue-500 outline-none"
+                            data-testid={`catalog-shore-value-${product.id}`} />
+                        </div>
+                        <p className="text-xs text-slate-400">{tp(SHORE_NOTE)}</p>
+                      </div>
+                      )}
 
                       {pair ? (
                       <div>
@@ -335,7 +368,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
               <table className="w-full text-sm">
                 <thead className="bg-slate-50">
                   <tr>
-                    {['Model', tp('Renk'), tp('Beden Dağılımı'), tp('Toplam'), ''].map(h => (
+                    {['Model', tp('Renk / Shore'), tp('Beden Dağılımı'), tp('Toplam'), ''].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
@@ -347,7 +380,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
                         {item.productCode && <span className="text-xs font-semibold text-blue-600 mr-1">{item.productCode}</span>}
                         <span className="font-medium text-slate-800">{item.productName}</span>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{item.color || '—'}</td>
+                      <td className="px-4 py-3 text-slate-600">{variantText(item) || '—'}</td>
                       <td className="px-4 py-3">
                         {!isPairUnit(item.unit) ? <span className="text-xs text-slate-500">—</span> : null}
                         <div className="flex flex-wrap gap-1">

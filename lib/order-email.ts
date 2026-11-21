@@ -1,4 +1,5 @@
 import { formatQty, isPairUnit } from './order-units';
+import { SHORE_NOTE, variantText } from './shore';
 
 // Üretim emri e-postasının saf parçaları (birim testli)
 
@@ -14,14 +15,15 @@ export function itemsTableHtml(items: any[]) {
       .filter(([, q]) => q > 0)
       .sort(([a], [b]) => a.localeCompare(b, 'tr', { numeric: true }))
       .map(([sz, q]) => `${esc(sz)}×${q}`).join(' · ');
-    return `<tr>${td(`<strong>${esc(i.productCode || '')}</strong> ${esc(i.productName || '')}`)}${td(esc(i.color || '—'))}${anyPair ? td(sizes || '—') : ''}${td(esc(formatQty(i.totalQuantity, i.unit)), 'right', true)}</tr>`;
+    return `<tr>${td(`<strong>${esc(i.productCode || '')}</strong> ${esc(i.productName || '')}`)}${td(esc(variantText(i) || '—'))}${anyPair ? td(sizes || '—') : ''}${td(esc(formatQty(i.totalQuantity, i.unit)), 'right', true)}</tr>`;
   }).join('');
   return `
   <div style="margin-bottom:20px;">
     <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Sipariş Kalemleri</p>
     <table style="border-collapse:collapse;width:100%;font-size:13px;">
-      <thead><tr>${th('Ürün')}${th('Renk')}${anyPair ? th('Beden Dağılımı') : ''}${th('Miktar', 'right')}</tr></thead>
+      <thead><tr>${th('Ürün')}${th(anyPair ? 'Renk' : 'Shore')}${anyPair ? th('Beden Dağılımı') : ''}${th('Miktar', 'right')}</tr></thead>
       <tbody>${rows}</tbody>
     </table>
+    ${anyPair ? '' : `<p style="font-size:11px;color:#64748b;margin:6px 0 0;">${esc(SHORE_NOTE)}</p>`}
   </div>`;
 }

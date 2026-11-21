@@ -12,7 +12,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { api } from '@/core/api';
 import { confirm, notify } from '@/core/dialog';
 import { formatDate } from '@/core/format';
-import { cartItem, formatQty, isPairUnit, orderBody, orderUnit, sizeSummary, sizesOf, unitDecimals, type CatalogProduct, type OrderItem } from '@/core/portal';
+import { DEFAULT_SHORE_LEVEL, DEFAULT_SHORE_VALUE, SHORE_LEVELS, SHORE_NOTE, cartItem, formatQty, isPairUnit, orderBody, orderUnit, sizeSummary, sizesOf, unitDecimals, variantText, type CatalogProduct, type OrderItem } from '@/core/portal';
 import { formatAmountInput } from '@/core/amount';
 import { useApi } from '@/core/query';
 import { useTheme } from '@/hooks/use-theme';
@@ -203,6 +203,8 @@ function AddToCart({ product, cartUnit, onAdd, onClose }: { product: CatalogProd
   const unit = orderUnit(product.unit);
   const pair = isPairUnit(unit);
   const [color, setColor] = useState('');
+  const [shoreLevel, setShoreLevel] = useState<string>(DEFAULT_SHORE_LEVEL);
+  const [shoreValue, setShoreValue] = useState(String(DEFAULT_SHORE_VALUE));
   const [raw, setRaw] = useState<Record<string, string>>({});
   const [qty, setQty] = useState('');
   const [error, setError] = useState('');
@@ -211,14 +213,25 @@ function AddToCart({ product, cartUnit, onAdd, onClose }: { product: CatalogProd
   const add = () => {
     // Sepette tek birim: farklı birimli ürünler ayrı siparişte gönderilir
     if (cartUnit && cartUnit !== unit) return setError(`Sepette ${cartUnit} birimli ürün var. ${unit} birimli ürünü ayrı bir siparişte gönderin.`);
-    const r = cartItem(product, color, raw, qty);
+    const r = cartItem(product, color, raw, qty, { level: shoreLevel, value: shoreValue });
     if (typeof r === 'string') return setError(r);
     onAdd(r);
   };
 
   return (
     <BottomSheet title={product.code ? `${product.code} · ${product.name}` : product.name} subtitle={product.description || undefined} onClose={onClose} testID="add-to-cart">
-      <Field label={pair ? 'Renk' : 'Renk / açıklama (isteğe bağlı)'} value={color} onChangeText={v => { setColor(v); setError(''); }} placeholder="örn. Siyah" testID="cart-color" />
+      {pair ? (
+        <Field label="Renk" value={color} onChangeText={v => { setColor(v); setError(''); }} placeholder="örn. Siyah" testID="cart-color" />
+      ) : (
+        // Hammaddede renk yok: shore seviyesi + değeri (varsayılan 65, ±2)
+        <View style={{ gap: 8 }} testID="cart-shore">
+          <T variant="label">Shore</T>
+          <Segmented value={shoreLevel} onChange={v => { setShoreLevel(v); setError(''); }} options={SHORE_LEVELS.map(l => ({ value: l, label: l }))} />
+          <Field label="Shore değeri" value={shoreValue} onChangeText={v => { setShoreValue(v.replace(/\D/g, '').slice(0, 3)); setError(''); }}
+            keyboardType="number-pad" testID="cart-shore-value" />
+          <T variant="small">{SHORE_NOTE}</T>
+        </View>
+      )}
       {pair ? <View style={{ gap: 6 }}>
         <T variant="label">Beden adetleri (çift)</T>
         <View style={styles.sizes}>
@@ -287,7 +300,7 @@ function Checkout({ orderUrl, extraBody, items, onRemove, onClose, onSent }: {
         {items.map((i, idx) => (
           <View key={i.key} style={[styles.cartRow, idx > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }]}>
             <View style={{ flex: 1, minWidth: 0 }}>
-              <T style={{ fontWeight: '600' }} numberOfLines={1}>{[i.productCode || i.productName, i.color].filter(Boolean).join(' · ')}</T>
+              <T style={{ fontWeight: '600' }} numberOfLines={1}>{[i.productCode || i.productName, variantText(i)].filter(Boolean).join(' · ')}</T>
               {isPairUnit(i.unit) ? <T variant="small" numberOfLines={2}>{sizeSummary(i.sizeDistribution)}</T> : null}
             </View>
             <T style={{ fontWeight: '700' }}>{formatQty(i.totalQuantity, i.unit)}</T>

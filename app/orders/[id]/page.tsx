@@ -12,6 +12,7 @@ import SizeTable from '@/app/portal/components/size-table';
 import Link from 'next/link';
 import BackLink from '@/app/components/back-link';
 import { Loader2, Save, Truck, ShoppingCart, Printer, X, Factory, CheckCircle, AlertTriangle, Package, Check } from 'lucide-react';
+import { variantLabel, variantText } from '@/lib/shore';
 
 
 const fmt = (d: string | null | undefined) =>
@@ -321,7 +322,7 @@ export default function OrderDetailPage() {
                   <p className="text-xs text-slate-400 mb-2 uppercase tracking-wide font-semibold">Sipariş Kalemleri</p>
                   <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
                     <thead className="bg-slate-50">
-                      <tr>{['Ürün', 'Renk', ...(pair ? ['Beden'] : []), 'Miktar', ...(pair ? [''] : [])].map(h => (
+                      <tr>{['Ürün', variantLabel(order.unit), ...(pair ? ['Beden'] : []), 'Miktar', ...(pair ? [''] : [])].map(h => (
                         <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b border-slate-200">{h}</th>
                       ))}</tr>
                     </thead>
@@ -332,7 +333,7 @@ export default function OrderDetailPage() {
                             <span className="font-semibold text-blue-600">{item.productCode || '—'}</span>
                             {item.productName && <span className="block text-slate-500">{item.productName}</span>}
                           </td>
-                          <td className="px-3 py-2 text-slate-600 text-xs">{item.color || '—'}</td>
+                          <td className="px-3 py-2 text-slate-600 text-xs">{variantText({ ...item, unit: item.unit ?? order.unit }) || '—'}</td>
                           {pair && <td className="px-3 py-2">
                             <div className="flex flex-wrap gap-1">
                               {Object.entries(item.sizeDistribution || {}).filter(([, q]) => (q as number) > 0).map(([sz, q]) => (
@@ -654,7 +655,7 @@ export default function OrderDetailPage() {
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Paket İçeriği</p>
                 <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
                   <thead className="bg-slate-50">
-                    <tr>{['Model', 'Renk', 'Beden Dağılımı', 'Adet'].map(h => (
+                    <tr>{['Model', variantLabel(order.unit), 'Beden Dağılımı', 'Adet'].map(h => (
                       <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b">{h}</th>
                     ))}</tr>
                   </thead>
@@ -662,7 +663,7 @@ export default function OrderDetailPage() {
                     {(order.orderItems as any[]).map((item: any, i: number) => (
                       <tr key={i}>
                         <td className="px-3 py-2 text-xs font-semibold text-slate-700">{item.productCode || item.productName || '—'}</td>
-                        <td className="px-3 py-2 text-xs text-slate-600">{item.color || '—'}</td>
+                        <td className="px-3 py-2 text-xs text-slate-600">{variantText({ ...item, unit: item.unit ?? order.unit }) || '—'}</td>
                         <td className="px-3 py-2 text-xs text-slate-600">
                           {Object.entries(item.sizeDistribution || {}).filter(([, q]) => (q as number) > 0).map(([s, q]) => `${s}×${q}`).join(' ')}
                         </td>

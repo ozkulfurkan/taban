@@ -10,6 +10,7 @@ import OrderStepper from '@/app/portal/components/order-stepper';
 import { stageLabel, statusLabel } from '@/lib/order-status';
 import { isPairUnit } from '@/lib/order-units';
 import { ShippedTable } from '@/app/components/shipment-qty';
+import { variantLabel, variantText } from '@/lib/shore';
 
 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleDateString('tr-TR') : '—');
 const sizes = (d: Record<string, number> = {}) => Object.entries(d)
@@ -55,13 +56,13 @@ export default function NetworkOrderDetailPage() {
           <h2 className="font-semibold text-slate-700 mb-3">Kalemler</h2>
           <table className="w-full text-sm">
             <thead><tr className="text-left text-xs text-slate-400 uppercase">
-              <th className="py-2">Ürün</th><th>Renk</th>{isPairUnit(order.unit) && <th>Beden dağılımı</th>}<th className="text-right">Miktar</th>
+              <th className="py-2">Ürün</th><th>{variantLabel(order.unit)}</th>{isPairUnit(order.unit) && <th>Beden dağılımı</th>}<th className="text-right">Miktar</th>
             </tr></thead>
             <tbody className="divide-y divide-slate-100">
               {items.map((it, i) => (
                 <tr key={i}>
                   <td className="py-2.5 font-semibold text-slate-700">{[it.productCode, it.productName].filter(Boolean).join(' · ') || '—'}</td>
-                  <td className="text-slate-600">{it.color || '—'}</td>
+                  <td className="text-slate-600">{variantText({ ...it, unit: (it as any).unit ?? order.unit }) || '—'}</td>
                   {isPairUnit(order.unit) && <td>
                     <div className="flex flex-wrap gap-1">
                       {sizes(it.sizeDistribution).map(([sz, q]) => (

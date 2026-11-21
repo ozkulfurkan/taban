@@ -42,12 +42,18 @@ test('tekli siparişte satır; beden özeti sayısal sırada; durum adımı', ()
   assert.equal(stepIndex('READY_FOR_SHIPMENT', 'kg'), 2);
 });
 
-test('birime göre sepet kalemi: kg ondalıklı miktar, adet tam sayı, renk isteğe bağlı', () => {
+test('birime göre sepet kalemi: kg ondalıklı miktar, adet tam sayı, hammaddede renk yerine shore', () => {
   const kg: CatalogProduct = { id: 'm1', code: 'PVC', name: 'PVC Granül', description: null, sizes: [], unit: 'kg' };
   assert.deepEqual(cartItem(kg, '', {}, '1.250,5'), {
     productId: 'm1', productCode: 'PVC', productName: 'PVC Granül', color: '', sizeDistribution: {},
-    totalQuantity: 1250.5, unit: 'kg', quantity: 1250.5,
+    totalQuantity: 1250.5, unit: 'kg', quantity: 1250.5, shoreLevel: 'Standart', shoreValue: 65,
   });
+  // Renk yazılsa da hammaddede tutulmaz; shore seçimi ve değeri alınır
+  assert.deepEqual(cartItem(kg, 'Mavi', {}, '10', { level: 'Sert', value: '70' }), {
+    productId: 'm1', productCode: 'PVC', productName: 'PVC Granül', color: '', sizeDistribution: {},
+    totalQuantity: 10, unit: 'kg', quantity: 10, shoreLevel: 'Sert', shoreValue: 70,
+  });
+  assert.equal(cartItem(kg, '', {}, '10', { level: 'Sert', value: '150' }), 'Shore değeri 0–100 arası tam sayı olmalı');
   assert.equal(cartItem(kg, '', {}, ''), 'Geçerli bir miktar girin (kg).');
   const adet: CatalogProduct = { ...kg, id: 'a1', unit: 'adet' };
   assert.equal(cartItem(adet, '', {}, '2,5'), 'Geçerli bir miktar girin (adet).');

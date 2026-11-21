@@ -12,6 +12,7 @@ import { Loader2, RefreshCw, Truck } from 'lucide-react';
 import { usePortalText } from '@/lib/i18n/portal';
 import BackLink from '@/app/components/back-link';
 import { stageLabel } from '@/lib/order-status';
+import { variantLabel, variantText } from '@/lib/shore';
 
 export default function PortalOrderDetailPage() {
   const { tp } = usePortalText();
@@ -84,7 +85,7 @@ export default function PortalOrderDetailPage() {
               <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
                 <thead className="bg-slate-50">
                   <tr>
-                    {['Model', tp('Renk'), tp('Beden Dağılımı'), tp('Adet')].map(h => (
+                    {['Model', tp(variantLabel(order.unit)), tp('Beden Dağılımı'), tp('Adet')].map(h => (
                       <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 border-b border-slate-200">{h}</th>
                     ))}
                   </tr>
@@ -96,7 +97,7 @@ export default function PortalOrderDetailPage() {
                         {item.productCode && <span className="text-blue-600 mr-1">{item.productCode}</span>}
                         {item.productName}
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-slate-600">{item.color || '—'}</td>
+                      <td className="px-3 py-2.5 text-xs text-slate-600">{variantText({ ...item, unit: item.unit ?? order.unit }) || '—'}</td>
                       <td className="px-3 py-2.5">
                         <div className="flex flex-wrap gap-1">
                           {Object.entries(item.sizeDistribution || {})

@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Badge, Card, Section, T } from '@/components/ui';
 import { formatDate } from '@/core/format';
-import { formatDiff, formatQty, orderLines, orderSteps, sizeSummary, stageLabel, statusLabel, statusTone, stepIndex, type PortalOrder } from '@/core/portal';
+import { SHORE_NOTE, formatDiff, formatQty, isPairUnit, orderLines, orderSteps, sizeSummary, stageLabel, statusLabel, statusTone, stepIndex, variantText, type PortalOrder } from '@/core/portal';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
@@ -58,13 +58,15 @@ export function OrderDetailBody({ order: o, subtitle, children }: { order: Porta
             <View key={i} style={[styles.item, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }]} testID={`order-line-${i}`}>
               <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                 <T style={{ fontWeight: '600' }} numberOfLines={1}>{[l.productCode, l.productName].filter(Boolean).join(' · ') || 'Model'}</T>
-                {l.color ? <T variant="small">Renk: {l.color}</T> : null}
+                {isPairUnit(l.unit ?? o.unit) ? (l.color ? <T variant="small">Renk: {l.color}</T> : null)
+                  : variantText({ ...l, unit: l.unit ?? o.unit }) ? <T variant="small">Shore: {variantText({ ...l, unit: l.unit ?? o.unit })}</T> : null}
                 {sizeSummary(l.sizeDistribution) ? <T variant="small">{sizeSummary(l.sizeDistribution)}</T> : null}
               </View>
               <T style={{ fontWeight: '700' }}>{formatQty(l.totalQuantity, l.unit ?? o.unit)}</T>
             </View>
           ))}
         </Card>
+              {lines.some(l => !isPairUnit(l.unit ?? o.unit) && l.shoreLevel) ? <T variant="small" testID="order-shore-note">{SHORE_NOTE}</T> : null}
       </Section>
 
       {(o.material || partials.length || o.requestedDeliveryDate || o.confirmedDeliveryDate || o.notes) ? (
