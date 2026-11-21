@@ -125,7 +125,7 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 - **Karar (21.11):** Kapsam şimdilik mevcut sipariş bildirimleri; saklama süresiz.
 - **Etkilenen alanlar:** web, mobil, API, veritabanı
 - **Büyüklük:** M
-- **Durum:** PR açıldı [#41](https://github.com/ozkulfurkan/taban/pull/41). Neon'da SQL çalıştırılınca birleştirilecek.
+- **Durum:** Tamamlandı [#41](https://github.com/ozkulfurkan/taban/pull/41)
 
 <!--
 Kayıt şablonu:
