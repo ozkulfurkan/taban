@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Linking, Share, Switch, View } from 'react-native';
 
 import { Sheet } from '@/components/sheet';
+import { api } from '@/core/api';
 
 import { Button, Card, ListRow, Screen, Section, Segmented, T } from '@/components/ui';
 import { useAuth } from '@/core/auth';
@@ -95,6 +96,37 @@ function CompanyLogo() {
   );
 }
 
+/** Günlük özet e-postası (her sabah 10:00): firma sahibi / yönetici açıp kapatır */
+function DailySummarySwitch() {
+  const c = useTheme();
+  const qc = useQueryClient();
+  const company = useApi<{ dailySummaryEmail?: boolean }>('/api/company');
+  const [busy, setBusy] = useState(false);
+  const on = company.data?.dailySummaryEmail !== false;
+  const set = async (v: boolean) => {
+    setBusy(true);
+    try {
+      await api('/api/company', { method: 'PUT', body: { dailySummaryEmail: v } });
+      await qc.invalidateQueries({ queryKey: ['/api/company'] });
+    } catch (e: any) {
+      notify('Kaydedilemedi', e?.message || 'Tekrar deneyin.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Section title="E-posta">
+      <Card style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <View style={{ flex: 1 }}>
+          <T style={{ fontWeight: '600' }}>Günlük özet e-postası</T>
+          <T variant="small">Her sabah 10:00&apos;da bekleyen siparişler ve kasa/banka detayı gönderilir.</T>
+        </View>
+        <Switch value={on} disabled={busy || company.isLoading} onValueChange={v => { void set(v); }} trackColor={{ true: c.primary }} testID="settings-daily-summary" />
+      </Card>
+    </Section>
+  );
+}
+
 /** Firma ve portal kullanıcıları için ortak ayarlar içeriği */
 export function SettingsBody() {
   const c = useTheme();
@@ -120,6 +152,7 @@ export function SettingsBody() {
       </Card>
 
       {manager ? <CompanyLogo /> : null}
+      {manager ? <DailySummarySwitch /> : null}
 
       <Section title="Hesap">
         <Card style={{ padding: 0, gap: 0 }}>
