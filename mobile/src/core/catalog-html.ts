@@ -20,12 +20,12 @@ export function formatPrice(n: number, currency: string) {
   return `${v} ${currency}`;
 }
 
-function card(p: CatalogProduct, showPrices: boolean) {
+function card(p: CatalogProduct, showPrices: boolean, last = false) {
   const img = safeImg(p.image);
   const meta = [p.category, p.renk ? `Renk: ${p.renk}` : null, p.shore ? `Shore: ${p.shore}` : null].filter(Boolean).join(' · ');
   const sizes = p.sizes?.length ? `Numara: ${p.sizes.join(', ')}` : '';
   return `
-    <div class="card">
+    <div class="card${last ? ' last' : ''}">
       <div class="img">${img ? `<img src="${img}" alt="">` : `<div class="noimg">${esc((p.code || p.name).slice(0, 2).toLocaleUpperCase('tr-TR'))}</div>`}</div>
       <div class="body">
         ${p.code ? `<div class="code">${esc(p.code)}</div>` : ''}
@@ -36,6 +36,13 @@ function card(p: CatalogProduct, showPrices: boolean) {
         ${showPrices && p.unitPrice > 0 ? `<div class="price">${esc(formatPrice(p.unitPrice, p.currency))}<span> / ${esc(p.unit || 'çift')}</span></div>` : ''}
       </div>
     </div>`;
+}
+
+/** Ürünleri ikişerli satırlara böler (her satır sayfada bölünmeden tek parça basılır) */
+export function rows<T>(items: T[]): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += 2) out.push(items.slice(i, i + 2));
+  return out;
 }
 
 export function catalogHtml(company: CatalogCompany, products: CatalogProduct[], o: CatalogOptions) {
@@ -52,11 +59,15 @@ export function catalogHtml(company: CatalogCompany, products: CatalogProduct[],
   .co { flex: 1; } .co b { font-size: 16px; display: block; } .co span { color: #6B5B60; }
   .title { margin: 16px 0 4px; font-size: 22px; font-weight: 800; color: ${BRAND}; }
   .sub { color: #6B5B60; margin-bottom: 14px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .card { border: 1px solid #EDE2E5; border-radius: 12px; overflow: hidden; page-break-inside: avoid; break-inside: avoid; display: flex; flex-direction: column; }
-  .img { height: 190px; background: #FAF6F6; display: flex; align-items: center; justify-content: center; }
-  .img img { width: 100%; height: 100%; object-fit: cover; }
-  .noimg { font-size: 34px; font-weight: 800; color: #D9C4CA; }
+  /* Yazdırmada (iOS WebKit) grid/flex öğeleri sayfa sonunda bölünüyor: ürünler ikişerli,
+     bölünmez blok satırlara dizilir; kartlar inline-block olur. */
+  .row { display: block; page-break-inside: avoid; break-inside: avoid; margin-bottom: 12px; white-space: nowrap; font-size: 0; }
+  .card { display: inline-block; vertical-align: top; width: 49%; margin-right: 2%; white-space: normal; font-size: 11px;
+    border: 1px solid #EDE2E5; border-radius: 12px; overflow: hidden; page-break-inside: avoid; break-inside: avoid; }
+  .card.last { margin-right: 0; }
+  .img { display: block; height: 190px; background: #FAF6F6; text-align: center; overflow: hidden; }
+  .img img { display: block; width: 100%; height: 190px; object-fit: cover; }
+  .noimg { line-height: 190px; font-size: 34px; font-weight: 800; color: #D9C4CA; }
   .body { padding: 10px 12px 12px; }
   .code { color: ${BRAND}; font-weight: 700; font-size: 10px; letter-spacing: .5px; }
   .name { font-size: 13px; font-weight: 700; margin: 2px 0 4px; }
@@ -72,7 +83,7 @@ export function catalogHtml(company: CatalogCompany, products: CatalogProduct[],
   </div>
   <div class="title">${esc(o.title || 'Ürün Kataloğu')}</div>
   <div class="sub">${o.customerName ? `Sayın ${esc(o.customerName)} · ` : ''}${date} · ${products.length} ürün${o.showPrices ? '' : ' · Fiyat için bizimle iletişime geçin'}</div>
-  <div class="grid">${products.map(p => card(p, o.showPrices)).join('')}</div>
+  ${rows(products).map(r => `<div class="row">${r.map((p, i) => card(p, o.showPrices, i === 1)).join('')}</div>`).join('')}
   <div class="foot">Bu katalog <b>SoleCost</b> tarafından üretilmiştir</div>
 </body></html>`;
 }

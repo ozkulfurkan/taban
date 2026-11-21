@@ -12,6 +12,7 @@ import {
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/lib/i18n/language-context';
+import { BrandMark } from '@/app/components/brand-mark';
 
 type LinkItem = { href: string; label: string; icon: any; special?: boolean };
 type Section = { title?: string; links: LinkItem[] };
@@ -137,13 +138,13 @@ export default function Sidebar() {
       <div className="p-4 flex items-center justify-between border-b border-blue-800/30">
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/30">SC</div>
+            <BrandMark size={36} />
             <span className="text-white font-semibold text-lg">SoleCost</span>
           </Link>
         )}
         {collapsed && (
           <Link href="/dashboard" className="mx-auto">
-            <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/30">SC</div>
+            <BrandMark size={36} />
           </Link>
         )}
         <button

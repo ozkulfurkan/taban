@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandMark } from '@/components/brand-mark';
 import { Button, Field, Segmented, T } from '@/components/ui';
 import { useAuth } from '@/core/auth';
 import { Spacing } from '@/constants/theme';
@@ -33,9 +34,7 @@ export default function Login() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.wrap}>
         <View style={styles.brand}>
-          <View style={[styles.logo, { backgroundColor: c.primary }]}>
-            <T variant="title" color="#fff">S</T>
-          </View>
+          <BrandMark size={64} />
           <T variant="title">SoleCost</T>
           <T variant="small">Taban üretiminde maliyet, cari ve stok</T>
         </View>

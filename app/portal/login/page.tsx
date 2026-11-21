@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { usePortalText } from '@/lib/i18n/portal';
+import { BrandMark } from '@/app/components/brand-mark';
 
 export default function PortalLoginPage() {
   const { tp } = usePortalText();
@@ -49,9 +50,7 @@ export default function PortalLoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-900 to-blue-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-blue-600/30">
-            <span className="text-white font-bold text-xl">SC</span>
-          </div>
+          <BrandMark size={56} className="mb-4" />
           <h1 className="text-2xl font-bold text-white">{tp('Müşteri Portalı')}</h1>
           <p className="text-blue-300 text-sm mt-1">{tp('SoleCost B2B Sipariş Sistemi')}</p>
         </div>
