@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authorizeStaff, authorizePortalCustomer } from '@/lib/auth-options';
 import { issueMobileToken } from '@/lib/mobile-token';
+import { ChooseAccountError } from '@/lib/portal-login';
 
 // Mobil giriş: web girişiyle aynı doğrulama (deneme sınırı, e-posta doğrulaması, portal ayrımı).
 // Dönen token "Authorization: Bearer" başlığıyla kullanılır.
@@ -25,11 +26,16 @@ export async function POST(req: NextRequest) {
   const kind = body.kind === 'portal' ? 'portal' : 'staff';
   if (!email || !password) return NextResponse.json({ error: 'E-posta ve şifre gerekli' }, { status: 400 });
 
+  // Portal: aynı e-posta birden fazla firmada hesapsa önce firma seçilir (accountId ile tekrar istenir)
+  const accountId = typeof body.accountId === 'string' && body.accountId ? body.accountId : '';
   let user: any;
   try {
     const authorize = kind === 'portal' ? authorizePortalCustomer : authorizeStaff;
-    user = await authorize({ email, password }, { headers: Object.fromEntries(req.headers) });
+    user = await authorize({ email, password, ...(kind === 'portal' && accountId ? { accountId } : {}) }, { headers: Object.fromEntries(req.headers) });
   } catch (e) {
+    if (e instanceof ChooseAccountError) {
+      return NextResponse.json({ error: 'Hangi firmanın portalına girmek istediğinizi seçin', code: 'CHOOSE_ACCOUNT', accounts: e.accounts }, { status: 409 });
+    }
     return fail((e as Error).message);
   }
   if (!user) return fail('INVALID_CREDENTIALS');

@@ -32,8 +32,9 @@ export async function POST(req: NextRequest) {
   });
   if (!customer) return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
 
-  const existing = await prisma.portalCustomer.findUnique({ where: { email } });
-  if (existing) return NextResponse.json({ error: 'Bu e-posta ile zaten bir portal hesabı var' }, { status: 400 });
+  // Aynı e-posta başka firmaların portalında da kullanılabilir; yalnızca bu firmada tekil
+  const existing = await prisma.portalCustomer.findFirst({ where: { companyId: user.companyId, email: { equals: email, mode: 'insensitive' } } });
+  if (existing) return NextResponse.json({ error: 'Bu e-posta ile firmanızda zaten bir portal hesabı var' }, { status: 400 });
   if (await prisma.portalCustomer.findUnique({ where: { customerId } })) {
     return NextResponse.json({ error: 'Bu müşterinin zaten bir portal hesabı var' }, { status: 400 });
   }
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
   const portalCustomer = await prisma.portalCustomer.create({
     data: {
       customerId,
+      companyId: user.companyId,
       email,
       name: name || customer.name,
       password: hashedPassword,

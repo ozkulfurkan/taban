@@ -95,7 +95,7 @@ test('portal müşterisi: portal girişi, portal API erişimi, firma API yasak',
   expect((await anon.get('/api/portal/me/orders', { headers: auth(token) })).status()).toBe(200);
   expect((await anon.get('/api/customers', { headers: auth(token) })).status()).toBe(403);
 
-  await prisma.portalCustomer.update({ where: { email: portalEmail }, data: { isActive: false } });
+  await prisma.portalCustomer.updateMany({ where: { email: portalEmail }, data: { isActive: false } });
   expect((await anon.get('/api/mobile/auth/me', { headers: auth(token) })).status()).toBe(401);
 });
 

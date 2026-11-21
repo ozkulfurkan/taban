@@ -160,7 +160,7 @@ test('portal şifresi sıfırlanınca portal müşterisinin eski mobil token’�
   expect((await anon.get('/api/portal/me/orders', { headers: bearer })).status()).toBe(200);
 
   await new Promise(r => setTimeout(r, 1100));
-  const pc = await prisma.portalCustomer.findUniqueOrThrow({ where: { email: portalEmail } });
+  const pc = await prisma.portalCustomer.findFirstOrThrow({ where: { email: portalEmail } });
   expect((await A.owner.put(`/api/portal/customers/${pc.id}`, { data: { newPassword: 'YeniSifre123' } })).status()).toBe(200);
   expect((await anon.get('/api/portal/me/orders', { headers: bearer })).status()).toBe(401);
 });
