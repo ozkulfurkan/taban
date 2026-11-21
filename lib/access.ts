@@ -44,6 +44,7 @@ const PORTAL_API_PREFIXES = [
   '/api/mobile/push-token', // kendi cihazının bildirim kaydı
   '/api/portal/fason/',
   '/api/portal/auth/verify-email',
+  '/api/account/password', // kendi şifresini değiştirme (web ve mobil portal)
   '/api/exchange-rates', // genel kur bilgisi, firma verisi içermez
 ];
 

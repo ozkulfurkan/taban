@@ -58,6 +58,7 @@ export default withAuth(
         pathname.startsWith('/portal/dashboard') ||
         pathname.startsWith('/portal/orders') ||
         pathname.startsWith('/portal/catalog') ||
+        pathname.startsWith('/portal/hesap') ||
         pathname.startsWith('/portal/fason/');
       if (isPortalCustomerRoute) {
         return NextResponse.redirect(new URL('/dashboard', req.url));
@@ -105,6 +106,8 @@ export const config = {
     '/portal/dashboard/:path*',
     '/portal/orders/:path*',
     '/portal/catalog/:path*',
+    '/portal/hesap/:path*',
+    '/portal/hesap',
     '/portal-admin/:path*',
     '/portal-admin',
     '/subcontractors/:path*',
