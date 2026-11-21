@@ -37,11 +37,25 @@ async function send(tokens: string[], msg: PushMessage) {
   if (dead.length) await prisma.pushToken.deleteMany({ where: { token: { in: dead } } }).catch(() => {});
 }
 
-/** Firma kullanıcılarına (verilen id'ler) */
+/** Bildirim kutusuna kayıt; hata loglanır, gönderimi ve çağıran işlemi bozmaz */
+async function saveInbox(rows: Array<{ userId?: string; companyId?: string | null; portalCustomerId?: string }>, msg: PushMessage) {
+  if (!rows.length) return;
+  try {
+    await prisma.notification.createMany({
+      data: rows.map(r => ({ ...r, title: msg.title.slice(0, 200), body: msg.body.slice(0, 1000), url: msg.url ?? null })),
+    });
+  } catch (e) {
+    console.error('notification inbox', e);
+  }
+}
+
+/** Firma kullanıcılarına (verilen id'ler): bildirim kutusuna yazılır ve cihazlara gönderilir */
 export async function pushToUsers(userIds: (string | null | undefined)[], msg: PushMessage) {
   try {
     const ids = Array.from(new Set(userIds.filter((x): x is string => !!x)));
     if (!ids.length) return;
+    const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, companyId: true } });
+    await saveInbox(users.map(u => ({ userId: u.id, companyId: u.companyId })), msg);
     const rows = await prisma.pushToken.findMany({ where: { userId: { in: ids } }, select: { token: true } });
     await send(rows.map(r => r.token), msg);
   } catch (e) {
@@ -49,10 +63,11 @@ export async function pushToUsers(userIds: (string | null | undefined)[], msg: P
   }
 }
 
-/** Portal müşterisine */
+/** Portal müşterisine: bildirim kutusuna yazılır ve cihazlarına gönderilir */
 export async function pushToPortalCustomer(portalCustomerId: string | null | undefined, msg: PushMessage) {
   try {
     if (!portalCustomerId) return;
+    await saveInbox([{ portalCustomerId }], msg);
     const rows = await prisma.pushToken.findMany({ where: { portalCustomerId }, select: { token: true } });
     await send(rows.map(r => r.token), msg);
   } catch (e) {

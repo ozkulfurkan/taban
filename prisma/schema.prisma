@@ -1,11 +1,11 @@
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
-    directUrl = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -65,116 +65,118 @@ enum CompanyType {
 }
 
 model Company {
-  id                 String             @id @default(cuid())
-  name               String
-  subscriptionStatus SubscriptionStatus @default(TRIAL)
-  trialEndsAt        DateTime?
-  address            String?
-  taxId              String?
-  phone              String?
-  bankInfo           String?
-  logoUrl            String?
-  usdToTry           Float              @default(1)
-  eurToTry           Float              @default(1)
-  vatRate            Float              @default(20)
-  companyType        CompanyType        @default(SOLE_MANUFACTURER)
+  id                      String                   @id @default(cuid())
+  name                    String
+  subscriptionStatus      SubscriptionStatus       @default(TRIAL)
+  trialEndsAt             DateTime?
+  address                 String?
+  taxId                   String?
+  phone                   String?
+  bankInfo                String?
+  logoUrl                 String?
+  usdToTry                Float                    @default(1)
+  eurToTry                Float                    @default(1)
+  vatRate                 Float                    @default(20)
+  companyType             CompanyType              @default(SOLE_MANUFACTURER)
   // Firmalar arası bağlantı kodu (örn. SC-7K4P9Q); başka firma bununla tedarikçi olarak ekler
-  code               String?            @unique
+  code                    String?                  @unique
   // Firma sahibi hesabını silince: firma pasif, bu tarihte tüm verisiyle silinir (talep eden giriş yaparsa iptal)
-  deletionScheduledAt   DateTime?
-  deletionRequestedById String?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  deletionScheduledAt     DateTime?
+  deletionRequestedById   String?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
   /// Her sabah TR 10:00'da firma sahibi/yöneticilere özet e-postası (bekleyen siparişler, kasa/banka)
-  dailySummaryEmail  Boolean   @default(true)
-  users              User[]
-  buyerLinks         CompanyLink[]      @relation("LinkBuyer")
-  sellerLinks        CompanyLink[]      @relation("LinkSeller")
-  auditLogs          AuditLog[]
-  employees          Employee[]
-  personnelDocuments PersonnelDocument[]
-  materials          Material[]
-  soleCalculations   SoleCalculation[]
-  customers          Customer[]
-  suppliers          Supplier[]
-  invoices           Invoice[]
-  purchases          Purchase[]
-  payments           Payment[]
-  products           Product[]
-  accounts           Account[]
-  cekler             Cek[]
-  soleOrders            SoleOrder[]
-  subcontractors        Subcontractor[]
-  subcontractorOrders   SubcontractorOrder[]
-  materialTransfers     MaterialTransfer[]
-  subcontractorScraps   SubcontractorScrap[]
-  stockAdjustments      StockAdjustment[]
-  productCategories     ProductCategory[]
-  customerCategories    CustomerCategory[]
-  supplierCategories    SupplierCategory[]
-  customerProductPrices CustomerProductPrice[]
-  materialCalculations  MaterialCalculation[]
-  supportTickets        SupportTicket[]
+  dailySummaryEmail       Boolean                  @default(true)
+  users                   User[]
+  buyerLinks              CompanyLink[]            @relation("LinkBuyer")
+  sellerLinks             CompanyLink[]            @relation("LinkSeller")
+  auditLogs               AuditLog[]
+  employees               Employee[]
+  personnelDocuments      PersonnelDocument[]
+  materials               Material[]
+  soleCalculations        SoleCalculation[]
+  customers               Customer[]
+  suppliers               Supplier[]
+  invoices                Invoice[]
+  purchases               Purchase[]
+  payments                Payment[]
+  products                Product[]
+  accounts                Account[]
+  cekler                  Cek[]
+  soleOrders              SoleOrder[]
+  subcontractors          Subcontractor[]
+  subcontractorOrders     SubcontractorOrder[]
+  materialTransfers       MaterialTransfer[]
+  subcontractorScraps     SubcontractorScrap[]
+  stockAdjustments        StockAdjustment[]
+  productCategories       ProductCategory[]
+  customerCategories      CustomerCategory[]
+  supplierCategories      SupplierCategory[]
+  customerProductPrices   CustomerProductPrice[]
+  materialCalculations    MaterialCalculation[]
+  supportTickets          SupportTicket[]
   barcodeSettings         BarcodeSettings?
   productStockAdjustments ProductStockAdjustment[]
   statementShareLinks     StatementShareLink[]
 }
 
 model User {
-  id               String           @id @default(cuid())
-  email            String           @unique
-  name             String?
-  password         String
-  role             Role             @default(EDITOR)
-  language         String           @default("tr")
-  currency         String           @default("USD")
-  allowedPages     String[]         @default([])
-  resetToken             String?          @unique
+  id                     String            @id @default(cuid())
+  email                  String            @unique
+  name                   String?
+  password               String
+  role                   Role              @default(EDITOR)
+  language               String            @default("tr")
+  currency               String            @default("USD")
+  allowedPages           String[]          @default([])
+  resetToken             String?           @unique
   resetTokenExpiry       DateTime?
   /// Şifre değişince bu tarihten önce açılmış oturumlar (web ve mobil) geçersiz olur
   passwordChangedAt      DateTime?
-  emailVerified          Boolean          @default(false)
-  emailVerifyToken       String?          @unique
-  impersonateToken       String?          @unique
+  emailVerified          Boolean           @default(false)
+  emailVerifyToken       String?           @unique
+  impersonateToken       String?           @unique
   impersonateTokenExpiry DateTime?
   // Hesap silme: e-postaya giden onay kodu (sha256) ve silinme tarihi (pasif dönem; girişte iptal olur)
   deleteCodeHash         String?
   deleteCodeExpiry       DateTime?
   deletionScheduledAt    DateTime?
   companyId              String?
-  company          Company?         @relation(fields: [companyId], references: [id])
-  soleCalculations SoleCalculation[]
-  invoices         Invoice[]
-  auditLogs        AuditLog[]
-  supportTickets   SupportTicket[]  @relation("ticketCreator")
-  ticketMessages   TicketMessage[]  @relation("messageAuthor")
-  pushTokens       PushToken[]
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  company                Company?          @relation(fields: [companyId], references: [id])
+  soleCalculations       SoleCalculation[]
+  invoices               Invoice[]
+  auditLogs              AuditLog[]
+  supportTickets         SupportTicket[]   @relation("ticketCreator")
+  ticketMessages         TicketMessage[]   @relation("messageAuthor")
+  pushTokens             PushToken[]
+  notifications          Notification[]
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
 }
 
 model Material {
-  id                String             @id @default(cuid())
-  companyId         String
-  company           Company            @relation(fields: [companyId], references: [id])
-  name              String
-  category          String?
-  supplier          String?
-  pricePerKg        Float
-  currency          String             @default("USD")
-  description       String?
-  stock             Float              @default(0)
-  soleParts         SolePart[]
-  productParts      ProductPart[]
-  priceHistory      PriceHistory[]
+  id                  String                    @id @default(cuid())
+  companyId           String
+  company             Company                   @relation(fields: [companyId], references: [id])
+  name                String
+  category            String?
+  supplier            String?
+  pricePerKg          Float
+  currency            String                    @default("USD")
+  description         String?
+  stock               Float                     @default(0)
+  soleParts           SolePart[]
+  productParts        ProductPart[]
+  priceHistory        PriceHistory[]
   purchaseMaterials   PurchaseMaterial[]
   subcontractorStocks SubcontractorStock[]
   materialTransfers   MaterialTransfer[]
   subcontractorScraps SubcontractorScrap[]
   stockAdjustments    StockAdjustment[]
   supplierProducts    MaterialSupplierProduct[]
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+
   @@index([companyId])
 }
 
@@ -185,34 +187,36 @@ model PriceHistory {
   pricePerKg Float
   currency   String
   createdAt  DateTime @default(now())
+
   @@index([materialId])
 }
 
 model SoleCalculation {
-  id           String     @id @default(cuid())
-  companyId    String
-  company      Company    @relation(fields: [companyId], references: [id])
-  userId       String
-  user         User       @relation(fields: [userId], references: [id])
-  name         String
-  parts        SolePart[]
-  laborMethod         String   @default("direct")
-  laborCurrency       String   @default("USD")
+  id                  String     @id @default(cuid())
+  companyId           String
+  company             Company    @relation(fields: [companyId], references: [id])
+  userId              String
+  user                User       @relation(fields: [userId], references: [id])
+  name                String
+  parts               SolePart[]
+  laborMethod         String     @default("direct")
+  laborCurrency       String     @default("USD")
   monthlySalary       Float?
   workDays            Int?
   dailyProduction     Int?
-  laborCostPerPair    Float    @default(0)
-  paintCost           Float    @default(0)
-  profitMargin        Float    @default(0)
-  vatRate             Float    @default(0)
-  totalMaterialCost   Float    @default(0)
-  totalCost           Float    @default(0)
-  sellingPrice        Float    @default(0)
-  sellingPriceWithVat Float    @default(0)
-  currency            String   @default("USD")
+  laborCostPerPair    Float      @default(0)
+  paintCost           Float      @default(0)
+  profitMargin        Float      @default(0)
+  vatRate             Float      @default(0)
+  totalMaterialCost   Float      @default(0)
+  totalCost           Float      @default(0)
+  sellingPrice        Float      @default(0)
+  sellingPriceWithVat Float      @default(0)
+  currency            String     @default("USD")
   notes               String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
   @@index([companyId])
 }
 
@@ -241,33 +245,33 @@ enum PaymentType {
 }
 
 model Product {
-  id               String             @id @default(cuid())
-  companyId        String
-  company          Company            @relation(fields: [companyId], references: [id])
-  code             String?
-  name             String
-  description      String?
-  unit             String             @default("çift")
-  unitPrice        Float              @default(0)
-  currency         String             @default("USD")
-  stock            Float              @default(0)
-  notes            String?
-  sizes            String[]           @default([])
-  laborCostPerPair Float              @default(0)
-  laborCurrency    String             @default("USD")
-  ciftPerKoli      Float              @default(0)
-  koliFiyati       Float              @default(0)
-  koliCurrency     String             @default("USD")
-  renk             String?
-  shore            String?
-  portalVisible    Boolean            @default(false)
-  categoryId       String?
-  category         ProductCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  parts               ProductPart[]
-  extraCosts          ProductExtraCost[]
-  invoiceItems        InvoiceItem[]
-  soleOrders          SoleOrder[]
-  portalCustomers     ProductPortalCustomer[]
+  id                    String                    @id @default(cuid())
+  companyId             String
+  company               Company                   @relation(fields: [companyId], references: [id])
+  code                  String?
+  name                  String
+  description           String?
+  unit                  String                    @default("çift")
+  unitPrice             Float                     @default(0)
+  currency              String                    @default("USD")
+  stock                 Float                     @default(0)
+  notes                 String?
+  sizes                 String[]                  @default([])
+  laborCostPerPair      Float                     @default(0)
+  laborCurrency         String                    @default("USD")
+  ciftPerKoli           Float                     @default(0)
+  koliFiyati            Float                     @default(0)
+  koliCurrency          String                    @default("USD")
+  renk                  String?
+  shore                 String?
+  portalVisible         Boolean                   @default(false)
+  categoryId            String?
+  category              ProductCategory?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  parts                 ProductPart[]
+  extraCosts            ProductExtraCost[]
+  invoiceItems          InvoiceItem[]
+  soleOrders            SoleOrder[]
+  portalCustomers       ProductPortalCustomer[]
   subcontractorOrders   SubcontractorOrder[]
   customerProductPrices CustomerProductPrice[]
   purchaseMaterials     PurchaseMaterial[]
@@ -276,8 +280,9 @@ model Product {
   // Ürün fotoğrafı ayrı tabloda (listeler şişmesin); dolu ise fotoğraf var, değeri önbellek sürümü
   imageUpdatedAt        DateTime?
   image                 ProductImage?
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
   @@index([companyId])
 }
 
@@ -291,6 +296,7 @@ model ProductImage {
   data      Bytes
   size      Int
   updatedAt DateTime @updatedAt
+
   @@index([companyId])
 }
 
@@ -306,6 +312,7 @@ model ProductPart {
   sortOrder     Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
   @@index([productId])
 }
 
@@ -319,6 +326,7 @@ model ProductExtraCost {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@index([productId])
 }
 
@@ -335,22 +343,22 @@ model CustomerCategory {
 }
 
 model Customer {
-  id         String    @id @default(cuid())
-  companyId  String
-  company    Company   @relation(fields: [companyId], references: [id])
-  name       String
-  taxId      String?
-  taxOffice  String?
-  email      String?
-  phone      String?
-  address    String?
-  currency   String    @default("TRY")
-  notes      String?
-  status     Int       @default(0)
-  categoryId String?
-  category   CustomerCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id                    String                 @id @default(cuid())
+  companyId             String
+  company               Company                @relation(fields: [companyId], references: [id])
+  name                  String
+  taxId                 String?
+  taxOffice             String?
+  email                 String?
+  phone                 String?
+  address               String?
+  currency              String                 @default("TRY")
+  notes                 String?
+  status                Int                    @default(0)
+  categoryId            String?
+  category              CustomerCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
   invoices              Invoice[]
   payments              Payment[]
   cekler                Cek[]
@@ -359,6 +367,7 @@ model Customer {
   customerProductPrices CustomerProductPrice[]
   statementShareLinks   StatementShareLink[]
   companyLinks          CompanyLink[]
+
   @@index([companyId])
 }
 
@@ -375,57 +384,58 @@ model SupplierCategory {
 }
 
 model Supplier {
-  id         String     @id @default(cuid())
-  companyId  String
-  company    Company    @relation(fields: [companyId], references: [id])
-  name       String
-  taxId      String?
-  email      String?
-  phone      String?
-  address    String?
-  currency   String     @default("USD")
-  notes      String?
-  status     Int        @default(0)
-  categoryId String?
-  category   SupplierCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  purchases Purchase[]
-  payments  Payment[]
-  cekler    Cek[]
+  id                  String               @id @default(cuid())
+  companyId           String
+  company             Company              @relation(fields: [companyId], references: [id])
+  name                String
+  taxId               String?
+  email               String?
+  phone               String?
+  address             String?
+  currency            String               @default("USD")
+  notes               String?
+  status              Int                  @default(0)
+  categoryId          String?
+  category            SupplierCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  purchases           Purchase[]
+  payments            Payment[]
+  cekler              Cek[]
   statementShareLinks StatementShareLink[]
   companyLinks        CompanyLink[]
+
   @@index([companyId])
 }
 
 model Invoice {
-  id             String        @id @default(cuid())
-  companyId      String
-  company        Company       @relation(fields: [companyId], references: [id])
-  customerId     String
-  customer       Customer      @relation(fields: [customerId], references: [id])
-  invoiceNo      String
-  date           DateTime
-  dueDate        DateTime?
-  irsaliyeNo     String?
-  sevkTarihi     DateTime?
-  currency       String        @default("USD")
-  subtotal       Float         @default(0)
-  vatRate        Float         @default(0)
-  vatAmount      Float         @default(0)
-  total          Float         @default(0)
-  paidAmount     Float         @default(0)
-  status         InvoiceStatus @default(PENDING)
-  isReturn       Boolean       @default(false)
-  stockDeducted  Boolean       @default(false)
-  notes          String?
-  createdById    String?
-  createdBy      User?         @relation(fields: [createdById], references: [id])
-  items          InvoiceItem[]
-  payments       Payment[]
-  soleOrder      SoleOrder?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  companyId     String
+  company       Company       @relation(fields: [companyId], references: [id])
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  invoiceNo     String
+  date          DateTime
+  dueDate       DateTime?
+  irsaliyeNo    String?
+  sevkTarihi    DateTime?
+  currency      String        @default("USD")
+  subtotal      Float         @default(0)
+  vatRate       Float         @default(0)
+  vatAmount     Float         @default(0)
+  total         Float         @default(0)
+  paidAmount    Float         @default(0)
+  status        InvoiceStatus @default(PENDING)
+  isReturn      Boolean       @default(false)
+  stockDeducted Boolean       @default(false)
+  notes         String?
+  createdById   String?
+  createdBy     User?         @relation(fields: [createdById], references: [id])
+  items         InvoiceItem[]
+  payments      Payment[]
+  soleOrder     SoleOrder?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@unique([companyId, invoiceNo])
   @@index([companyId, date])
@@ -444,7 +454,8 @@ model InvoiceItem {
   discount         Float    @default(0)
   total            Float
   notes            String?
-  partVariantsData Json?    // [{ partId, variantId }] - sale-time variant selections
+  partVariantsData Json? // [{ partId, variantId }] - sale-time variant selections
+
   @@index([invoiceId])
   @@index([productId])
 }
@@ -474,18 +485,19 @@ model Purchase {
 }
 
 model PurchaseMaterial {
-  id            String         @id @default(cuid())
-  purchaseId    String
-  purchase      Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  materialId    String?
-  material      Material?      @relation(fields: [materialId], references: [id])
-  productId     String?
-  product       Product?       @relation(fields: [productId], references: [id])
-  kgAmount      Float          @default(0)
-  pricePerKg    Float?
+  id              String         @id @default(cuid())
+  purchaseId      String
+  purchase        Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  materialId      String?
+  material        Material?      @relation(fields: [materialId], references: [id])
+  productId       String?
+  product         Product?       @relation(fields: [productId], references: [id])
+  kgAmount        Float          @default(0)
+  pricePerKg      Float?
   subcontractorId String?
   subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id])
-  createdAt     DateTime       @default(now())
+  createdAt       DateTime       @default(now())
+
   @@index([purchaseId])
   @@index([materialId])
 }
@@ -514,6 +526,7 @@ model Payment {
   method           String      @default("Nakit")
   notes            String?
   createdAt        DateTime    @default(now())
+
   @@index([companyId, date])
   @@index([customerId])
   @@index([supplierId])
@@ -523,18 +536,19 @@ model Payment {
 }
 
 model Account {
-  id        String    @id @default(cuid())
-  companyId String
-  company   Company   @relation(fields: [companyId], references: [id])
-  name      String
-  type      String    @default("Kasa")
-  currency  String    @default("TRY")
-  balance   Float     @default(0)
-  color     String    @default("#3B82F6")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  payments  Payment[]
-  bankedCeks Cek[]   @relation("CekBankAccount")
+  id         String    @id @default(cuid())
+  companyId  String
+  company    Company   @relation(fields: [companyId], references: [id])
+  name       String
+  type       String    @default("Kasa")
+  currency   String    @default("TRY")
+  balance    Float     @default(0)
+  color      String    @default("#3B82F6")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  payments   Payment[]
+  bankedCeks Cek[]     @relation("CekBankAccount")
+
   @@index([companyId])
 }
 
@@ -550,6 +564,7 @@ model SolePart {
   netWeight     Float
   cost          Float
   createdAt     DateTime        @default(now())
+
   @@index([calculationId])
 }
 
@@ -563,30 +578,31 @@ enum CekDurum {
 }
 
 model Cek {
-  id          String    @id @default(cuid())
-  companyId   String
-  company     Company   @relation(fields: [companyId], references: [id])
-  customerId  String?
-  customer    Customer? @relation(fields: [customerId], references: [id])
-  supplierId  String?
-  supplier    Supplier? @relation(fields: [supplierId], references: [id])
-  borclu      String
-  islem       String    @default("Müşteriden Alınan Çek Kaydı")
-  aciklama    String?
-  islemTarihi DateTime  @default(now())
-  vadesi      DateTime
-  tutar           Float
-  currency        String    @default("TRY")
-  customerAmount  Float?    // Müşteri para birimindeki karşılık (çapraz dövizde doldurulur)
-  customerCurrency String?  // Müşteri para birimi
-  seriNo      String?
-  bankasi     String?
-  durum       CekDurum  @default(PORTFOY)
-  paymentId   String?   // tahsil edilince kasa girişi, tedarikçiye verilince tedarikçi ödemesi
-  bankAccountId String?  // bankaya verildiyse hangi hesaba (tahsilde varsayılan)
-  bankAccount   Account? @relation("CekBankAccount", fields: [bankAccountId], references: [id], onDelete: SetNull)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  companyId        String
+  company          Company   @relation(fields: [companyId], references: [id])
+  customerId       String?
+  customer         Customer? @relation(fields: [customerId], references: [id])
+  supplierId       String?
+  supplier         Supplier? @relation(fields: [supplierId], references: [id])
+  borclu           String
+  islem            String    @default("Müşteriden Alınan Çek Kaydı")
+  aciklama         String?
+  islemTarihi      DateTime  @default(now())
+  vadesi           DateTime
+  tutar            Float
+  currency         String    @default("TRY")
+  customerAmount   Float? // Müşteri para birimindeki karşılık (çapraz dövizde doldurulur)
+  customerCurrency String? // Müşteri para birimi
+  seriNo           String?
+  bankasi          String?
+  durum            CekDurum  @default(PORTFOY)
+  paymentId        String? // tahsil edilince kasa girişi, tedarikçiye verilince tedarikçi ödemesi
+  bankAccountId    String? // bankaya verildiyse hangi hesaba (tahsilde varsayılan)
+  bankAccount      Account?  @relation("CekBankAccount", fields: [bankAccountId], references: [id], onDelete: SetNull)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
   @@index([companyId])
   @@index([customerId])
   @@index([supplierId])
@@ -596,26 +612,27 @@ model Cek {
 // ─── B2B Customer Portal ───────────────────────────────────────────────────
 
 model PortalCustomer {
-  id               String             @id @default(cuid())
-  customerId       String?            @unique
-  customer         Customer?          @relation(fields: [customerId], references: [id])
-  portalType       PortalCustomerType @default(CUSTOMER)
+  id                String                  @id @default(cuid())
+  customerId        String?                 @unique
+  customer          Customer?               @relation(fields: [customerId], references: [id])
+  portalType        PortalCustomerType      @default(CUSTOMER)
   /// Hesabın ait olduğu satıcı firma. Aynı e-posta farklı firmalarda ayrı portal hesabı olabilir (firma + e-posta tekil).
-  companyId        String?
-  email            String
-  password         String
-  name             String?
-  emailVerified    Boolean            @default(false)
-  emailVerifyToken String?            @unique
-  isActive         Boolean            @default(true)
+  companyId         String?
+  email             String
+  password          String
+  name              String?
+  emailVerified     Boolean                 @default(false)
+  emailVerifyToken  String?                 @unique
+  isActive          Boolean                 @default(true)
   /// Şifre değişince bu tarihten önce açılmış oturumlar (web ve mobil) geçersiz olur
   passwordChangedAt DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  orders           SoleOrder[]
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  orders            SoleOrder[]
   productVisibility ProductPortalCustomer[]
-  subcontractor    Subcontractor?     @relation("PortalCustomerSubcontractor")
-  pushTokens       PushToken[]
+  subcontractor     Subcontractor?          @relation("PortalCustomerSubcontractor")
+  pushTokens        PushToken[]
+  notifications     Notification[]
 
   @@unique([companyId, email])
   @@index([email])
@@ -623,6 +640,26 @@ model PortalCustomer {
 
 // Mobil anlık bildirim: cihazın Expo push token'ı. Bir cihaz aynı anda tek oturuma bağlıdır
 // (token benzersiz; başka hesapla giriş yapılınca kayıt o hesaba taşınır). Hesap silinince kayıtlar silinir.
+/// Bildirim kutusu: gönderilen her anlık bildirim alıcı başına saklanır (firma kullanıcısı ya da portal hesabı)
+model Notification {
+  id               String          @id @default(cuid())
+  userId           String?
+  user             User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Firma kullanıcısının bildirim anındaki firması; başka firmaya geçerse eski bildirimler görünmez
+  companyId        String?
+  portalCustomerId String?
+  portalCustomer   PortalCustomer? @relation(fields: [portalCustomerId], references: [id], onDelete: Cascade)
+  title            String
+  body             String
+  /// Mobil uygulamadaki ekran yolu (web adresi lib/notification-link ile çıkarılır)
+  url              String?
+  readAt           DateTime?
+  createdAt        DateTime        @default(now())
+
+  @@index([userId, createdAt])
+  @@index([portalCustomerId, createdAt])
+}
+
 model PushToken {
   id               String          @id @default(cuid())
   token            String          @unique
@@ -691,7 +728,6 @@ model SoleOrder {
   @@unique([companyId, orderNo])
   @@index([companyId, createdAt])
   @@index([customerId])
-
   @@index([linkId])
 }
 
@@ -702,6 +738,7 @@ model OrderStatusHistory {
   status    OrderStatus
   note      String?
   createdAt DateTime    @default(now())
+
   @@index([orderId])
 }
 
@@ -725,17 +762,17 @@ model OrderShipment {
 // ─── Fason Modülleri ───────────────────────────────────────────────────────────
 
 model Subcontractor {
-  id              String   @id @default(cuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id])
-  name            String
-  contactPerson   String?
-  phone           String?
-  address         String?
-  email           String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(cuid())
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id])
+  name          String
+  contactPerson String?
+  phone         String?
+  address       String?
+  email         String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   materialStocks      SubcontractorStock[]
   purchaseMaterials   PurchaseMaterial[]
@@ -786,7 +823,7 @@ model StockAdjustment {
   subcontractorId String?
   subcontractor   Subcontractor? @relation(fields: [subcontractorId], references: [id])
   delta           Float
-  type            String         // 'artirma' | 'azaltma' | 'stok_guncelleme'
+  type            String // 'artirma' | 'azaltma' | 'stok_guncelleme'
   notes           String?
   createdAt       DateTime       @default(now())
 
@@ -830,17 +867,17 @@ model ProductionUpdate {
 }
 
 model SubcontractorScrap {
-  id          String             @id @default(cuid())
-  companyId   String
-  company     Company            @relation(fields: [companyId], references: [id])
-  orderId     String
-  order       SubcontractorOrder @relation(fields: [orderId], references: [id])
-  materialId  String
-  material    Material           @relation(fields: [materialId], references: [id])
-  quantity    Float
-  reason      String?
-  reportedBy  String?
-  createdAt   DateTime           @default(now())
+  id         String             @id @default(cuid())
+  companyId  String
+  company    Company            @relation(fields: [companyId], references: [id])
+  orderId    String
+  order      SubcontractorOrder @relation(fields: [orderId], references: [id])
+  materialId String
+  material   Material           @relation(fields: [materialId], references: [id])
+  quantity   Float
+  reason     String?
+  reportedBy String?
+  createdAt  DateTime           @default(now())
 
   @@index([orderId])
   @@index([companyId])
@@ -889,8 +926,8 @@ model AuditLog {
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
   userName  String?
-  action    String   // CREATE | UPDATE | DELETE | ERROR
-  entity    String   // Invoice | Payment | Cek | Customer | Supplier | Material | Stock
+  action    String // CREATE | UPDATE | DELETE | ERROR
+  entity    String // Invoice | Payment | Cek | Customer | Supplier | Material | Stock
   entityId  String?
   detail    String?
   meta      Json?
@@ -904,28 +941,28 @@ model AuditLog {
 // ─── Personel Takip ──────────────────────────────────────────────────────────
 
 model Employee {
-  id              String            @id @default(cuid())
-  companyId       String
-  company         Company           @relation(fields: [companyId], references: [id])
-  name            String
-  department      String
-  role            String
-  salary          Float             @default(0)
-  currency        String            @default("TRY")
-  status          String            @default("active") // active | left
-  hireDate        DateTime
-  payday          Int               @default(1)
-  leaveBalance    Float             @default(14)
-  phone           String?
-  email           String?
-  notes           String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  ledger          PersonnelLedger[]
-  documents       PersonnelDocument[]
-  leaves          PersonnelLeave[]
-  overtimes       PersonnelOvertime[]
-  personnelNotes  PersonnelNote[]
+  id             String              @id @default(cuid())
+  companyId      String
+  company        Company             @relation(fields: [companyId], references: [id])
+  name           String
+  department     String
+  role           String
+  salary         Float               @default(0)
+  currency       String              @default("TRY")
+  status         String              @default("active") // active | left
+  hireDate       DateTime
+  payday         Int                 @default(1)
+  leaveBalance   Float               @default(14)
+  phone          String?
+  email          String?
+  notes          String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  ledger         PersonnelLedger[]
+  documents      PersonnelDocument[]
+  leaves         PersonnelLeave[]
+  overtimes      PersonnelOvertime[]
+  personnelNotes PersonnelNote[]
 
   @@index([companyId])
 }
@@ -936,12 +973,12 @@ model PersonnelLedger {
   employeeId  String
   employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   date        DateTime
-  type        String   // Maaş | Avans | Hakediş | Prim | Kesinti | İzin | Mesai | Diğer
+  type        String // Maaş | Avans | Hakediş | Prim | Kesinti | İzin | Mesai | Diğer
   description String?
   debit       Float    @default(0)
   credit      Float    @default(0)
   account     String?
-  paymentId   String?  // linked Payment.id for kasa integration
+  paymentId   String? // linked Payment.id for kasa integration
   createdBy   String?
   createdAt   DateTime @default(now())
 
@@ -950,61 +987,61 @@ model PersonnelLedger {
 }
 
 model PersonnelLeave {
-  id          String   @id @default(cuid())
-  companyId   String
-  employeeId  String
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  startDate   DateTime
-  endDate     DateTime
-  type        String   // Yıllık | Mazeret | Ücretsiz | Hastalık
-  days        Float
-  note        String?
-  createdBy   String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  companyId  String
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  startDate  DateTime
+  endDate    DateTime
+  type       String // Yıllık | Mazeret | Ücretsiz | Hastalık
+  days       Float
+  note       String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
 
   @@index([employeeId])
 }
 
 model PersonnelOvertime {
-  id          String   @id @default(cuid())
-  companyId   String
-  employeeId  String
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  date        DateTime
-  hours       Float
-  amount      Float    @default(0)
-  note        String?
-  createdBy   String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  companyId  String
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date       DateTime
+  hours      Float
+  amount     Float    @default(0)
+  note       String?
+  createdBy  String?
+  createdAt  DateTime @default(now())
 
   @@index([employeeId])
 }
 
 model PersonnelNote {
-  id          String   @id @default(cuid())
-  companyId   String
-  employeeId  String
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  content     String
-  createdBy   String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  companyId  String
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  content    String
+  createdBy  String?
+  createdAt  DateTime @default(now())
 
   @@index([employeeId])
 }
 
 model PersonnelDocument {
-  id          String   @id @default(cuid())
-  companyId   String
-  company     Company  @relation(fields: [companyId], references: [id])
-  employeeId  String
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  name        String
-  docType     String
-  size        Int
-  mimeType    String
-  data        Bytes
-  createdBy   String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  name       String
+  docType    String
+  size       Int
+  mimeType   String
+  data       Bytes
+  createdBy  String?
+  createdAt  DateTime @default(now())
 
   @@index([employeeId])
   @@index([companyId])
@@ -1060,24 +1097,24 @@ model MaterialCalculationItem {
 // ─── Destek Merkezi ────────────────────────────────────────────────────────────
 
 model SupportTicket {
-  id          String           @id @default(cuid())
+  id          String             @id @default(cuid())
   ticketNo    String
   companyId   String
-  company     Company          @relation(fields: [companyId], references: [id])
+  company     Company            @relation(fields: [companyId], references: [id])
   userId      String
-  user        User             @relation(fields: [userId], references: [id], name: "ticketCreator")
-  type        TicketType       @default(BUG)
+  user        User               @relation(fields: [userId], references: [id], name: "ticketCreator")
+  type        TicketType         @default(BUG)
   title       String
   description String
   module      String?
-  priority    TicketPriority   @default(ORTA)
-  status      TicketStatus     @default(YENI)
+  priority    TicketPriority     @default(ORTA)
+  status      TicketStatus       @default(YENI)
   pageUrl     String?
   browser     String?
   messages    TicketMessage[]
   attachments TicketAttachment[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
   resolvedAt  DateTime?
 
   @@unique([companyId, ticketNo])
@@ -1108,21 +1145,21 @@ model TicketAttachment {
 }
 
 model BarcodeSettings {
-  id               String  @id @default(cuid())
-  companyId        String  @unique
-  company          Company @relation(fields: [companyId], references: [id])
-  labelWidth       Int     @default(100)
-  labelHeight      Int     @default(100)
-  labelPadding     Int     @default(3)
-  companyFontSize  Int     @default(7)
+  id                  String  @id @default(cuid())
+  companyId           String  @unique
+  company             Company @relation(fields: [companyId], references: [id])
+  labelWidth          Int     @default(100)
+  labelHeight         Int     @default(100)
+  labelPadding        Int     @default(3)
+  companyFontSize     Int     @default(7)
   productFontSize     Int     @default(9)
   productCodeFontSize Int     @default(7)
-  detailsFontSize  Int     @default(6)
-  barcodeFontSize  Int     @default(6)
-  dateFontSize     Int     @default(6)
-  barcodeHeight     Int     @default(35)
-  defaultQtyPerPack String  @default("1")
-  defaultQtyUnit    String  @default("adet")
+  detailsFontSize     Int     @default(6)
+  barcodeFontSize     Int     @default(6)
+  dateFontSize        Int     @default(6)
+  barcodeHeight       Int     @default(35)
+  defaultQtyPerPack   String  @default("1")
+  defaultQtyUnit      String  @default("adet")
 
   @@index([companyId])
 }
@@ -1144,7 +1181,7 @@ model ProductStockAdjustment {
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   delta     Float
-  type      String   // 'manuel_ekle' | 'manuel_cikar' | 'barkod_yazdir'
+  type      String // 'manuel_ekle' | 'manuel_cikar' | 'barkod_yazdir'
   notes     String?
   createdAt DateTime @default(now())
 
@@ -1203,19 +1240,19 @@ enum CompanyLinkStatus {
 // Firmalar arası bağlantı: alıcı firma (buyer) satıcı firmayı (seller) firma koduyla tedarikçi
 // olarak ekler; satıcı onaylayınca alıcı kendi panelinden satıcıya sipariş verebilir.
 model CompanyLink {
-  id               String            @id @default(cuid())
+  id               String                    @id @default(cuid())
   buyerCompanyId   String
-  buyerCompany     Company           @relation("LinkBuyer", fields: [buyerCompanyId], references: [id], onDelete: Cascade)
+  buyerCompany     Company                   @relation("LinkBuyer", fields: [buyerCompanyId], references: [id], onDelete: Cascade)
   sellerCompanyId  String
-  sellerCompany    Company           @relation("LinkSeller", fields: [sellerCompanyId], references: [id], onDelete: Cascade)
+  sellerCompany    Company                   @relation("LinkSeller", fields: [sellerCompanyId], references: [id], onDelete: Cascade)
   buyerSupplierId  String?
-  buyerSupplier    Supplier?         @relation(fields: [buyerSupplierId], references: [id], onDelete: SetNull)
+  buyerSupplier    Supplier?                 @relation(fields: [buyerSupplierId], references: [id], onDelete: SetNull)
   sellerCustomerId String?
-  sellerCustomer   Customer?         @relation(fields: [sellerCustomerId], references: [id], onDelete: SetNull)
-  status           CompanyLinkStatus @default(PENDING)
+  sellerCustomer   Customer?                 @relation(fields: [sellerCustomerId], references: [id], onDelete: SetNull)
+  status           CompanyLinkStatus         @default(PENDING)
   requestedById    String?
   approvedById     String?
-  createdAt        DateTime          @default(now())
+  createdAt        DateTime                  @default(now())
   respondedAt      DateTime?
   orders           SoleOrder[]
   materialMaps     MaterialSupplierProduct[]
