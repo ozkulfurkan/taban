@@ -4,12 +4,14 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-n
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/icon';
+import { BellButton } from '@/components/notification-inbox';
 import { OrderRow } from '@/components/portal-order-row';
 import { Button, Card, T } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/core/auth';
 import type { PortalOrder } from '@/core/portal';
 import { useApi } from '@/core/query';
+import { useUnreadCount } from '@/core/notifications-inbox';
 import { useTheme } from '@/hooks/use-theme';
 
 // Portal ana sayfası: sipariş özeti, yeni sipariş, son siparişler ve (firma açtıysa) hesap ekstresi
@@ -19,6 +21,7 @@ export default function PortalHome() {
   const fason = user?.type === 'portal' && user.portalType === 'SUBCONTRACTOR';
   const orders = useApi<PortalOrder[]>(fason ? null : '/api/portal/me/orders');
   const link = useApi<{ url: string | null }>(fason ? null : '/api/portal/me/statement-link');
+  const unread = useUnreadCount();
   const list = orders.data ?? [];
   const active = list.filter(o => o.status !== 'SHIPPED' && o.status !== 'CANCELLED').length;
   const ready = list.filter(o => o.status === 'READY_FOR_SHIPMENT').length;
@@ -28,13 +31,14 @@ export default function PortalHome() {
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView
         contentContainerStyle={styles.page}
-        refreshControl={<RefreshControl refreshing={orders.isRefetching} onRefresh={() => { void orders.refetch(); void link.refetch(); }} />}
+        refreshControl={<RefreshControl refreshing={orders.isRefetching} onRefresh={() => { void orders.refetch(); void link.refetch(); void unread.refetch(); }} />}
       >
         <View style={styles.head}>
           <View style={{ flex: 1, minWidth: 0 }}>
             <T variant="small">Hoş geldiniz</T>
             <T variant="title" numberOfLines={1} testID="portal-name">{user?.name || user?.email}</T>
           </View>
+          <BellButton href="/portal-bildirimler" unread={unread.data ?? 0} color={c.text} background={c.card} border={c.border} />
           <Pressable onPress={() => router.push('/portal-ayarlar')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ayarlar"
             style={[styles.round, { backgroundColor: c.card, borderColor: c.border }]} testID="portal-settings">
             <Icon name="settings" size={20} color={c.text} />
