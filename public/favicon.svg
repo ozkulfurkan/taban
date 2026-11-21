@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <rect width="256" height="256" fill="#1F2937"/>
-  <path d="M60 100 Q80 85 110 85 L180 85 Q200 85 210 100 L220 140 Q220 160 210 170 L190 185 Q180 190 160 190 L90 190 Q70 190 55 180 L40 165 Q35 150 40 135 Z" fill="#2563EB"/>
-  <ellipse cx="80" cy="140" rx="12" ry="8" fill="#1F2937"/>
-  <ellipse cx="120" cy="145" rx="12" ry="8" fill="#1F2937"/>
-  <ellipse cx="160" cy="145" rx="12" ry="8" fill="#1F2937"/>
-  <ellipse cx="195" cy="140" rx="12" ry="8" fill="#1F2937"/>
-  <text x="128" y="150" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">SC</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><rect width="256" height="256" fill="#6B1A2C"/><g transform="translate(0 0) scale(1)"><path d="M60 92 Q82 76 112 76 L182 76 Q204 76 214 94 L226 138 Q228 162 214 174 L192 190 Q180 196 160 196 L92 196 Q68 196 52 184 L36 168 Q30 150 36 132 Z" fill="#FFFFFF"/><g fill="#6B1A2C"><text x="131" y="138" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="74" font-weight="800" letter-spacing="2" text-anchor="middle" dominant-baseline="central">SC</text></g></g></svg>

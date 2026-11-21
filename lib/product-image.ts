@@ -2,6 +2,8 @@
 // istemcinin bildirdiği türe güvenilmez.
 
 export const MAX_IMAGE_BYTES = 1_500_000;
+/** Firma logosu her katalog/ekstre yanıtında taşınır: daha küçük tutulur */
+export const MAX_LOGO_BYTES = 1_000_000;
 
 export type ImageMime = 'image/jpeg' | 'image/png' | 'image/webp';
 
@@ -15,13 +17,13 @@ export function sniffImage(buf: Uint8Array): ImageMime | null {
 }
 
 /** "data:image/jpeg;base64,..." ya da düz base64 → bayt + tür; geçersizse hata mesajı */
-export function decodeImage(input: unknown): { bytes: Buffer; mime: ImageMime } | { error: string } {
+export function decodeImage(input: unknown, maxBytes = MAX_IMAGE_BYTES): { bytes: Buffer; mime: ImageMime } | { error: string } {
   if (typeof input !== 'string' || !input) return { error: 'Fotoğraf verisi yok' };
   const b64 = input.includes(',') ? input.slice(input.indexOf(',') + 1) : input;
   if (!/^[A-Za-z0-9+/=\s]+$/.test(b64)) return { error: 'Fotoğraf verisi okunamadı' };
   const bytes = Buffer.from(b64, 'base64');
   if (!bytes.length) return { error: 'Fotoğraf verisi okunamadı' };
-  if (bytes.length > MAX_IMAGE_BYTES) return { error: 'Fotoğraf çok büyük (en fazla 1,5 MB)' };
+  if (bytes.length > maxBytes) return { error: `Fotoğraf çok büyük (en fazla ${(maxBytes / 1_000_000).toLocaleString('tr-TR')} MB)` };
   const mime = sniffImage(bytes);
   if (!mime) return { error: 'Yalnızca JPEG, PNG ya da WebP fotoğraf yüklenebilir' };
   return { bytes, mime };

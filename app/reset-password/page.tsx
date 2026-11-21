@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2, CheckCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { passwordError } from '@/lib/password';
+import { BrandMark } from '@/app/components/brand-mark';
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -139,9 +140,7 @@ export default function ResetPasswordPage() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-blue-600/30">
-            <span className="text-white font-bold text-2xl">SC</span>
-          </div>
+          <BrandMark size={64} className="mb-4" />
           <h1 className="text-3xl font-bold text-white mb-2">SoleCost</h1>
         </div>
         <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/10">

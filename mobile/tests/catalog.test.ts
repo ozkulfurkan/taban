@@ -31,3 +31,12 @@ test('metin kaçışlanır, yalnızca gömülü görsel kabul edilir', () => {
   assert.match(html, /Demo &lt;Taban&gt;/);
   assert.doesNotMatch(html, /evil\.test/);
 });
+
+test('sayfa sonunda bölünmesin: ürünler ikişerli bölünmez satırlarda, grid/flex kart yok', () => {
+  const html = catalogHtml(company, [p({ id: '1' }), p({ id: '2' }), p({ id: '3' })], opts);
+  assert.equal((html.match(/<div class="row">/g) ?? []).length, 2);
+  assert.match(html, /\.row \{ display: block; page-break-inside: avoid; break-inside: avoid;/);
+  assert.doesNotMatch(html, /display: grid/);
+  assert.doesNotMatch(html, /\.card \{[^}]*display: flex/);
+  assert.equal((html.match(/class="card last"/g) ?? []).length, 1);
+});

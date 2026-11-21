@@ -2,12 +2,14 @@ import { router, type Href } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BrandMark } from '@/components/brand-mark';
 import { Icon, type IconName } from '@/components/icon';
 import { Card, T } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useAuth, useCanWrite } from '@/core/auth';
 import { useIsManager, useLinks } from '@/core/network';
 import { useApi } from '@/core/query';
+import { homeRates } from '@/core/rates';
 import { useTheme } from '@/hooks/use-theme';
 
 type Dashboard = {
@@ -47,7 +49,10 @@ export default function Home() {
   // Panel izni olmayan kullanıcıda özet 403 döner; menü yine de çalışır
   const q = useApi<Dashboard>('/api/dashboard');
   const d = q.data;
-  const companyName = user?.type === 'staff' ? user.companyName : null;
+  // Merkez Bankası döviz satış kuru (alınamazsa firmanın kayıtlı kuru)
+  const tcmb = useApi<{ usd: number; eur: number }>('/api/tcmb-rates', undefined, { staleTime: 30 * 60 * 1000, retry: false });
+  const saved = useApi<{ usdToTry?: number; eurToTry?: number }>(tcmb.isError ? '/api/company' : null);
+  const rateText = homeRates(tcmb.data ?? null, tcmb.isError ? saved.data ?? null : null);
   const owner = user?.type === 'staff' && (user.role === 'ADMIN' || user.role === 'COMPANY_OWNER');
   const pages = user?.type === 'staff' ? user.allowedPages ?? [] : [];
   // Web'deki sayfa izinleriyle aynı: sahip her kutuyu, diğerleri izin verilen sayfaları görür
@@ -69,21 +74,25 @@ export default function Home() {
     <SafeAreaView edges={['left', 'right']} style={{ flex: 1, backgroundColor: c.background }}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: Spacing.six }}
-        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); if (manager) void links.refetch(); }} />}
+        refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { void q.refetch(); void tcmb.refetch(); if (manager) void links.refetch(); }} />}
       >
         {/* Bordo karşılama bandı: durum çubuğunun arkasına kadar uzanır */}
         <View style={[styles.hero, { backgroundColor: c.strong, paddingTop: insets.top + Spacing.three }]}>
           <View style={styles.head}>
+            <BrandMark size={38} inverse />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <T variant="small" color={c.strongMuted}>{user?.name ? `Merhaba, ${user.name}` : 'Hoş geldiniz'}</T>
-              <T variant="title" color={c.strongText} numberOfLines={1} testID="home-company">{companyName || 'SoleCost'}</T>
+              <T color={c.strongText} numberOfLines={1} style={styles.brand} testID="home-brand">SOLE COST</T>
+              <T variant="small" color={c.strongMuted} numberOfLines={1} testID="home-user">{user?.name ? `Merhaba, ${user.name}` : 'Hoş geldiniz'}</T>
             </View>
             <Pressable onPress={() => router.push('/ayarlar')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ayarlar"
               style={[styles.round, { backgroundColor: 'rgba(255,255,255,0.14)', borderColor: 'rgba(255,255,255,0.22)' }]}>
               <Icon name="settings" size={20} color={c.strongText} />
             </Pressable>
           </View>
-          <T variant="small" color={c.strongMuted}>{new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}</T>
+          <View style={styles.subline}>
+            <T variant="small" color={c.strongMuted}>{new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}</T>
+            {rateText ? <T variant="small" color={c.strongMuted} testID="home-rates">{rateText}</T> : null}
+          </View>
         </View>
 
         <View style={styles.page}>
@@ -137,6 +146,8 @@ const styles = StyleSheet.create({
   },
   page: { padding: Spacing.three, gap: Spacing.four, width: '100%', maxWidth: 720, alignSelf: 'center' },
   head: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  brand: { fontSize: 26, fontWeight: '800', letterSpacing: 2 },
+  subline: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   round: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   tile: {
