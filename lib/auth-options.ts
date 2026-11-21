@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendMailSafe } from '@/lib/mail';
 import { LIMITS, clientIp, normEmail, isLimited, recordAttempt, clearAttempts } from '@/lib/login-throttle';
+import { matchPortalAccounts, pickPortalAccount } from '@/lib/portal-login';
+import { esc } from '@/lib/order-email';
 import { sendCancelledMail } from '@/lib/account-deletion';
 
 const sameList = (a: unknown, b: unknown) =>
@@ -55,31 +57,9 @@ async function assertTokenStillValid(token: any) {
 
 export async function authorizePortalCustomer(credentials: Record<string, string> | undefined, req?: any) {
   if (!credentials?.email || !credentials?.password) return null;
-  const acctKey = `portal:${normEmail(credentials.email)}`;
-  const ipKey = `login-ip:${clientIp(req?.headers)}`;
-  if ((await isLimited(acctKey, LIMITS.loginPerAccount)) || (await isLimited(ipKey, LIMITS.loginPerIp))) {
-    throw new Error('TOO_MANY_ATTEMPTS');
-  }
-
-  const portalCustomer = await prisma.portalCustomer.findUnique({
-    where: { email: credentials.email },
-    include: {
-      customer: { select: { id: true, companyId: true, name: true } },
-      subcontractor: { select: { id: true, companyId: true } },
-    },
-  });
-
-  if (!portalCustomer) {
-    await recordAttempt(acctKey, ipKey);
-    throw new Error('INVALID_CREDENTIALS');
-  }
-
-  const isValid = await bcrypt.compare(credentials.password, portalCustomer.password);
-  if (!isValid) {
-    await recordAttempt(acctKey, ipKey);
-    throw new Error('INVALID_CREDENTIALS');
-  }
-  await clearAttempts(acctKey);
+  // Aynı e-posta birden fazla firmada portal hesabı olabilir: şifreye uyanlar arasından seçilir
+  const matches = await matchPortalAccounts(credentials.email, credentials.password, req);
+  const portalCustomer = pickPortalAccount(matches, credentials.accountId || null);
 
   if (!portalCustomer.isActive) throw new Error('ACCOUNT_INACTIVE');
 
@@ -93,7 +73,7 @@ export async function authorizePortalCustomer(credentials: Record<string, string
     await sendMailSafe({
       to: portalCustomer.email,
       subject: 'Portal - E-posta adresinizi doğrulayın',
-      html: `<p>Merhaba ${portalCustomer.name ?? portalCustomer.email},</p>
+      html: `<p>Merhaba ${esc(portalCustomer.name ?? portalCustomer.email)},</p>
         <p>Giriş yapabilmek için e-posta adresinizi doğrulayın:</p>
         <p><a href="${verifyUrl}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>`,
       text: `Doğrulama linki: ${verifyUrl}`,

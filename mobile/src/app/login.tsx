@@ -4,10 +4,12 @@ import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandMark } from '@/components/brand-mark';
-import { Button, Field, Segmented, T } from '@/components/ui';
+import { Button, Card, Field, ListRow, Segmented, T } from '@/components/ui';
 import { useAuth } from '@/core/auth';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+
+type AccountChoice = { id: string; companyName: string; portalType: string };
 
 export default function Login() {
   const c = useTheme();
@@ -17,18 +19,43 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  // Aynı e-posta birden fazla firmanın portalında kayıtlıysa önce firma seçilir
+  const [accounts, setAccounts] = useState<AccountChoice[] | null>(null);
 
-  const submit = async () => {
+  const submit = async (accountId?: string) => {
     if (!email.trim() || !password) { setError('E-posta ve şifrenizi girin.'); return; }
     setBusy(true); setError('');
     try {
-      await signIn(email, password, kind);
+      await signIn(email, password, kind, accountId);
     } catch (e: any) {
-      setError(e?.message || 'Giriş yapılamadı');
+      if (e?.code === 'CHOOSE_ACCOUNT' && Array.isArray(e?.data?.accounts) && e.data.accounts.length) setAccounts(e.data.accounts);
+      else setError(e?.message || 'Giriş yapılamadı');
     } finally {
       setBusy(false);
     }
   };
+
+  if (accounts) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
+        <View style={styles.wrap} testID="account-chooser">
+          <View style={styles.brand}>
+            <BrandMark size={56} />
+            <T variant="title">Firma seçin</T>
+            <T variant="small" style={{ textAlign: 'center' }}>Bu e-posta birden fazla firmanın portalında kayıtlı. Giriş yapmak istediğiniz firmayı seçin.</T>
+          </View>
+          <Card style={{ padding: 0, gap: 0 }}>
+            {accounts.map(a => (
+              <ListRow key={a.id} title={a.companyName} subtitle={a.portalType === 'SUBCONTRACTOR' ? 'Fasoncu portalı' : 'Müşteri portalı'}
+                onPress={busy ? undefined : () => { void submit(a.id); }} testID={`choose-${a.id}`} />
+            ))}
+          </Card>
+          {error ? <T color={c.danger} testID="login-error">{error}</T> : null}
+          <Button title="Geri" variant="ghost" onPress={() => { setAccounts(null); setError(''); }} loading={busy} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -49,9 +76,9 @@ export default function Login() {
           <Field label="E-posta" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email"
             keyboardType="email-address" textContentType="username" returnKeyType="next" testID="login-email" />
           <Field label="Şifre" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password"
-            textContentType="password" returnKeyType="go" onSubmitEditing={submit} testID="login-password" />
+            textContentType="password" returnKeyType="go" onSubmitEditing={() => { void submit(); }} testID="login-password" />
           {error ? <T color={c.danger} testID="login-error">{error}</T> : null}
-          <Button title="Giriş yap" onPress={submit} loading={busy} testID="login-submit" />
+          <Button title="Giriş yap" onPress={() => { void submit(); }} loading={busy} testID="login-submit" />
         </View>
 
         <View style={styles.links}>

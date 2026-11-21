@@ -160,6 +160,10 @@ export function SettingsBody() {
           {manager ? (
             <ListRow title="Kullanıcılar" subtitle="Firma kullanıcısı ekleyin, rol ve izinleri yönetin" onPress={() => router.push('/ayarlar/kullanicilar')} testID="settings-users" />
           ) : null}
+          {user?.type === 'portal' ? (
+            <ListRow title="Firma değiştir" subtitle="Başka bir firmanın portalına aynı e-postayla girin"
+              onPress={() => { void signOut(); }} testID="settings-switch-company" />
+          ) : null}
           {user?.type === 'staff' ? (
             <ListRow title="Uygulamayı paylaş" subtitle="Müşterilerinize uygulama ve web bağlantısı gönderin"
               onPress={() => { void Share.share({ message: inviteMessage(WEB_URL, { companyName: user.companyName }) }); }} testID="settings-share" />

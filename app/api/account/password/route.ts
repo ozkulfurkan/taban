@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   if (bearerToken(req.headers.get('authorization'))) {
     try {
       const fresh = portal
-        ? await authorizePortalCustomer({ email: row.email, password: next }, { headers: Object.fromEntries(req.headers) })
+        ? await authorizePortalCustomer({ email: row.email, password: next, accountId: user.id }, { headers: Object.fromEntries(req.headers) })
         : await authorizeStaff({ email: row.email, password: next }, { headers: Object.fromEntries(req.headers) });
       if (fresh) token = (await issueMobileToken(fresh)).jwt;
     } catch { /* yeni token alınamazsa istemci yeniden giriş ister */ }

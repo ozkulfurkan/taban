@@ -27,14 +27,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Email ve şifre zorunlu' }, { status: 400 });
   }
 
-  const existing = await prisma.portalCustomer.findUnique({ where: { email: email.trim() } });
-  if (existing) return NextResponse.json({ error: 'Bu email zaten kayıtlı' }, { status: 400 });
+  // Aynı e-posta başka firmaların portalında da kullanılabilir; yalnızca bu firmada tekil
+  const existing = await prisma.portalCustomer.findFirst({ where: { companyId: subcontractor.companyId, email: { equals: email.trim(), mode: 'insensitive' } } });
+  if (existing) return NextResponse.json({ error: 'Bu e-posta ile firmanızda zaten bir portal hesabı var' }, { status: 400 });
 
   const hashedPassword = await bcrypt.hash(password, 12);
   const emailVerifyToken = crypto.randomBytes(32).toString('hex');
 
   const portalCustomer = await prisma.portalCustomer.create({
     data: {
+      companyId: subcontractor.companyId,
       email: email.trim(),
       password: hashedPassword,
       name: name?.trim() || subcontractor.name,

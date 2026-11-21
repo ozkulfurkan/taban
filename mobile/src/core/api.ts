@@ -5,7 +5,7 @@ import { TOKEN_KEY, getItem } from './storage';
 // (rol değişmiş, kullanıcı silinmiş ya da süre dolmuş olabilir).
 
 export class ApiError extends Error {
-  constructor(message: string, public status: number, public code?: string) {
+  constructor(message: string, public status: number, public code?: string, public data?: any) {
     super(message);
   }
 }
@@ -52,7 +52,7 @@ export async function api<T = any>(path: string, opts: Options = {}): Promise<T>
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     if (res.status === 401 && token) onUnauthorized?.();
-    throw new ApiError((data && (data.error || data.message)) || `İstek başarısız (${res.status})`, res.status, data?.code);
+    throw new ApiError((data && (data.error || data.message)) || `İstek başarısız (${res.status})`, res.status, data?.code, data);
   }
   return data as T;
 }

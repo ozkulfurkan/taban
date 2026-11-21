@@ -600,7 +600,9 @@ model PortalCustomer {
   customerId       String?            @unique
   customer         Customer?          @relation(fields: [customerId], references: [id])
   portalType       PortalCustomerType @default(CUSTOMER)
-  email            String             @unique
+  /// Hesabın ait olduğu satıcı firma. Aynı e-posta farklı firmalarda ayrı portal hesabı olabilir (firma + e-posta tekil).
+  companyId        String?
+  email            String
   password         String
   name             String?
   emailVerified    Boolean            @default(false)
@@ -614,6 +616,9 @@ model PortalCustomer {
   productVisibility ProductPortalCustomer[]
   subcontractor    Subcontractor?     @relation("PortalCustomerSubcontractor")
   pushTokens       PushToken[]
+
+  @@unique([companyId, email])
+  @@index([email])
 }
 
 // Mobil anlık bildirim: cihazın Expo push token'ı. Bir cihaz aynı anda tek oturuma bağlıdır

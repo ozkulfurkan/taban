@@ -14,7 +14,8 @@ export type User = StaffUser | PortalUser;
 type AuthState = {
   ready: boolean;
   user: User | null;
-  signIn: (email: string, password: string, kind: 'staff' | 'portal') => Promise<void>;
+  /** Portal: aynı e-posta birden fazla firmadaysa CHOOSE_ACCOUNT hatası (data.accounts) gelir, accountId ile tekrar çağrılır */
+  signIn: (email: string, password: string, kind: 'staff' | 'portal', accountId?: string) => Promise<void>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
   /** Kendi şifresini değiştirir; sunucunun verdiği yeni token saklanır (oturum düşmez) */
@@ -75,10 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => setUnauthorizedHandler(null);
   }, [refresh, signOut]);
 
-  const signIn = useCallback(async (email: string, password: string, kind: 'staff' | 'portal') => {
+  const signIn = useCallback(async (email: string, password: string, kind: 'staff' | 'portal', accountId?: string) => {
     const r = await api<{ token: string; user: User }>('/api/mobile/auth/login', {
       method: 'POST',
-      body: { email: email.trim(), password, kind },
+      body: { email: email.trim(), password, kind, ...(accountId ? { accountId } : {}) },
     });
     await setItem(TOKEN_KEY, r.token);
     setAuthToken(r.token);

@@ -61,10 +61,10 @@ export async function createUser(companyId: string, name: string, role: 'COMPANY
   return userEmail;
 }
 
-export async function createPortalCustomer(customerId: string, name: string) {
-  const portalEmail = email(name);
+export async function createPortalCustomer(customerId: string, name: string, portalEmail = email(name), password = PASSWORD) {
+  const customer = await prisma.customer.findUniqueOrThrow({ where: { id: customerId }, select: { companyId: true } });
   await prisma.portalCustomer.create({
-    data: { email: portalEmail, customerId, emailVerified: true, password: await bcrypt.hash(PASSWORD, 10) },
+    data: { email: portalEmail, customerId, companyId: customer.companyId, emailVerified: true, password: await bcrypt.hash(password, 10) },
   });
   return portalEmail;
 }
