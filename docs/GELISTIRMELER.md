@@ -114,6 +114,19 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 - **Büyüklük:** S
 - **Durum:** Tamamlandı [#39](https://github.com/ozkulfurkan/taban/pull/39)
 
+## G-6 · Web ve mobilde bildirim kutusu
+- **Tarih:** 21.11.2026
+- **İstek:** "Mobil ve web'e bildirimler ekleyebilir miyiz? Daha önce gelen bildirimler orada listelense?"
+- **Çözüm:**
+  - Telefona giden her sipariş bildirimi (yeni sipariş; onay, durum, termin ve sevk) alıcı başına saklanır. Kayıtlar süresiz tutulur, liste sayfalıdır.
+  - Web: üst barda zil ve okunmamış sayısı, açılır liste, `/bildirimler` ve `/portal/bildirimler` sayfaları.
+  - Mobil: ana sayfa ve portal başlığında zil ve rozet, Bildirimler ekranı.
+  - Bildirime dokununca ilgili sipariş açılır ve bildirim okundu olur. "Tümünü okundu yap" seçeneği var.
+- **Karar (21.11):** Kapsam şimdilik mevcut sipariş bildirimleri; saklama süresiz.
+- **Etkilenen alanlar:** web, mobil, API, veritabanı
+- **Büyüklük:** M
+- **Durum:** PR açıldı [#41](https://github.com/ozkulfurkan/taban/pull/41). Neon'da SQL çalıştırılınca birleştirilecek.
+
 <!--
 Kayıt şablonu:
 
