@@ -6,10 +6,10 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 | No | Başlık | Alan | Büyüklük | Durum |
 | --- | --- | --- | --- | --- |
 | G-1 | Mobil uygulamada dil seçimi (Türkçe / İngilizce) | Mobil | L | Bekliyor |
-| G-2 | Portal müşterisi kendi şifresini değiştirebilsin (web portal) | Web | S | Bekliyor |
+| G-2 | Portal müşterisi kendi şifresini değiştirebilsin (mobilde "yetkiniz yok" hatası + web portal) | Web + mobil | S | Bekliyor |
 | G-3 | Hammadde siparişinde renk yerine shore seçimi (Yumuşak / Standart / Sert) | Web + mobil + API | M | Bekliyor |
 | G-4 | Shore değeri elle girilebilsin (örn. 65), "±2 shore oynayabilir" notu | Web + mobil + API | S | Bekliyor |
-| G-5 | Portal müşterisinin daha önce aldığı ürünler üstte listelensin | Web + mobil | S | Bekliyor |
+| G-5 | Mobilde ürünleri portalda göster/gizle (tekli ve çoklu); daha önce alınanlar üstte | Web + mobil + API | M | Bekliyor |
 
 ---
 
@@ -41,7 +41,11 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
   - Mobilde var: portal müşterisi Ayarlar → **Şifre değiştir** (PR #32).
   - Sunucu tarafı da hazır: `POST /api/account/password`, portal kullanıcısını da destekliyor.
   - **Web portalında yok:** şifre değiştirme kartı yalnızca firma Ayarlar sayfasında.
+  - **Hata (21.11):** Mobilde portal müşterisi şifre değiştirince "Bu işlem için yetkiniz yok" uyarısı çıkıyor.
+    - Neden: portal kullanıcılarının erişebildiği uçlar listesinde (`lib/access.ts` → `PORTAL_API_PREFIXES`) `/api/account/password` yok; ara katman isteği 403 ile reddediyor.
 - **Önerilen çözüm:**
+  - `PORTAL_API_PREFIXES` listesine `/api/account/password` eklenir.
+  - Portal kullanıcısının şifre değiştirmesi API testine eklenir.
   - Web portalına "Hesabım / Şifre değiştir" sayfası ya da kartı eklenir (`app/portal/...`, mevcut `ChangePasswordCard` `portal-credentials` ile).
   - Portal üst menüsüne bağlantı eklenir.
   - Türkçe/İngilizce metinler `lib/i18n/portal.ts`'e eklenir.
@@ -66,7 +70,7 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
     - e-postalar;
     - alıcının "verilen siparişler" ekranı.
   - Web (`app/components/order-catalog.tsx`) ve mobil (`mobile/src/components/order-catalog.tsx`) kataloglarında, `lib/orders.ts` → `normalizeOrderItems` doğrulamasında.
-- **Açık nokta:** Renk tamamen mi kalksın, yoksa isteğe bağlı mı dursun? Varsayılan öneri: hammaddede gizli, tabanda zorunlu.
+- **Karar (21.11):** Hammadde siparişinde renk **tamamen kalkar**. Taban (çift) siparişinde renk aynen kalır.
 - **Etkilenen alanlar:** web, mobil, API (veritabanı değişikliği yok; kalemler JSON)
 - **Büyüklük:** M
 - **Durum:** Bekliyor
@@ -78,11 +82,11 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 - **İstek:** "Shore değerini manuel giriş yeri olsun; oraya 65 yazsın ama not olarak ±2 shore oynar gibi bir yazı gözüksün."
 - **Önerilen çözüm:**
   - G-3'teki seçimin yanında sayı alanı: **Shore (elle)**.
-  - Örnek / yer tutucu "65". Değer girilirse Yumuşak/Standart/Sert yerine bu kullanılır.
+  - Alan 65 değeriyle dolu gelir. Kullanıcı değiştirebilir; elle girilen değer Yumuşak / Standart / Sert seçimiyle birlikte kaydedilir.
   - Alanın altında her zaman küçük not: "Shore değeri ±2 oynayabilir."
   - Not, sipariş detayında ve PDF'te de gösterilir.
   - Doğrulama: 0–100 arası tam sayı.
-- **Açık nokta:** "65" varsayılan değer olarak mı gelsin, yoksa yalnızca örnek (silik yazı) mı olsun? Öneri: örnek yazı.
+- **Karar (21.11):** Alan **65 hazır değeriyle** gelir; kullanıcı değiştirebilir.
 - **Etkilenen alanlar:** web, mobil, API (G-3 ile birlikte yapılır)
 - **Büyüklük:** S
 - **Durum:** Bekliyor
@@ -92,15 +96,20 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 ## G-5 · Portal müşterisinin daha önce aldığı ürünler üstte listelensin
 - **Tarih:** 21.11.2026
 - **İstek:** "Her portal müşterisinin hesabında daha önce aldığı ürünler üstte listelensin."
+- **Ek istek (21.11):** "Mobilde ürünler portalda gözüksün ya da gözükmesin seçilebilsin; çoklu seçimle de portalda gözükür hale gelsin."
+- **Test sonucu (21.11):**
+  - Portal kataloğu daha önce alınan ürünleri doğru şekilde üstte ve "Daha önce aldınız" işaretiyle döndürüyor.
+  - Bir ürün faturadan, bir ürün siparişten alınmış olarak denendi; alınmamış ürün altta kaldı.
 - **Mevcut durum:**
   - Portal **sipariş kataloğunda** (web ve mobil) bu zaten var: daha önce sipariş verilen ya da faturalanan ürünler üstte, "Daha önce aldınız" etiketiyle (commit `a540054`).
   - Ama sıralama müşterinin bu firmadaki sipariş ve fatura geçmişine bakıyor.
 - **Önerilen çözüm:**
-  - Kontrol edilecek:
-    - müşteride görünmüyorsa nedeni (ör. geçmiş siparişler farklı cari kaydına bağlı);
-    - mobil portal ana sayfasında da "Son aldıklarınız" bölümü isteniyor mu.
+  - **Mobilde portal görünürlüğü:**
+    - Ürün detayında "Portalda göster" anahtarı.
+    - Ürün listesinde "Seç" modu: birden çok ürün işaretlenip tek seferde "Portalda göster" ya da "Portalda gizle" yapılır.
+    - Kullanılan uçlar: mevcut `PUT /api/products/[id]/portal-visibility`; toplu işlem için yeni `POST /api/products/portal-visibility { ids, visible }` (yalnızca kendi firmasının ürünleri).
   - Gerekirse portal ana sayfasına (web + mobil) "Daha önce aldıklarınız" kısa listesi eklenir; dokununca katalogda o ürün açılır.
-- **Açık nokta:** Listenin görünmesi istenen yer katalog mu, portal ana sayfası mı?
+- **Açık nokta:** Daha önce alınan ürünler bugün yalnızca "Yeni sipariş" ekranındaki listede üstte çıkıyor. Portal ana sayfasında (müşterinin girişte ilk gördüğü ekran) da ayrıca listelensin mi?
 - **Etkilenen alanlar:** web portal, mobil portal
 - **Büyüklük:** S
 - **Durum:** Bekliyor
