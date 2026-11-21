@@ -43,6 +43,7 @@ const EN: Record<string, string> = {
   'Sipariş Alındı': 'Order Received',
   'Onay bekliyor': 'Awaiting confirmation',
   'Firma seçin': 'Choose a company',
+  'Hesabım': 'My account',
   'Bu e-posta birden fazla firmanın portalında kayıtlı. Giriş yapmak istediğiniz firmayı seçin.': 'This e-mail is registered in the portals of more than one company. Choose the company you want to sign in to.',
   'Fasoncu portalı': 'Subcontractor portal',
   'Onaylandı': 'Confirmed',

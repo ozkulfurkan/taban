@@ -10,6 +10,8 @@ import { KeyRound, Loader2 } from 'lucide-react';
 export function ChangePasswordCard({ provider = 'credentials' }: { provider?: 'credentials' | 'portal-credentials' }) {
   const { data } = useSession() || {};
   const email = (data?.user as any)?.email as string | undefined;
+  // Portal: aynı e-posta birden fazla firmada olabilir; oturum bu hesapla yenilenir
+  const accountId = provider === 'portal-credentials' ? ((data?.user as any)?.id as string | undefined) : undefined;
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [again, setAgain] = useState('');
@@ -28,7 +30,7 @@ export function ChangePasswordCard({ provider = 'credentials' }: { provider?: 'c
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) return setMsg({ ok: false, text: d?.error || 'Şifre değiştirilemedi' });
-      if (email) await signIn(provider, { email, password: next, redirect: false });
+      if (email) await signIn(provider, { email, password: next, ...(accountId ? { accountId } : {}), redirect: false });
       setCurrent(''); setNext(''); setAgain('');
       setMsg({ ok: true, text: 'Şifreniz değiştirildi. Diğer cihazlardaki oturumlar kapatıldı.' });
     } finally {

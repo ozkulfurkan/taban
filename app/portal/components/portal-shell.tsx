@@ -3,7 +3,7 @@
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingBag, List, BookOpen, LogOut, Menu, X } from 'lucide-react';
+import { ShoppingBag, List, BookOpen, LogOut, Menu, X, KeyRound } from 'lucide-react';
 import { useState } from 'react';
 import { usePortalText } from '@/lib/i18n/portal';
 import { BrandMark } from '@/app/components/brand-mark';
@@ -12,6 +12,7 @@ const NAV = [
   { href: '/portal/dashboard', label: 'Ana Sayfa', icon: ShoppingBag },
   { href: '/portal/orders', label: 'Siparişlerim', icon: List },
   { href: '/portal/catalog', label: 'Katalog', icon: BookOpen },
+  { href: '/portal/hesap', label: 'Hesabım', icon: KeyRound },
 ];
 
 export default function PortalShell({ children }: { children: React.ReactNode }) {

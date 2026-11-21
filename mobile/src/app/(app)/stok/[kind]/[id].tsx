@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
 
 import { ProductImageField, ProductThumb } from '@/components/product-image';
 import { StockAdjustModal } from '@/components/stock-adjust';
@@ -8,6 +8,7 @@ import { Button, Card, ErrorState, ListRow, Loading, Screen, Section, T } from '
 import { useCanWrite } from '@/core/auth';
 import { notify } from '@/core/dialog';
 import { uploadProductImage } from '@/core/product-image';
+import { setPortalVisibility } from '@/core/portal-visibility';
 import { formatDate } from '@/core/format';
 import { useApi } from '@/core/query';
 import { KIND_PATH, MOVE_LABEL, formatQty, type AdjustMode, type StockKind } from '@/core/stock';
@@ -18,7 +19,7 @@ type Entry = {
   qty?: number; kgAmount?: number; notes?: string | null; product?: string | null;
 };
 type Ekstre = {
-  product?: { id: string; name: string; stock: number; unit: string; imageUpdatedAt?: string | null };
+  product?: { id: string; name: string; stock: number; unit: string; imageUpdatedAt?: string | null; portalVisible?: boolean };
   material?: { id: string; name: string; stock: number; category?: string | null };
   entries: Entry[];
 };
@@ -34,6 +35,13 @@ export default function StockDetail() {
   const q = useApi<Ekstre>(`/api/${KIND_PATH[kind]}/${id}/ekstre`);
   const [adjust, setAdjust] = useState<AdjustMode | null>(null);
   const [imageBusy, setImageBusy] = useState(false);
+  const [portalBusy, setPortalBusy] = useState(false);
+  const togglePortal = async (visible: boolean) => {
+    setPortalBusy(true);
+    try { await setPortalVisibility([id], visible); await q.refetch(); }
+    catch (e: any) { notify('Kaydedilemedi', e?.message || '', 'error'); }
+    finally { setPortalBusy(false); }
+  };
   const setImage = async (base64: string | null) => {
     setImageBusy(true);
     try { await uploadProductImage(id, base64); await q.refetch(); notify(base64 ? 'Fotoğraf kaydedildi' : 'Fotoğraf kaldırıldı'); }
@@ -66,6 +74,16 @@ export default function StockDetail() {
               <ProductThumb productId={id} imageUpdatedAt={q.data!.product!.imageUpdatedAt} size={180} />
             </View>
           ) : null
+        ) : null}
+        {kind === 'product' && canWrite ? (
+          <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <T style={{ fontWeight: '600' }}>Portalda göster</T>
+              <T variant="small">Açıkken müşteriler bu ürünü portal kataloğunda görüp sipariş verebilir.</T>
+            </View>
+            <Switch value={!!q.data!.product!.portalVisible} disabled={portalBusy} onValueChange={v => { void togglePortal(v); }}
+              trackColor={{ true: c.primary }} testID="product-portal-visible" />
+          </Card>
         ) : null}
         <Card style={{ backgroundColor: c.strong, borderColor: c.strong }}>
           <T variant="small" color={c.strongText} style={{ opacity: 0.8 }}>{kind === 'product' ? 'Ürün stoku' : 'Hammadde stoku (ana depo)'}</T>
