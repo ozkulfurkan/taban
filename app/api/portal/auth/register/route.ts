@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     html: `
       <p>Merhaba ${esc(portalCustomer.name ?? email)},</p>
       <p>Müşteri portalı hesabınız oluşturuldu. Giriş yapabilmek için e-posta adresinizi doğrulayın.</p>
-      <p><a href="${verifyUrl}" style="background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600;">E-postamı Doğrula</a></p>
+      <p><a href="${verifyUrl}" style="background:#6B1A2C;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600;">E-postamı Doğrula</a></p>
       <p>Doğruladıktan sonra <a href="${baseUrl}/portal/login">${baseUrl}/portal/login</a> adresinden giriş yapabilirsiniz.</p>
       <p>Geçici şifreniz: <strong>${esc(password)}</strong> (girişten sonra Ayarlar → Şifre değiştir ile değiştirebilirsiniz)</p>
       <p>Mobil uygulama: <a href="${baseUrl}/indir">${baseUrl}/indir</a></p>

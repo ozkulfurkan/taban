@@ -7,7 +7,7 @@ import { useLanguage } from '@/lib/i18n/language-context';
 import { formatDate } from '@/lib/time';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Shield, Building2, Clock, Crown, Users, Package, Calculator, Loader2, Mail, Send, Eye } from 'lucide-react';
+import { Shield, Building2, Clock, Crown, Users, Package, Calculator, Loader2, Mail, Send, Eye } from '@/app/components/icons';
 import { motion } from 'framer-motion';
 
 export default function AdminPage() {
@@ -78,17 +78,17 @@ export default function AdminPage() {
   const proSubs = (companies ?? []).filter((c: any) => c?.subscriptionStatus === 'PRO')?.length ?? 0;
 
   const statusColors: Record<string, string> = {
-    FREE: 'bg-slate-100 text-slate-700',
+    FREE: 'bg-ink-100 text-ink-700',
     TRIAL: 'bg-amber-100 text-amber-700',
-    PRO: 'bg-green-100 text-green-700',
+    PRO: 'bg-emerald-100 text-emerald-700',
   };
 
   return (
     <AppShell>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Shield className="w-6 h-6 text-blue-600" />
-          <h1 className="text-2xl font-bold text-slate-800">{t('admin', 'title')}</h1>
+          <Shield className="w-6 h-6 text-brand-700" />
+          <h1 className="page-title">{t('admin', 'title')}</h1>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -98,15 +98,15 @@ export default function AdminPage() {
         </div>
 
         {/* Mail Test Section */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-card p-6 border border-ink-200/80">
           <div className="flex items-center gap-3 mb-4">
-            <Mail className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-slate-700">Mail Testi</h2>
+            <Mail className="w-5 h-5 text-brand-700" />
+            <h2 className="text-lg font-semibold text-ink-700">Mail Testi</h2>
           </div>
 
           <form onSubmit={handleMailTest} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-2">
+              <label className="block text-sm font-medium text-ink-600 mb-2">
                 Test Mail Adresi
               </label>
               <input
@@ -114,7 +114,7 @@ export default function AdminPage() {
                 value={mailTest.email}
                 onChange={(e) => setMailTest(p => ({ ...p, email: e.target.value }))}
                 placeholder="test@example.com"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-ink-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-brand-600"
                 required
               />
             </div>
@@ -122,7 +122,7 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={mailTest.loading}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 disabled:bg-brand-500 text-white rounded-lg font-medium transition-colors"
             >
               {mailTest.loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -134,7 +134,7 @@ export default function AdminPage() {
           </form>
 
           {mailTest.result && (
-            <div className={`mt-4 p-4 rounded-lg ${mailTest.result.error ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`}>
+            <div className={`mt-4 p-4 rounded-lg ${mailTest.result.error ? 'bg-red-50 border border-red-200' : 'bg-emerald-50 border border-emerald-200'}`}>
               {mailTest.result.error ? (
                 <div>
                   <p className="text-red-700 font-medium">❌ Mail gönderim hatası</p>
@@ -142,10 +142,10 @@ export default function AdminPage() {
                 </div>
               ) : (
                 <div>
-                  <p className="text-green-700 font-medium">✅ Mail başarıyla gönderildi</p>
-                  <p className="text-green-600 text-sm mt-1">{mailTest.result.message}</p>
-                  <p className="text-green-600 text-sm">Environment: {mailTest.result.environment}</p>
-                  <p className="text-green-600 text-sm">Timestamp: {mailTest.result.timestamp}</p>
+                  <p className="text-emerald-700 font-medium">✅ Mail başarıyla gönderildi</p>
+                  <p className="text-emerald-600 text-sm mt-1">{mailTest.result.message}</p>
+                  <p className="text-emerald-600 text-sm">Environment: {mailTest.result.environment}</p>
+                  <p className="text-emerald-600 text-sm">Timestamp: {mailTest.result.timestamp}</p>
                 </div>
               )}
             </div>
@@ -153,11 +153,11 @@ export default function AdminPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
             <div className="p-4 border-b">
-              <h2 className="font-semibold text-slate-700">{t('admin', 'companies')}</h2>
+              <h2 className="font-semibold text-ink-700">{t('admin', 'companies')}</h2>
             </div>
             <div className="divide-y">
               {(companies ?? []).map((company: any, i: number) => (
@@ -166,21 +166,21 @@ export default function AdminPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.05 }}
-                  className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                  className="p-4 flex items-center justify-between hover:bg-ink-50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Building2 className="w-5 h-5 text-blue-600" />
+                    <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-brand-700" />
                     </div>
                     <div>
-                      <p className="font-medium text-slate-700">{company?.name ?? '-'}</p>
-                      <p className="text-xs text-slate-400">
+                      <p className="font-medium text-ink-700">{company?.name ?? '-'}</p>
+                      <p className="text-xs text-ink-400">
                         {company?.createdAt ? formatDate(company.createdAt) : ''}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                    <div className="flex items-center gap-3 text-xs text-ink-500">
                       <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{company?._count?.users ?? 0}</span>
                       <span className="flex items-center gap-1"><Package className="w-3.5 h-3.5" />{company?._count?.materials ?? 0}</span>
                       <span className="flex items-center gap-1"><Calculator className="w-3.5 h-3.5" />{company?._count?.soleCalculations ?? 0}</span>
@@ -189,14 +189,14 @@ export default function AdminPage() {
                       {company?.subscriptionStatus ?? 'FREE'}
                     </span>
                     {company?.trialEndsAt && (
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-ink-400">
                         {t('admin', 'trialEnds')}: {formatDate(company.trialEndsAt)}
                       </span>
                     )}
                     <button
                       onClick={() => handleImpersonate(company.id)}
                       disabled={impersonating === company.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-100 hover:bg-brand-200 text-brand-800 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
                     >
                       {impersonating === company.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />

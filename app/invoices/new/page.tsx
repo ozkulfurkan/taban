@@ -74,7 +74,7 @@ export default function NewInvoicePage() {
   };
 
   // Siparişten gelindiyse sipariş yüklenince açılır (irsaliye no ve sevk tarihi sevkiyattan gelir)
-  if (orderId && !order) return <AppShell><div className="py-16 text-center text-slate-400 text-sm">Sipariş yükleniyor…</div></AppShell>;
+  if (orderId && !order) return <AppShell><div className="py-16 text-center text-ink-400 text-sm">Sipariş yükleniyor…</div></AppShell>;
   const shipmentHeader = order?.shipment ? {
     irsaliyeNo: order.shipment.deliveryNoteNo ?? '',
     sevkTarihi: order.shipment.shipmentDate ? new Date(order.shipment.shipmentDate).toISOString().split('T')[0] : undefined,

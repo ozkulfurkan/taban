@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import StatCard from '@/app/components/stat-card';
-import { Package, Factory, TrendingUp, Tag, Loader2, X, Edit2, Trash2, Layers, TrendingDown, RotateCcw, FileText, Plus, CheckCircle, History, AlertTriangle } from 'lucide-react';
+import { Package, Factory, TrendingUp, Tag, Loader2, X, Edit2, Trash2, Layers, TrendingDown, RotateCcw, FileText, Plus, CheckCircle, History, AlertTriangle } from '@/app/components/icons';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { stockTextClass } from '@/lib/stock-display';
 import DecimalInput from '@/app/components/decimal-input';
@@ -16,12 +16,12 @@ function typeBadge(type: string, kgAmount: number) {
   if (type === 'alis') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold"><TrendingUp className="w-3 h-3" /> Alış</span>;
   if (type === 'alis_iade') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold"><RotateCcw className="w-3 h-3" /> Alış İadesi</span>;
   if (type === 'satis') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold"><TrendingDown className="w-3 h-3" /> Satış</span>;
-  if (type === 'iade') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold"><RotateCcw className="w-3 h-3" /> İade</span>;
-  if (type === 'fason_transfer') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold"><Factory className="w-3 h-3" /> {kgAmount < 0 ? 'Fason Gönderim' : 'Fason İade'}</span>;
+  if (type === 'iade') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-100 text-brand-800 rounded-full text-xs font-semibold"><RotateCcw className="w-3 h-3" /> İade</span>;
+  if (type === 'fason_transfer') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold"><Factory className="w-3 h-3" /> {kgAmount < 0 ? 'Fason Gönderim' : 'Fason İade'}</span>;
   if (type === 'artirma') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold"><TrendingUp className="w-3 h-3" /> Artırma</span>;
   if (type === 'azaltma') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold"><TrendingDown className="w-3 h-3" /> Azaltma</span>;
-  if (type === 'stok_guncelleme') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold"><Layers className="w-3 h-3" /> Stok Güncelleme</span>;
-  return <span className="text-xs text-slate-400">{type}</span>;
+  if (type === 'stok_guncelleme') return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-100 text-brand-800 rounded-full text-xs font-semibold"><Layers className="w-3 h-3" /> Stok Güncelleme</span>;
+  return <span className="text-xs text-ink-400">{type}</span>;
 }
 
 export default function MaterialDetailPage() {
@@ -192,13 +192,13 @@ export default function MaterialDetailPage() {
 
   if (loading) return (
     <AppShell>
-      <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+      <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>
     </AppShell>
   );
 
   if (!material) return (
     <AppShell>
-      <div className="text-center py-20 text-slate-400">Hammadde bulunamadı.</div>
+      <div className="text-center py-20 text-ink-400">Hammadde bulunamadı.</div>
     </AppShell>
   );
 
@@ -223,20 +223,20 @@ export default function MaterialDetailPage() {
           <div className="flex items-center gap-3">
             <BackLink variant="icon" href="/materials" label="Hammaddeler" />
             <div>
-              <h1 className="text-xl font-bold text-slate-800">{material.name}</h1>
+              <h1 className="page-title">{material.name}</h1>
               <div className="flex items-center gap-2 mt-0.5">
                 {material.category && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-100 text-violet-700 rounded text-xs font-medium">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-100 text-brand-800 rounded text-xs font-medium">
                     <Tag className="w-3 h-3" />{material.category}
                   </span>
                 )}
-                {material.supplier && <span className="text-xs text-slate-400">{material.supplier}</span>}
+                {material.supplier && <span className="text-xs text-ink-400">{material.supplier}</span>}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setEditModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors">
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-ink-600 bg-ink-100 hover:bg-ink-200 border border-ink-200 rounded-lg transition-colors">
               <Edit2 className="w-3.5 h-3.5" /> Düzenle
             </button>
             <button onClick={handleDelete}
@@ -262,7 +262,7 @@ export default function MaterialDetailPage() {
           </button>
           {subcontractors.length > 0 && (
             <button onClick={() => { setSendModal(true); setSendSubId(''); setSendQty(''); setSendNotes(''); }}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-lg transition-colors">
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors">
               <Factory className="w-4 h-4" /> Fasoncuya Gönder
             </button>
           )}
@@ -272,37 +272,37 @@ export default function MaterialDetailPage() {
         <div className="grid lg:grid-cols-2 gap-6">
 
           {/* LEFT: Ekstre */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="bg-teal-700 px-4 py-3 flex items-center gap-2">
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+            <div className="bg-brand-800 px-4 py-3 flex items-center gap-2">
               <FileText className="w-4 h-4 text-white" />
               <h2 className="text-white font-semibold text-sm">Stok Ekstresi</h2>
             </div>
             {ekstreLoading ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-teal-600" /></div>
+              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-brand-700" /></div>
             ) : !ekstre?.entries?.length ? (
-              <div className="text-center py-12 text-slate-400 text-sm">Henüz hareket kaydı yok</div>
+              <div className="text-center py-12 text-ink-400 text-sm">Henüz hareket kaydı yok</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
+                    <tr className="text-xs font-semibold text-ink-500 border-b bg-ink-50">
                       <th className="px-3 py-2.5 text-left">Tarih</th>
                       <th className="px-3 py-2.5 text-left">İşlem</th>
                       <th className="px-3 py-2.5 text-left">Taraf</th>
                       <th className="px-3 py-2.5 text-right">Miktar (kg)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-ink-100">
                     {ekstre.entries.map((e: any) => (
-                      <tr key={e.id} className="hover:bg-slate-50/50">
-                        <td className="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap">
+                      <tr key={e.id} className="hover:bg-ink-50/50">
+                        <td className="px-3 py-2.5 text-xs text-ink-500 whitespace-nowrap">
                           {new Date(e.date).toLocaleDateString('tr-TR')}
                         </td>
                         <td className="px-3 py-2.5">{typeBadge(e.type, e.kgAmount)}</td>
-                        <td className="px-3 py-2.5 text-slate-600 truncate max-w-[120px] text-xs">
+                        <td className="px-3 py-2.5 text-ink-600 truncate max-w-[120px] text-xs">
                           {e.party}
-                          {e.invoiceNo && <div className="text-slate-400">{e.invoiceNo}</div>}
-                          {e.product && <div className="text-slate-400">{e.product}</div>}
+                          {e.invoiceNo && <div className="text-ink-400">{e.invoiceNo}</div>}
+                          {e.product && <div className="text-ink-400">{e.product}</div>}
                         </td>
                         <td className={`px-3 py-2.5 text-right font-semibold ${e.kgAmount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                           {e.kgAmount > 0 ? '+' : ''}{e.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -320,11 +320,11 @@ export default function MaterialDetailPage() {
 
             {/* Subcontractor cards */}
             <div>
-              <h2 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-1.5">
-                <Factory className="w-4 h-4 text-orange-500" /> Fasoncudaki Stok
+              <h2 className="text-sm font-semibold text-ink-600 mb-3 flex items-center gap-1.5">
+                <Factory className="w-4 h-4 text-amber-500" /> Fasoncudaki Stok
               </h2>
               {(material.subcontractorStocks ?? []).filter((ss: any) => ss.quantity > 0).length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm p-6 text-center text-sm text-slate-400">
+                <div className="bg-white rounded-xl shadow-card p-6 text-center text-sm text-ink-400 border border-ink-200/80">
                   Hiçbir fasoncuda stok bulunmuyor
                 </div>
               ) : (
@@ -336,10 +336,10 @@ export default function MaterialDetailPage() {
                         .filter((t: any) => t.subcontractorId === ss.subcontractorId)
                         .slice(0, 3);
                       return (
-                        <div key={ss.id} className="bg-white rounded-xl shadow-sm p-4 border border-orange-100">
+                        <div key={ss.id} className="bg-white rounded-xl shadow-card p-4 border border-amber-100">
                           <div className="flex items-center justify-between mb-3">
-                            <span className="font-semibold text-slate-800">{ss.subcontractor?.name}</span>
-                            <span className="text-lg font-bold text-orange-600">
+                            <span className="font-semibold text-ink-800">{ss.subcontractor?.name}</span>
+                            <span className="text-lg font-bold text-amber-600">
                               {ss.quantity.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                             </span>
                           </div>
@@ -351,15 +351,15 @@ export default function MaterialDetailPage() {
                             </button>
                             <button
                               onClick={() => openStokModal({ id: ss.subcontractorId, name: ss.subcontractor?.name, qty: ss.quantity })}
-                              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors">
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-brand-800 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg transition-colors">
                               <Layers className="w-3 h-3" /> Stok Güncelle
                             </button>
                           </div>
                           {recentTransfers.length > 0 && (
-                            <div className="space-y-1 border-t border-slate-100 pt-2">
+                            <div className="space-y-1 border-t border-ink-100 pt-2">
                               {recentTransfers.map((t: any) => (
                                 <div key={t.id} className="flex items-center justify-between text-xs">
-                                  <span className="text-slate-400">{new Date(t.transferDate).toLocaleDateString('tr-TR')}</span>
+                                  <span className="text-ink-400">{new Date(t.transferDate).toLocaleDateString('tr-TR')}</span>
                                   <span className={`font-medium ${t.direction === 'OUTGOING' ? 'text-emerald-600' : 'text-red-500'}`}>
                                     {t.direction === 'OUTGOING' ? '+' : '−'}{t.quantity.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                                   </span>
@@ -377,15 +377,15 @@ export default function MaterialDetailPage() {
             {/* Price history */}
             {(material.priceHistory ?? []).length > 0 && (
               <div>
-                <h2 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-1.5">
-                  <History className="w-4 h-4 text-blue-500" /> Fiyat Geçmişi
+                <h2 className="text-sm font-semibold text-ink-600 mb-3 flex items-center gap-1.5">
+                  <History className="w-4 h-4 text-brand-600" /> Fiyat Geçmişi
                 </h2>
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="divide-y divide-slate-100">
+                <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+                  <div className="divide-y divide-ink-100">
                     {(material.priceHistory ?? []).map((h: any) => (
                       <div key={h.id} className="flex items-center justify-between px-4 py-2.5">
-                        <span className="text-xs text-slate-500">{new Date(h.createdAt).toLocaleDateString('tr-TR')}</span>
-                        <span className="font-semibold text-slate-700 text-sm">
+                        <span className="text-xs text-ink-500">{new Date(h.createdAt).toLocaleDateString('tr-TR')}</span>
+                        <span className="font-semibold text-ink-700 text-sm">
                           {h.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {h.currency}/kg
                         </span>
                       </div>
@@ -404,8 +404,8 @@ export default function MaterialDetailPage() {
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/40" onClick={() => setStokModal(null)} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-              <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-ink-200/80">
+              <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
                 <h3 className="text-white font-semibold text-base">
                   {stokModal.subcontractorId ? `Fasoncu Stok Güncelle — ${stokModal.subcontractorName}` : 'Stok Güncelle (Ana Depo)'}
                 </h3>
@@ -413,15 +413,15 @@ export default function MaterialDetailPage() {
               </div>
               <div className="p-5 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-slate-800">{material.name}</span>
+                  <span className="text-sm font-semibold text-ink-800">{material.name}</span>
                   <div className="text-right">
-                    <p className="text-xs text-slate-400">Mevcut</p>
+                    <p className="text-xs text-ink-400">Mevcut</p>
                     <p className={`text-lg font-bold ${stockTextClass(stokModal.stock, 'text-emerald-600')}`}>
                       {stokModal.stock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5 bg-slate-100 rounded-xl p-1">
+                <div className="grid grid-cols-3 gap-1.5 bg-ink-100 rounded-xl p-1">
                   {([
                     { key: 'artirma', label: '+ Artır' },
                     { key: 'azaltma', label: '− Azalt' },
@@ -432,36 +432,36 @@ export default function MaterialDetailPage() {
                         stokMode === key
                           ? key === 'artirma' ? 'bg-emerald-600 text-white shadow-sm'
                             : key === 'azaltma' ? 'bg-red-500 text-white shadow-sm'
-                            : 'bg-blue-600 text-white shadow-sm'
-                          : 'text-slate-600 hover:bg-white/70'
+                            : 'bg-brand-700 text-white shadow-sm'
+                          : 'text-ink-600 hover:bg-white/70'
                       }`}>
                       {label}
                     </button>
                   ))}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">
+                  <label className="block text-xs font-medium text-ink-500 mb-1">
                     {stokMode === 'artirma' ? 'Eklenecek Miktar (kg)' : stokMode === 'azaltma' ? 'Azaltılacak Miktar (kg)' : 'Güncel Stok Değeri (kg)'}
                   </label>
                   <DecimalInput step="0.001" min="0" value={stokValue} onChange={e => setStokValue(e.target.value)}
                     placeholder="0,000" autoFocus
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-emerald-400" />
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-emerald-400" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Not (opsiyonel)</label>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Not (opsiyonel)</label>
                   <input type="text" value={stokNotes} onChange={e => setStokNotes(e.target.value)} placeholder="Açıklama..."
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-400" />
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-400" />
                 </div>
                 {stokValue && val > 0 && (
-                  <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
-                    <span className="text-xs text-slate-500">Yeni Stok</span>
+                  <div className="flex items-center justify-between bg-ink-50 border border-ink-200 rounded-xl px-4 py-2.5">
+                    <span className="text-xs text-ink-500">Yeni Stok</span>
                     <span className={`text-base font-bold ${stokPreview <= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                       {stokPreview.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg
                     </span>
                   </div>
                 )}
                 <div className="flex gap-3 pt-1">
-                  <button onClick={() => setStokModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm">Vazgeç</button>
+                  <button onClick={() => setStokModal(null)} className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg hover:bg-ink-50 text-sm">Vazgeç</button>
                   <button onClick={handleStokSave} disabled={stokSaving || !stokValue || val <= 0}
                     className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
                     {stokSaving && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -478,35 +478,35 @@ export default function MaterialDetailPage() {
       {sendModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setSendModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-            <div className="bg-orange-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-ink-200/80">
+            <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
               <h3 className="text-white font-semibold text-base flex items-center gap-2"><Factory className="w-4 h-4" /> Fasoncuya Gönder</h3>
               <button onClick={() => setSendModal(false)} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
-              <p className="text-sm font-medium text-slate-700">{material.name}</p>
+              <p className="text-sm font-medium text-ink-700">{material.name}</p>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Fasoncu *</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Fasoncu *</label>
                 <select value={sendSubId} onChange={e => setSendSubId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none">
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none">
                   <option value="">Fasoncu seçin...</option>
                   {subcontractors.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Miktar (kg) *</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Miktar (kg) *</label>
                 <DecimalInput step="0.001" min="0.001" value={sendQty} onChange={e => setSendQty(e.target.value)} placeholder="0.000"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-orange-500 outline-none" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-brand-600 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Not (opsiyonel)</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Not (opsiyonel)</label>
                 <input type="text" value={sendNotes} onChange={e => setSendNotes(e.target.value)} placeholder="Açıklama..."
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-500" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
               </div>
               <div className="flex gap-3 pt-1">
-                <button onClick={() => setSendModal(false)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm">Vazgeç</button>
+                <button onClick={() => setSendModal(false)} className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg hover:bg-ink-50 text-sm">Vazgeç</button>
                 <button onClick={handleSendToSub} disabled={sendSaving || !sendSubId || !sendQty || parseFloat(sendQty) <= 0}
-                  className="flex-1 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
+                  className="flex-1 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
                   {sendSaving && <Loader2 className="w-4 h-4 animate-spin" />} Gönder
                 </button>
               </div>
@@ -519,29 +519,29 @@ export default function MaterialDetailPage() {
       {receiveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setReceiveModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-            <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-ink-200/80">
+            <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
               <h3 className="text-white font-semibold text-base">Fasoncudan Al — {receiveModal.name}</h3>
               <button onClick={() => setReceiveModal(null)} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="flex items-center justify-between bg-orange-50 border border-orange-200 rounded-xl px-4 py-2.5">
-                <span className="text-xs text-slate-500">Fasoncudaki Stok</span>
-                <span className="font-bold text-orange-600">{receiveModal.availableQty.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</span>
+              <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+                <span className="text-xs text-ink-500">Fasoncudaki Stok</span>
+                <span className="font-bold text-amber-600">{receiveModal.availableQty.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</span>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Alınacak Miktar (kg) *</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Alınacak Miktar (kg) *</label>
                 <DecimalInput step="0.001" min="0.001" max={receiveModal.availableQty} value={receiveQty}
                   onChange={e => setReceiveQty(e.target.value)} placeholder="0.000" autoFocus
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Not (opsiyonel)</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Not (opsiyonel)</label>
                 <input type="text" value={receiveNotes} onChange={e => setReceiveNotes(e.target.value)} placeholder="Açıklama..."
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
               <div className="flex gap-3 pt-1">
-                <button onClick={() => setReceiveModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm">Vazgeç</button>
+                <button onClick={() => setReceiveModal(null)} className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg hover:bg-ink-50 text-sm">Vazgeç</button>
                 <button onClick={handleReceiveFromSub} disabled={receiveSaving || !receiveQty || parseFloat(receiveQty) <= 0}
                   className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
                   {receiveSaving && <Loader2 className="w-4 h-4 animate-spin" />} Al
@@ -556,52 +556,52 @@ export default function MaterialDetailPage() {
       {editModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setEditModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+            <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
               <h3 className="text-white font-semibold text-base">Hammadde Düzenle</h3>
               <button onClick={() => setEditModal(false)} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Ad *</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Ad *</label>
                 <input value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Kategori</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Kategori</label>
                 <input value={editForm.category} onChange={e => setEditForm(p => ({ ...p, category: e.target.value }))}
-                  placeholder="Ör: Taban, Astar" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                  placeholder="Ör: Taban, Astar" className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Tedarikçi</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Tedarikçi</label>
                 <input value={editForm.supplier} onChange={e => setEditForm(p => ({ ...p, supplier: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Fiyat/kg</label>
+                  <label className="block text-xs font-medium text-ink-600 mb-1">Fiyat/kg</label>
                   <input type="text" inputMode="decimal" value={editForm.pricePerKg}
                     onChange={e => setEditForm(p => ({ ...p, pricePerKg: normalizePriceInput(e.target.value) }))}
                     onKeyDown={blockDot} placeholder="0,00"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Para Birimi</label>
+                  <label className="block text-xs font-medium text-ink-600 mb-1">Para Birimi</label>
                   <select value={editForm.currency} onChange={e => setEditForm(p => ({ ...p, currency: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600">
                     <option>USD</option><option>EUR</option><option>TRY</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Açıklama</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Açıklama</label>
                 <textarea value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))}
-                  rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                  rows={2} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600 resize-none" />
               </div>
               <div className="flex gap-3 pt-1">
-                <button onClick={() => setEditModal(false)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 text-sm">Vazgeç</button>
+                <button onClick={() => setEditModal(false)} className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg hover:bg-ink-50 text-sm">Vazgeç</button>
                 <button onClick={handleEdit} disabled={editSaving || !editForm.name}
-                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
+                  className="flex-1 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold disabled:opacity-60 flex items-center justify-center gap-2">
                   {editSaving && <Loader2 className="w-4 h-4 animate-spin" />} Kaydet
                 </button>
               </div>
@@ -612,19 +612,19 @@ export default function MaterialDetailPage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-ink-600 whitespace-pre-line">{confirmModal.message}</p>
               </div>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setConfirmModal(null)}
-                className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+                className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg text-sm hover:bg-ink-50">İptal</button>
               <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }}
                 className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>
@@ -634,18 +634,18 @@ export default function MaterialDetailPage() {
       {errorMsg && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
-                <p className="text-sm text-slate-600">{errorMsg}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Hata</h3>
+                <p className="text-sm text-ink-600">{errorMsg}</p>
               </div>
             </div>
             <button onClick={() => setErrorMsg('')}
-              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              className="w-full py-2 bg-ink-700 hover:bg-ink-800 text-white rounded-lg text-sm font-medium">
               Tamam
             </button>
           </div>

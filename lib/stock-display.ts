@@ -16,7 +16,7 @@ export function stockTone(n: number | null | undefined): StockTone {
 }
 
 // Metin rengi. positive için çağıran tarafın varsayılan rengi kullanılır.
-export function stockTextClass(n: number | null | undefined, positive = 'text-slate-700'): string {
+export function stockTextClass(n: number | null | undefined, positive = 'text-ink-700'): string {
   const tone = stockTone(n);
-  return tone === 'negative' ? 'text-red-600' : tone === 'zero' ? 'text-slate-400' : positive;
+  return tone === 'negative' ? 'text-red-600' : tone === 'zero' ? 'text-ink-400' : positive;
 }

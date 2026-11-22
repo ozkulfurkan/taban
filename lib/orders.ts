@@ -112,36 +112,36 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
 
   // Build size distribution table rows
   const sizeEntries = Object.entries(finalSizeDist).filter(([, qty]) => qty > 0);
-  const sizeHeaderCells = sizeEntries.map(([sz]) => `<th style="padding:6px 12px;border:1px solid #e2e8f0;background:#f8fafc;font-weight:600;color:#475569;">${esc(sz)}</th>`).join('');
-  const sizeValueCells = sizeEntries.map(([, qty]) => `<td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:500;">${qty}</td>`).join('');
+  const sizeHeaderCells = sizeEntries.map(([sz]) => `<th style="padding:6px 12px;border:1px solid #E7E1D9;background:#FAF8F5;font-weight:600;color:#5E554C;">${esc(sz)}</th>`).join('');
+  const sizeValueCells = sizeEntries.map(([, qty]) => `<td style="padding:6px 12px;border:1px solid #E7E1D9;text-align:center;font-weight:500;">${qty}</td>`).join('');
 
   const productionHtml = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
-<body style="font-family:sans-serif;color:#1e293b;max-width:680px;margin:0 auto;padding:24px;">
-  <div style="border-bottom:2px solid #1e293b;padding-bottom:16px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;">
+<body style="font-family:sans-serif;color:#342E28;max-width:680px;margin:0 auto;padding:24px;">
+  <div style="border-bottom:2px solid #342E28;padding-bottom:16px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;">
     <div>
-      <p style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Üretim Emri</p>
+      <p style="font-size:11px;color:#776D62;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Üretim Emri</p>
       <h1 style="font-size:24px;font-weight:700;margin:0;">${esc(orderNo)}</h1>
     </div>
-    <div style="text-align:right;font-size:12px;color:#64748b;">
+    <div style="text-align:right;font-size:12px;color:#776D62;">
       <p style="margin:0;">Tarih: ${now.toLocaleDateString('tr-TR')}</p>
-      ${requestedDeliveryDate ? `<p style="margin:4px 0 0;"><strong style="color:#1e293b;">İstenen Termin: ${new Date(requestedDeliveryDate).toLocaleDateString('tr-TR')}</strong></p>` : ''}
+      ${requestedDeliveryDate ? `<p style="margin:4px 0 0;"><strong style="color:#342E28;">İstenen Termin: ${new Date(requestedDeliveryDate).toLocaleDateString('tr-TR')}</strong></p>` : ''}
     </div>
   </div>
 
   <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
     <tr>
       <td style="padding:8px 16px 8px 0;vertical-align:top;width:50%;">
-        <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Müşteri</p>
+        <p style="font-size:11px;color:#A89E92;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Müşteri</p>
         <p style="font-size:15px;font-weight:600;margin:0;">${esc(customer?.name ?? '—')}</p>
-        ${portalCustomer ? `<p style="font-size:12px;color:#64748b;margin:2px 0 0;">${esc(portalCustomer.email)}</p>` : ''}
+        ${portalCustomer ? `<p style="font-size:12px;color:#776D62;margin:2px 0 0;">${esc(portalCustomer.email)}</p>` : ''}
       </td>
       <td style="padding:8px 0 8px 16px;vertical-align:top;width:50%;">
-        <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Toplam</p>
+        <p style="font-size:11px;color:#A89E92;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Toplam</p>
         <p style="font-size:15px;font-weight:600;margin:0;">${esc(formatQty(finalTotalQty, finalUnit))}</p>
-        ${finalItems ? `<p style="font-size:12px;color:#64748b;margin:2px 0 0;">${finalItems.length} kalem</p>` : ''}
+        ${finalItems ? `<p style="font-size:12px;color:#776D62;margin:2px 0 0;">${finalItems.length} kalem</p>` : ''}
       </td>
     </tr>
   </table>
@@ -150,40 +150,40 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
   <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
     <tr>
       <td style="padding:8px 16px 8px 0;vertical-align:top;width:50%;">
-        <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Ürün</p>
+        <p style="font-size:11px;color:#A89E92;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Ürün</p>
         <p style="font-size:15px;font-weight:600;margin:0;">${esc(productCode || product?.code || '—')}</p>
-        ${product?.name ? `<p style="font-size:12px;color:#64748b;margin:2px 0 0;">${esc(product.name)}</p>` : ''}
+        ${product?.name ? `<p style="font-size:12px;color:#776D62;margin:2px 0 0;">${esc(product.name)}</p>` : ''}
       </td>
       <td style="padding:8px 0 8px 16px;vertical-align:top;width:50%;">
-        <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Renk / Malzeme</p>
+        <p style="font-size:11px;color:#A89E92;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Renk / Malzeme</p>
         <p style="font-size:15px;font-weight:600;margin:0;">${esc(color || '—')} · ${esc(material || '—')}</p>
       </td>
     </tr>
   </table>
   <div style="margin-bottom:20px;">
-    <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Beden Dağılımı</p>
+    <p style="font-size:11px;color:#A89E92;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Beden Dağılımı</p>
     <table style="border-collapse:collapse;width:100%;">
       <thead><tr>
         ${sizeHeaderCells}
-        <th style="padding:6px 12px;border:1px solid #e2e8f0;background:#dbeafe;color:#1d4ed8;font-weight:700;">Toplam</th>
+        <th style="padding:6px 12px;border:1px solid #E7E1D9;background:#F5E4E7;color:#561524;font-weight:700;">Toplam</th>
       </tr></thead>
       <tbody><tr>
         ${sizeValueCells}
-        <td style="padding:6px 12px;border:1px solid #e2e8f0;text-align:center;font-weight:700;color:#1d4ed8;background:#dbeafe;">${esc(formatQty(finalTotalQty, finalUnit))}</td>
+        <td style="padding:6px 12px;border:1px solid #E7E1D9;text-align:center;font-weight:700;color:#561524;background:#F5E4E7;">${esc(formatQty(finalTotalQty, finalUnit))}</td>
       </tr></tbody>
     </table>
   </div>`}
 
-  ${notes ? `<div style="background:#f8fafc;border-radius:8px;padding:12px 16px;margin-bottom:20px;">
-    <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Notlar</p>
-    <p style="margin:0;color:#475569;">${esc(notes)}</p>
+  ${notes ? `<div style="background:#FAF8F5;border-radius:8px;padding:12px 16px;margin-bottom:20px;">
+    <p style="font-size:11px;color:#A89E92;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Notlar</p>
+    <p style="margin:0;color:#5E554C;">${esc(notes)}</p>
   </div>` : ''}
 
-  <div style="border-top:1px solid #e2e8f0;padding-top:16px;display:flex;gap:40px;">
+  <div style="border-top:1px solid #E7E1D9;padding-top:16px;display:flex;gap:40px;">
     ${['Hazırlayan', 'Kontrol Eden', 'Onaylayan'].map(l => `
     <div style="flex:1;text-align:center;">
-      <div style="border-bottom:1px solid #94a3b8;height:40px;margin-bottom:4px;"></div>
-      <p style="font-size:11px;color:#94a3b8;margin:0;">${l}</p>
+      <div style="border-bottom:1px solid #A89E92;height:40px;margin-bottom:4px;"></div>
+      <p style="font-size:11px;color:#A89E92;margin:0;">${l}</p>
     </div>`).join('')}
   </div>
 </body>

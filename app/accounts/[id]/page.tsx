@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
-import { Loader2, Pencil, TrendingDown, TrendingUp, ArrowLeftRight, ChevronDown, Trash2, X, Save, AlertTriangle } from 'lucide-react';
+import { Loader2, Pencil, TrendingDown, TrendingUp, ArrowLeftRight, ChevronDown, Trash2, X, Save, AlertTriangle } from '@/app/components/icons';
 import { matchesText } from '@/lib/search';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
@@ -69,32 +69,32 @@ function HesapIslemModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm">
-        <div className={`rounded-t-2xl px-5 py-4 flex items-center justify-between ${isGiris ? 'bg-green-600' : 'bg-red-600'}`}>
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm border border-ink-200/80">
+        <div className={`rounded-t-2xl px-5 py-4 flex items-center justify-between ${isGiris ? 'bg-emerald-600' : 'bg-red-600'}`}>
           <h3 className="text-white font-semibold">{isGiris ? 'Hesaba Para Girişi' : 'Hesaptan Para Çıkışı'}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tutar</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Tutar</label>
             <DecimalInput step="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
               placeholder="0,00"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Tarih</label>
             <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Açıklama</label>
             <input value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Opsiyonel"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
           </div>
           <div className="flex gap-3 pt-1">
-            <button onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+            <button onClick={onClose} className="flex-1 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
             <button onClick={handleSave} disabled={saving || !form.amount}
-              className={`flex-1 py-2 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 ${isGiris ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
+              className={`flex-1 py-2 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 ${isGiris ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Kaydet
             </button>
           </div>
@@ -184,56 +184,56 @@ function TransferModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm">
-        <div className="rounded-t-2xl px-5 py-4 flex items-center justify-between bg-teal-500">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm border border-ink-200/80">
+        <div className="rounded-t-2xl px-5 py-4 flex items-center justify-between bg-brand-600">
           <h3 className="text-white font-semibold">Başka Hesaba Transfer</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">İşlem Tarihi</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">İşlem Tarihi</label>
             <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Gönderilecek Hesap</label>
-            <div className="w-full px-3 py-2 border border-slate-100 rounded-lg text-sm bg-slate-50 text-slate-700 font-medium">
+            <label className="block text-xs font-medium text-ink-500 mb-1">Gönderilecek Hesap</label>
+            <div className="w-full px-3 py-2 border border-ink-100 rounded-lg text-sm bg-ink-50 text-ink-700 font-medium">
               {targetAccount ? `${targetAccount.name} (${targetAccount.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${targetAccount.currency})` : '—'}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-700 font-bold mb-1">Gönderilen Tutar</label>
+            <label className="block text-xs font-medium text-ink-700 font-bold mb-1">Gönderilen Tutar</label>
             <DecimalInput step="0.01" value={form.amount} onChange={e => handleAmountChange(e.target.value)}
               placeholder="0,00"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right font-medium" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right font-medium" />
           </div>
           {isCrossCurrency && (
             <>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">
-                  Döviz Kuru <span className="text-slate-400">({sourceAccount.currency} / {targetAccount.currency})</span>
+                <label className="block text-xs font-medium text-ink-500 mb-1">
+                  Döviz Kuru <span className="text-ink-400">({sourceAccount.currency} / {targetAccount.currency})</span>
                 </label>
                 <DecimalInput step="0.0001" value={form.exchangeRate} onChange={e => handleExchangeRateChange(e.target.value)}
                   placeholder="0,0000"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 font-bold mb-1">
-                  Karşı Hesaba Geçen Tutar <span className="text-slate-400 font-normal">({targetAccount.currency})</span>
+                <label className="block text-xs font-medium text-ink-700 font-bold mb-1">
+                  Karşı Hesaba Geçen Tutar <span className="text-ink-400 font-normal">({targetAccount.currency})</span>
                 </label>
                 <DecimalInput step="0.0001" value={form.targetAmount} onChange={e => handleTargetAmountChange(e.target.value)}
                   placeholder="0,00"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right font-medium" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right font-medium" />
               </div>
             </>
           )}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Açıklama</label>
             <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Opsiyonel" rows={2}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none resize-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none resize-none" />
           </div>
           <div className="flex gap-3 pt-1">
-            <button onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+            <button onClick={onClose} className="flex-1 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
             <button onClick={handleSave}
               disabled={saving || !form.amount || !form.targetId || (isCrossCurrency && !form.targetAmount)}
               className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
@@ -258,7 +258,7 @@ function EditAccountModal({
   });
   const [saving, setSaving] = useState(false);
   const set = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
-  const COLORS = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#6B7280'];
+  const COLORS = ['#8A2438','#10B981','#F59E0B','#EF4444','#A8455A','#6B7280'];
 
   const handleSave = async () => {
     setSaving(true);
@@ -276,45 +276,45 @@ function EditAccountModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm border border-ink-200/80">
         <div className="rounded-t-2xl px-5 py-4 flex items-center justify-between" style={{ backgroundColor: form.color }}>
           <h3 className="text-white font-semibold">Hesabı Güncelle</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Hesap Adı</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Hesap Adı</label>
             <input value={form.name} onChange={e => set('name', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Para Birimi</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Para Birimi</label>
               <select value={form.currency} onChange={e => set('currency', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none">
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm bg-white outline-none">
                 {['TRY','USD','EUR'].map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Bakiye</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Bakiye</label>
               <DecimalInput step="0.01" value={form.balance} onChange={e => set('balance', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none text-right" />
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none text-right" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-2">Renk</label>
+            <label className="block text-xs font-medium text-ink-500 mb-2">Renk</label>
             <div className="flex gap-2">
               {COLORS.map(c => (
                 <button key={c} type="button" onClick={() => set('color', c)}
                   className="w-8 h-8 rounded-full border-2 transition-all"
-                  style={{ backgroundColor: c, borderColor: form.color === c ? '#1e293b' : 'transparent', transform: form.color === c ? 'scale(1.2)' : 'scale(1)' }} />
+                  style={{ backgroundColor: c, borderColor: form.color === c ? '#342E28' : 'transparent', transform: form.color === c ? 'scale(1.2)' : 'scale(1)' }} />
               ))}
             </div>
           </div>
           <div className="flex gap-3 pt-1">
-            <button onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+            <button onClick={onClose} className="flex-1 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
             <button onClick={handleSave} disabled={saving}
-              className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+              className="flex-1 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Güncelle
             </button>
           </div>
@@ -417,11 +417,11 @@ export default function AccountEkstrePage() {
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setModal('edit')}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg text-sm font-medium transition-colors">
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium transition-colors">
             <Pencil className="w-4 h-4" /> Güncelle
           </button>
           <button onClick={() => setModal('giris')}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors">
             <TrendingDown className="w-4 h-4" /> Hesaba Para Girişi Yap
           </button>
           <button onClick={() => setModal('cikis')}
@@ -430,23 +430,23 @@ export default function AccountEkstrePage() {
           </button>
           <div className="relative">
             <button onClick={() => setTransferDropdown(d => !d)}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-400 hover:bg-orange-500 text-white rounded-lg text-sm font-medium transition-colors">
+              className="flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm font-medium transition-colors">
               <ArrowLeftRight className="w-4 h-4" /> Hesaplar Arası Transfer <ChevronDown className="w-3 h-3" />
             </button>
             {transferDropdown && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setTransferDropdown(false)} />
-                <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 z-20 min-w-[220px] overflow-hidden">
+                <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-ink-100 z-20 min-w-[220px] overflow-hidden">
                   {allAccounts.filter((a: any) => a.id !== params?.id).map((a: any) => (
                     <button key={a.id}
                       onClick={() => { setTransferDropdown(false); setTransferTargetId(a.id); setModal('transfer'); }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                      className="w-full text-left px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: a.color }} />
                       {a.name}
                     </button>
                   ))}
                   {allAccounts.filter((a: any) => a.id !== params?.id).length === 0 && (
-                    <p className="px-4 py-3 text-sm text-slate-400">Başka hesap yok</p>
+                    <p className="px-4 py-3 text-sm text-ink-400">Başka hesap yok</p>
                   )}
                 </div>
               </>
@@ -455,28 +455,28 @@ export default function AccountEkstrePage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 bg-slate-700">
-            <h2 className="font-semibold text-white text-sm uppercase tracking-wide">HESAP HAREKETLERİ</h2>
+        <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+          <div className="px-4 py-3 border-b border-ink-200 bg-ink-50">
+            <h2 className="section-title">HESAP HAREKETLERİ</h2>
           </div>
 
           {/* Search */}
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3 justify-end">
-            <span className="text-sm text-slate-500 font-medium">Bul:</span>
+          <div className="px-4 py-3 border-b border-ink-100 flex items-center gap-3 justify-end">
+            <span className="text-sm text-ink-500 font-medium">Bul:</span>
             <input value={search} onChange={e => setSearch(e.target.value)}
-              className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400 w-64" />
+              className="px-3 py-1.5 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500 w-64" />
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>
+            <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-600" /></div>
           ) : filtered.length === 0 ? (
-            <div className="py-16 text-center text-slate-400 text-sm">İşlem bulunamadı</div>
+            <div className="py-16 text-center text-ink-400 text-sm">İşlem bulunamadı</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[850px]">
                 <thead>
-                  <tr className="text-xs font-semibold text-slate-600 border-b bg-green-50">
-                    <th className="px-3 py-2.5 text-left cursor-pointer hover:text-slate-800">Tarih ▼</th>
+                  <tr className="text-xs font-semibold text-ink-600 border-b bg-emerald-50">
+                    <th className="px-3 py-2.5 text-left cursor-pointer hover:text-ink-800">Tarih ▼</th>
                     <th className="px-3 py-2.5 text-left">İşlem</th>
                     <th className="px-3 py-2.5 text-left">Hesap</th>
                     <th className="px-3 py-2.5 text-left">Açıklama</th>
@@ -492,25 +492,25 @@ export default function AccountEkstrePage() {
                     const hesap = row.customer?.name || row.supplier?.name || '';
                     const islemLabel = getIslemLabel(row);
                     return (
-                      <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                        <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap">{fmtDate(row.date)}</td>
+                      <tr key={row.id} className="border-b border-ink-100 hover:bg-ink-50/50">
+                        <td className="px-3 py-2.5 text-ink-500 whitespace-nowrap">{fmtDate(row.date)}</td>
                         <td className="px-3 py-2.5 whitespace-nowrap">
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                            islemLabel === 'Para Girişi' || islemLabel === 'Tahsilat' ? 'bg-green-100 text-green-700' :
+                            islemLabel === 'Para Girişi' || islemLabel === 'Tahsilat' ? 'bg-emerald-100 text-emerald-700' :
                             islemLabel === 'Para Çıkışı' || islemLabel === 'Ödeme' ? 'bg-red-100 text-red-700' :
-                            islemLabel === 'Transfer' ? 'bg-orange-100 text-orange-700' :
-                            'bg-slate-100 text-slate-600'
+                            islemLabel === 'Transfer' ? 'bg-amber-100 text-amber-700' :
+                            'bg-ink-100 text-ink-600'
                           }`}>{islemLabel}</span>
                         </td>
-                        <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{hesap || '—'}</td>
-                        <td className="px-3 py-2.5 text-slate-500 max-w-[220px] truncate">{row.notes || ''}</td>
-                        <td className="px-3 py-2.5 text-right font-semibold text-green-700">
+                        <td className="px-3 py-2.5 text-ink-600 whitespace-nowrap">{hesap || '—'}</td>
+                        <td className="px-3 py-2.5 text-ink-500 max-w-[220px] truncate">{row.notes || ''}</td>
+                        <td className="px-3 py-2.5 text-right font-semibold text-emerald-700">
                           {isIn ? fmt(row.displayAmount) : ''}
                         </td>
                         <td className="px-3 py-2.5 text-right font-semibold text-red-600">
                           {!isIn ? fmt(row.displayAmount) : ''}
                         </td>
-                        <td className={`px-3 py-2.5 text-right font-bold whitespace-nowrap ${row.runningBalance < 0 ? 'text-red-600' : 'text-slate-800'}`}>
+                        <td className={`px-3 py-2.5 text-right font-bold whitespace-nowrap ${row.runningBalance < 0 ? 'text-red-600' : 'text-ink-800'}`}>
                           {fmt(row.runningBalance)}
                         </td>
                         <td className="px-3 py-2.5 text-center">
@@ -525,7 +525,7 @@ export default function AccountEkstrePage() {
                                 setOpenRowMenu(row.id);
                               }
                             }}
-                            className="px-3 py-1 bg-slate-500 hover:bg-slate-600 text-white text-xs rounded-lg">
+                            className="px-3 py-1 bg-ink-500 hover:bg-ink-600 text-white text-xs rounded-lg">
                             İşlem ▾
                           </button>
                         </td>
@@ -543,7 +543,7 @@ export default function AccountEkstrePage() {
       {openRowMenu && menuPos && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => { setOpenRowMenu(null); setMenuPos(null); }} />
-          <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right }} className="bg-white rounded-xl shadow-lg border border-slate-100 z-40 min-w-[140px] overflow-hidden">
+          <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right }} className="bg-white rounded-xl shadow-lg border border-ink-100 z-40 min-w-[140px] overflow-hidden">
             <button
               onClick={() => handleDeletePayment(openRowMenu)}
               className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
@@ -569,18 +569,18 @@ export default function AccountEkstrePage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-ink-600 whitespace-pre-line">{confirmModal.message}</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg text-sm hover:bg-ink-50">İptal</button>
               <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>
           </div>

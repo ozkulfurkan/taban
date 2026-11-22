@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Calculator, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Paintbrush, Wrench, History } from 'lucide-react';
+import { Calculator, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Paintbrush, Wrench, History } from '@/app/components/icons';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import DecimalInput from '@/app/components/decimal-input';
@@ -166,13 +166,13 @@ function NewCalculationForm() {
   const SectionHeader = ({ id, title, icon: Icon }: { id: string; title: string; icon: any }) => (
     <button
       onClick={() => setExpandedSection(expandedSection === id ? '' : id)}
-      className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors"
+      className="w-full flex items-center justify-between p-4 bg-ink-50 hover:bg-ink-100 rounded-lg transition-colors"
     >
       <div className="flex items-center gap-3">
-        <Icon className="w-5 h-5 text-blue-600" />
-        <span className="font-semibold text-slate-700">{title}</span>
+        <Icon className="w-5 h-5 text-brand-700" />
+        <span className="font-semibold text-ink-700">{title}</span>
       </div>
-      {expandedSection === id ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+      {expandedSection === id ? <ChevronUp className="w-5 h-5 text-ink-400" /> : <ChevronDown className="w-5 h-5 text-ink-400" />}
     </button>
   );
 
@@ -181,31 +181,31 @@ function NewCalculationForm() {
       <div className="space-y-6 max-w-4xl">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">
+            <h1 className="page-title">
               {copyFromId ? t('calculation', 'copyCalculation') : t('common', 'newCalculation')}
             </h1>
-            <p className="text-slate-500 text-sm">{t('calculation', 'title')}</p>
+            <p className="text-ink-500 text-sm">{t('calculation', 'title')}</p>
           </div>
           <Link
             href="/calculations"
-            className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50 transition-colors"
           >
             <History className="w-4 h-4" /> Hesaplama Geçmişi
           </Link>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-5">
-          <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'calculationName')}</label>
+        <div className="bg-white rounded-xl shadow-card p-5 border border-ink-200/80">
+          <label className="block text-sm font-medium text-ink-700 mb-1">{t('calculation', 'calculationName')}</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none"
             placeholder={t('calculation', 'calculationName')}
           />
         </div>
 
         {/* Parts Section */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
           <SectionHeader id="parts" title={t('calculation', 'parts')} icon={Calculator} />
           <AnimatePresence>
             {expandedSection === 'parts' && (
@@ -214,9 +214,9 @@ function NewCalculationForm() {
                   {parts.map((part, idx) => {
                     const { netWeight, cost } = calcPartCost(part);
                     return (
-                      <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                      <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="p-4 bg-ink-50 rounded-lg space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-slate-600">#{idx + 1}</span>
+                          <span className="text-sm font-medium text-ink-600">#{idx + 1}</span>
                           {parts.length > 1 && (
                             <button onClick={() => removePart(idx)} className="text-red-400 hover:text-red-600 p-1">
                               <Trash2 className="w-4 h-4" />
@@ -225,12 +225,12 @@ function NewCalculationForm() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">{t('calculation', 'partName')}</label>
-                            <input value={part.partName} onChange={(e) => updatePart(idx, 'partName', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                            <label className="block text-xs font-medium text-ink-500 mb-1">{t('calculation', 'partName')}</label>
+                            <input value={part.partName} onChange={(e) => updatePart(idx, 'partName', e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">{t('calculation', 'material')}</label>
-                            <select value={part.materialId} onChange={(e) => updatePart(idx, 'materialId', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <label className="block text-xs font-medium text-ink-500 mb-1">{t('calculation', 'material')}</label>
+                            <select value={part.materialId} onChange={(e) => updatePart(idx, 'materialId', e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none">
                               <option value="">{t('calculation', 'material')}...</option>
                               {materials.map((m: any) => (
                                 <option key={m.id} value={m.id}>{m.name} ({formatCurrency(m.pricePerKg ?? 0)}/kg)</option>
@@ -238,22 +238,22 @@ function NewCalculationForm() {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">{t('calculation', 'grossWeight')}</label>
-                            <DecimalInput step="0.1" value={part.grossWeight} onChange={(e) => updatePart(idx, 'grossWeight', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                            <label className="block text-xs font-medium text-ink-500 mb-1">{t('calculation', 'grossWeight')}</label>
+                            <DecimalInput step="0.1" value={part.grossWeight} onChange={(e) => updatePart(idx, 'grossWeight', e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">{t('calculation', 'wasteRate')}</label>
-                            <DecimalInput step="0.1" value={part.wasteRate} onChange={(e) => updatePart(idx, 'wasteRate', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                            <label className="block text-xs font-medium text-ink-500 mb-1">{t('calculation', 'wasteRate')}</label>
+                            <DecimalInput step="0.1" value={part.wasteRate} onChange={(e) => updatePart(idx, 'wasteRate', e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
                           </div>
                         </div>
-                        <div className="flex justify-between text-xs text-slate-500 pt-1">
+                        <div className="flex justify-between text-xs text-ink-500 pt-1">
                           <span>{t('calculation', 'netWeight')}: {netWeight.toFixed(2)}g</span>
-                          <span className="font-semibold text-blue-600">{t('calculation', 'materialCost')}: {formatCurrency(cost)}</span>
+                          <span className="font-semibold text-brand-700">{t('calculation', 'materialCost')}: {formatCurrency(cost)}</span>
                         </div>
                       </motion.div>
                     );
                   })}
-                  <button onClick={addPart} className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium">
+                  <button onClick={addPart} className="flex items-center gap-2 px-4 py-2 text-brand-700 hover:bg-brand-50 rounded-lg transition-colors text-sm font-medium">
                     <Plus className="w-4 h-4" /> {t('calculation', 'addPart')}
                   </button>
                 </div>
@@ -263,7 +263,7 @@ function NewCalculationForm() {
         </div>
 
         {/* Labor Section */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
           <SectionHeader id="labor" title={t('calculation', 'labor')} icon={Wrench} />
           <AnimatePresence>
             {expandedSection === 'labor' && (
@@ -271,8 +271,8 @@ function NewCalculationForm() {
                 <div className="p-5 space-y-4">
                   {/* Labor Currency */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'laborCurrency')}</label>
-                    <select value={laborCurrency} onChange={(e) => setLaborCurrency(e.target.value)} className="w-full sm:w-48 px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label className="block text-sm font-medium text-ink-700 mb-1">{t('calculation', 'laborCurrency')}</label>
+                    <select value={laborCurrency} onChange={(e) => setLaborCurrency(e.target.value)} className="w-full sm:w-48 px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none">
                       <option value="USD">USD ($)</option>
                       <option value="EUR">EUR (€)</option>
                       <option value="TRY">TRY (₺)</option>
@@ -283,37 +283,37 @@ function NewCalculationForm() {
                   </div>
 
                   <div className="flex gap-3">
-                    <button onClick={() => setLaborMethod('direct')} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${laborMethod === 'direct' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                    <button onClick={() => setLaborMethod('direct')} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${laborMethod === 'direct' ? 'bg-brand-700 text-white' : 'bg-ink-100 text-ink-600 hover:bg-ink-200'}`}>
                       {t('calculation', 'directEntry')}
                     </button>
-                    <button onClick={() => setLaborMethod('salary')} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${laborMethod === 'salary' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                    <button onClick={() => setLaborMethod('salary')} className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${laborMethod === 'salary' ? 'bg-brand-700 text-white' : 'bg-ink-100 text-ink-600 hover:bg-ink-200'}`}>
                       {t('calculation', 'salaryBased')}
                     </button>
                   </div>
                   {laborMethod === 'direct' ? (
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'laborCostPerPair')} ({laborCurrency})</label>
-                      <DecimalInput step="0.01" value={laborCostPerPair} onChange={(e) => setLaborCostPerPair(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                      <label className="block text-sm font-medium text-ink-700 mb-1">{t('calculation', 'laborCostPerPair')} ({laborCurrency})</label>
+                      <DecimalInput step="0.01" value={laborCostPerPair} onChange={(e) => setLaborCostPerPair(e.target.value)} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none" />
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'monthlySalary')} ({laborCurrency})</label>
-                        <DecimalInput step="0.01" value={monthlySalary} onChange={(e) => setMonthlySalary(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <label className="block text-sm font-medium text-ink-700 mb-1">{t('calculation', 'monthlySalary')} ({laborCurrency})</label>
+                        <DecimalInput step="0.01" value={monthlySalary} onChange={(e) => setMonthlySalary(e.target.value)} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none" />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'workDays')}</label>
-                        <DecimalInput value={workDays} onChange={(e) => setWorkDays(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <label className="block text-sm font-medium text-ink-700 mb-1">{t('calculation', 'workDays')}</label>
+                        <DecimalInput value={workDays} onChange={(e) => setWorkDays(e.target.value)} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none" />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'dailyProduction')}</label>
-                        <DecimalInput value={dailyProduction} onChange={(e) => setDailyProduction(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <label className="block text-sm font-medium text-ink-700 mb-1">{t('calculation', 'dailyProduction')}</label>
+                        <DecimalInput value={dailyProduction} onChange={(e) => setDailyProduction(e.target.value)} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none" />
                       </div>
                     </div>
                   )}
                   <div className="text-right text-sm">
-                    <span className="text-slate-500">{t('calculation', 'laborCostPerPair')}: </span>
-                    <span className="font-semibold text-blue-600">{laborCost.toFixed(4)} {laborCurrency}</span>
+                    <span className="text-ink-500">{t('calculation', 'laborCostPerPair')}: </span>
+                    <span className="font-semibold text-brand-700">{laborCost.toFixed(4)} {laborCurrency}</span>
                   </div>
                 </div>
               </motion.div>
@@ -322,14 +322,14 @@ function NewCalculationForm() {
         </div>
 
         {/* Paint Section */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
           <SectionHeader id="paint" title={t('calculation', 'paint')} icon={Paintbrush} />
           <AnimatePresence>
             {expandedSection === 'paint' && (
               <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
                 <div className="p-5">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'paintCost')}</label>
-                  <DecimalInput step="0.01" value={paintCost} onChange={(e) => setPaintCost(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <label className="block text-sm font-medium text-ink-700 mb-1">{t('calculation', 'paintCost')}</label>
+                  <DecimalInput step="0.01" value={paintCost} onChange={(e) => setPaintCost(e.target.value)} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none" />
                 </div>
               </motion.div>
             )}
@@ -337,23 +337,23 @@ function NewCalculationForm() {
         </div>
 
         {/* Summary */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white shadow-lg">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-brand-700 rounded-xl p-6 text-white shadow-lg">
           <h3 className="text-lg font-semibold mb-4">{t('calculation', 'summary')}</h3>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-blue-200">{t('calculation', 'totalMaterialCost')}:</span>
+              <span className="text-brand-200">{t('calculation', 'totalMaterialCost')}:</span>
               <span className="font-medium">{formatCurrency(totalMaterialCost)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-blue-200">{t('calculation', 'laborCostPerPair')}:</span>
+              <span className="text-brand-200">{t('calculation', 'laborCostPerPair')}:</span>
               <span className="font-medium">{formatCurrency(laborCost)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-blue-200">{t('calculation', 'paintCost')}:</span>
+              <span className="text-brand-200">{t('calculation', 'paintCost')}:</span>
               <span className="font-medium">{formatCurrency(paintCostVal)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-blue-200">{t('calculation', 'profitMargin')}:</span>
+              <span className="text-brand-200">{t('calculation', 'profitMargin')}:</span>
               <div className="flex items-center gap-2">
                 <DecimalInput step="0.1" value={profitMargin} onChange={(e) => setProfitMargin(e.target.value)} className="w-16 px-2 py-1 bg-white/20 rounded text-white text-right text-sm outline-none" />
                 <span>%</span>
@@ -367,7 +367,7 @@ function NewCalculationForm() {
             </div>
             <div className="flex justify-between">
               <span>{t('calculation', 'sellingPrice')}:</span>
-              <span className="font-bold text-green-300">{formatCurrency(sellingPrice)}</span>
+              <span className="font-bold text-emerald-300">{formatCurrency(sellingPrice)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
@@ -386,15 +386,15 @@ function NewCalculationForm() {
         </motion.div>
 
         {/* Notes */}
-        <div className="bg-white rounded-xl shadow-sm p-5">
-          <label className="block text-sm font-medium text-slate-700 mb-1">{t('calculation', 'notes')}</label>
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+        <div className="bg-white rounded-xl shadow-card p-5 border border-ink-200/80">
+          <label className="block text-sm font-medium text-ink-700 mb-1">{t('calculation', 'notes')}</label>
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none resize-none" />
         </div>
 
         <button
           onClick={handleSubmit}
           disabled={saving || !name}
-          className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-blue-600/20"
+          className="w-full py-3.5 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-brand-700/20"
         >
           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
           {t('common', 'save')}

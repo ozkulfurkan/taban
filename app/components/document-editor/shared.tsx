@@ -9,10 +9,10 @@ export type Accent = 'blue' | 'red' | 'indigo' | 'amber';
 export const ACCENTS: Record<Accent, {
   head: string; solid: string; solidHover: string; ring: string; text: string; soft: string; border: string;
 }> = {
-  blue: { head: 'bg-blue-600', solid: 'bg-blue-600', solidHover: 'hover:bg-blue-700', ring: 'focus:ring-blue-500', text: 'text-blue-600', soft: 'bg-blue-50', border: 'focus:border-blue-500' },
+  blue: { head: 'bg-brand-700', solid: 'bg-brand-700', solidHover: 'hover:bg-brand-800', ring: 'focus:ring-brand-600', text: 'text-brand-700', soft: 'bg-brand-50', border: 'focus:border-brand-600' },
   red: { head: 'bg-red-600', solid: 'bg-red-600', solidHover: 'hover:bg-red-700', ring: 'focus:ring-red-500', text: 'text-red-600', soft: 'bg-red-50', border: 'focus:border-red-500' },
   amber: { head: 'bg-amber-600', solid: 'bg-amber-600', solidHover: 'hover:bg-amber-700', ring: 'focus:ring-amber-500', text: 'text-amber-700', soft: 'bg-amber-50', border: 'focus:border-amber-500' },
-  indigo: { head: 'bg-indigo-600', solid: 'bg-indigo-600', solidHover: 'hover:bg-indigo-700', ring: 'focus:ring-indigo-500', text: 'text-indigo-600', soft: 'bg-indigo-50', border: 'focus:border-indigo-500' },
+  indigo: { head: 'bg-brand-700', solid: 'bg-brand-700', solidHover: 'hover:bg-brand-800', ring: 'focus:ring-brand-600', text: 'text-brand-700', soft: 'bg-brand-50', border: 'focus:border-brand-600' },
 };
 
 const TR = {

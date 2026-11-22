@@ -7,8 +7,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Sidebar from './sidebar';
 import NotificationBell from './notification-bell';
-import { Loader2, ChevronDown, LogOut, User, Clock, AlertTriangle, LifeBuoy, X, Sparkles, Wrench } from 'lucide-react';
+import { Loader2, ChevronDown, LogOut, User, Clock, AlertTriangle, LifeBuoy, X, Sparkles, Wrench } from '@/app/components/icons';
 import { useLanguage } from '@/lib/i18n/language-context';
+
+// "Mehmet Yılmaz" → "MY"
+const initials = (name?: string | null) =>
+  (name ?? '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]!.toLocaleUpperCase('tr-TR')).join('');
 
 function UserMenu() {
   const { data: session } = useSession() || {};
@@ -28,20 +32,20 @@ function UserMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-ink-100 transition-colors"
       >
-        <div className="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center">
-          <User className="w-4 h-4 text-slate-600" />
+        <div className="w-8 h-8 rounded-full bg-brand-700 text-white flex items-center justify-center text-xs font-semibold tracking-wide">
+          {initials(user?.name) || <User className="w-4 h-4" />}
         </div>
-        <span className="text-sm font-medium text-slate-700 hidden sm:block">{user?.name ?? 'Kullanıcı'}</span>
-        <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <span className="text-sm font-medium text-ink-700 hidden sm:block">{user?.name ?? 'Kullanıcı'}</span>
+        <ChevronDown className={`w-4 h-4 text-ink-500 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50">
-          <div className="px-4 py-2 border-b border-slate-100">
-            <p className="text-sm font-medium text-slate-700 truncate">{user?.name ?? 'Kullanıcı'}</p>
-            <p className="text-xs text-slate-400 truncate">{user?.companyName ?? ''}</p>
+        <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl shadow-pop border border-ink-200 py-1 z-50">
+          <div className="px-4 py-2 border-b border-ink-100">
+            <p className="text-sm font-medium text-ink-700 truncate">{user?.name ?? 'Kullanıcı'}</p>
+            <p className="text-xs text-ink-400 truncate">{user?.companyName ?? ''}</p>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
@@ -64,9 +68,9 @@ function DestekLink() {
   return (
     <Link
       href="/destek-merkezi"
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-ink-600 hover:bg-ink-100 transition-colors"
     >
-      <LifeBuoy className="w-4 h-4 text-blue-500" />
+      <LifeBuoy className="w-[18px] h-[18px]" />
       <span className="hidden sm:block">{t('nav', 'supportCenter')}</span>
     </Link>
   );
@@ -103,12 +107,12 @@ function WhatsNewModal({ onClose }: { onClose: () => void }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 8 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+        className="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-ink-200/80"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5 flex items-center justify-between">
+        <div className="bg-brand-700 px-6 py-5 flex items-center justify-between">
           <div>
-            <p className="text-blue-100 text-xs font-medium mb-0.5">10 Mayıs 2026</p>
+            <p className="text-brand-100 text-xs font-medium mb-0.5">10 Mayıs 2026</p>
             <h2 className="text-white font-bold text-lg">Yenilikler & Düzeltmeler</h2>
           </div>
           <button onClick={onClose} className="text-white/70 hover:text-white transition-colors p-1">
@@ -123,11 +127,11 @@ function WhatsNewModal({ onClose }: { onClose: () => void }) {
               <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-800">Yeni Özellikler</h3>
+              <h3 className="text-sm font-semibold text-ink-800">Yeni Özellikler</h3>
             </div>
             <ul className="space-y-2">
               {WHATS_NEW_FEATURES.map((f, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
+                <li key={i} className="flex items-start gap-2.5 text-sm text-ink-600">
                   <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
                   {f}
                 </li>
@@ -135,7 +139,7 @@ function WhatsNewModal({ onClose }: { onClose: () => void }) {
             </ul>
           </div>
 
-          <div className="border-t border-slate-100" />
+          <div className="border-t border-ink-100" />
 
           {/* Hata düzeltmeleri */}
           <div>
@@ -143,11 +147,11 @@ function WhatsNewModal({ onClose }: { onClose: () => void }) {
               <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <Wrench className="w-3.5 h-3.5 text-amber-600" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-800">Hata Düzeltmeleri</h3>
+              <h3 className="text-sm font-semibold text-ink-800">Hata Düzeltmeleri</h3>
             </div>
             <ul className="space-y-2">
               {WHATS_NEW_FIXES.map((f, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
+                <li key={i} className="flex items-start gap-2.5 text-sm text-ink-600">
                   <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
                   {f}
                 </li>
@@ -159,7 +163,7 @@ function WhatsNewModal({ onClose }: { onClose: () => void }) {
         <div className="px-6 pb-5">
           <button
             onClick={onClose}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors"
+            className="w-full py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-sm font-semibold transition-colors"
           >
             Anladım
           </button>
@@ -238,13 +242,13 @@ function IdleWarningModal({ countdown, onContinue }: { countdown: number; onCont
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 8 }}
         transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        className="relative z-10 bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl shadow-black/20 border border-slate-200"
+        className="relative z-10 bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl shadow-black/20 border border-ink-200"
       >
         {/* Icon + countdown ring */}
         <div className="flex justify-center mb-5">
           <div className="relative w-16 h-16">
             <svg className="w-16 h-16 -rotate-90" viewBox="0 0 52 52">
-              <circle cx="26" cy="26" r="22" fill="none" stroke="#f1f5f9" strokeWidth="3" />
+              <circle cx="26" cy="26" r="22" fill="none" stroke="#F3EFEA" strokeWidth="3" />
               <circle
                 cx="26" cy="26" r="22"
                 fill="none"
@@ -269,9 +273,9 @@ function IdleWarningModal({ countdown, onContinue }: { countdown: number; onCont
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-1.5 mb-2">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <h3 className="text-lg font-semibold text-slate-800">Oturum Kapanmak Üzere</h3>
+            <h3 className="text-lg font-semibold text-ink-800">Oturum Kapanmak Üzere</h3>
           </div>
-          <p className="text-slate-500 text-sm leading-relaxed">
+          <p className="text-ink-500 text-sm leading-relaxed">
             {countdown} saniye hareketsizlik nedeniyle oturumunuz otomatik olarak kapatılacak.
           </p>
         </div>
@@ -280,13 +284,13 @@ function IdleWarningModal({ countdown, onContinue }: { countdown: number; onCont
         <div className="flex gap-3">
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
-            className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition-colors"
+            className="flex-1 py-2.5 rounded-xl border border-ink-200 text-ink-600 hover:bg-ink-50 text-sm font-medium transition-colors"
           >
             Çıkış Yap
           </button>
           <button
             onClick={onContinue}
-            className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors shadow-sm shadow-blue-600/25"
+            className="flex-1 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-sm font-semibold transition-colors shadow-sm shadow-brand-700/25"
           >
             Devam Et
           </button>
@@ -326,8 +330,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="min-h-screen flex items-center justify-center bg-ink-50">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-700" />
       </div>
     );
   }
@@ -335,7 +339,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (!session) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-ink-50">
       <AnimatePresence>
         {showWhatsNew && <WhatsNewModal onClose={closeWhatsNew} />}
         {showWarning && (
@@ -344,7 +348,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="sticky top-0 z-30 bg-slate-50/80 backdrop-blur border-b border-slate-200/60">
+        <div className="sticky top-0 z-30 bg-ink-50/85 backdrop-blur-md border-b border-ink-200/70">
           <div className="max-w-[1200px] mx-auto px-4 md:px-6 lg:px-8 h-14 flex items-center justify-end gap-2">
             <DestekLink />
             <NotificationBell />

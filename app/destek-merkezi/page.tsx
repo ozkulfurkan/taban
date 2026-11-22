@@ -8,7 +8,7 @@ import {
   ChevronRight, Search, Send, Paperclip, X, CheckCircle2,
   AlertCircle, Clock, MessageSquare, Upload, Loader2,
   ChevronDown, Star
-} from 'lucide-react';
+} from '@/app/components/icons';
 import Link from 'next/link';
 import AppShell from '@/app/components/app-shell';
 import { matchesText } from '@/lib/search';
@@ -85,14 +85,14 @@ const ARTICLES = [
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const STATUS_MAP = {
-  YENI:        { label: 'Yeni',        color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  YENI:        { label: 'Yeni',        color: 'bg-brand-100 text-brand-800 border-brand-200' },
   INCELENIYOR: { label: 'İnceleniyor', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  CEVAPLANDI:  { label: 'Cevaplandı',  color: 'bg-purple-100 text-purple-700 border-purple-200' },
-  COZULDU:     { label: 'Çözüldü',     color: 'bg-green-100 text-green-700 border-green-200' },
+  CEVAPLANDI:  { label: 'Cevaplandı',  color: 'bg-brand-100 text-brand-800 border-brand-200' },
+  COZULDU:     { label: 'Çözüldü',     color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
 };
 
 const PRIORITY_MAP = {
-  DUSUK:  { label: 'Düşük',  color: 'bg-slate-100 text-slate-600 border-slate-200' },
+  DUSUK:  { label: 'Düşük',  color: 'bg-ink-100 text-ink-600 border-ink-200' },
   ORTA:   { label: 'Orta',   color: 'bg-amber-100 text-amber-700 border-amber-200' },
   KRITIK: { label: 'Kritik', color: 'bg-red-100 text-red-700 border-red-200' },
 };
@@ -100,7 +100,7 @@ const PRIORITY_MAP = {
 const MODULES = ['Ön Muhasebe', 'Maliyet', 'Personel', 'Sipariş', 'Stok', 'Diğer'];
 
 function Badge({ map, value }: { map: Record<string, { label: string; color: string }>; value: string }) {
-  const entry = map[value] ?? { label: value, color: 'bg-slate-100 text-slate-600 border-slate-200' };
+  const entry = map[value] ?? { label: value, color: 'bg-ink-100 text-ink-600 border-ink-200' };
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${entry.color}`}>
       {entry.label}
@@ -156,9 +156,9 @@ function HataBildir({ onSuccess }: { onSuccess: () => void }) {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-blue-50 border border-blue-200 rounded-xl p-4"
+          className="bg-brand-50 border border-brand-200 rounded-xl p-4"
         >
-          <p className="text-xs font-semibold text-blue-600 mb-2 flex items-center gap-1.5">
+          <p className="text-xs font-semibold text-brand-700 mb-2 flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5" />
             Bu konuyla ilgili makaleler bulundu
           </p>
@@ -171,7 +171,7 @@ function HataBildir({ onSuccess }: { onSuccess: () => void }) {
                   const tabs = document.querySelector('[data-tab="bilgi"]') as HTMLButtonElement;
                   tabs?.click();
                 }}
-                className="w-full text-left flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900 hover:bg-blue-100 rounded-lg px-2 py-1 transition-colors"
+                className="w-full text-left flex items-center gap-2 text-sm text-brand-800 hover:text-brand-950 hover:bg-brand-100 rounded-lg px-2 py-1 transition-colors"
               >
                 <span>{a.icon}</span>
                 <span>{a.title}</span>
@@ -184,28 +184,28 @@ function HataBildir({ onSuccess }: { onSuccess: () => void }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Konu *</label>
+          <label className="block text-sm font-medium text-ink-700 mb-1.5">Konu *</label>
           <input
             value={form.title}
             onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
             placeholder="Hatayı kısaca özetleyin"
-            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
+            className="w-full px-3.5 py-2.5 border border-ink-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none bg-white"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Modül</label>
+          <label className="block text-sm font-medium text-ink-700 mb-1.5">Modül</label>
           <select
             value={form.module}
             onChange={e => setForm(p => ({ ...p, module: e.target.value }))}
-            className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
+            className="w-full px-3.5 py-2.5 border border-ink-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none bg-white"
           >
             <option value="">Seçiniz</option>
             {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Öncelik</label>
+          <label className="block text-sm font-medium text-ink-700 mb-1.5">Öncelik</label>
           <div className="flex gap-2">
             {(['DUSUK', 'ORTA', 'KRITIK'] as const).map(p => (
               <button
@@ -215,7 +215,7 @@ function HataBildir({ onSuccess }: { onSuccess: () => void }) {
                 className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-all ${
                   form.priority === p
                     ? PRIORITY_MAP[p].color + ' ring-2 ring-offset-1 ring-current'
-                    : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                    : 'border-ink-200 text-ink-500 hover:border-ink-300'
                 }`}
               >
                 {PRIORITY_MAP[p].label}
@@ -226,43 +226,43 @@ function HataBildir({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1.5">Açıklama *</label>
+        <label className="block text-sm font-medium text-ink-700 mb-1.5">Açıklama *</label>
         <textarea
           value={form.description}
           onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
           rows={5}
           placeholder="Hatayı ayrıntılı açıklayın. Hangi adımları izlediniz? Ne bekliyordunuz?"
-          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none bg-white"
+          className="w-full px-3.5 py-2.5 border border-ink-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none resize-none bg-white"
           required
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1.5">Ekran Görüntüsü</label>
+        <label className="block text-sm font-medium text-ink-700 mb-1.5">Ekran Görüntüsü</label>
         <div
           onClick={() => fileRef.current?.click()}
           className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors ${
-            file ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'
+            file ? 'border-brand-300 bg-brand-50' : 'border-ink-200 hover:border-brand-300 hover:bg-brand-50/50'
           }`}
         >
           {file ? (
             <div className="flex items-center justify-center gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Paperclip className="w-4 h-4 text-blue-600" />
+              <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
+                <Paperclip className="w-4 h-4 text-brand-700" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-slate-700">{file.name}</p>
-                <p className="text-xs text-slate-400">{(file.size / 1024).toFixed(0)} KB</p>
+                <p className="text-sm font-medium text-ink-700">{file.name}</p>
+                <p className="text-xs text-ink-400">{(file.size / 1024).toFixed(0)} KB</p>
               </div>
-              <button type="button" onClick={e => { e.stopPropagation(); setFile(null); }} className="ml-2 text-slate-400 hover:text-red-500">
+              <button type="button" onClick={e => { e.stopPropagation(); setFile(null); }} className="ml-2 text-ink-400 hover:text-red-500">
                 <X className="w-4 h-4" />
               </button>
             </div>
           ) : (
             <div>
-              <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">Görsel yüklemek için tıklayın</p>
-              <p className="text-xs text-slate-400 mt-1">PNG, JPG, WebP · max 5MB</p>
+              <Upload className="w-6 h-6 text-ink-400 mx-auto mb-2" />
+              <p className="text-sm text-ink-500">Görsel yüklemek için tıklayın</p>
+              <p className="text-xs text-ink-400 mt-1">PNG, JPG, WebP · max 5MB</p>
             </div>
           )}
         </div>
@@ -270,15 +270,15 @@ function HataBildir({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       {/* Auto-attached info */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-        <p className="text-xs font-medium text-slate-500 mb-2">Otomatik eklenen bilgiler</p>
+      <div className="bg-ink-50 border border-ink-200 rounded-xl p-3">
+        <p className="text-xs font-medium text-ink-500 mb-2">Otomatik eklenen bilgiler</p>
         <div className="flex flex-wrap gap-2">
           {[
             `Kullanıcı: ${(session?.user as any)?.name ?? '-'}`,
             `Sayfa: ${typeof window !== 'undefined' ? window.location.pathname : '-'}`,
             `Tarih: ${new Date().toLocaleDateString('tr-TR')}`,
           ].map(info => (
-            <span key={info} className="text-xs bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-600">
+            <span key={info} className="text-xs bg-white border border-ink-200 rounded-lg px-2 py-1 text-ink-600">
               {info}
             </span>
           ))}
@@ -295,7 +295,7 @@ function HataBildir({ onSuccess }: { onSuccess: () => void }) {
       <button
         type="submit"
         disabled={loading}
-        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition-colors disabled:opacity-60"
+        className="flex items-center gap-2 px-6 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-medium text-sm transition-colors disabled:opacity-60"
       >
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         Hata Bildir
@@ -346,22 +346,22 @@ function TalepOneri({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1.5">Başlık *</label>
+        <label className="block text-sm font-medium text-ink-700 mb-1.5">Başlık *</label>
         <input
           value={form.title}
           onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
           placeholder="Önerinizi kısaca özetleyin"
-          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
+          className="w-full px-3.5 py-2.5 border border-ink-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none bg-white"
           required
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1.5">İlgili Modül</label>
+        <label className="block text-sm font-medium text-ink-700 mb-1.5">İlgili Modül</label>
         <select
           value={form.module}
           onChange={e => setForm(p => ({ ...p, module: e.target.value }))}
-          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
+          className="w-full px-3.5 py-2.5 border border-ink-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none bg-white"
         >
           <option value="">Seçiniz</option>
           {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
@@ -369,13 +369,13 @@ function TalepOneri({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1.5">Açıklama *</label>
+        <label className="block text-sm font-medium text-ink-700 mb-1.5">Açıklama *</label>
         <textarea
           value={form.description}
           onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
           rows={5}
           placeholder="Bu özellik neden gerekli? Nasıl çalışmasını istersiniz? Hangi sorunu çözer?"
-          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none bg-white"
+          className="w-full px-3.5 py-2.5 border border-ink-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none resize-none bg-white"
           required
         />
       </div>
@@ -390,7 +390,7 @@ function TalepOneri({ onSuccess }: { onSuccess: () => void }) {
       <button
         type="submit"
         disabled={loading}
-        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-sm transition-colors disabled:opacity-60"
+        className="flex items-center gap-2 px-6 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-medium text-sm transition-colors disabled:opacity-60"
       >
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         Öneriyi Gönder
@@ -414,15 +414,15 @@ function Taleplerim() {
 
   if (loading) return (
     <div className="flex items-center justify-center py-16">
-      <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+      <Loader2 className="w-6 h-6 animate-spin text-brand-600" />
     </div>
   );
 
   if (tickets.length === 0) return (
     <div className="text-center py-16">
-      <ClipboardList className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-      <p className="text-slate-500 font-medium">Henüz talep oluşturmadınız</p>
-      <p className="text-slate-400 text-sm mt-1">Hata bildirmek veya öneri göndermek için ilgili sekmeleri kullanın.</p>
+      <ClipboardList className="w-10 h-10 text-ink-300 mx-auto mb-3" />
+      <p className="text-ink-500 font-medium">Henüz talep oluşturmadınız</p>
+      <p className="text-ink-400 text-sm mt-1">Hata bildirmek veya öneri göndermek için ilgili sekmeleri kullanın.</p>
     </div>
   );
 
@@ -437,7 +437,7 @@ function Taleplerim() {
         >
           <Link
             href={`/destek-merkezi/talep/${t.id}`}
-            className="block bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-sm transition-all group"
+            className="block bg-white border border-ink-200 rounded-xl p-4 hover:border-brand-300 hover:shadow-card transition-all group"
           >
             <div className="flex items-start gap-3">
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
@@ -447,15 +447,15 @@ function Taleplerim() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-mono text-slate-400">{t.ticketNo}</span>
+                  <span className="text-xs font-mono text-ink-400">{t.ticketNo}</span>
                   <Badge map={STATUS_MAP} value={t.status} />
                   <Badge map={PRIORITY_MAP} value={t.priority} />
                   {t.module && (
-                    <span className="text-xs bg-slate-100 text-slate-600 border border-slate-200 rounded-full px-2 py-0.5">{t.module}</span>
+                    <span className="text-xs bg-ink-100 text-ink-600 border border-ink-200 rounded-full px-2 py-0.5">{t.module}</span>
                   )}
                 </div>
-                <p className="text-sm font-medium text-slate-800 mt-1 truncate group-hover:text-blue-700">{t.title}</p>
-                <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-400">
+                <p className="text-sm font-medium text-ink-800 mt-1 truncate group-hover:text-brand-800">{t.title}</p>
+                <div className="flex items-center gap-3 mt-1.5 text-xs text-ink-400">
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     {new Date(t.createdAt).toLocaleDateString('tr-TR')}
@@ -468,7 +468,7 @@ function Taleplerim() {
                   )}
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-400 flex-shrink-0 mt-1 transition-colors" />
+              <ChevronRight className="w-4 h-4 text-ink-300 group-hover:text-brand-500 flex-shrink-0 mt-1 transition-colors" />
             </div>
           </Link>
         </motion.div>
@@ -491,19 +491,19 @@ function BilgiBank() {
   return (
     <div className="max-w-2xl space-y-5">
       <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Makale ara... (örn: stok, fatura, şifre)"
-          className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
+          className="w-full pl-10 pr-4 py-2.5 border border-ink-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none bg-white"
         />
       </div>
 
       {filtered.length === 0 && (
         <div className="text-center py-10">
-          <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-          <p className="text-slate-500 text-sm">Bu aramayla eşleşen makale bulunamadı.</p>
+          <Search className="w-8 h-8 text-ink-300 mx-auto mb-2" />
+          <p className="text-ink-500 text-sm">Bu aramayla eşleşen makale bulunamadı.</p>
         </div>
       )}
 
@@ -512,18 +512,18 @@ function BilgiBank() {
           <motion.div
             key={a.id}
             layout
-            className="bg-white border border-slate-200 rounded-xl overflow-hidden"
+            className="bg-white border border-ink-200 rounded-xl overflow-hidden"
           >
             <button
               onClick={() => setExpanded(expanded === a.id ? null : a.id)}
-              className="w-full flex items-center gap-3 p-4 text-left hover:bg-slate-50 transition-colors"
+              className="w-full flex items-center gap-3 p-4 text-left hover:bg-ink-50 transition-colors"
             >
               <span className="text-xl flex-shrink-0">{a.icon}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-800">{a.title}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{a.category}</p>
+                <p className="text-sm font-medium text-ink-800">{a.title}</p>
+                <p className="text-xs text-ink-400 mt-0.5">{a.category}</p>
               </div>
-              <ChevronDown className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200 ${expanded === a.id ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-ink-400 flex-shrink-0 transition-transform duration-200 ${expanded === a.id ? 'rotate-180' : ''}`} />
             </button>
             <AnimatePresence>
               {expanded === a.id && (
@@ -533,13 +533,13 @@ function BilgiBank() {
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="px-4 pb-4 border-t border-slate-100">
-                    <div className="pt-3 prose prose-sm prose-slate max-w-none text-sm text-slate-600 whitespace-pre-line">
+                  <div className="px-4 pb-4 border-t border-ink-100">
+                    <div className="pt-3 prose prose-sm prose-slate max-w-none text-sm text-ink-600 whitespace-pre-line">
                       {a.content}
                     </div>
                     <div className="mt-4 flex items-center gap-2">
-                      <p className="text-xs text-slate-400">Bu makale yardımcı oldu mu?</p>
-                      <button className="text-xs text-green-600 hover:text-green-700 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-green-50 transition-colors">
+                      <p className="text-xs text-ink-400">Bu makale yardımcı oldu mu?</p>
+                      <button className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-emerald-50 transition-colors">
                         <Star className="w-3 h-3" /> Evet
                       </button>
                     </div>
@@ -580,12 +580,12 @@ export default function DestekMerkeziPage() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
+              <div className="w-9 h-9 bg-brand-700 rounded-xl flex items-center justify-center">
                 <LifeBuoy className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-slate-800">Destek Merkezi</h1>
+              <h1 className="page-title">Destek Merkezi</h1>
             </div>
-            <p className="text-sm text-slate-500 ml-12">Sorun bildirin, öneri gönderin, destek alın.</p>
+            <p className="text-sm text-ink-500 ml-12">Sorun bildirin, öneri gönderin, destek alın.</p>
           </div>
         </div>
 
@@ -596,11 +596,11 @@ export default function DestekMerkeziPage() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl"
+              className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl"
             >
-              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-              <p className="text-sm text-green-700">{successMsg}</p>
-              <button onClick={() => setSuccessMsg('')} className="ml-auto text-green-400 hover:text-green-600">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+              <p className="text-sm text-emerald-700">{successMsg}</p>
+              <button onClick={() => setSuccessMsg('')} className="ml-auto text-emerald-400 hover:text-emerald-600">
                 <X className="w-4 h-4" />
               </button>
             </motion.div>
@@ -619,8 +619,8 @@ export default function DestekMerkeziPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
                   active
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600'
+                    ? 'bg-brand-700 text-white border-brand-700 shadow-sm shadow-brand-700/20'
+                    : 'bg-white text-ink-600 border-ink-200 hover:border-brand-300 hover:text-brand-700'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -631,7 +631,7 @@ export default function DestekMerkeziPage() {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white border border-ink-200 rounded-2xl p-6 shadow-card">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}

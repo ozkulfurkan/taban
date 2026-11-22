@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { LinkRequests } from '@/app/components/network';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Users, Plus, Loader2, Search, Upload, Download, X, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Users, Plus, Loader2, Search, Upload, Download, X, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Filter } from '@/app/components/icons';
 import Link from 'next/link';
 
 function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
@@ -34,34 +34,34 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold flex items-center gap-2">
             <Upload className="w-4 h-4" /> Müşteri İçeri Aktar
           </h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div className="bg-ink-50 border border-ink-200 rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-slate-700">Şablon dosyası</p>
-              <p className="text-xs text-slate-400 mt-0.5">Doldurup yükleyin. Müşteri Adı ve Para Birimi zorunlu.</p>
+              <p className="text-sm font-medium text-ink-700">Şablon dosyası</p>
+              <p className="text-xs text-ink-400 mt-0.5">Doldurup yükleyin. Müşteri Adı ve Para Birimi zorunlu.</p>
             </div>
             <a href="/api/customers/import/template"
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
-              <Download className="w-4 h-4 text-blue-500" /> İndir
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-white border border-ink-200 rounded-lg text-sm font-medium text-ink-700 hover:bg-ink-100 transition-colors">
+              <Download className="w-4 h-4 text-brand-600" /> İndir
             </a>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Excel Dosyası (.xlsx)</label>
-            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+            <label className="block text-xs font-medium text-ink-500 mb-1.5">Excel Dosyası (.xlsx)</label>
+            <div className="border-2 border-dashed border-ink-200 rounded-xl p-6 text-center cursor-pointer hover:border-brand-500 hover:bg-brand-50 transition-colors"
               onClick={() => fileRef.current?.click()}>
               {file ? (
-                <p className="text-sm font-medium text-blue-600">{file.name}</p>
+                <p className="text-sm font-medium text-brand-700">{file.name}</p>
               ) : (
                 <>
-                  <Upload className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-sm text-slate-400">Dosya seçmek için tıklayın</p>
+                  <Upload className="w-8 h-8 text-ink-300 mx-auto mb-2" />
+                  <p className="text-sm text-ink-400">Dosya seçmek için tıklayın</p>
                 </>
               )}
             </div>
@@ -71,8 +71,8 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
           {result && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                <span className="text-green-700 font-medium">{result.created} müşteri başarıyla eklendi</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                <span className="text-emerald-700 font-medium">{result.created} müşteri başarıyla eklendi</span>
               </div>
               {result.skipped > 0 && (
                 <div className="flex items-start gap-2 text-sm">
@@ -90,12 +90,12 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
             </div>
           )}
           <div className="flex gap-2 pt-1">
-            <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+            <button onClick={onClose} className="flex-1 py-2.5 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50 transition-colors">
               {result ? 'Kapat' : 'Vazgeç'}
             </button>
             {!result && (
               <button onClick={handleUpload} disabled={!file || loading}
-                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                className="flex-1 py-2.5 bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 Yükle
               </button>
@@ -163,16 +163,16 @@ export default function CustomersPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">{t('customers', 'title')}</h1>
-            <p className="text-slate-500 text-sm">{total} {t('customers', 'title').toLowerCase()}</p>
+            <h1 className="page-title">{t('customers', 'title')}</h1>
+            <p className="text-ink-500 text-sm">{total} {t('customers', 'title').toLowerCase()}</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setShowImport(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg font-medium transition-colors shadow-sm text-sm">
-              <Upload className="w-4 h-4 text-blue-500" /> İçeri Aktar
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-ink-200 hover:bg-ink-50 text-ink-700 rounded-lg font-medium transition-colors shadow-sm text-sm">
+              <Upload className="w-4 h-4 text-brand-600" /> İçeri Aktar
             </button>
             <Link href="/customers/new"
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm">
+              className="flex items-center gap-2 px-4 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium transition-colors shadow-sm">
               <Plus className="w-4 h-4" /> {t('customers', 'newCustomer')}
             </Link>
           </div>
@@ -181,72 +181,71 @@ export default function CustomersPage() {
         {/* Search + Filters */}
         <div className="space-y-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder={t('customers', 'searchPlaceholder')}
-              className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm" />
+              className="w-full pl-9 pr-4 py-2.5 border border-ink-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white shadow-sm" />
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-slate-400" />
+              <Filter className="w-3.5 h-3.5 text-ink-400" />
               <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-                className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none text-slate-600">
+                className="px-3 py-1.5 border border-ink-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-brand-600 outline-none text-ink-600">
                 <option value="">Tüm Kategoriler</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input type="checkbox" checked={onlyWithBalance} onChange={e => setOnlyWithBalance(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              <span className="text-sm text-slate-600">Bakiyesi olanları göster</span>
+                className="w-4 h-4 rounded border-ink-300 text-brand-700 focus:ring-brand-600" />
+              <span className="text-sm text-ink-600">Bakiyesi olanları göster</span>
             </label>
           </div>
         </div>
 
         {/* Table */}
         {(loading && !hasLoaded) ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>
         ) : (
           <div className={loading ? 'opacity-50 pointer-events-none transition-opacity duration-150' : 'transition-opacity duration-150'}>
             {!customers.length ? (
-              <div className="text-center py-16 bg-white rounded-xl shadow-sm">
-                <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-400 text-sm mb-3">{search ? t('customers', 'noResults') : t('customers', 'empty')}</p>
+              <div className="text-center py-16 bg-white rounded-xl shadow-card border border-ink-200/80">
+                <Users className="w-12 h-12 text-ink-300 mx-auto mb-3" />
+                <p className="text-ink-400 text-sm mb-3">{search ? t('customers', 'noResults') : t('customers', 'empty')}</p>
                 {!search && (
-                  <Link href="/customers/new" className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                  <Link href="/customers/new" className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium transition-colors">
                     <Plus className="w-4 h-4" /> Müşteri ekle
                   </Link>
                 )}
               </div>
             ) : (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="grid grid-cols-[1fr_160px_140px] items-center px-4 py-2.5 bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide">
+              <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+                <div className="grid grid-cols-[1fr_130px] sm:grid-cols-[1fr_160px_140px] items-center px-4 py-2.5 bg-ink-50 text-ink-500 text-[11px] font-semibold uppercase tracking-[0.08em] border-b border-ink-200">
                   <span>{t('customers', 'nameTitle')}</span>
                   <span className="text-right">{t('customers', 'openBalance')}</span>
-                  <span className="text-right pr-1">{t('customers', 'totalInvoiced')}</span>
+                  <span className="hidden sm:block text-right pr-1">{t('customers', 'totalInvoiced')}</span>
                 </div>
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-ink-100">
                   {displayed.map(c => (
                     <Link key={c.id} href={`/customers/${c.id}`}
-                      className="grid grid-cols-[1fr_160px_140px] items-center hover:bg-slate-50 transition-colors group">
-                      <div className="flex items-center gap-2 px-3 py-2">
-                        <span className="block w-full bg-blue-600 group-hover:bg-blue-700 text-white text-sm font-medium px-3 py-1.5 rounded transition-colors truncate">
-                          {c.name}
+                      className="grid grid-cols-[1fr_130px] sm:grid-cols-[1fr_160px_140px] items-center hover:bg-ink-50 transition-colors group">
+                      <div className="flex items-center gap-3 px-4 py-3 min-w-0">
+                        <span aria-hidden className="w-8 h-8 shrink-0 rounded-full bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100 grid place-items-center text-xs font-semibold">
+                          {c.name.trim().charAt(0).toLocaleUpperCase('tr-TR')}
                         </span>
-                        {c.phone && (
-                          <span className="flex-shrink-0 bg-emerald-500 text-white text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap">
-                            {c.phone}
-                          </span>
-                        )}
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-ink-900 group-hover:text-brand-700 truncate">{c.name}</span>
+                          {c.phone ? <span className="block text-xs text-ink-500 tabular-nums">{c.phone}</span> : null}
+                        </span>
                       </div>
                       <div className="text-right pr-4 py-2">
-                        <span className={`text-sm font-semibold ${c.balance > 0 ? 'text-orange-600' : 'text-slate-500'}`}>
+                        <span className={`text-sm font-semibold ${c.balance > 0 ? 'text-brand-700' : 'text-ink-500'}`}>
                           {(c.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           <span className="text-xs font-normal ml-1 opacity-70">{c.currency}</span>
                         </span>
                       </div>
-                      <div className="text-right pr-4 py-2">
-                        <span className="text-sm text-slate-500">
+                      <div className="hidden sm:block text-right pr-4 py-2">
+                        <span className="text-sm text-ink-500">
                           {(c.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           <span className="text-xs font-normal ml-1 opacity-70">{c.currency}</span>
                         </span>
@@ -257,25 +256,25 @@ export default function CustomersPage() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50">
-                    <span className="text-sm text-slate-500">
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-ink-100 bg-ink-50">
+                    <span className="text-sm text-ink-500">
                       {(page - 1) * 50 + 1}–{Math.min(page * 50, total)} / {total} müşteri
                     </span>
                     <div className="flex items-center gap-1">
                       <button
                         disabled={page === 1}
                         onClick={() => setPage(p => p - 1)}
-                        className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="p-1.5 rounded-lg border border-ink-200 bg-white text-ink-600 hover:bg-ink-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
-                      <span className="px-3 py-1 text-sm font-medium text-slate-700">
+                      <span className="px-3 py-1 text-sm font-medium text-ink-700">
                         {page} / {totalPages}
                       </span>
                       <button
                         disabled={page === totalPages}
                         onClick={() => setPage(p => p + 1)}
-                        className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="p-1.5 rounded-lg border border-ink-200 bg-white text-ink-600 hover:bg-ink-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './card'
 import { Badge } from './badge'
 import { Checkbox } from './checkbox'
 import { Button } from './button'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from '@/app/components/icons'
 import { motion } from 'framer-motion'
 
 interface TaskCardProps {

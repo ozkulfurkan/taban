@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, ArrowLeft, Loader2, Copy, CheckCircle } from 'lucide-react';
+import { Mail, ArrowLeft, Loader2, Copy, CheckCircle } from '@/app/components/icons';
 import Link from 'next/link';
-import { BrandMark } from '@/app/components/brand-mark';
+import { AuthShell } from '@/app/components/auth-shell';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -48,31 +48,19 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-900 to-blue-950 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md"
-      >
-        <div className="text-center mb-8">
-          <BrandMark size={64} className="mb-4" />
-          <h1 className="text-3xl font-bold text-white mb-2">SoleCost</h1>
-          <p className="text-blue-300 text-sm">Şifre Sıfırlama</p>
-        </div>
-
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/10">
-          <Link href="/login" className="flex items-center gap-2 text-blue-300 hover:text-white text-sm mb-6 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Giriş sayfasına dön
-          </Link>
-
-          <h2 className="text-xl font-semibold text-white mb-2">Şifremi Unuttum</h2>
-          <p className="text-blue-300 text-sm mb-6">
-            Kayıtlı e-posta adresinizi girin. Şifre sıfırlama bağlantısı oluşturulacak.
-          </p>
+    <AuthShell
+      title="Şifremi unuttum"
+      subtitle="Kayıtlı e-posta adresinizi girin; şifre sıfırlama bağlantısı gönderelim."
+      footer={
+        <Link href="/login" className="inline-flex items-center gap-2 text-sm font-medium text-ink-600 hover:text-ink-900">
+          <ArrowLeft className="w-4 h-4" /> Giriş sayfasına dön
+        </Link>
+      }
+    >
+        <div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-sm">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
               {error}
             </div>
           )}
@@ -80,15 +68,15 @@ export default function ForgotPasswordPage() {
           {!successMessage ? (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-blue-200 mb-1.5">E-posta Adresi</label>
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">E-posta Adresi</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-500" />
                   <input
                     type="email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300/50 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                    placeholder="email@example.com"
+                    className="w-full pl-10 pr-4 py-3 input py-2.5 text-[15px] transition"
+                    placeholder="ornek@firma.com"
                     required
                   />
                 </div>
@@ -96,7 +84,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Mail className="w-5 h-5" />}
                 Sıfırlama Bağlantısı Oluştur
@@ -104,21 +92,21 @@ export default function ForgotPasswordPage() {
             </form>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-green-400 mb-2">
+              <div className="flex items-center gap-2 text-emerald-600 mb-2">
                 <CheckCircle className="w-5 h-5" />
                 <span className="text-sm font-medium">{successMessage}</span>
               </div>
-              <p className="text-blue-300 text-sm">
+              <p className="text-ink-500 text-sm">
                 E-posta gönderildi. Lütfen gelen kutunuzu ve spam klasörünü kontrol edin.
               </p>
               {previewUrl ? (
                 <>
-                  <div className="bg-white/5 border border-white/20 rounded-lg p-3 break-all text-xs text-blue-200 font-mono">
+                  <div className="bg-ink-50 border border-ink-200 rounded-lg p-3 break-all text-xs text-ink-700 font-mono">
                     {previewUrl}
                   </div>
                   <button
                     onClick={handleCopy}
-                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                    className="w-full py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                   >
                     {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {copied ? 'Kopyalandı!' : 'Önizleme Bağlantısını Kopyala'}
@@ -128,7 +116,6 @@ export default function ForgotPasswordPage() {
             </div>
           )}
         </div>
-      </motion.div>
-    </div>
+    </AuthShell>
   );
 }

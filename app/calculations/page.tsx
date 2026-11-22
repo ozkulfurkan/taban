@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Calculator, Trash2, Loader2, Eye, FileText, Pencil, Copy, AlertTriangle } from 'lucide-react';
+import { Calculator, Trash2, Loader2, Eye, FileText, Pencil, Copy, AlertTriangle } from '@/app/components/icons';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -46,21 +46,21 @@ export default function CalculationsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">{t('calculation', 'history')}</h1>
-            <p className="text-slate-500 text-sm">{t('calculation', 'title')}</p>
+            <h1 className="page-title">{t('calculation', 'history')}</h1>
+            <p className="text-ink-500 text-sm">{t('calculation', 'title')}</p>
           </div>
-          <Link href="/calculations/new" className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm">
+          <Link href="/calculations/new" className="flex items-center gap-2 px-4 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium transition-colors shadow-sm">
             <Calculator className="w-4 h-4" />
             {t('common', 'newCalculation')}
           </Link>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>
         ) : !calcs.length ? (
-          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
-            <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-400">{t('common', 'noData')}</p>
+          <div className="text-center py-16 bg-white rounded-xl shadow-card border border-ink-200/80">
+            <FileText className="w-12 h-12 text-ink-300 mx-auto mb-3" />
+            <p className="text-ink-400">{t('common', 'noData')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -70,36 +70,36 @@ export default function CalculationsPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl p-4 shadow-card hover:shadow-md transition-shadow-card border border-ink-200/80"
               >
                 <div className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <p className="font-medium text-slate-800 truncate">{calc.name ?? '-'}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="font-medium text-ink-800 truncate">{calc.name ?? '-'}</p>
+                    <p className="text-xs text-ink-400 mt-0.5">
                       {calc.user?.name ?? ''} • {calc.createdAt ? new Date(calc.createdAt).toLocaleDateString() : ''}
                     </p>
                     <div className="flex flex-wrap gap-4 mt-2 text-xs">
-                      <span className="text-slate-500">{t('calculation', 'totalCost')}: <strong className="text-slate-700">{formatCurrency(calc.totalCost ?? 0)}</strong></span>
-                      <span className="text-green-600">{t('calculation', 'sellingPrice')}: <strong>{formatCurrency(calc.sellingPrice ?? 0)}</strong></span>
+                      <span className="text-ink-500">{t('calculation', 'totalCost')}: <strong className="text-ink-700">{formatCurrency(calc.totalCost ?? 0)}</strong></span>
+                      <span className="text-emerald-600">{t('calculation', 'sellingPrice')}: <strong>{formatCurrency(calc.sellingPrice ?? 0)}</strong></span>
                       {calc.vatRate > 0 && (
                         <span className="text-amber-600">KDV Dahil: <strong>{formatCurrency(calc.sellingPriceWithVat ?? 0)}</strong></span>
                       )}
-                      <span className="text-slate-500">{t('calculation', 'profitMargin')}: <strong>{calc.profitMargin ?? 0}%</strong></span>
+                      <span className="text-ink-500">{t('calculation', 'profitMargin')}: <strong>{calc.profitMargin ?? 0}%</strong></span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0 ml-3">
-                    <Link href={`/calculations/${calc.id}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title={t('common', 'edit')}>
+                    <Link href={`/calculations/${calc.id}`} className="p-2 text-ink-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors" title={t('common', 'edit')}>
                       <Eye className="w-4 h-4" />
                     </Link>
                     {canEdit && (
                       <>
-                        <Link href={`/calculations/${calc.id}/edit`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title={t('calculation', 'editCalculation')}>
+                        <Link href={`/calculations/${calc.id}/edit`} className="p-2 text-ink-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors" title={t('calculation', 'editCalculation')}>
                           <Pencil className="w-4 h-4" />
                         </Link>
-                        <button onClick={() => handleCopy(calc.id)} className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title={t('calculation', 'copyCalculation')}>
+                        <button onClick={() => handleCopy(calc.id)} className="p-2 text-ink-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title={t('calculation', 'copyCalculation')}>
                           <Copy className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDelete(calc.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title={t('common', 'delete')}>
+                        <button onClick={() => handleDelete(calc.id)} className="p-2 text-ink-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title={t('common', 'delete')}>
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </>
@@ -114,18 +114,18 @@ export default function CalculationsPage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-ink-600 whitespace-pre-line">{confirmModal.message}</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg text-sm hover:bg-ink-50">İptal</button>
               <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>
           </div>

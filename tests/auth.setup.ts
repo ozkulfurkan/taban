@@ -8,7 +8,7 @@ setup('authenticate', async ({ page }) => {
   await page.goto('/login');
   await page.waitForLoadState('domcontentloaded');
 
-  await page.getByPlaceholder('email@example.com').fill(TEST_CONFIG.credentials.email);
+  await page.getByPlaceholder('ornek@firma.com').fill(TEST_CONFIG.credentials.email);
   await page.getByPlaceholder('••••••••').fill(TEST_CONFIG.credentials.password);
   await page.getByRole('button', { name: /giriş|login/i }).click();
 

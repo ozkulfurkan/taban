@@ -86,15 +86,15 @@ export function ordersHtml(orders: PrintableOrder[], opts: { title: string; comp
 /** Föy iskeleti: başlık, firma, sağda özet satırı ve tarih (sipariş ve ürün föyü aynı görünür) */
 export function printDocument(o: { title: string; companyName?: string | null; now?: Date; headline: string; body: string }) {
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(o.title)}</title><style>
-    body{font-family:-apple-system,Roboto,Helvetica,Arial,sans-serif;font-size:11px;color:#0f172a;margin:24px}
-    .top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #0f172a;padding-bottom:8px;margin-bottom:12px}
-    h1{font-size:18px;margin:0} .muted{color:#64748b;font-size:10px}
-    section{border:1px solid #cbd5e1;border-radius:6px;padding:10px;margin-bottom:10px;page-break-inside:avoid;break-inside:avoid}
+    body{font-family:-apple-system,Roboto,Helvetica,Arial,sans-serif;font-size:11px;color:#231E19;margin:24px}
+    .top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #231E19;padding-bottom:8px;margin-bottom:12px}
+    h1{font-size:18px;margin:0} .muted{color:#776D62;font-size:10px}
+    section{border:1px solid #D4CBC0;border-radius:6px;padding:10px;margin-bottom:10px;page-break-inside:avoid;break-inside:avoid}
     .head{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px} .no{font-weight:700;font-size:13px} .cust{font-size:12px}
     .meta{text-align:right;font-size:10px;line-height:1.5}
-    table{width:100%;border-collapse:collapse} th{background:#f1f5f9;padding:4px 5px;font-size:9px;text-align:left}
-    td{padding:4px 5px;border-top:1px solid #e2e8f0;vertical-align:top} .n{text-align:center;white-space:nowrap} .b{font-weight:700}
-    .note{margin-top:6px;font-size:10px;color:#334155}
+    table{width:100%;border-collapse:collapse} th{background:#F3EFEA;padding:4px 5px;font-size:9px;text-align:left}
+    td{padding:4px 5px;border-top:1px solid #E7E1D9;vertical-align:top} .n{text-align:center;white-space:nowrap} .b{font-weight:700}
+    .note{margin-top:6px;font-size:10px;color:#4A423A}
     @page{margin:12mm}
   </style></head><body>
     <div class="top">

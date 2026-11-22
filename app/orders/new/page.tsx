@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import SizeTable from '@/app/portal/components/size-table';
-import { Loader2, Save, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, AlertTriangle } from '@/app/components/icons';
 import BackLink from '@/app/components/back-link';
 import { cleanQuantity, formatQty, isPairUnit, orderUnit, unitDecimals } from '@/lib/order-units';
 
@@ -106,7 +106,7 @@ export default function NewOrderPage() {
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <BackLink variant="icon" href="/orders" label="Siparişler" />
-            <h1 className="text-xl font-bold text-slate-800">Yeni Sipariş</h1>
+            <h1 className="page-title">Yeni Sipariş</h1>
           </div>
           <button type="submit" disabled={saving || totalQty === 0 || !form.customerId}
             className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors">
@@ -116,28 +116,28 @@ export default function NewOrderPage() {
         </div>
 
         {/* Top row: Müşteri | Ürün | Termin */}
-        <div className="bg-white rounded-xl p-4 shadow-sm">
+        <div className="bg-white rounded-xl p-4 shadow-card border border-ink-200/80">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Müşteri *</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Müşteri *</label>
               <select required value={form.customerId} onChange={e => setForm(f => ({ ...f, customerId: e.target.value }))}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white">
                 <option value="">— Seçin —</option>
                 {customers.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ürün</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Ürün</label>
               <select value={form.productId} onChange={e => handleProductChange(e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white">
                 <option value="">— Katalogdan Seç —</option>
                 {products.map((p: any) => <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ''}{p.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">İstenen Termin</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">İstenen Termin</label>
               <input type="date" value={form.requestedDeliveryDate} onChange={e => setForm(f => ({ ...f, requestedDeliveryDate: e.target.value }))}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
           </div>
         </div>
@@ -145,10 +145,10 @@ export default function NewOrderPage() {
         {/* Main 2-column: Left=Hammadde, Right=Numara */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
           {/* Left — Hammadde Seçimi */}
-          <div className="bg-white rounded-xl p-4 shadow-sm space-y-4">
-            <h2 className="font-semibold text-slate-700 text-sm">Hammadde Seçimi</h2>
+          <div className="bg-white rounded-xl p-4 shadow-card space-y-4 border border-ink-200/80">
+            <h2 className="font-semibold text-ink-700 text-sm">Hammadde Seçimi</h2>
             {parts.length === 0 ? (
-              <p className="text-sm text-slate-400">Ürün seçildikten sonra hammadde seçimi görünür.</p>
+              <p className="text-sm text-ink-400">Ürün seçildikten sonra hammadde seçimi görünür.</p>
             ) : (
               <div className="space-y-3">
                 {parts.map((part: any) => {
@@ -157,20 +157,20 @@ export default function NewOrderPage() {
                   const stock = selectedMat?.stock ?? part.material?.stock ?? null;
                   return (
                     <div key={part.id} className="space-y-1.5">
-                      <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{part.name}</span>
+                      <span className="text-xs font-semibold text-ink-600 uppercase tracking-wide">{part.name}</span>
                       <div className="flex items-center gap-2">
                         <select
                           value={selectedMatId}
                           onChange={e => setPartMaterials(prev => ({ ...prev, [part.id]: e.target.value }))}
-                          className="flex-1 min-w-0 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                          className="flex-1 min-w-0 px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white"
                         >
                           <option value="">— Seç —</option>
                           {materials.map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </select>
                         <div className={`w-28 flex-shrink-0 px-2.5 py-2 border rounded-lg text-xs text-right font-medium ${
-                          stock === null ? 'bg-slate-50 border-slate-200 text-slate-400' :
+                          stock === null ? 'bg-ink-50 border-ink-200 text-ink-400' :
                           stock <= 0 ? 'bg-red-50 border-red-200 text-red-600' :
-                          'bg-green-50 border-green-200 text-green-700'
+                          'bg-emerald-50 border-emerald-200 text-emerald-700'
                         }`}>
                           {stock !== null ? `${stock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : '—'}
                         </div>
@@ -181,31 +181,31 @@ export default function NewOrderPage() {
               </div>
             )}
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Notlar</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Notlar</label>
               <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3}
                 placeholder="Opsiyonel sipariş notu..."
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+                className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none resize-none" />
             </div>
           </div>
 
           {/* Right — Numara Dağılımı (çift) ya da Miktar (kg, metre, adet...) */}
           {pair ? (
-            <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
+            <div className="bg-white rounded-xl p-4 shadow-card space-y-3 border border-ink-200/80">
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-slate-700 text-sm">Numara Dağılımı *</h2>
+                <h2 className="font-semibold text-ink-700 text-sm">Numara Dağılımı *</h2>
                 {totalQty > 0 && (
-                  <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">{totalQty} çift</span>
+                  <span className="text-sm font-bold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg">{totalQty} çift</span>
                 )}
               </div>
               <SizeTable value={sizeDistribution} onChange={setSizeDistribution} sizes={selectedProduct?.sizes} />
             </div>
           ) : (
-            <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
-              <h2 className="font-semibold text-slate-700 text-sm">Miktar ({unit}) *</h2>
+            <div className="bg-white rounded-xl p-4 shadow-card space-y-3 border border-ink-200/80">
+              <h2 className="font-semibold text-ink-700 text-sm">Miktar ({unit}) *</h2>
               <input value={qtyText} onChange={e => setQtyText(e.target.value)} inputMode="decimal" placeholder={unitDecimals(unit) ? 'örn. 1250,5' : 'örn. 500'}
                 data-testid="order-quantity"
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-              <p className="text-xs text-slate-500">
+                className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-lg focus:ring-2 focus:ring-brand-600 outline-none" />
+              <p className="text-xs text-ink-500">
                 {quantity ? formatQty(quantity, unit) : unitDecimals(unit) ? 'En fazla 3 ondalık girilebilir.' : 'Tam sayı girin.'}
               </p>
             </div>
@@ -215,18 +215,18 @@ export default function NewOrderPage() {
       {errorMsg && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
-                <p className="text-sm text-slate-600">{errorMsg}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Hata</h3>
+                <p className="text-sm text-ink-600">{errorMsg}</p>
               </div>
             </div>
             <button onClick={() => setErrorMsg('')}
-              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              className="w-full py-2 bg-ink-700 hover:bg-ink-800 text-white rounded-lg text-sm font-medium">
               Tamam
             </button>
           </div>

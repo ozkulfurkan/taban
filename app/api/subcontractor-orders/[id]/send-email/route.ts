@@ -34,15 +34,15 @@ export async function POST(_: NextRequest, { params }: { params: { id: string } 
 
   const sizeRows = Object.entries(order.sizeDistribution as Record<string, number>)
     .filter(([, qty]) => qty > 0)
-    .map(([size, qty]) => `<tr><td style="padding:4px 12px;border:1px solid #e2e8f0;">${size}</td><td style="padding:4px 12px;border:1px solid #e2e8f0;text-align:right;">${qty} çift</td></tr>`)
+    .map(([size, qty]) => `<tr><td style="padding:4px 12px;border:1px solid #E7E1D9;">${size}</td><td style="padding:4px 12px;border:1px solid #E7E1D9;text-align:right;">${qty} çift</td></tr>`)
     .join('');
 
   const bomRows = order.product?.parts.map(part => {
     const kgRequired = (part.gramsPerPiece * (1 + part.wasteRate / 100) * order.totalPairs) / 1000;
     return `<tr>
-      <td style="padding:4px 12px;border:1px solid #e2e8f0;">${part.name}</td>
-      <td style="padding:4px 12px;border:1px solid #e2e8f0;">${part.material?.name ?? '—'}</td>
-      <td style="padding:4px 12px;border:1px solid #e2e8f0;text-align:right;">${kgRequired.toFixed(3)} kg</td>
+      <td style="padding:4px 12px;border:1px solid #E7E1D9;">${part.name}</td>
+      <td style="padding:4px 12px;border:1px solid #E7E1D9;">${part.material?.name ?? '—'}</td>
+      <td style="padding:4px 12px;border:1px solid #E7E1D9;text-align:right;">${kgRequired.toFixed(3)} kg</td>
     </tr>`;
   }).join('') ?? '';
 
@@ -62,23 +62,23 @@ export async function POST(_: NextRequest, { params }: { params: { id: string } 
         <p>Sayın <strong>${order.subcontractor.name}</strong>,</p>
         <p>Aşağıdaki fason siparişi sisteminize tanımlanmıştır.</p>
         <table style="border-collapse:collapse;width:100%;margin-bottom:16px;">
-          <tr><td style="padding:6px 12px;background:#f8fafc;font-weight:600;">Sipariş No</td><td style="padding:6px 12px;">${order.orderNo}</td></tr>
-          <tr><td style="padding:6px 12px;background:#f8fafc;font-weight:600;">Ürün</td><td style="padding:6px 12px;">${order.product?.name ?? '—'} ${order.product?.code ? `(${order.product.code})` : ''}</td></tr>
-          <tr><td style="padding:6px 12px;background:#f8fafc;font-weight:600;">Toplam Adet</td><td style="padding:6px 12px;">${order.totalPairs} çift</td></tr>
-          <tr><td style="padding:6px 12px;background:#f8fafc;font-weight:600;">Termin</td><td style="padding:6px 12px;">${dueDateStr}</td></tr>
+          <tr><td style="padding:6px 12px;background:#FAF8F5;font-weight:600;">Sipariş No</td><td style="padding:6px 12px;">${order.orderNo}</td></tr>
+          <tr><td style="padding:6px 12px;background:#FAF8F5;font-weight:600;">Ürün</td><td style="padding:6px 12px;">${order.product?.name ?? '—'} ${order.product?.code ? `(${order.product.code})` : ''}</td></tr>
+          <tr><td style="padding:6px 12px;background:#FAF8F5;font-weight:600;">Toplam Adet</td><td style="padding:6px 12px;">${order.totalPairs} çift</td></tr>
+          <tr><td style="padding:6px 12px;background:#FAF8F5;font-weight:600;">Termin</td><td style="padding:6px 12px;">${dueDateStr}</td></tr>
         </table>
         <h3 style="color:#374151;border-bottom:1px solid #e5e7eb;padding-bottom:8px;">Numara Dağılımı</h3>
         <table style="border-collapse:collapse;margin-bottom:16px;">
-          <thead><tr><th style="padding:6px 12px;background:#f1f5f9;border:1px solid #e2e8f0;text-align:left;">Numara</th><th style="padding:6px 12px;background:#f1f5f9;border:1px solid #e2e8f0;">Adet</th></tr></thead>
+          <thead><tr><th style="padding:6px 12px;background:#F3EFEA;border:1px solid #E7E1D9;text-align:left;">Numara</th><th style="padding:6px 12px;background:#F3EFEA;border:1px solid #E7E1D9;">Adet</th></tr></thead>
           <tbody>${sizeRows}</tbody>
         </table>
         ${bomRows ? `
         <h3 style="color:#374151;border-bottom:1px solid #e5e7eb;padding-bottom:8px;">Gerekli Hammaddeler (BOM)</h3>
         <table style="border-collapse:collapse;width:100%;margin-bottom:16px;">
           <thead><tr>
-            <th style="padding:6px 12px;background:#f1f5f9;border:1px solid #e2e8f0;text-align:left;">Parça</th>
-            <th style="padding:6px 12px;background:#f1f5f9;border:1px solid #e2e8f0;text-align:left;">Hammadde</th>
-            <th style="padding:6px 12px;background:#f1f5f9;border:1px solid #e2e8f0;">Gereken</th>
+            <th style="padding:6px 12px;background:#F3EFEA;border:1px solid #E7E1D9;text-align:left;">Parça</th>
+            <th style="padding:6px 12px;background:#F3EFEA;border:1px solid #E7E1D9;text-align:left;">Hammadde</th>
+            <th style="padding:6px 12px;background:#F3EFEA;border:1px solid #E7E1D9;">Gereken</th>
           </tr></thead>
           <tbody>${bomRows}</tbody>
         </table>

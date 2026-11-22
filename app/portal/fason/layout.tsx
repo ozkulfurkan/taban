@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/app/components/icons';
 import FasonPortalShell from './components/fason-portal-shell';
 
 export default function FasonPortalLayout({ children }: { children: React.ReactNode }) {
@@ -27,8 +27,8 @@ export default function FasonPortalLayout({ children }: { children: React.ReactN
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+      <div className="min-h-screen flex items-center justify-center bg-ink-50">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
       </div>
     );
   }

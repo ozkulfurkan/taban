@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus } from '@/app/components/icons';
 import BackLink from '@/app/components/back-link';
 import Link from 'next/link';
 
@@ -90,13 +90,13 @@ export default function NewSupplierPage() {
       <div className="max-w-2xl space-y-6">
         <div className="flex items-center gap-3">
           <BackLink variant="icon" href="/suppliers" label="Tedarikçiler" />
-          <h1 className="text-2xl font-bold text-slate-800">{t('suppliers', 'newSupplierTitle')}</h1>
+          <h1 className="page-title">{t('suppliers', 'newSupplierTitle')}</h1>
         </div>
 
         {saveError && (
           <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2.5 text-sm">{saveError}</div>
         )}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-card p-6 space-y-4 border border-ink-200/80">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2 bg-emerald-50 border border-emerald-100 rounded-lg p-3">
               <label className="block text-xs font-medium text-emerald-800 mb-1">SoleCost firma kodu (isteğe bağlı)</label>
@@ -105,36 +105,36 @@ export default function NewSupplierPage() {
               <p className="text-xs text-emerald-700 mt-1">Tedarikçiniz SoleCost kullanıyorsa kodunu girin; onaylarsa ona buradan doğrudan sipariş verebilirsiniz.</p>
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">{t('suppliers', 'companyNameLabel')}</label>
-              <input required value={form.name} onChange={e => set('name', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">{t('suppliers', 'companyNameLabel')}</label>
+              <input required value={form.name} onChange={e => set('name', e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Para Birimi *</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Para Birimi *</label>
               <select value={form.currency} onChange={e => set('currency', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white">
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
                 <option value="TRY">TRY</option>
               </select>
-              <p className="text-xs text-slate-400 mt-1">Kaydedildikten sonra değiştirilemez</p>
+              <p className="text-xs text-ink-400 mt-1">Kaydedildikten sonra değiştirilemez</p>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">{t('suppliers', 'taxId')}</label>
-              <input value={form.taxId} onChange={e => set('taxId', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">{t('suppliers', 'taxId')}</label>
+              <input value={form.taxId} onChange={e => set('taxId', e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
 
             {/* Kategori */}
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Kategori</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Kategori</label>
               <div className="flex gap-2">
                 <select value={categoryId} onChange={e => setCategoryId(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  className="flex-1 px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white">
                   <option value="">— Kategori seçin (isteğe bağlı) —</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 <button type="button" onClick={() => setShowAddCat(v => !v)}
                   title="Yeni kategori ekle"
-                  className="px-3 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors">
+                  className="px-3 py-2 border border-ink-200 rounded-lg text-ink-600 hover:bg-ink-50 transition-colors">
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
@@ -143,9 +143,9 @@ export default function NewSupplierPage() {
                   <input autoFocus value={newCatName} onChange={e => setNewCatName(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } }}
                     placeholder="Kategori adı"
-                    className="flex-1 px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                    className="flex-1 px-3 py-2 border border-brand-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
                   <button type="button" onClick={addCategory} disabled={savingCat || !newCatName.trim()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 flex items-center gap-1">
+                    className="px-4 py-2 bg-brand-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 flex items-center gap-1">
                     {savingCat ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Ekle'}
                   </button>
                 </div>
@@ -153,25 +153,25 @@ export default function NewSupplierPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">{t('suppliers', 'phone')}</label>
-              <input value={form.phone} onChange={e => set('phone', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">{t('suppliers', 'phone')}</label>
+              <input value={form.phone} onChange={e => set('phone', e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">{t('suppliers', 'email')}</label>
-              <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">{t('suppliers', 'email')}</label>
+              <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">{t('suppliers', 'address')}</label>
-              <textarea value={form.address} onChange={e => set('address', e.target.value)} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">{t('suppliers', 'address')}</label>
+              <textarea value={form.address} onChange={e => set('address', e.target.value)} rows={2} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none resize-none" />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">{t('suppliers', 'notes')}</label>
-              <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">{t('suppliers', 'notes')}</label>
+              <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none resize-none" />
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <Link href="/suppliers" className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors inline-flex items-center justify-center">{t('common', 'cancel')}</Link>
-            <button type="submit" disabled={saving} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+            <Link href="/suppliers" className="px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50 transition-colors inline-flex items-center justify-center">{t('common', 'cancel')}</Link>
+            <button type="submit" disabled={saving} className="flex-1 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
               {t('common', 'save')}
             </button>

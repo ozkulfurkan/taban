@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { GripVertical, GripHorizontal, ChevronUp } from 'lucide-react';
+import { GripVertical, GripHorizontal, ChevronUp } from '@/app/components/icons';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -47,22 +47,22 @@ export function WidgetShell({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, position: 'relative' }}
-      className={`bg-white rounded-2xl border border-slate-100 overflow-hidden transition-shadow duration-200 ${isDragging ? 'shadow-2xl ring-2 ring-blue-200' : 'shadow-sm'}`}
+      className={`bg-white rounded-xl border border-ink-200/80 overflow-hidden transition-shadow duration-200 ${isDragging ? 'shadow-pop ring-2 ring-brand-200' : 'shadow-card'}`}
     >
-      <div className="flex items-center gap-2 px-3 py-3 border-b border-slate-100 select-none bg-white">
+      <div className="flex items-center gap-2 px-3 py-3 border-b border-ink-100 select-none bg-white">
         <button
           {...attributes} {...listeners}
-          className="flex-shrink-0 p-1.5 rounded-lg cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-colors touch-none"
+          className="flex-shrink-0 p-1.5 rounded-lg cursor-grab active:cursor-grabbing text-ink-300 hover:text-ink-500 hover:bg-ink-100 transition-colors touch-none"
           tabIndex={-1} aria-label="Sürükle"
         >
           <GripVertical className="w-4 h-4" />
         </button>
-        {icon && <span className="flex-shrink-0 text-slate-500">{icon}</span>}
-        <h2 className="font-bold text-slate-800 text-sm flex-1 truncate">{title}</h2>
+        {icon && <span className="flex-shrink-0 text-ink-500">{icon}</span>}
+        <h2 className="font-semibold text-ink-900 text-[15px] flex-1 truncate">{title}</h2>
         {headerExtra && <div className="flex items-center gap-1.5 flex-shrink-0">{headerExtra}</div>}
         <button
           onClick={onToggle}
-          className="flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          className="flex-shrink-0 p-1.5 rounded-lg text-ink-400 hover:text-ink-600 hover:bg-ink-100 transition-colors"
           aria-label={collapsed ? 'Genişlet' : 'Küçült'}
         >
           <motion.div animate={{ rotate: collapsed ? 180 : 0 }} transition={{ duration: 0.22 }}>
@@ -88,14 +88,14 @@ interface CardShellProps {
 
 export function CardShell({ title, icon, headerExtra, collapsed, onToggle, children }: CardShellProps) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-      <div className="flex items-center gap-2 px-3 py-3 border-b border-slate-100 select-none">
-        {icon && <span className="flex-shrink-0 text-slate-500">{icon}</span>}
-        <h2 className="font-bold text-slate-800 text-sm flex-1 truncate">{title}</h2>
+    <div className="bg-white rounded-2xl border border-ink-100 shadow-card overflow-hidden flex flex-col">
+      <div className="flex items-center gap-2 px-3 py-3 border-b border-ink-100 select-none">
+        {icon && <span className="flex-shrink-0 text-ink-500">{icon}</span>}
+        <h2 className="font-semibold text-ink-900 text-[15px] flex-1 truncate">{title}</h2>
         {headerExtra && <div className="flex items-center gap-1.5 flex-shrink-0">{headerExtra}</div>}
         <button
           onClick={onToggle}
-          className="flex-shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          className="flex-shrink-0 p-1.5 rounded-lg text-ink-400 hover:text-ink-600 hover:bg-ink-100 transition-colors"
           aria-label={collapsed ? 'Genişlet' : 'Küçült'}
         >
           <motion.div animate={{ rotate: collapsed ? 180 : 0 }} transition={{ duration: 0.22 }}>
@@ -125,10 +125,10 @@ export function SortablePairShell({ id, left, right }: SortablePairShellProps) {
       style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 20 : undefined, position: 'relative' }}
     >
       {/* Drag handle bar */}
-      <div className={`flex items-center justify-center py-1.5 mb-1 rounded-xl transition-colors ${isDragging ? 'bg-blue-50' : 'hover:bg-slate-100/60'}`}>
+      <div className={`flex items-center justify-center py-1.5 mb-1 rounded-xl transition-colors ${isDragging ? 'bg-brand-50' : 'hover:bg-ink-100/60'}`}>
         <button
           {...attributes} {...listeners}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 transition-colors touch-none select-none"
+          className="flex items-center gap-1.5 px-3 py-1 rounded-lg cursor-grab active:cursor-grabbing text-ink-300 hover:text-ink-500 transition-colors touch-none select-none"
           tabIndex={-1} aria-label="Grubu Sürükle"
         >
           <GripHorizontal className="w-4 h-4" />

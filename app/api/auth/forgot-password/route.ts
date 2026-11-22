@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
           <p>Merhaba,</p>
           <p>Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:</p>
           <p>
-            <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">
+            <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #6B1A2C; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600;">
               Şifremi Sıfırlamak İstiyorum
             </a>
           </p>

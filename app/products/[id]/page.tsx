@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
-import { Loader2, Save, Plus, Trash2, Pencil, X, Package, Calculator, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Warehouse, FileText, Users, AlertTriangle, QrCode } from 'lucide-react';
+import { Loader2, Save, Plus, Trash2, Pencil, X, Package, Calculator, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Warehouse, FileText, Users, AlertTriangle, QrCode } from '@/app/components/icons';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { buildPrintHtml, type BarcodeTemplateSettings } from '@/lib/barcode-print';
 import DecimalInput from '@/app/components/decimal-input';
@@ -389,8 +389,8 @@ export default function ProductDetailPage() {
     } finally { setSavingMat(false); }
   };
 
-  if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div></AppShell>;
-  if (!product) return <AppShell><div className="text-center py-16 text-slate-400">Ürün bulunamadı</div></AppShell>;
+  if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div></AppShell>;
+  if (!product) return <AppShell><div className="text-center py-16 text-ink-400">Ürün bulunamadı</div></AppShell>;
 
   const parts: any[] = product.parts || [];
   const totalGrams = parts.reduce((s: number, p: any) => s + p.gramsPerPiece, 0);
@@ -416,7 +416,7 @@ export default function ProductDetailPage() {
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
           <button onClick={handleBarcodeOpen}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold shadow-md">
+            className="flex items-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold shadow-md">
             <QrCode className="w-4 h-4" /> Barkod Yazdır
           </button>
           {!isMaterial && (
@@ -428,7 +428,7 @@ export default function ProductDetailPage() {
               setPriceWarning({ totalCost: costs.totalCost, currency: costs.toCurrency });
             }
           }}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md">
+            className="flex items-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold shadow-md">
             <Calculator className="w-4 h-4" /> Maliyet Hesapla
           </button>
           )}
@@ -440,11 +440,11 @@ export default function ProductDetailPage() {
           ) : (
             <>
               <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
+                className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Kaydet
               </button>
               <button onClick={() => { setEditing(false); load(); }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium">
+                className="flex items-center gap-2 px-3 py-1.5 bg-ink-200 hover:bg-ink-300 text-ink-700 rounded-lg text-sm font-medium">
                 <X className="w-4 h-4" /> Vazgeç
               </button>
             </>
@@ -457,22 +457,22 @@ export default function ProductDetailPage() {
           {/* LEFT: Product info + cost summary */}
           <div className="space-y-3">
             {/* Product header */}
-            <div className="bg-blue-700 rounded-xl px-4 py-3 flex items-center justify-between">
+            <div className="bg-brand-800 rounded-xl px-4 py-3 flex items-center justify-between">
               <div>
                 <p className="text-white font-bold text-sm">{product.name}</p>
-                {product.code && <p className="text-blue-200 text-xs mt-0.5">Kod: {product.code}</p>}
+                {product.code && <p className="text-brand-200 text-xs mt-0.5">Kod: {product.code}</p>}
               </div>
-              <Package className="w-5 h-5 text-blue-300" />
+              <Package className="w-5 h-5 text-brand-300" />
             </div>
 
             {/* Product meta */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
               {editing && (
                 <div className="bg-amber-50 px-4 py-2 border-b border-amber-100">
                   <p className="text-xs text-amber-600 font-medium">Düzenleme modu aktif</p>
                 </div>
               )}
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-ink-100">
                 {[
                   { label: 'Ürün Adı', field: 'name', type: 'text', value: product.name },
                   { label: 'Kod', field: 'code', type: 'text', value: product.code || '—' },
@@ -482,16 +482,16 @@ export default function ProductDetailPage() {
                   { label: 'Stok', field: 'stock', type: 'number', value: `${product.stock} ${product.unit}` },
                 ].map(row => (
                   <div key={row.field} className="flex items-center px-4 py-2.5">
-                    <span className="text-xs font-semibold text-slate-500 w-24 flex-shrink-0">{row.label}</span>
+                    <span className="text-xs font-semibold text-ink-500 w-24 flex-shrink-0">{row.label}</span>
                     {editing ? (
                       row.type === 'sel-unit' ? (
                         <select value={editForm[row.field]} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
-                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none">
+                          className="flex-1 px-2 py-1 border border-ink-200 rounded text-sm bg-white outline-none">
                           {UNITS.map(u => <option key={u}>{u}</option>)}
                         </select>
                       ) : row.type === 'sel-cur' ? (
                         <select value={editForm[row.field]} onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
-                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none">
+                          className="flex-1 px-2 py-1 border border-ink-200 rounded text-sm bg-white outline-none">
                           {CURRENCIES.map(c => <option key={c}>{c}</option>)}
                         </select>
                       ) : row.field === 'unitPrice' ? (
@@ -499,61 +499,61 @@ export default function ProductDetailPage() {
                           value={editForm[row.field]}
                           onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: normalizePriceInput(e.target.value) }))}
                           onKeyDown={blockDot}
-                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
+                          className="flex-1 px-2 py-1 border border-ink-200 rounded text-sm outline-none focus:ring-1 focus:ring-brand-500" />
                       ) : (
                         <input type={row.type === 'number' ? 'number' : 'text'} step="0.01"
                           value={editForm[row.field]}
                           onChange={e => setEditForm((p: any) => ({ ...p, [row.field]: e.target.value }))}
-                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
+                          className="flex-1 px-2 py-1 border border-ink-200 rounded text-sm outline-none focus:ring-1 focus:ring-brand-500" />
                       )
                     ) : (
-                      <span className="text-sm text-slate-700 font-medium">{row.value}</span>
+                      <span className="text-sm text-ink-700 font-medium">{row.value}</span>
                     )}
                   </div>
                 ))}
                 <div className="px-4 py-2.5">
-                  <span className="text-xs font-semibold text-slate-500 block mb-1">Kategori</span>
+                  <span className="text-xs font-semibold text-ink-500 block mb-1">Kategori</span>
                   {editing ? (
                     <select value={editForm.categoryId} onChange={e => setEditForm((p: any) => ({ ...p, categoryId: e.target.value }))}
-                      className="w-full px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none focus:ring-1 focus:ring-blue-400">
+                      className="w-full px-2 py-1 border border-ink-200 rounded text-sm bg-white outline-none focus:ring-1 focus:ring-brand-500">
                       <option value="">— Seç —</option>
                       {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   ) : (
-                    <p className="text-sm text-slate-600">{product.category?.name || <span className="text-slate-300 italic">—</span>}</p>
+                    <p className="text-sm text-ink-600">{product.category?.name || <span className="text-ink-300 italic">—</span>}</p>
                   )}
                 </div>
                 <div className="px-4 py-2.5 flex items-center">
-                  <span className="text-xs font-semibold text-slate-500 w-24 flex-shrink-0">Renk</span>
+                  <span className="text-xs font-semibold text-ink-500 w-24 flex-shrink-0">Renk</span>
                   {editing ? (
                     <input type="text" value={editForm.renk} onChange={e => setEditForm((p: any) => ({ ...p, renk: e.target.value }))}
-                      className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
+                      className="flex-1 px-2 py-1 border border-ink-200 rounded text-sm outline-none focus:ring-1 focus:ring-brand-500" />
                   ) : (
-                    <span className="text-sm text-slate-700">{product.renk || <span className="text-slate-300 italic">—</span>}</span>
+                    <span className="text-sm text-ink-700">{product.renk || <span className="text-ink-300 italic">—</span>}</span>
                   )}
                 </div>
                 <div className="px-4 py-2.5 flex items-center">
-                  <span className="text-xs font-semibold text-slate-500 w-24 flex-shrink-0">Shore</span>
+                  <span className="text-xs font-semibold text-ink-500 w-24 flex-shrink-0">Shore</span>
                   {editing ? (
                     <input type="text" value={editForm.shore} onChange={e => setEditForm((p: any) => ({ ...p, shore: e.target.value }))}
-                      className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400" />
+                      className="flex-1 px-2 py-1 border border-ink-200 rounded text-sm outline-none focus:ring-1 focus:ring-brand-500" />
                   ) : (
-                    <span className="text-sm text-slate-700">{product.shore || <span className="text-slate-300 italic">—</span>}</span>
+                    <span className="text-sm text-ink-700">{product.shore || <span className="text-ink-300 italic">—</span>}</span>
                   )}
                 </div>
                 <div className="px-4 py-2.5">
-                  <span className="text-xs font-semibold text-slate-500 block mb-1">Notlar</span>
+                  <span className="text-xs font-semibold text-ink-500 block mb-1">Notlar</span>
                   {editing ? (
                     <textarea value={editForm.notes} onChange={e => setEditForm((p: any) => ({ ...p, notes: e.target.value }))} rows={2}
-                      className="w-full px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400 resize-none" />
+                      className="w-full px-2 py-1 border border-ink-200 rounded text-sm outline-none focus:ring-1 focus:ring-brand-500 resize-none" />
                   ) : (
-                    <p className="text-sm text-slate-600">{product.notes || <span className="text-slate-300 italic">—</span>}</p>
+                    <p className="text-sm text-ink-600">{product.notes || <span className="text-ink-300 italic">—</span>}</p>
                   )}
                 </div>
 
                 {/* Boylar */}
                 <div className="px-4 py-2.5">
-                  <span className="text-xs font-semibold text-slate-500 block mb-2">Boylar</span>
+                  <span className="text-xs font-semibold text-ink-500 block mb-2">Boylar</span>
                   {editing ? (
                     <div className="space-y-2">
                       <div className="flex gap-2">
@@ -573,7 +573,7 @@ export default function ProductDetailPage() {
                             }
                           }}
                           placeholder="36-40 veya 36,37,38 veya S,M,L"
-                          className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-blue-400"
+                          className="flex-1 px-2 py-1 border border-ink-200 rounded text-sm outline-none focus:ring-1 focus:ring-brand-500"
                         />
                         <button
                           type="button"
@@ -586,33 +586,33 @@ export default function ProductDetailPage() {
                             });
                             setSizeInput('');
                           }}
-                          className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium"
+                          className="px-2 py-1 bg-brand-700 hover:bg-brand-800 text-white rounded text-xs font-medium"
                         >
                           Ekle
                         </button>
                       </div>
-                      <p className="text-xs text-slate-400">
-                        Asorti aralığı girerseniz o numaralar listelenir: <span className="font-medium text-slate-500">36-40</span>
-                        {' '}· Virgülle toplu ekleyebilirsiniz: <span className="font-medium text-slate-500">36,37,38</span>
+                      <p className="text-xs text-ink-400">
+                        Asorti aralığı girerseniz o numaralar listelenir: <span className="font-medium text-ink-500">36-40</span>
+                        {' '}· Virgülle toplu ekleyebilirsiniz: <span className="font-medium text-ink-500">36,37,38</span>
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {editSizes.map(s => (
-                          <span key={s} className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                          <span key={s} className="flex items-center gap-1 px-2 py-0.5 bg-brand-100 text-brand-800 rounded-full text-xs font-semibold">
                             {s}
                             <button type="button" onClick={() => setEditSizes(p => p.filter(x => x !== s))} className="hover:text-red-600">
                               <X className="w-3 h-3" />
                             </button>
                           </span>
                         ))}
-                        {editSizes.length === 0 && <span className="text-xs text-slate-400 italic">Henüz boy eklenmedi</span>}
+                        {editSizes.length === 0 && <span className="text-xs text-ink-400 italic">Henüz boy eklenmedi</span>}
                       </div>
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
                       {(product.sizes || []).length === 0
-                        ? <span className="text-sm text-slate-300 italic">—</span>
+                        ? <span className="text-sm text-ink-300 italic">—</span>
                         : (product.sizes || []).map((s: string) => (
-                            <span key={s} className="px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">{s}</span>
+                            <span key={s} className="px-2.5 py-0.5 bg-brand-100 text-brand-800 rounded-full text-xs font-semibold">{s}</span>
                           ))
                       }
                     </div>
@@ -622,16 +622,16 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Stok Yönetimi */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="bg-teal-600 px-4 py-3 flex items-center gap-2">
+            <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+              <div className="bg-brand-700 px-4 py-3 flex items-center gap-2">
                 <Warehouse className="w-4 h-4 text-white" />
                 <h2 className="text-white font-bold text-sm uppercase tracking-wide">Stok Yönetimi</h2>
               </div>
               <div className="p-4 space-y-3">
-                <div className="flex items-center justify-between bg-teal-50 rounded-xl px-4 py-3">
-                  <span className="text-xs font-semibold text-teal-700">Güncel Stok</span>
-                  <span className="text-2xl font-bold text-teal-800">
-                    {product.stock} <span className="text-sm font-normal text-teal-600">{product.unit}</span>
+                <div className="flex items-center justify-between bg-brand-50 rounded-xl px-4 py-3">
+                  <span className="text-xs font-semibold text-brand-800">Güncel Stok</span>
+                  <span className="text-2xl font-bold text-brand-900">
+                    {product.stock} <span className="text-sm font-normal text-brand-700">{product.unit}</span>
                   </span>
                 </div>
                 <div className="space-y-2">
@@ -642,13 +642,13 @@ export default function ProductDetailPage() {
                     value={stokAmt}
                     onChange={e => setStokAmt(e.target.value)}
                     placeholder="Miktar"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-teal-400"
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-brand-500"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleStok(1)}
                       disabled={stokLoading || !stokAmt}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium disabled:opacity-60"
                     >
                       {stokLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
                       Ekle
@@ -668,9 +668,9 @@ export default function ProductDetailPage() {
 
             {/* Maliyet Özeti */}
             {!isMaterial && costs && (
-              <div ref={costRef} className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div ref={costRef} className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
                 <button onClick={() => setShowCost(s => !s)}
-                  className="w-full px-4 py-3 flex items-center justify-between bg-blue-600 hover:bg-blue-700 transition-colors">
+                  className="w-full px-4 py-3 flex items-center justify-between bg-brand-700 hover:bg-brand-800 transition-colors">
                   <span className="text-white font-bold text-sm flex items-center gap-2">
                     <Calculator className="w-4 h-4" /> Maliyet Özeti
                   </span>
@@ -678,27 +678,27 @@ export default function ProductDetailPage() {
                 </button>
                 {showCost && (
                   <div className="p-4 space-y-1.5 text-sm">
-                    <div className="flex justify-between text-slate-600">
+                    <div className="flex justify-between text-ink-600">
                       <span>Hammadde Maliyeti</span>
                       <span className="font-medium">{fmt2(costs.totalMaterialCost)} {costs.toCurrency}</span>
                     </div>
-                    <div className="flex justify-between text-slate-600">
+                    <div className="flex justify-between text-ink-600">
                       <span>İşçilik Maliyeti</span>
                       <span className="font-medium">{fmt2(costs.laborCost)} {costs.toCurrency}</span>
                     </div>
-                    <div className="flex justify-between text-slate-600">
+                    <div className="flex justify-between text-ink-600">
                       <span>Koli Maliyeti (çift başına)</span>
                       <span className="font-medium">{fmt2(costs.packagingCostPerPair)} {costs.toCurrency}</span>
                     </div>
                     {costs.extraConverted.map((e: any) => (
-                      <div key={e.name} className="flex justify-between text-slate-600">
+                      <div key={e.name} className="flex justify-between text-ink-600">
                         <span>{e.name}</span>
                         <span className="font-medium">{fmt2(e.converted)} {costs.toCurrency}</span>
                       </div>
                     ))}
-                    <div className="flex justify-between font-bold text-slate-800 text-base pt-2 border-t border-slate-200">
+                    <div className="flex justify-between font-bold text-ink-800 text-base pt-2 border-t border-ink-200">
                       <span>TOPLAM MALİYET</span>
-                      <span className="text-blue-700">{fmt2(costs.totalCost)} {costs.toCurrency}</span>
+                      <span className="text-brand-800">{fmt2(costs.totalCost)} {costs.toCurrency}</span>
                     </div>
                   </div>
                 )}
@@ -708,20 +708,20 @@ export default function ProductDetailPage() {
 
           {/* RIGHT: stok hareketleri (isMaterial) OR cost sections (!isMaterial) */}
           {isMaterial ? (
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden self-start">
-              <div className="bg-teal-700 px-4 py-3 flex items-center gap-2">
+            <div className="bg-white rounded-xl shadow-card overflow-hidden self-start border border-ink-200/80">
+              <div className="bg-brand-800 px-4 py-3 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-white" />
                 <h2 className="text-white font-semibold text-sm">Stok Hareketleri</h2>
               </div>
               {ekstreLoading ? (
-                <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-teal-600" /></div>
+                <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-brand-700" /></div>
               ) : ekstre.length === 0 ? (
-                <div className="text-center py-10 text-slate-400 text-sm">Henüz hareket kaydı yok</div>
+                <div className="text-center py-10 text-ink-400 text-sm">Henüz hareket kaydı yok</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
+                      <tr className="text-xs font-semibold text-ink-500 border-b bg-ink-50">
                         <th className="px-4 py-2.5 text-left">Tarih</th>
                         <th className="px-4 py-2.5 text-left">İşlem</th>
                         <th className="px-4 py-2.5 text-left">Müşteri / Tedarikçi</th>
@@ -729,26 +729,26 @@ export default function ProductDetailPage() {
                         <th className="px-4 py-2.5 text-right">Miktar</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-ink-100">
                       {ekstre.map((e: any) => (
-                        <tr key={e.id} className="hover:bg-slate-50/50">
-                          <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">
+                        <tr key={e.id} className="hover:bg-ink-50/50">
+                          <td className="px-4 py-2.5 text-xs text-ink-500 whitespace-nowrap">
                             {new Date(e.date).toLocaleDateString('tr-TR')}
                           </td>
                           <td className="px-4 py-2.5">
                             {e.type === 'satis'
                               ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Satış</span>
                               : e.type === 'alis'
-                              ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">Alış</span>
+                              ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-100 text-brand-800 rounded-full text-xs font-semibold">Alış</span>
                               : e.type === 'alis_iade'
                               ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">Alış İadesi</span>
                               : e.type === 'iade'
                               ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">İade</span>
-                              : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">Üretim</span>
+                              : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-100 text-brand-800 rounded-full text-xs font-semibold">Üretim</span>
                             }
                           </td>
-                          <td className="px-4 py-2.5 text-slate-600 text-xs">{e.party}</td>
-                          <td className="px-4 py-2.5 text-slate-400 text-xs">{e.invoiceNo ?? '—'}</td>
+                          <td className="px-4 py-2.5 text-ink-600 text-xs">{e.party}</td>
+                          <td className="px-4 py-2.5 text-ink-400 text-xs">{e.invoiceNo ?? '—'}</td>
                           <td className={`px-4 py-2.5 text-right font-semibold ${e.qty > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                             {e.qty > 0 ? '+' : ''}{e.qty.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {product?.unit}
                           </td>
@@ -762,8 +762,8 @@ export default function ProductDetailPage() {
           ) : <div className="lg:col-span-2 space-y-4">
 
             {/* ── 1. Parça / Hammadde ─────────────────────────────────────── */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="bg-blue-600 px-4 py-3 flex items-center justify-between">
+            <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+              <div className="bg-brand-700 px-4 py-3 flex items-center justify-between">
                 <h2 className="text-white font-bold text-sm uppercase tracking-wide">Parça / Hammadde Listesi</h2>
                 {editing && (
                   <button onClick={addPart}
@@ -775,7 +775,7 @@ export default function ProductDetailPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[560px]">
                   <thead>
-                    <tr className="bg-blue-50 text-xs font-semibold text-slate-600 border-b border-blue-100">
+                    <tr className="bg-brand-50 text-xs font-semibold text-ink-600 border-b border-brand-100">
                       <th className="px-3 py-2.5 text-left w-8">#</th>
                       <th className="px-3 py-2.5 text-left">Hammadde</th>
                       <th className="px-3 py-2.5 text-left">Parça Adı</th>
@@ -786,21 +786,21 @@ export default function ProductDetailPage() {
                       {editing && <th className="w-8"></th>}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-ink-50">
                     {editing ? (
                       editParts.length === 0 ? (
-                        <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400 text-sm">Henüz parça eklenmedi.</td></tr>
+                        <tr><td colSpan={7} className="px-4 py-8 text-center text-ink-400 text-sm">Henüz parça eklenmedi.</td></tr>
                       ) : editParts.map((part, idx) => {
                         const net = parseFloat(part.gramsPerPiece) || 0;
                         const fire = parseFloat(part.wasteRate) || 0;
                         const brut = net * (1 + fire / 100);
                         const nameEmpty = !part.name.trim();
                         return (
-                          <tr key={idx} className="hover:bg-slate-50/50">
-                            <td className="px-3 py-2 text-slate-400 text-xs">{idx + 1}</td>
+                          <tr key={idx} className="hover:bg-ink-50/50">
+                            <td className="px-3 py-2 text-ink-400 text-xs">{idx + 1}</td>
                             <td className="px-3 py-2 space-y-1">
                               <select value={part.materialId} onChange={e => onMaterialSelect(idx, e.target.value)}
-                                className="w-full px-2 py-1 border border-slate-200 rounded text-sm bg-white outline-none focus:ring-1 focus:ring-blue-400">
+                                className="w-full px-2 py-1 border border-ink-200 rounded text-sm bg-white outline-none focus:ring-1 focus:ring-brand-500">
                                 <option value="">— Seç —</option>
                                 {materials.map(m => (
                                   <option key={m.id} value={m.id}>{m.name} ({fmt(m.pricePerKg)} {m.currency}/kg)</option>
@@ -809,7 +809,7 @@ export default function ProductDetailPage() {
                               <button
                                 type="button"
                                 onClick={() => { setMatModalRow(idx); setShowMatModal(true); }}
-                                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                className="flex items-center gap-1 text-xs text-brand-700 hover:text-brand-900 font-medium"
                               >
                                 <Plus className="w-3 h-3" /> Yeni Hammadde
                               </button>
@@ -817,23 +817,23 @@ export default function ProductDetailPage() {
                             <td className="px-3 py-2">
                               <input value={part.name} onChange={e => setPart(idx, 'name', e.target.value)}
                                 placeholder="Parça adı *"
-                                className={`w-full px-2 py-1 border rounded text-sm outline-none focus:ring-1 focus:ring-blue-400 ${nameEmpty ? 'border-red-300 bg-red-50' : 'border-slate-200'}`} />
+                                className={`w-full px-2 py-1 border rounded text-sm outline-none focus:ring-1 focus:ring-brand-500 ${nameEmpty ? 'border-red-300 bg-red-50' : 'border-ink-200'}`} />
                             </td>
                             <td className="px-3 py-2">
                               <DecimalInput step="0.01" min="0" value={part.gramsPerPiece}
                                 onChange={e => setPart(idx, 'gramsPerPiece', e.target.value)}
                                 placeholder="0"
-                                className="w-20 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-blue-400" />
+                                className="w-20 px-2 py-1 border border-ink-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-brand-500" />
                             </td>
                             <td className="px-3 py-2">
                               <div className="flex items-center gap-1 justify-end">
                                 <DecimalInput step="0.1" min="0" max="100" value={part.wasteRate}
                                   onChange={e => setPart(idx, 'wasteRate', e.target.value)}
-                                  className="w-16 px-2 py-1 border border-slate-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-blue-400" />
-                                <span className="text-xs text-slate-400">%</span>
+                                  className="w-16 px-2 py-1 border border-ink-200 rounded text-sm text-right outline-none focus:ring-1 focus:ring-brand-500" />
+                                <span className="text-xs text-ink-400">%</span>
                               </div>
                             </td>
-                            <td className="px-3 py-2 text-right text-slate-600 font-medium">{brut > 0 ? fmt2(brut) : '—'}</td>
+                            <td className="px-3 py-2 text-right text-ink-600 font-medium">{brut > 0 ? fmt2(brut) : '—'}</td>
                             <td className="px-3 py-2">
                               <button onClick={() => removePart(idx)} className="p-1 text-red-400 hover:text-red-600">
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -844,25 +844,25 @@ export default function ProductDetailPage() {
                       })
                     ) : (
                       parts.length === 0 ? (
-                        <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-300 text-sm">Parça eklenmemiş</td></tr>
+                        <tr><td colSpan={7} className="px-4 py-10 text-center text-ink-300 text-sm">Parça eklenmemiş</td></tr>
                       ) : parts.map((part: any, idx: number) => {
                         const netGrams = part.gramsPerPiece; // user-entered net
                         const brutGrams = netGrams * (1 + part.wasteRate / 100); // calculated
                         const partCost = costs?.partCosts?.[idx]?.cost ?? 0;
                         return (
-                          <tr key={part.id} className="hover:bg-slate-50/50">
-                            <td className="px-3 py-2.5 text-slate-400 text-xs">{idx + 1}</td>
+                          <tr key={part.id} className="hover:bg-ink-50/50">
+                            <td className="px-3 py-2.5 text-ink-400 text-xs">{idx + 1}</td>
                             <td className="px-3 py-2.5">
-                              <p className="font-medium text-slate-700">
+                              <p className="font-medium text-ink-700">
                                 {part.material?.name || '—'}
                               </p>
-                              {part.material && <p className="text-xs text-slate-400">{fmt(part.material.pricePerKg)} {part.material.currency}/kg</p>}
+                              {part.material && <p className="text-xs text-ink-400">{fmt(part.material.pricePerKg)} {part.material.currency}/kg</p>}
                             </td>
-                            <td className="px-3 py-2.5 text-slate-600">{part.name}</td>
-                            <td className="px-3 py-2.5 text-right text-slate-600">{fmt2(netGrams)} gr</td>
-                            <td className="px-3 py-2.5 text-right text-slate-500">%{part.wasteRate}</td>
-                            <td className="px-3 py-2.5 text-right text-slate-700 font-medium">{fmt2(brutGrams)} gr</td>
-                            <td className="px-3 py-2.5 text-right font-semibold text-blue-700">
+                            <td className="px-3 py-2.5 text-ink-600">{part.name}</td>
+                            <td className="px-3 py-2.5 text-right text-ink-600">{fmt2(netGrams)} gr</td>
+                            <td className="px-3 py-2.5 text-right text-ink-500">%{part.wasteRate}</td>
+                            <td className="px-3 py-2.5 text-right text-ink-700 font-medium">{fmt2(brutGrams)} gr</td>
+                            <td className="px-3 py-2.5 text-right font-semibold text-brand-800">
                               {costs ? `${fmt2(partCost)} ${costs.toCurrency}` : '—'}
                             </td>
                           </tr>
@@ -872,14 +872,14 @@ export default function ProductDetailPage() {
                   </tbody>
                   {!editing && parts.length > 0 && costs && (
                     <tfoot>
-                      <tr className="bg-blue-50 border-t-2 border-blue-200 font-bold">
-                        <td colSpan={3} className="px-3 py-2.5 text-blue-800 text-sm">TOPLAM</td>
-                        <td className="px-3 py-2.5 text-right text-blue-800">{fmt2(totalGrams)} gr</td>
+                      <tr className="bg-brand-50 border-t-2 border-brand-200 font-bold">
+                        <td colSpan={3} className="px-3 py-2.5 text-brand-900 text-sm">TOPLAM</td>
+                        <td className="px-3 py-2.5 text-right text-brand-900">{fmt2(totalGrams)} gr</td>
                         <td></td>
-                        <td className="px-3 py-2.5 text-right text-blue-800">
+                        <td className="px-3 py-2.5 text-right text-brand-900">
                           {fmt2(parts.reduce((s: number, p: any) => s + p.gramsPerPiece * (1 + p.wasteRate / 100), 0))} gr
                         </td>
-                        <td className="px-3 py-2.5 text-right text-blue-700">{fmt2(costs.totalMaterialCost)} {costs.toCurrency}</td>
+                        <td className="px-3 py-2.5 text-right text-brand-800">{fmt2(costs.totalMaterialCost)} {costs.toCurrency}</td>
                       </tr>
                     </tfoot>
                   )}
@@ -888,37 +888,37 @@ export default function ProductDetailPage() {
             </div>
 
             {/* ── 2. İşçilik Maliyeti ─────────────────────────────────────── */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="bg-green-600 px-4 py-3">
+            <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+              <div className="bg-emerald-600 px-4 py-3">
                 <h2 className="text-white font-bold text-sm uppercase tracking-wide">İşçilik Maliyeti</h2>
               </div>
               <div className="p-4">
                 {editing ? (
                   <div className="flex items-center gap-3 flex-wrap">
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">Çift Başına İşçilik</label>
+                      <label className="block text-xs font-medium text-ink-500 mb-1">Çift Başına İşçilik</label>
                       <input type="text" inputMode="decimal" value={editForm.laborCostPerPair}
                         onChange={e => setEditForm((p: any) => ({ ...p, laborCostPerPair: normalizePriceInput(e.target.value) }))}
                         onKeyDown={blockDot}
                         placeholder="0"
-                        className="w-36 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-green-400" />
+                        className="w-36 px-3 py-2 border border-ink-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-emerald-400" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">Para Birimi</label>
+                      <label className="block text-xs font-medium text-ink-500 mb-1">Para Birimi</label>
                       <select value={editForm.laborCurrency}
                         onChange={e => setEditForm((p: any) => ({ ...p, laborCurrency: e.target.value }))}
-                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none">
+                        className="px-3 py-2 border border-ink-200 rounded-lg text-sm bg-white outline-none">
                         {CURRENCIES.map(c => <option key={c}>{c}</option>)}
                       </select>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">Çift başına işçilik maliyeti</span>
-                    <span className="font-bold text-green-700 text-base">
+                    <span className="text-sm text-ink-500">Çift başına işçilik maliyeti</span>
+                    <span className="font-bold text-emerald-700 text-base">
                       {fmt2(product.laborCostPerPair)} {product.laborCurrency}
                       {costs && product.laborCurrency !== product.currency && (
-                        <span className="text-xs font-normal text-slate-400 ml-2">
+                        <span className="text-xs font-normal text-ink-400 ml-2">
                           ≈ {fmt2(costs.laborCost)} {product.currency}
                         </span>
                       )}
@@ -929,33 +929,33 @@ export default function ProductDetailPage() {
             </div>
 
             {/* ── 3. Koli Maliyeti ────────────────────────────────────────── */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="bg-orange-500 px-4 py-3">
+            <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+              <div className="bg-brand-600 px-4 py-3">
                 <h2 className="text-white font-bold text-sm uppercase tracking-wide">Koli Maliyeti</h2>
               </div>
               <div className="p-4">
                 {editing ? (
                   <div className="flex items-center gap-3 flex-wrap">
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">Kolide Çift Sayısı</label>
+                      <label className="block text-xs font-medium text-ink-500 mb-1">Kolide Çift Sayısı</label>
                       <DecimalInput integer step="1" min="0" value={editForm.ciftPerKoli}
                         onChange={e => setEditForm((p: any) => ({ ...p, ciftPerKoli: e.target.value }))}
                         placeholder="0"
-                        className="w-28 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-orange-400" />
+                        className="w-28 px-3 py-2 border border-ink-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-brand-500" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">Koli Fiyatı</label>
+                      <label className="block text-xs font-medium text-ink-500 mb-1">Koli Fiyatı</label>
                       <input type="text" inputMode="decimal" value={editForm.koliFiyati}
                         onChange={e => setEditForm((p: any) => ({ ...p, koliFiyati: normalizePriceInput(e.target.value) }))}
                         onKeyDown={blockDot}
                         placeholder="0"
-                        className="w-36 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-orange-400" />
+                        className="w-36 px-3 py-2 border border-ink-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-brand-500" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">Para Birimi</label>
+                      <label className="block text-xs font-medium text-ink-500 mb-1">Para Birimi</label>
                       <select value={editForm.koliCurrency}
                         onChange={e => setEditForm((p: any) => ({ ...p, koliCurrency: e.target.value }))}
-                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none">
+                        className="px-3 py-2 border border-ink-200 rounded-lg text-sm bg-white outline-none">
                         {CURRENCIES.map(c => <option key={c}>{c}</option>)}
                       </select>
                     </div>
@@ -963,16 +963,16 @@ export default function ProductDetailPage() {
                 ) : (
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <p className="text-xs text-slate-400 mb-0.5">Kolide Çift</p>
-                      <p className="font-semibold text-slate-700">{product.ciftPerKoli} çift</p>
+                      <p className="text-xs text-ink-400 mb-0.5">Kolide Çift</p>
+                      <p className="font-semibold text-ink-700">{product.ciftPerKoli} çift</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400 mb-0.5">Koli Fiyatı</p>
-                      <p className="font-semibold text-slate-700">{fmt2(product.koliFiyati)} {product.koliCurrency}</p>
+                      <p className="text-xs text-ink-400 mb-0.5">Koli Fiyatı</p>
+                      <p className="font-semibold text-ink-700">{fmt2(product.koliFiyati)} {product.koliCurrency}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400 mb-0.5">Çift Başına Koli</p>
-                      <p className="font-bold text-orange-600">
+                      <p className="text-xs text-ink-400 mb-0.5">Çift Başına Koli</p>
+                      <p className="font-bold text-amber-600">
                         {costs && product.ciftPerKoli > 0
                           ? `${fmt2(costs.packagingCostPerPair)} ${product.currency}`
                           : '—'}
@@ -984,8 +984,8 @@ export default function ProductDetailPage() {
             </div>
 
             {/* ── 4. Ekstra Maliyetler ─────────────────────────────────────── */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="bg-purple-600 px-4 py-3 flex items-center justify-between">
+            <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+              <div className="bg-brand-700 px-4 py-3 flex items-center justify-between">
                 <h2 className="text-white font-bold text-sm uppercase tracking-wide">Ekstra Maliyetler</h2>
                 {editing && (
                   <button onClick={addExtra}
@@ -997,18 +997,18 @@ export default function ProductDetailPage() {
               {editing ? (
                 <div className="p-4 space-y-2">
                   {editExtras.length === 0 ? (
-                    <p className="text-sm text-slate-400 text-center py-4">Ekstra maliyet eklenmedi.</p>
+                    <p className="text-sm text-ink-400 text-center py-4">Ekstra maliyet eklenmedi.</p>
                   ) : editExtras.map((ec, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <input value={ec.name} onChange={e => setExtra(idx, 'name', e.target.value)}
                         placeholder="Maliyet adı (örn: Nakliye)"
-                        className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-1 focus:ring-purple-400" />
+                        className="flex-1 px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-1 focus:ring-brand-500" />
                       <input type="text" inputMode="decimal" value={ec.amount} onChange={e => setExtra(idx, 'amount', normalizePriceInput(e.target.value))}
                         onKeyDown={blockDot}
                         placeholder="0"
-                        className="w-28 px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-purple-400" />
+                        className="w-28 px-3 py-2 border border-ink-200 rounded-lg text-sm text-right outline-none focus:ring-1 focus:ring-brand-500" />
                       <select value={ec.currency} onChange={e => setExtra(idx, 'currency', e.target.value)}
-                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none">
+                        className="px-3 py-2 border border-ink-200 rounded-lg text-sm bg-white outline-none">
                         {CURRENCIES.map(c => <option key={c}>{c}</option>)}
                       </select>
                       <button onClick={() => removeExtra(idx)} className="p-1.5 text-red-400 hover:text-red-600">
@@ -1020,23 +1020,23 @@ export default function ProductDetailPage() {
               ) : (
                 <div>
                   {(!product.extraCosts || product.extraCosts.length === 0) ? (
-                    <p className="text-sm text-slate-300 text-center py-6">Ekstra maliyet eklenmemiş.</p>
+                    <p className="text-sm text-ink-300 text-center py-6">Ekstra maliyet eklenmemiş.</p>
                   ) : (
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-purple-50 text-xs font-semibold text-slate-600 border-b border-purple-100">
+                        <tr className="bg-brand-50 text-xs font-semibold text-ink-600 border-b border-brand-100">
                           <th className="px-4 py-2.5 text-left">Açıklama</th>
                           <th className="px-4 py-2.5 text-right">Tutar</th>
                           {costs && <th className="px-4 py-2.5 text-right">{product.currency} cinsinden</th>}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-50">
+                      <tbody className="divide-y divide-ink-50">
                         {product.extraCosts.map((ec: any, idx: number) => (
-                          <tr key={ec.id} className="hover:bg-slate-50/50">
-                            <td className="px-4 py-2.5 text-slate-700">{ec.name}</td>
-                            <td className="px-4 py-2.5 text-right font-medium text-slate-600">{fmt2(ec.amount)} {ec.currency}</td>
+                          <tr key={ec.id} className="hover:bg-ink-50/50">
+                            <td className="px-4 py-2.5 text-ink-700">{ec.name}</td>
+                            <td className="px-4 py-2.5 text-right font-medium text-ink-600">{fmt2(ec.amount)} {ec.currency}</td>
                             {costs && (
-                              <td className="px-4 py-2.5 text-right font-semibold text-purple-700">
+                              <td className="px-4 py-2.5 text-right font-semibold text-brand-800">
                                 {fmt2(costs.extraConverted[idx]?.converted ?? 0)} {product.currency}
                               </td>
                             )}
@@ -1045,10 +1045,10 @@ export default function ProductDetailPage() {
                       </tbody>
                       {costs && (
                         <tfoot>
-                          <tr className="bg-purple-50 border-t-2 border-purple-200 font-bold">
-                            <td className="px-4 py-2.5 text-purple-800 text-sm">TOPLAM</td>
+                          <tr className="bg-brand-50 border-t-2 border-brand-200 font-bold">
+                            <td className="px-4 py-2.5 text-brand-900 text-sm">TOPLAM</td>
                             <td></td>
-                            <td className="px-4 py-2.5 text-right text-purple-700">{fmt2(costs.totalExtraCost)} {product.currency}</td>
+                            <td className="px-4 py-2.5 text-right text-brand-800">{fmt2(costs.totalExtraCost)} {product.currency}</td>
                           </tr>
                         </tfoot>
                       )}
@@ -1063,18 +1063,18 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Müşteri Özel Fiyatlar */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden mt-6">
-        <div className="bg-slate-700 px-4 py-3 flex items-center gap-2">
+      <div className="bg-white rounded-xl shadow-card overflow-hidden mt-6 border border-ink-200/80">
+        <div className="bg-ink-700 px-4 py-3 flex items-center gap-2">
           <Users className="w-4 h-4 text-white" />
           <h2 className="text-white font-semibold text-sm">Müşteri Özel Fiyatlar</h2>
-          <span className="text-slate-300 text-xs ml-auto">{productPrices.length} müşteri</span>
+          <span className="text-ink-300 text-xs ml-auto">{productPrices.length} müşteri</span>
         </div>
-        <div className="p-4 border-b border-slate-100">
+        <div className="p-4 border-b border-ink-100">
           <div className="flex gap-2 flex-wrap">
             <select
               value={ppForm.customerId}
               onChange={e => setPpForm(f => ({ ...f, customerId: e.target.value }))}
-              className="flex-1 min-w-[160px] px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+              className="flex-1 min-w-[160px] px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white"
             >
               <option value="">— Müşteri Seç —</option>
               {allCustomers.map((c: any) => (
@@ -1087,19 +1087,19 @@ export default function ProductDetailPage() {
               value={ppForm.unitPrice}
               onChange={e => setPpForm(f => ({ ...f, unitPrice: e.target.value }))}
               placeholder="Fiyat"
-              className="w-28 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-28 px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
             />
             <select
               value={ppForm.currency}
               onChange={e => setPpForm(f => ({ ...f, currency: e.target.value }))}
-              className="w-24 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+              className="w-24 px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white"
             >
               {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <button
               onClick={handleAddProductPrice}
               disabled={ppSaving || !ppForm.customerId || !ppForm.unitPrice}
-              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
             >
               {ppSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
               Ekle / Güncelle
@@ -1107,27 +1107,27 @@ export default function ProductDetailPage() {
           </div>
         </div>
         {productPrices.length === 0 ? (
-          <div className="py-8 text-center text-slate-400 text-sm">Henüz özel fiyat eklenmemiş</div>
+          <div className="py-8 text-center text-ink-400 text-sm">Henüz özel fiyat eklenmemiş</div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+              <tr className="text-xs text-ink-500 font-medium border-b bg-ink-50">
                 <th className="px-4 py-2 text-left">Müşteri</th>
                 <th className="px-4 py-2 text-right">Katalog Fiyatı</th>
                 <th className="px-4 py-2 text-right">Özel Fiyat</th>
                 <th className="w-8"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-ink-100">
               {productPrices.map((pp: any) => (
-                <tr key={pp.customerId} className="hover:bg-slate-50 group">
-                  <td className="px-4 py-2.5 font-medium text-slate-800">{pp.customer?.name ?? '—'}</td>
-                  <td className="px-4 py-2.5 text-right text-slate-400 text-xs">
+                <tr key={pp.customerId} className="hover:bg-ink-50 group">
+                  <td className="px-4 py-2.5 font-medium text-ink-800">{pp.customer?.name ?? '—'}</td>
+                  <td className="px-4 py-2.5 text-right text-ink-400 text-xs">
                     {product ? `${fmt2(product.unitPrice)} ${product.currency}` : '—'}
                   </td>
-                  <td className="px-4 py-2.5 text-right font-semibold text-blue-700">
+                  <td className="px-4 py-2.5 text-right font-semibold text-brand-800">
                     {pp.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    <span className="text-xs font-normal text-slate-400 ml-1">{pp.currency}</span>
+                    <span className="text-xs font-normal text-ink-400 ml-1">{pp.currency}</span>
                   </td>
                   <td className="px-2 py-2.5 text-center">
                     <button
@@ -1148,8 +1148,8 @@ export default function ProductDetailPage() {
       {showBarcode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowBarcode(false)} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="bg-purple-600 px-5 py-4 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-ink-200/80">
+            <div className="bg-brand-700 px-5 py-4 flex items-center justify-between">
               <h3 className="text-white font-bold text-sm flex items-center gap-2">
                 <QrCode className="w-4 h-4" /> Barkod Etiket Yazdır
               </h3>
@@ -1160,41 +1160,41 @@ export default function ProductDetailPage() {
             <div className="p-5 space-y-3 max-h-[80vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Firma Adı</label>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Firma Adı</label>
                   <input type="text" value={barcodeForm.companyName}
                     onChange={e => setBarcodeForm(f => ({ ...f, companyName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Ürün Adı</label>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Ürün Adı</label>
                   <input type="text" value={barcodeForm.productName}
                     onChange={e => setBarcodeForm(f => ({ ...f, productName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Shore</label>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Shore</label>
                 <input type="text" value={barcodeForm.shore}
                   onChange={e => setBarcodeForm(f => ({ ...f, shore: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Tarih</label>
                 <input type="text" value={barcodeForm.date}
                   onChange={e => setBarcodeForm(f => ({ ...f, date: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Paket Miktarı</label>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Paket Miktarı</label>
                   <input type="text" inputMode="decimal" value={barcodeForm.qtyPerPack}
                     onChange={e => setBarcodeForm(f => ({ ...f, qtyPerPack: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Birim</label>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Birim</label>
                   <select value={barcodeForm.qtyUnit} onChange={e => setBarcodeForm(f => ({ ...f, qtyUnit: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-purple-400">
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-brand-500">
                     <option value="adet">adet</option>
                     <option value="çift">çift</option>
                     <option value="kg">kg</option>
@@ -1202,13 +1202,13 @@ export default function ProductDetailPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Kaç Etiket</label>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Kaç Etiket</label>
                 <DecimalInput min="1" value={barcodeForm.labelCount}
                   onChange={e => handleBarcodeLabelCountChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-400" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
               {barcodeNumbers.length > 0 && (
-                <div className="bg-purple-50 rounded-xl px-4 py-3 text-xs text-purple-700">
+                <div className="bg-brand-50 rounded-xl px-4 py-3 text-xs text-brand-800">
                   <span className="font-medium">Barkod numaraları: </span>
                   {barcodeNumbers[0]}
                   {barcodeNumbers.length > 1 && ` → ${barcodeNumbers[barcodeNumbers.length - 1]}`}
@@ -1217,16 +1217,16 @@ export default function ProductDetailPage() {
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" checked={barcodeForm.addToStock}
                   onChange={e => setBarcodeForm(f => ({ ...f, addToStock: e.target.checked }))}
-                  className="w-4 h-4 rounded accent-purple-600" />
-                <span className="text-sm text-slate-600">Stoklara ekle</span>
+                  className="w-4 h-4 rounded accent-brand-700" />
+                <span className="text-sm text-ink-600">Stoklara ekle</span>
               </label>
               <div className="flex gap-3 pt-1">
                 <button onClick={() => setShowBarcode(false)}
-                  className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                  className="flex-1 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">
                   Vazgeç
                 </button>
                 <button onClick={handlePrint} disabled={barcodeLoading}
-                  className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                  className="flex-1 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
                   {barcodeLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />} Yazdır
                 </button>
               </div>
@@ -1239,7 +1239,7 @@ export default function ProductDetailPage() {
       {priceWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setPriceWarning(null)} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-ink-200/80">
             <div className="bg-red-500 px-5 py-4 flex items-center justify-between">
               <h3 className="text-white font-bold text-sm">⚠️ Fiyat Uyarısı</h3>
               <button onClick={() => setPriceWarning(null)} className="text-white/80 hover:text-white">
@@ -1247,13 +1247,13 @@ export default function ProductDetailPage() {
               </button>
             </div>
             <div className="p-5 space-y-4">
-              <p className="text-slate-700 text-sm font-medium">
+              <p className="text-ink-700 text-sm font-medium">
                 Dikkat! Ürün satış fiyatı hesaplanan maliyet fiyatından düşük.
               </p>
               <div className="bg-red-50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Mevcut Satış Fiyatı</span>
-                  <span className="font-semibold text-slate-700">{fmt2(product.unitPrice)} {product.currency}</span>
+                  <span className="text-ink-500">Mevcut Satış Fiyatı</span>
+                  <span className="font-semibold text-ink-700">{fmt2(product.unitPrice)} {product.currency}</span>
                 </div>
                 <div className="flex justify-between text-red-600 font-bold border-t border-red-200 pt-2">
                   <span>Hesaplanan Maliyet</span>
@@ -1261,22 +1261,22 @@ export default function ProductDetailPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Yeni Satış Fiyatı ({product.currency})</label>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Yeni Satış Fiyatı ({product.currency})</label>
                 <input
                   type="text" inputMode="decimal"
                   value={newPrice}
                   onChange={e => setNewPrice(normalizePriceInput(e.target.value))}
                   onKeyDown={blockDot}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-blue-400 font-medium"
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm text-right outline-none focus:ring-2 focus:ring-brand-500 font-medium"
                 />
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setPriceWarning(null)}
-                  className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                  className="flex-1 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">
                   Vazgeç
                 </button>
                 <button onClick={handleUpdatePrice} disabled={updatingPrice || !newPrice}
-                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                  className="flex-1 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
                   {updatingPrice ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Fiyatı Güncelle
                 </button>
               </div>
@@ -1289,8 +1289,8 @@ export default function ProductDetailPage() {
       {showMatModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowMatModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
-            <div className="bg-blue-600 px-5 py-4 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-ink-200/80">
+            <div className="bg-brand-700 px-5 py-4 flex items-center justify-between">
               <h3 className="text-white font-bold text-sm flex items-center gap-2">
                 <Package className="w-4 h-4" /> Yeni Hammadde
               </h3>
@@ -1300,17 +1300,17 @@ export default function ProductDetailPage() {
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Hammadde Adı *</label>
+                <label className="block text-xs font-medium text-ink-500 mb-1">Hammadde Adı *</label>
                 <input
                   value={newMatForm.name}
                   onChange={e => setNewMatForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="ör. Deri Taban"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Kg Fiyatı *</label>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Kg Fiyatı *</label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -1318,15 +1318,15 @@ export default function ProductDetailPage() {
                     onChange={e => setNewMatForm(f => ({ ...f, pricePerKg: normalizePriceInput(e.target.value) }))}
                     onKeyDown={blockDot}
                     placeholder="0,00"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-400"
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Para Birimi</label>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Para Birimi</label>
                   <select
                     value={newMatForm.currency}
                     onChange={e => setNewMatForm(f => ({ ...f, currency: e.target.value }))}
-                    className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none"
+                    className="px-3 py-2 border border-ink-200 rounded-lg text-sm bg-white outline-none"
                   >
                     {CURRENCIES.map(c => <option key={c}>{c}</option>)}
                   </select>
@@ -1334,13 +1334,13 @@ export default function ProductDetailPage() {
               </div>
               <div className="flex gap-3 pt-1">
                 <button onClick={() => setShowMatModal(false)}
-                  className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                  className="flex-1 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">
                   İptal
                 </button>
                 <button
                   onClick={handleNewMaterial}
                   disabled={savingMat || !newMatForm.name.trim() || !newMatForm.pricePerKg}
-                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex-1 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {savingMat ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Kaydet
                 </button>
@@ -1352,18 +1352,18 @@ export default function ProductDetailPage() {
       {errorMsg && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
-                <p className="text-sm text-slate-600">{errorMsg}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Hata</h3>
+                <p className="text-sm text-ink-600">{errorMsg}</p>
               </div>
             </div>
             <button onClick={() => setErrorMsg('')}
-              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              className="w-full py-2 bg-ink-700 hover:bg-ink-800 text-white rounded-lg text-sm font-medium">
               Tamam
             </button>
           </div>

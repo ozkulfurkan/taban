@@ -4,33 +4,114 @@
 
 [data-hydration-error] { display: none !important; }
 
+/*
+ * SoleCost tasarım dili
+ * Bordo (brand) marka rengi, sıcak gri/krem (ink) nötrler. Renkler tailwind.config.ts'teki skalalardan gelir;
+ * burada yalnızca ortak yapı taşları ve shadcn uyumluluğu için HSL değişkenleri tanımlanır.
+ */
 :root {
-  --primary: #2563EB;
-  --primary-dark: #1D4ED8;
-  --accent: #3B82F6;
-  --bg-main: #F8FAFC;
+  --primary-hex: #6B1A2C;
+  --bg-main: #FAF8F5;
   --bg-card: #FFFFFF;
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --border: #E2E8F0;
+  --text-primary: #231E19;
+  --text-secondary: #5E554C;
+
+  /* shadcn/ui değişkenleri (components/ui ile uyum) */
+  --background: 36 33% 97%;
+  --foreground: 30 17% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 30 17% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 30 17% 12%;
+  --primary: 347 61% 26%;
+  --primary-foreground: 36 33% 97%;
+  --secondary: 33 26% 93%;
+  --secondary-foreground: 30 17% 12%;
+  --muted: 33 26% 93%;
+  --muted-foreground: 30 9% 43%;
+  --accent: 351 47% 93%;
+  --accent-foreground: 347 61% 26%;
+  --destructive: 0 72% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 33 21% 88%;
+  --input: 33 21% 88%;
+  --ring: 347 61% 26%;
+  --radius: 0.625rem;
+  --chart-1: 347 61% 26%;
+  --chart-2: 351 42% 47%;
+  --chart-3: 30 9% 43%;
+  --chart-4: 160 84% 30%;
+  --chart-5: 38 92% 45%;
 }
+
+html { -webkit-tap-highlight-color: transparent; }
 
 body {
   background-color: var(--bg-main);
   color: var(--text-primary);
+  font-feature-settings: 'ss01', 'cv11';
 }
+
+::selection { background: #F5E4E7; color: #43111D; }
+
+/* Klavye odağı her yerde görünür ve marka renginde */
+:focus-visible { outline: 2px solid #8A2438; outline-offset: 2px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
+
+/* Rakamlar hizalı (tablolar, tutarlar) */
+td, .tabular { font-variant-numeric: tabular-nums; }
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-.sidebar-scroll { scrollbar-width: thin; scrollbar-color: rgba(59,130,246,0.3) transparent; }
+.sidebar-scroll { scrollbar-width: thin; scrollbar-color: rgba(119, 109, 98, 0.25) transparent; }
 .sidebar-scroll::-webkit-scrollbar { width: 4px; }
 .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
-.sidebar-scroll::-webkit-scrollbar-thumb { background-color: rgba(59,130,246,0.3); border-radius: 9999px; }
-.sidebar-scroll::-webkit-scrollbar-thumb:hover { background-color: rgba(59,130,246,0.5); }
+.sidebar-scroll::-webkit-scrollbar-thumb { background-color: rgba(119, 109, 98, 0.25); border-radius: 9999px; }
+.sidebar-scroll::-webkit-scrollbar-thumb:hover { background-color: rgba(119, 109, 98, 0.45); }
+
+@layer base {
+  h1, h2, h3 { letter-spacing: -0.01em; }
+}
+
+@layer components {
+  /* Başlıklar */
+  .page-title { @apply font-display text-[1.75rem] leading-tight font-semibold text-ink-900; font-variation-settings: 'opsz' 48, 'SOFT' 30; }
+  .page-subtitle { @apply text-sm text-ink-500 mt-1; }
+  .section-title { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500; }
+
+  /* Kart */
+  .card { @apply bg-white rounded-xl border border-ink-200/80 shadow-card; }
+
+  /* Düğmeler */
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none; }
+  .btn-primary { @apply btn bg-brand-700 text-white hover:bg-brand-800 active:bg-brand-900; }
+  .btn-secondary { @apply btn bg-white text-ink-800 border border-ink-200 hover:border-ink-300 hover:bg-ink-50; }
+  .btn-ghost { @apply btn text-ink-600 hover:bg-ink-100 hover:text-ink-900; }
+  .btn-danger { @apply btn bg-white text-red-700 border border-red-200 hover:bg-red-50; }
+
+  /* Girdiler */
+  .input { @apply form-input block w-full rounded-lg border-ink-200 bg-white text-sm text-ink-900 placeholder:text-ink-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20; }
+  .select { @apply form-select block w-full rounded-lg border-ink-200 bg-white text-sm text-ink-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20; }
+
+  /* Rozetler */
+  .badge { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium; }
+  .badge-brand { @apply badge bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100; }
+  .badge-neutral { @apply badge bg-ink-100 text-ink-700; }
+  .badge-success { @apply badge bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-100; }
+  .badge-warning { @apply badge bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-100; }
+  .badge-danger { @apply badge bg-red-50 text-red-700 ring-1 ring-inset ring-red-100; }
+
+  /* Tablo */
+  .table-base { @apply w-full text-sm; }
+  .table-base thead th { @apply bg-ink-50 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-500 px-4 py-2.5 border-b border-ink-200; }
+  .table-base tbody td { @apply px-4 py-3 border-b border-ink-100 text-ink-800; }
+  .table-base tbody tr:hover td { @apply bg-ink-50/70; }
+
+  /* Deri dikiş çizgisi: marka süsü (giriş ekranı, ayraçlar) */
+  .stitch { background-image: repeating-linear-gradient(90deg, currentColor 0 8px, transparent 8px 14px); height: 1.5px; }
+}
 
 @layer utilities {
-  .glass {
-    @apply bg-white/80 backdrop-blur-md;
-  }
+  .glass { @apply bg-white/80 backdrop-blur-md; }
 }

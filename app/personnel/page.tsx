@@ -6,7 +6,7 @@ import AppShell from '@/app/components/app-shell';
 import {
   UserCheck, Plus, Search, X, ChevronRight, Loader2,
   AlertCircle, CheckCircle2, Users
-} from 'lucide-react';
+} from '@/app/components/icons';
 import type { Employee } from '@/app/personnel/data';
 import { matchesText } from '@/lib/search';
 import DecimalInput from '@/app/components/decimal-input';
@@ -66,65 +66,65 @@ function AddEmployeeModal({ onClose, onSave }: { onClose: () => void; onSave: (e
     }
   };
 
-  const inputCls = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none';
+  const inputCls = 'w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none';
   const errCls = 'w-full px-3 py-2 border border-red-400 ring-1 ring-red-400 rounded-lg text-sm focus:ring-2 focus:ring-red-400 outline-none';
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">Yeni Personel Ekle</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors"><X className="w-5 h-5 text-gray-500" /></button>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
+          <h2 className="text-base font-semibold text-ink-900">Yeni Personel Ekle</h2>
+          <button onClick={onClose} className="p-1 hover:bg-ink-100 rounded-lg transition-colors"><X className="w-5 h-5 text-ink-500" /></button>
         </div>
         <form onSubmit={handle} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Ad Soyad <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Ad Soyad <span className="text-red-500">*</span></label>
               <input className={fieldErrors.name ? errCls : inputCls} value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ahmet Yılmaz" />
               {fieldErrors.name && <p className="mt-0.5 text-xs text-red-500">{fieldErrors.name}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Departman <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Departman <span className="text-red-500">*</span></label>
               <input className={fieldErrors.department ? errCls : inputCls} value={form.department} onChange={e => set('department', e.target.value)} placeholder="Üretim" />
               {fieldErrors.department && <p className="mt-0.5 text-xs text-red-500">{fieldErrors.department}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Görev <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Görev <span className="text-red-500">*</span></label>
               <input className={fieldErrors.role ? errCls : inputCls} value={form.role} onChange={e => set('role', e.target.value)} placeholder="Operatör" />
               {fieldErrors.role && <p className="mt-0.5 text-xs text-red-500">{fieldErrors.role}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Maaş <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Maaş <span className="text-red-500">*</span></label>
               <DecimalInput min="0" step="0.01" className={fieldErrors.salary ? errCls : inputCls} value={form.salary} onChange={e => set('salary', e.target.value)} placeholder="25000" />
               {fieldErrors.salary && <p className="mt-0.5 text-xs text-red-500">{fieldErrors.salary}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Para Birimi</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Para Birimi</label>
               <select className={inputCls} value={form.currency} onChange={e => set('currency', e.target.value)}>
                 {['TRY', 'USD', 'EUR'].map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">İşe Giriş</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">İşe Giriş</label>
               <input type="date" className={inputCls} value={form.hireDate} onChange={e => set('hireDate', e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Maaş Günü</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Maaş Günü</label>
               <DecimalInput min="1" max="31" className={inputCls} value={form.payday} onChange={e => set('payday', e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Telefon</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Telefon</label>
               <input className={inputCls} value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="0532 111 2233" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">E-posta</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">E-posta</label>
               <input type="email" className={inputCls} value={form.email} onChange={e => set('email', e.target.value)} placeholder="ad@firma.com" />
             </div>
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">İptal</button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50 transition-colors">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-brand-700 text-white rounded-lg text-sm font-medium hover:bg-brand-800 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
               Kaydet
             </button>
@@ -142,7 +142,7 @@ function SkeletonRow() {
     <tr>
       {[140, 100, 120, 90, 70, 100, 80, 60].map((w, i) => (
         <td key={i} className="px-4 py-3">
-          <div className="h-4 bg-gray-200 rounded animate-pulse" style={{ width: w }} />
+          <div className="h-4 bg-ink-200 rounded animate-pulse" style={{ width: w }} />
         </td>
       ))}
     </tr>
@@ -201,17 +201,17 @@ export default function PersonnelPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-              <UserCheck className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center">
+              <UserCheck className="w-5 h-5 text-brand-700" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Personel Takip</h1>
-              <p className="text-sm text-gray-500">{employees.filter(e => e.status === 'active').length} aktif personel</p>
+              <h1 className="page-title">Personel Takip</h1>
+              <p className="text-sm text-ink-500">{employees.filter(e => e.status === 'active').length} aktif personel</p>
             </div>
           </div>
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-brand-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-brand-800 transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Yeni Personel</span>
@@ -219,25 +219,25 @@ export default function PersonnelPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-end">
+        <div className="bg-white border border-ink-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-end">
           <div className="flex-1 min-w-48">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Ara</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Ara</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Ad, departman, görev..."
-                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full pl-9 pr-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
               />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Durum</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Durum</label>
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value as any)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
             >
               <option value="all">Tümü</option>
               <option value="active">Aktif</option>
@@ -245,11 +245,11 @@ export default function PersonnelPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Departman</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Departman</label>
             <select
               value={deptFilter}
               onChange={e => setDeptFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
             >
               <option value="">Tümü</option>
               {departments.map(d => <option key={d}>{d}</option>)}
@@ -260,36 +260,36 @@ export default function PersonnelPage() {
               type="checkbox"
               checked={paydaySoon}
               onChange={e => setPaydaySoon(e.target.checked)}
-              className="w-4 h-4 accent-blue-600"
+              className="w-4 h-4 accent-brand-700"
             />
-            <span className="text-sm text-gray-700">Maaş Günü Yaklaşan</span>
+            <span className="text-sm text-ink-700">Maaş Günü Yaklaşan</span>
           </label>
         </div>
 
         {/* Table */}
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-ink-200 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Ad Soyad</th>
-                  <th className="hidden sm:table-cell text-left px-4 py-3 font-semibold text-gray-600">Departman</th>
-                  <th className="hidden sm:table-cell text-left px-4 py-3 font-semibold text-gray-600">Görev</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-600">Maaş</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Durum</th>
-                  <th className="hidden sm:table-cell text-left px-4 py-3 font-semibold text-gray-600">Son Ödeme</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-600">Bakiye</th>
-                  <th className="text-center px-4 py-3 font-semibold text-gray-600">İşlem</th>
+                <tr className="bg-ink-50 border-b border-ink-200">
+                  <th className="text-left px-4 py-3 font-semibold text-ink-600">Ad Soyad</th>
+                  <th className="hidden sm:table-cell text-left px-4 py-3 font-semibold text-ink-600">Departman</th>
+                  <th className="hidden sm:table-cell text-left px-4 py-3 font-semibold text-ink-600">Görev</th>
+                  <th className="text-right px-4 py-3 font-semibold text-ink-600">Maaş</th>
+                  <th className="text-left px-4 py-3 font-semibold text-ink-600">Durum</th>
+                  <th className="hidden sm:table-cell text-left px-4 py-3 font-semibold text-ink-600">Son Ödeme</th>
+                  <th className="text-right px-4 py-3 font-semibold text-ink-600">Bakiye</th>
+                  <th className="text-center px-4 py-3 font-semibold text-ink-600">İşlem</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-ink-100">
                 {loading
                   ? Array(5).fill(0).map((_, i) => <SkeletonRow key={i} />)
                   : filtered.length === 0
                     ? (
                       <tr>
                         <td colSpan={8} className="px-4 py-16 text-center">
-                          <div className="flex flex-col items-center gap-3 text-gray-400">
+                          <div className="flex flex-col items-center gap-3 text-ink-400">
                             <Users className="w-10 h-10" />
                             <p className="text-sm">Personel bulunamadı</p>
                           </div>
@@ -300,29 +300,29 @@ export default function PersonnelPage() {
                       <tr
                         key={emp.id}
                         onClick={() => router.push('/personnel/' + emp.id)}
-                        className="hover:bg-blue-50/50 cursor-pointer transition-colors"
+                        className="hover:bg-brand-50/50 cursor-pointer transition-colors"
                       >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                              <span className="text-xs font-bold text-blue-600">{emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}</span>
+                            <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs font-bold text-brand-700">{emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}</span>
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900">{emp.name}</p>
-                              {emp.phone && <p className="text-xs text-gray-400">{emp.phone}</p>}
+                              <p className="font-medium text-ink-900">{emp.name}</p>
+                              {emp.phone && <p className="text-xs text-ink-400">{emp.phone}</p>}
                             </div>
                           </div>
                         </td>
-                        <td className="hidden sm:table-cell px-4 py-3 text-gray-600">{emp.department}</td>
-                        <td className="hidden sm:table-cell px-4 py-3 text-gray-600">{emp.role}</td>
-                        <td className="px-4 py-3 text-right font-medium text-gray-800">{formatMoney(emp.salary, emp.currency)}</td>
+                        <td className="hidden sm:table-cell px-4 py-3 text-ink-600">{emp.department}</td>
+                        <td className="hidden sm:table-cell px-4 py-3 text-ink-600">{emp.role}</td>
+                        <td className="px-4 py-3 text-right font-medium text-ink-800">{formatMoney(emp.salary, emp.currency)}</td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${emp.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${emp.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${emp.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-ink-100 text-ink-500'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${emp.status === 'active' ? 'bg-emerald-500' : 'bg-ink-400'}`} />
                             {emp.status === 'active' ? 'Aktif' : 'Ayrıldı'}
                           </span>
                         </td>
-                        <td className="hidden sm:table-cell px-4 py-3 text-gray-500">
+                        <td className="hidden sm:table-cell px-4 py-3 text-ink-500">
                           <div>
                             {formatDate(emp.lastPaymentDate)}
                             {isPaydaySoon(emp.payday) && emp.status === 'active' && (
@@ -330,13 +330,13 @@ export default function PersonnelPage() {
                             )}
                           </div>
                         </td>
-                        <td className={`px-4 py-3 text-right font-semibold ${emp.balance < 0 ? 'text-red-600' : emp.balance > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                        <td className={`px-4 py-3 text-right font-semibold ${emp.balance < 0 ? 'text-red-600' : emp.balance > 0 ? 'text-emerald-600' : 'text-ink-500'}`}>
                           {emp.balance === 0 ? '—' : (emp.balance > 0 ? '+' : '') + formatMoney(emp.balance, emp.currency)}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <button
                             onClick={e => { e.stopPropagation(); router.push('/personnel/' + emp.id); }}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors"
                           >
                             Detay <ChevronRight className="w-3 h-3" />
                           </button>
@@ -365,7 +365,7 @@ export default function PersonnelPage() {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-all ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-all ${toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
           {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
           <span>{toast.msg}</span>
           <button onClick={() => setToast(null)} className="ml-1 opacity-70 hover:opacity-100 transition-opacity">

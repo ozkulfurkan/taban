@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/app/components/icons';
 import { fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
@@ -68,7 +68,7 @@ export default function NewProductPage() {
       <div className="max-w-2xl space-y-6">
         <div className="flex items-center gap-3">
           <BackLink variant="icon" href="/products" label="Ürünler" />
-          <h1 className="text-2xl font-bold text-slate-800">Yeni Ürün</h1>
+          <h1 className="page-title">Yeni Ürün</h1>
         </div>
 
         {fromMaliyet && (
@@ -77,55 +77,55 @@ export default function NewProductPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-card p-6 space-y-4 border border-ink-200/80">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Ürün Adı *</label>
-              <input required value={form.name} onChange={e => set('name', e.target.value)} placeholder={isMaterial ? 'ör. 701 Krep Termogranül' : 'ör. Campus Taban'} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">Ürün Adı *</label>
+              <input required value={form.name} onChange={e => set('name', e.target.value)} placeholder={isMaterial ? 'ör. 701 Krep Termogranül' : 'ör. Campus Taban'} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Ürün Kodu</label>
-              <input value={form.code} onChange={e => set('code', e.target.value)} placeholder={isMaterial ? 'ör. GRN-001' : 'ör. TBN-001'} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">Ürün Kodu</label>
+              <input value={form.code} onChange={e => set('code', e.target.value)} placeholder={isMaterial ? 'ör. GRN-001' : 'ör. TBN-001'} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Kategori</label>
-              <select value={form.categoryId} onChange={e => set('categoryId', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+              <label className="block text-xs font-medium text-ink-600 mb-1">Kategori</label>
+              <select value={form.categoryId} onChange={e => set('categoryId', e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white">
                 <option value="">— Kategori Seç —</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Birim</label>
-              <select value={form.unit} onChange={e => set('unit', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+              <label className="block text-xs font-medium text-ink-600 mb-1">Birim</label>
+              <select value={form.unit} onChange={e => set('unit', e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white">
                 {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Birim Fiyat</label>
-              <input type="text" inputMode="decimal" value={form.unitPrice} onChange={e => set('unitPrice', normalizePriceInput(e.target.value))} onKeyDown={blockDot} placeholder="0,00" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">Birim Fiyat</label>
+              <input type="text" inputMode="decimal" value={form.unitPrice} onChange={e => set('unitPrice', normalizePriceInput(e.target.value))} onKeyDown={blockDot} placeholder="0,00" className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Para Birimi</label>
-              <select value={form.currency} onChange={e => set('currency', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+              <label className="block text-xs font-medium text-ink-600 mb-1">Para Birimi</label>
+              <select value={form.currency} onChange={e => set('currency', e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white">
                 {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Mevcut Stok {isMaterial ? `(${form.unit})` : ''}</label>
-              <DecimalInput step="any" min="0" value={form.stock} onChange={e => set('stock', e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">Mevcut Stok {isMaterial ? `(${form.unit})` : ''}</label>
+              <DecimalInput step="any" min="0" value={form.stock} onChange={e => set('stock', e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Açıklama</label>
-              <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">Açıklama</label>
+              <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={2} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none resize-none" />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Notlar</label>
-              <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">Notlar</label>
+              <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none resize-none" />
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <Link href="/products" className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors inline-flex items-center justify-center">İptal</Link>
-            <button type="submit" disabled={saving} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+            <Link href="/products" className="px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50 transition-colors inline-flex items-center justify-center">İptal</Link>
+            <button type="submit" disabled={saving} className="flex-1 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />} Kaydet
             </button>
           </div>

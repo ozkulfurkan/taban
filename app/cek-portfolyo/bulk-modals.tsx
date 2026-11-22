@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { X, Loader2, AlertTriangle, Landmark, Truck, Wallet } from 'lucide-react';
+import { X, Loader2, AlertTriangle, Landmark, Truck, Wallet } from '@/app/components/icons';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { convertAmount, crossRate, type Rates } from '@/lib/fx';
 import { totalsByCurrency, weightedAvgVade } from '@/lib/cek';
@@ -29,13 +29,13 @@ function Shell({ title, icon: Icon, color, onClose, children, footer }: {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-label={title}>
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[92vh] flex flex-col">
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[92vh] flex flex-col border border-ink-200/80">
         <div className={`${color} rounded-t-2xl px-5 py-4 flex items-center justify-between`}>
           <h2 className="text-white font-semibold flex items-center gap-2"><Icon className="w-4 h-4" /> {title}</h2>
           <button onClick={onClose} aria-label="Kapat" className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4 overflow-y-auto flex-1">{children}</div>
-        <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex gap-2">{footer}</div>
+        <div className="px-5 pb-5 pt-3 border-t border-ink-100 flex gap-2">{footer}</div>
       </div>
     </div>
   );
@@ -45,10 +45,10 @@ function Summary({ cekler }: { cekler: Cek[] }) {
   const totals = totalsByCurrency(cekler);
   const avg = weightedAvgVade(cekler);
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm bg-ink-50 border border-ink-200 rounded-lg px-3 py-2">
       <span><b>{cekler.length}</b> çek</span>
       {totals.map(t => <span key={t.currency} className="tabular-nums"><b>{fmt(t.total)}</b> {t.currency}</span>)}
-      {avg && <span className="text-slate-500">Ort. vade {formatDate(avg.date)}</span>}
+      {avg && <span className="text-ink-500">Ort. vade {formatDate(avg.date)}</span>}
     </div>
   );
 }
@@ -61,8 +61,8 @@ function Err({ text }: { text: string }) {
   ) : null;
 }
 
-const input = 'w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500 bg-white';
-const btnCancel = 'px-4 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50';
+const input = 'w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600 bg-white';
+const btnCancel = 'px-4 py-2.5 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50';
 
 function useAccounts() {
   const [accounts, setAccounts] = useState<any[] | null>(null);
@@ -88,11 +88,11 @@ export function BankModal({ cekler, onClose, onDone }: { cekler: Cek[]; onClose:
     if (e) setError(e); else { onDone(); onClose(); }
   };
   return (
-    <Shell title="Bankaya Ver" icon={Landmark} color="bg-purple-600" onClose={onClose}
+    <Shell title="Bankaya Ver" icon={Landmark} color="bg-brand-700" onClose={onClose}
       footer={<>
         <button onClick={onClose} className={btnCancel}>Vazgeç</button>
         <button onClick={save} disabled={saving || !accountId}
-          className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+          className="flex-1 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
           {saving && <Loader2 className="w-4 h-4 animate-spin" />} Bankaya Ver
         </button>
       </>}>
@@ -102,19 +102,19 @@ export function BankModal({ cekler, onClose, onDone }: { cekler: Cek[]; onClose:
       ) : (
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1" htmlFor="bank-acc">Banka hesabı *</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1" htmlFor="bank-acc">Banka hesabı *</label>
             <select id="bank-acc" value={accountId} onChange={e => setAccountId(e.target.value)} className={input}>
               {banks.length > 0 && <optgroup label="Banka hesapları">{banks.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}</optgroup>}
               {others.length > 0 && <optgroup label="Diğer hesaplar">{others.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}</optgroup>}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1" htmlFor="bank-date">Veriliş tarihi</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1" htmlFor="bank-date">Veriliş tarihi</label>
             <input id="bank-date" type="date" value={date} onChange={e => setDate(e.target.value)} className={input} />
           </div>
         </div>
       )}
-      <p className="text-xs text-slate-500">Para bu aşamada hesaba geçmez. Çek ödendiğinde <b>Tahsil Et</b> ile bu hesaba yansır.</p>
+      <p className="text-xs text-ink-500">Para bu aşamada hesaba geçmez. Çek ödendiğinde <b>Tahsil Et</b> ile bu hesaba yansır.</p>
       <Err text={error} />
     </Shell>
   );
@@ -142,11 +142,11 @@ export function CollectModal({ cekler, onClose, onDone }: { cekler: Cek[]; onClo
     if (e) setError(e); else { onDone(); onClose(); }
   };
   return (
-    <Shell title="Tahsil Et" icon={Wallet} color="bg-teal-600" onClose={onClose}
+    <Shell title="Tahsil Et" icon={Wallet} color="bg-brand-700" onClose={onClose}
       footer={<>
         <button onClick={onClose} className={btnCancel}>Vazgeç</button>
         <button onClick={save} disabled={saving || !accountId || currencies.length !== 1}
-          className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+          className="flex-1 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
           {saving && <Loader2 className="w-4 h-4 animate-spin" />} Tahsil Et
         </button>
       </>}>
@@ -158,13 +158,13 @@ export function CollectModal({ cekler, onClose, onDone }: { cekler: Cek[]; onClo
       ) : (
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1" htmlFor="col-acc">Kasa / banka hesabı *</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1" htmlFor="col-acc">Kasa / banka hesabı *</label>
             <select id="col-acc" value={accountId} onChange={e => setAccountId(e.target.value)} className={input}>
               {usable.map(a => <option key={a.id} value={a.id}>{a.name}{a.id === preferred ? ' (çekin verildiği banka)' : ''} — {fmt(a.balance)} {a.currency}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1" htmlFor="col-date">Tahsil tarihi</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1" htmlFor="col-date">Tahsil tarihi</label>
             <input id="col-date" type="date" value={date} onChange={e => setDate(e.target.value)} className={input} />
           </div>
         </div>
@@ -230,11 +230,11 @@ export function SupplierPayModal({ cekler, onClose, onDone }: { cekler: Cek[]; o
   };
 
   return (
-    <Shell title="Tedarikçiye Ödeme Yap" icon={Truck} color="bg-orange-500" onClose={onClose}
+    <Shell title="Tedarikçiye Ödeme Yap" icon={Truck} color="bg-brand-600" onClose={onClose}
       footer={<>
         <button onClick={onClose} className={btnCancel}>Vazgeç</button>
         <button onClick={save} disabled={saving || !supplier || missing.length > 0}
-          className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+          className="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}
           {supplier ? `${fmt(total)} ${target} Öde` : 'Ödemeyi Kaydet'}
         </button>
@@ -242,30 +242,30 @@ export function SupplierPayModal({ cekler, onClose, onDone }: { cekler: Cek[]; o
       <Summary cekler={cekler} />
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1" htmlFor="sup-q">Tedarikçi *</label>
+          <label className="block text-xs font-medium text-ink-500 mb-1" htmlFor="sup-q">Tedarikçi *</label>
           {supplier ? (
-            <div className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50">
-              <span className="font-medium text-slate-800 truncate flex-1">{supplier.name}</span>
-              <span className="text-xs font-semibold text-slate-500">{supplier.currency}</span>
-              <button onClick={() => setSupplierId('')} className="text-xs text-orange-600 hover:underline">Değiştir</button>
+            <div className="flex items-center gap-2 px-3 py-2 border border-ink-200 rounded-lg text-sm bg-ink-50">
+              <span className="font-medium text-ink-800 truncate flex-1">{supplier.name}</span>
+              <span className="text-xs font-semibold text-ink-500">{supplier.currency}</span>
+              <button onClick={() => setSupplierId('')} className="text-xs text-amber-600 hover:underline">Değiştir</button>
             </div>
           ) : (
             <div className="relative">
               <input id="sup-q" value={q} onChange={e => setQ(e.target.value)} placeholder="Tedarikçi ara..." className={input} autoFocus />
-              <div className="mt-1 max-h-40 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100" role="listbox" aria-label="Tedarikçiler">
+              <div className="mt-1 max-h-40 overflow-y-auto border border-ink-200 rounded-lg divide-y divide-ink-100" role="listbox" aria-label="Tedarikçiler">
                 {list.map(s => (
                   <button key={s.id} type="button" role="option" aria-selected={false} onClick={() => setSupplierId(s.id)}
-                    className="w-full flex justify-between px-3 py-2 text-sm text-left hover:bg-orange-50">
-                    <span className="truncate">{s.name}</span><span className="text-xs text-slate-400 ml-2">{s.currency}</span>
+                    className="w-full flex justify-between px-3 py-2 text-sm text-left hover:bg-amber-50">
+                    <span className="truncate">{s.name}</span><span className="text-xs text-ink-400 ml-2">{s.currency}</span>
                   </button>
                 ))}
-                {list.length === 0 && <p className="px-3 py-2 text-sm text-slate-400">Sonuç yok</p>}
+                {list.length === 0 && <p className="px-3 py-2 text-sm text-ink-400">Sonuç yok</p>}
               </div>
             </div>
           )}
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-500 mb-1" htmlFor="sup-date">Veriliş tarihi</label>
+          <label className="block text-xs font-medium text-ink-500 mb-1" htmlFor="sup-date">Veriliş tarihi</label>
           <input id="sup-date" type="date" value={date} onChange={e => setDate(e.target.value)} className={input} />
         </div>
       </div>
@@ -273,29 +273,29 @@ export function SupplierPayModal({ cekler, onClose, onDone }: { cekler: Cek[]; o
       {supplier && (
         <>
           {rates?.date && cekler.some(c => c.currency !== target) && (
-            <p className="text-xs text-slate-500">Karşılıklar TCMB {rates.date} satış kuruyla hesaplandı; gerekirse değiştirebilirsiniz.</p>
+            <p className="text-xs text-ink-500">Karşılıklar TCMB {rates.date} satış kuruyla hesaplandı; gerekirse değiştirebilirsiniz.</p>
           )}
           {ratesFailed && cekler.some(c => c.currency !== target) && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">Kur alınamadı; {target} karşılıklarını elle girin.</p>
           )}
-          <div className="border border-slate-200 rounded-lg overflow-x-auto">
+          <div className="border border-ink-200 rounded-lg overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-xs text-slate-500">
+                <tr className="bg-ink-50 text-xs text-ink-500">
                   <th className="px-3 py-2 text-left">Çek</th>
                   <th className="px-3 py-2 text-right">Tutar</th>
                   <th className="px-3 py-2 text-right">{target} karşılığı</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-ink-100">
                 {cekler.map(c => {
                   const same = c.currency === target;
                   const r = rates && !same ? crossRate(c.currency, target, rates) : null;
                   return (
                     <tr key={c.id}>
                       <td className="px-3 py-2">
-                        <p className="font-medium text-slate-700 truncate max-w-[180px]">{c.borclu}</p>
-                        <p className="text-xs text-slate-400">{c.seriNo || '—'} · vade {formatDate(c.vadesi)}</p>
+                        <p className="font-medium text-ink-700 truncate max-w-[180px]">{c.borclu}</p>
+                        <p className="text-xs text-ink-400">{c.seriNo || '—'} · vade {formatDate(c.vadesi)}</p>
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">{fmt(c.tutar)} {c.currency}</td>
                       <td className="px-3 py-2 text-right">
@@ -306,8 +306,8 @@ export function SupplierPayModal({ cekler, onClose, onDone }: { cekler: Cek[]; o
                             <input type="text" inputMode="decimal" aria-label={`${c.seriNo || c.borclu} ${target} karşılığı`}
                               value={amounts[c.id] ?? ''} onKeyDown={blockDot}
                               onChange={e => setAmounts(p => ({ ...p, [c.id]: normalizePriceInput(e.target.value) }))}
-                              className={`w-32 px-2 py-1 border rounded text-right text-sm outline-none focus:ring-2 focus:ring-orange-400 ${amountOf(c) > 0 ? 'border-slate-200' : 'border-red-300 bg-red-50'}`} />
-                            {r && <span className="text-[11px] text-slate-400">1 {c.currency} = {r.toLocaleString('tr-TR', { maximumFractionDigits: 4 })} {target}</span>}
+                              className={`w-32 px-2 py-1 border rounded text-right text-sm outline-none focus:ring-2 focus:ring-brand-500 ${amountOf(c) > 0 ? 'border-ink-200' : 'border-red-300 bg-red-50'}`} />
+                            {r && <span className="text-[11px] text-ink-400">1 {c.currency} = {r.toLocaleString('tr-TR', { maximumFractionDigits: 4 })} {target}</span>}
                           </div>
                         )}
                       </td>
@@ -316,7 +316,7 @@ export function SupplierPayModal({ cekler, onClose, onDone }: { cekler: Cek[]; o
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-slate-50 font-semibold">
+                <tr className="bg-ink-50 font-semibold">
                   <td className="px-3 py-2" colSpan={2}>Tedarikçiye ödenecek</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmt(total)} {target}</td>
                 </tr>
@@ -324,7 +324,7 @@ export function SupplierPayModal({ cekler, onClose, onDone }: { cekler: Cek[]; o
             </table>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1" htmlFor="sup-note">Not</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1" htmlFor="sup-note">Not</label>
             <input id="sup-note" value={note} onChange={e => setNote(e.target.value)} className={input} />
           </div>
         </>

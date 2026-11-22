@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from '@/app/components/icons';
 
 // Kaydedilmemiş değişiklik varken sayfadan çıkılırsa sorar:
 // - sekme kapatma / yenileme: tarayıcının kendi uyarısı (beforeunload)
@@ -50,16 +50,16 @@ export function useLeaveGuard(dirty: boolean) {
             <AlertTriangle className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-800 mb-1">Kaydedilmemiş değişiklikler var</h3>
-            <p className="text-sm text-slate-600">Bu sayfadan çıkarsanız girdiğiniz bilgiler kaybolacak.</p>
+            <h3 className="font-semibold text-ink-800 mb-1">Kaydedilmemiş değişiklikler var</h3>
+            <p className="text-sm text-ink-600">Bu sayfadan çıkarsanız girdiğiniz bilgiler kaybolacak.</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setPending(null)} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium" autoFocus>
+          <button onClick={() => setPending(null)} className="flex-1 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium" autoFocus>
             Sayfada kal
           </button>
           <button onClick={() => { const fn = pending; setPending(null); dirtyRef.current = false; fn(); }}
-            className="flex-1 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-red-600 rounded-lg text-sm font-medium">
+            className="flex-1 py-2 bg-white border border-ink-200 hover:bg-ink-50 text-red-600 rounded-lg text-sm font-medium">
             Çık
           </button>
         </div>

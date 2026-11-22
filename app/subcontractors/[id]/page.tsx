@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import Link from 'next/link';
 import BackLink from '@/app/components/back-link';
-import { Loader2, Pencil, Save, X, Factory, ArrowUpDown, Plus, CheckCircle2, Mail, AlertTriangle } from 'lucide-react';
+import { Loader2, Pencil, Save, X, Factory, ArrowUpDown, Plus, CheckCircle2, Mail, AlertTriangle } from '@/app/components/icons';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Bekliyor', MATERIAL_SENT: 'Hammadde Gönderildi',
@@ -13,10 +13,10 @@ const STATUS_LABELS: Record<string, string> = {
   COMPLETED: 'Tamamlandı', RECEIVED: 'Teslim Alındı', CANCELLED: 'İptal',
 };
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-700', MATERIAL_SENT: 'bg-blue-100 text-blue-700',
-  IN_PRODUCTION: 'bg-purple-100 text-purple-700', IN_PROGRESS: 'bg-indigo-100 text-indigo-700',
-  COMPLETED: 'bg-green-100 text-green-700', RECEIVED: 'bg-teal-100 text-teal-700',
-  CANCELLED: 'bg-slate-100 text-slate-500',
+  PENDING: 'bg-yellow-100 text-yellow-700', MATERIAL_SENT: 'bg-brand-100 text-brand-800',
+  IN_PRODUCTION: 'bg-brand-100 text-brand-800', IN_PROGRESS: 'bg-brand-100 text-brand-800',
+  COMPLETED: 'bg-emerald-100 text-emerald-700', RECEIVED: 'bg-brand-100 text-brand-800',
+  CANCELLED: 'bg-ink-100 text-ink-500',
 };
 
 export default function SubcontractorDetailPage() {
@@ -74,8 +74,8 @@ export default function SubcontractorDetailPage() {
     } finally { setPortalSaving(false); }
   };
 
-  if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-orange-500" /></div></AppShell>;
-  if (!data) return <AppShell><div className="text-center py-16 text-slate-400">Fasoncu bulunamadı</div></AppShell>;
+  if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-amber-500" /></div></AppShell>;
+  if (!data) return <AppShell><div className="text-center py-16 text-ink-400">Fasoncu bulunamadı</div></AppShell>;
 
   const tabs = [
     { id: 'info', label: 'Bilgiler' },
@@ -90,36 +90,36 @@ export default function SubcontractorDetailPage() {
         <div className="flex flex-wrap gap-2 items-center">
           <BackLink href="/subcontractors" label="Fasoncular" />
           {!editing ? (
-            <button onClick={() => setEditing(true)} className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+            <button onClick={() => setEditing(true)} className="flex items-center gap-2 px-3 py-1.5 bg-ink-700 hover:bg-ink-800 text-white rounded-lg text-sm font-medium">
               <Pencil className="w-4 h-4" /> Düzenle
             </button>
           ) : (
             <>
-              <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
+              <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Kaydet
               </button>
-              <button onClick={() => { setEditing(false); load(); }} className="flex items-center gap-2 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium">
+              <button onClick={() => { setEditing(false); load(); }} className="flex items-center gap-2 px-3 py-1.5 bg-ink-200 hover:bg-ink-300 text-ink-700 rounded-lg text-sm font-medium">
                 <X className="w-4 h-4" /> Vazgeç
               </button>
             </>
           )}
           {!data.portalCustomer && (
-            <button onClick={() => setShowPortalModal(true)} className="flex items-center gap-2 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium">
+            <button onClick={() => setShowPortalModal(true)} className="flex items-center gap-2 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium">
               <Plus className="w-4 h-4" /> Portal Hesabı Oluştur
             </button>
           )}
-          <Link href="/subcontractor-orders/new" className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+          <Link href="/subcontractor-orders/new" className="flex items-center gap-2 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium">
             <Plus className="w-4 h-4" /> Yeni Sipariş
           </Link>
         </div>
 
         {/* Header */}
-        <div className="bg-orange-600 rounded-xl px-5 py-4">
+        <div className="bg-brand-700 rounded-xl px-5 py-4">
           <div className="flex items-center gap-3">
-            <Factory className="w-6 h-6 text-orange-200" />
+            <Factory className="w-6 h-6 text-amber-200" />
             <div>
               <p className="text-white font-bold text-lg">{data.name}</p>
-              {data.contactPerson && <p className="text-orange-200 text-sm">{data.contactPerson}</p>}
+              {data.contactPerson && <p className="text-amber-200 text-sm">{data.contactPerson}</p>}
               {data.portalCustomer && (
                 <span className="inline-flex items-center gap-1 text-xs bg-white/20 text-white px-2 py-0.5 rounded-full mt-1">
                   <CheckCircle2 className="w-3 h-3" /> Portal: {data.portalCustomer.email}
@@ -130,10 +130,10 @@ export default function SubcontractorDetailPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 border-b border-slate-200">
+        <div className="flex gap-1 border-b border-ink-200">
           {tabs.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${activeTab === tab.id ? 'border-orange-500 text-orange-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${activeTab === tab.id ? 'border-brand-600 text-amber-600' : 'border-transparent text-ink-500 hover:text-ink-700'}`}>
               {tab.label}
             </button>
           ))}
@@ -141,8 +141,8 @@ export default function SubcontractorDetailPage() {
 
         {/* Info Tab */}
         {activeTab === 'info' && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="divide-y divide-slate-100">
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+            <div className="divide-y divide-ink-100">
               {[
                 { key: 'name', label: 'Firma Adı' },
                 { key: 'contactPerson', label: 'İletişim' },
@@ -151,19 +151,19 @@ export default function SubcontractorDetailPage() {
                 { key: 'address', label: 'Adres' },
               ].map(({ key, label }) => (
                 <div key={key} className="flex items-center px-4 py-3 gap-3">
-                  <span className="text-xs font-semibold text-slate-400 w-24 flex-shrink-0">{label}</span>
+                  <span className="text-xs font-semibold text-ink-400 w-24 flex-shrink-0">{label}</span>
                   {editing ? (
                     <input value={editForm[key] || ''} onChange={e => setEditForm((p: any) => ({ ...p, [key]: e.target.value }))}
-                      className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm outline-none focus:ring-1 focus:ring-orange-400" />
+                      className="flex-1 px-2 py-1 border border-ink-200 rounded text-sm outline-none focus:ring-1 focus:ring-brand-500" />
                   ) : (
-                    <span className="text-sm text-slate-700">{data[key] || <span className="text-slate-300 italic">—</span>}</span>
+                    <span className="text-sm text-ink-700">{data[key] || <span className="text-ink-300 italic">—</span>}</span>
                   )}
                 </div>
               ))}
               {editing && (
                 <div className="flex items-center px-4 py-3 gap-3">
-                  <span className="text-xs font-semibold text-slate-400 w-24">Aktif</span>
-                  <input type="checkbox" checked={editForm.isActive} onChange={e => setEditForm((p: any) => ({ ...p, isActive: e.target.checked }))} className="w-4 h-4 accent-orange-500" />
+                  <span className="text-xs font-semibold text-ink-400 w-24">Aktif</span>
+                  <input type="checkbox" checked={editForm.isActive} onChange={e => setEditForm((p: any) => ({ ...p, isActive: e.target.checked }))} className="w-4 h-4 accent-amber-500" />
                 </div>
               )}
             </div>
@@ -172,20 +172,20 @@ export default function SubcontractorDetailPage() {
 
         {/* Stock/Zimmet Tab */}
         {activeTab === 'stock' && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
             {data.materialStocks?.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">Zimmetli hammadde yok</div>
+              <div className="text-center py-12 text-ink-400">Zimmetli hammadde yok</div>
             ) : (
               <table className="w-full text-sm">
-                <thead><tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500">
+                <thead><tr className="bg-ink-50 border-b text-xs font-semibold text-ink-500">
                   <th className="px-4 py-3 text-left">Hammadde</th>
                   <th className="px-4 py-3 text-right">Miktar</th>
                 </tr></thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-ink-100">
                   {data.materialStocks?.map((s: any) => (
                     <tr key={s.id} className={s.quantity <= 0 ? 'bg-red-50/30' : ''}>
-                      <td className="px-4 py-3 font-medium text-slate-700">{s.material?.name}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-slate-700">
+                      <td className="px-4 py-3 font-medium text-ink-700">{s.material?.name}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-ink-700">
                         {s.quantity.toLocaleString('tr-TR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kg
                       </td>
                     </tr>
@@ -198,30 +198,30 @@ export default function SubcontractorDetailPage() {
 
         {/* Active Orders Tab */}
         {activeTab === 'orders' && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
             {data.subcontractorOrders?.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">Aktif sipariş yok</div>
+              <div className="text-center py-12 text-ink-400">Aktif sipariş yok</div>
             ) : (
               <table className="w-full text-sm">
-                <thead><tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500">
+                <thead><tr className="bg-ink-50 border-b text-xs font-semibold text-ink-500">
                   <th className="px-4 py-3 text-left">Sipariş No</th>
                   <th className="px-4 py-3 text-left">Ürün</th>
                   <th className="px-4 py-3 text-right">Adet</th>
                   <th className="px-4 py-3 text-center">Durum</th>
                   <th className="px-4 py-3 text-right">Termin</th>
                 </tr></thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-ink-100">
                   {data.subcontractorOrders?.map((o: any) => (
                     <tr key={o.id}>
                       <td className="px-4 py-3">
-                        <Link href={`/subcontractor-orders/${o.id}`} className="text-blue-600 hover:underline font-medium">{o.orderNo}</Link>
+                        <Link href={`/subcontractor-orders/${o.id}`} className="text-brand-700 hover:underline font-medium">{o.orderNo}</Link>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{o.product?.name || <span className="text-slate-300">—</span>}</td>
-                      <td className="px-4 py-3 text-right text-slate-700 font-medium">{o.totalPairs}</td>
+                      <td className="px-4 py-3 text-ink-600">{o.product?.name || <span className="text-ink-300">—</span>}</td>
+                      <td className="px-4 py-3 text-right text-ink-700 font-medium">{o.totalPairs}</td>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[o.status]}`}>{STATUS_LABELS[o.status]}</span>
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-500 text-xs">
+                      <td className="px-4 py-3 text-right text-ink-500 text-xs">
                         {o.dueDate ? new Date(o.dueDate).toLocaleDateString('tr-TR') : '—'}
                       </td>
                     </tr>
@@ -234,31 +234,31 @@ export default function SubcontractorDetailPage() {
 
         {/* Transfers Tab */}
         {activeTab === 'transfers' && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
             {data.materialTransfers?.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">Transfer geçmişi yok</div>
+              <div className="text-center py-12 text-ink-400">Transfer geçmişi yok</div>
             ) : (
               <table className="w-full text-sm">
-                <thead><tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500">
+                <thead><tr className="bg-ink-50 border-b text-xs font-semibold text-ink-500">
                   <th className="px-4 py-3 text-left">Tarih</th>
                   <th className="px-4 py-3 text-left">Hammadde</th>
                   <th className="px-4 py-3 text-center">Yön</th>
                   <th className="px-4 py-3 text-right">Miktar</th>
                 </tr></thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-ink-100">
                   {data.materialTransfers?.map((t: any) => (
                     <tr key={t.id}>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{new Date(t.createdAt).toLocaleDateString('tr-TR')}</td>
-                      <td className="px-4 py-3 font-medium text-slate-700">
+                      <td className="px-4 py-3 text-ink-500 text-xs">{new Date(t.createdAt).toLocaleDateString('tr-TR')}</td>
+                      <td className="px-4 py-3 font-medium text-ink-700">
                         {t.material?.name}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${t.direction === 'OUTGOING' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                        <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${t.direction === 'OUTGOING' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
                           <ArrowUpDown className="w-2.5 h-2.5" />
                           {t.direction === 'OUTGOING' ? 'Gönderildi' : 'Alındı'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-slate-700">
+                      <td className="px-4 py-3 text-right font-semibold text-ink-700">
                         {t.quantity.toLocaleString('tr-TR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} kg
                       </td>
                     </tr>
@@ -274,31 +274,31 @@ export default function SubcontractorDetailPage() {
       {showPortalModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowPortalModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
-            <div className="bg-orange-600 px-5 py-4 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-ink-200/80">
+            <div className="bg-brand-700 px-5 py-4 flex items-center justify-between">
               <h3 className="text-white font-bold text-sm flex items-center gap-2"><Mail className="w-4 h-4" /> Portal Hesabı Oluştur</h3>
               <button onClick={() => setShowPortalModal(false)} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-3">
-              <p className="text-xs text-slate-500">Fasoncuya giriş yapabileceği bir portal hesabı oluşturulacak ve aktivasyon maili gönderilecek.</p>
+              <p className="text-xs text-ink-500">Fasoncuya giriş yapabileceği bir portal hesabı oluşturulacak ve aktivasyon maili gönderilecek.</p>
               {[
                 { key: 'email', label: 'E-posta *', type: 'email', placeholder: 'fasoncu@firma.com' },
                 { key: 'password', label: 'Şifre *', type: 'password', placeholder: '••••••••' },
                 { key: 'name', label: 'Kullanıcı Adı', type: 'text', placeholder: data.contactPerson || data.name },
               ].map(({ key, label, type, placeholder }) => (
                 <div key={key}>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
+                  <label className="block text-xs font-medium text-ink-600 mb-1">{label}</label>
                   <input type={type} value={(portalForm as any)[key]} onChange={e => setPortalForm(p => ({ ...p, [key]: e.target.value }))}
                     placeholder={placeholder}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-400" />
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
               ))}
               <div className="flex gap-2 pt-1">
                 <button onClick={handlePortalRegister} disabled={portalSaving || !portalForm.email || !portalForm.password}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60">
+                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold disabled:opacity-60">
                   {portalSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Oluştur ve Mail Gönder
                 </button>
-                <button onClick={() => setShowPortalModal(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+                <button onClick={() => setShowPortalModal(false)} className="px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
               </div>
             </div>
           </div>
@@ -307,18 +307,18 @@ export default function SubcontractorDetailPage() {
       {errorMsg && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
-                <p className="text-sm text-slate-600">{errorMsg}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Hata</h3>
+                <p className="text-sm text-ink-600">{errorMsg}</p>
               </div>
             </div>
             <button onClick={() => setErrorMsg('')}
-              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              className="w-full py-2 bg-ink-700 hover:bg-ink-800 text-white rounded-lg text-sm font-medium">
               Tamam
             </button>
           </div>

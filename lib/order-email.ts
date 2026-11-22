@@ -7,8 +7,8 @@ export const esc = (v: unknown) => String(v ?? '').replace(/[&<>"]/g, c => ({ '&
 
 /** Üretim emri e-postasında kalem tablosu: model, renk, beden dağılımı (taban) ya da miktar */
 export function itemsTableHtml(items: any[]) {
-  const th = (t: string, align = 'left') => `<th style="padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-size:11px;color:#475569;text-align:${align};text-transform:uppercase;">${t}</th>`;
-  const td = (t: string, align = 'left', bold = false) => `<td style="padding:8px 10px;border:1px solid #e2e8f0;text-align:${align};${bold ? 'font-weight:700;' : ''}">${t}</td>`;
+  const th = (t: string, align = 'left') => `<th style="padding:8px 10px;border:1px solid #E7E1D9;background:#FAF8F5;font-size:11px;color:#5E554C;text-align:${align};text-transform:uppercase;">${t}</th>`;
+  const td = (t: string, align = 'left', bold = false) => `<td style="padding:8px 10px;border:1px solid #E7E1D9;text-align:${align};${bold ? 'font-weight:700;' : ''}">${t}</td>`;
   const anyPair = items.some(i => isPairUnit(i.unit));
   const rows = items.map(i => {
     const sizes = Object.entries((i.sizeDistribution ?? {}) as Record<string, number>)
@@ -19,11 +19,11 @@ export function itemsTableHtml(items: any[]) {
   }).join('');
   return `
   <div style="margin-bottom:20px;">
-    <p style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Sipariş Kalemleri</p>
+    <p style="font-size:11px;color:#A89E92;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Sipariş Kalemleri</p>
     <table style="border-collapse:collapse;width:100%;font-size:13px;">
       <thead><tr>${th('Ürün')}${th(anyPair ? 'Renk' : 'Shore')}${anyPair ? th('Beden Dağılımı') : ''}${th('Miktar', 'right')}</tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    ${anyPair ? '' : `<p style="font-size:11px;color:#64748b;margin:6px 0 0;">${esc(SHORE_NOTE)}</p>`}
+    ${anyPair ? '' : `<p style="font-size:11px;color:#776D62;margin:6px 0 0;">${esc(SHORE_NOTE)}</p>`}
   </div>`;
 }

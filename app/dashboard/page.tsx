@@ -10,7 +10,7 @@ import {
   TrendingUp, TrendingDown, BarChart2, DollarSign,
   ScrollText, ChevronRight, Loader2, AlertCircle,
   Users, Package, FileText, Layers, ClipboardList, AlertTriangle,
-} from 'lucide-react';
+} from '@/app/components/icons';
 import Link from 'next/link';
 import PendingOrdersWidget from '@/app/components/pending-orders-widget';
 import { WidgetShell, SortablePairShell } from '@/app/components/widget-shell';
@@ -30,13 +30,14 @@ const fmt = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2,
 const fmtDate = formatDate;
 
 const ASSET_KEYS = ['kasa', 'pos', 'cek', 'senet', 'stok', 'acikHesap', 'calisanlar'];
+// Varlık çubukları: marka bordosunun tonları (en büyük kalemler koyu, küçükler açık)
 const ASSET_COLORS: Record<string, string> = {
-  kasa: '#22c55e', pos: '#22c55e', cek: '#22c55e', senet: '#4ade80',
-  stok: '#22c55e', acikHesap: '#16a34a', calisanlar: '#86efac',
+  kasa: '#6B1A2C', pos: '#8A2438', cek: '#A8455A', senet: '#C66E7E',
+  stok: '#561524', acikHesap: '#776D62', calisanlar: '#A89E92',
 };
 const CEK_DURUM_COLOR: Record<string, string> = {
-  PORTFOY: 'bg-blue-100 text-blue-700',
-  BANKAYA_VERILDI: 'bg-purple-100 text-purple-700',
+  PORTFOY: 'bg-brand-100 text-brand-800',
+  BANKAYA_VERILDI: 'bg-brand-100 text-brand-800',
 };
 
 const DEFAULT_ORDER = ['kpi', 'pair', 'orders'];
@@ -74,20 +75,18 @@ function KpiContent({ data }: { data: any }) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-4">
       {[
-        { label: 'Toplam Alacak', value: fmt(data?.totalReceivables ?? 0), unit: 'TL', border: 'border-orange-400', bg: 'bg-orange-100', icon: TrendingUp, iconCls: 'text-orange-500' },
-        { label: 'Toplam Borç', value: fmt(data?.totalPayables ?? 0), unit: 'TL', border: 'border-red-400', bg: 'bg-red-100', icon: TrendingDown, iconCls: 'text-red-500' },
-        { label: 'Bugünkü Ciro', value: fmt(data?.dailyCiro ?? 0), unit: 'Bugün', border: 'border-blue-400', bg: 'bg-blue-100', icon: DollarSign, iconCls: 'text-blue-500' },
-        { label: 'Aylık Ciro', value: fmt(data?.monthlyCiro ?? 0), unit: 'Bu ay', border: 'border-emerald-400', bg: 'bg-emerald-100', icon: BarChart2, iconCls: 'text-emerald-500' },
+        { label: 'Toplam Alacak', value: fmt(data?.totalReceivables ?? 0), unit: 'TL', icon: TrendingUp, accent: true },
+        { label: 'Toplam Borç', value: fmt(data?.totalPayables ?? 0), unit: 'TL', icon: TrendingDown },
+        { label: 'Bugünkü Ciro', value: fmt(data?.dailyCiro ?? 0), unit: 'Bugün', icon: DollarSign },
+        { label: 'Aylık Ciro', value: fmt(data?.monthlyCiro ?? 0), unit: 'Bu ay', icon: BarChart2 },
       ].map(k => (
-        <div key={k.label} className={`rounded-xl border-l-4 ${k.border} bg-slate-50 p-3`}>
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide leading-tight">{k.label}</p>
-            <div className={`w-7 h-7 ${k.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
-              <k.icon className={`w-3.5 h-3.5 ${k.iconCls}`} />
-            </div>
+        <div key={k.label} className={`rounded-lg p-4 ${k.accent ? 'bg-brand-700 text-white' : 'bg-ink-50 ring-1 ring-inset ring-ink-200/70'}`}>
+          <div className="flex items-center justify-between">
+            <p className={`text-[11px] font-semibold uppercase tracking-[0.1em] ${k.accent ? 'text-white/75' : 'text-ink-500'}`}>{k.label}</p>
+            <k.icon className={`w-4 h-4 ${k.accent ? 'text-white/70' : 'text-ink-400'}`} />
           </div>
-          <FitText className="text-lg font-bold text-slate-800 tabular-nums">{k.value}</FitText>
-          <p className="text-xs text-slate-400 mt-0.5">{k.unit}</p>
+          <FitText className={`mt-3 font-display text-[1.65rem] leading-none tabular-nums ${k.accent ? 'text-white' : 'text-ink-900'}`}>{k.value}</FitText>
+          <p className={`text-xs mt-1.5 ${k.accent ? 'text-white/65' : 'text-ink-500'}`}>{k.unit}</p>
         </div>
       ))}
     </div>
@@ -110,15 +109,15 @@ function AssetsContent({ assets, t }: { assets: Record<string, number>; t: (s: s
         return (
           <div key={k}>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-semibold text-green-600">{ASSET_LABELS[k]}</span>
-              <span className="text-sm text-slate-600 font-medium">{fmt(val)} TL</span>
+              <span className="text-sm font-medium text-ink-800">{ASSET_LABELS[k]}</span>
+              <span className="text-sm text-ink-700 font-medium tabular-nums">{fmt(val)} TL</span>
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+            <div className="w-full bg-ink-100 rounded-full h-2 overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${pct}%`,
-                  background: `repeating-linear-gradient(45deg,${ASSET_COLORS[k]},${ASSET_COLORS[k]} 6px,${ASSET_COLORS[k]}cc 6px,${ASSET_COLORS[k]}cc 12px)`,
+                  background: ASSET_COLORS[k],
                 }}
               />
             </div>
@@ -136,37 +135,37 @@ function ChecksContent({ checks, t }: { checks: any[]; t: (s: string, k: string)
   };
   if (checks.length === 0) {
     return (
-      <div className="py-10 text-center text-slate-400 text-sm flex flex-col items-center gap-2">
-        <ScrollText className="w-9 h-9 text-slate-200" />
+      <div className="py-10 text-center text-ink-400 text-sm flex flex-col items-center gap-2">
+        <ScrollText className="w-9 h-9 text-ink-200" />
         {t('dashboard', 'noUpcomingChecks')}
       </div>
     );
   }
   return (
-    <div className="divide-y divide-slate-50">
+    <div className="divide-y divide-ink-50">
       {checks.map(c => {
         const daysLeft = Math.ceil((new Date(c.vadesi).getTime() - Date.now()) / 86400000);
         return (
-          <div key={c.id} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50/50 transition-colors">
+          <div key={c.id} className="flex items-center justify-between px-4 py-3 hover:bg-ink-50/50 transition-colors">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-slate-800 truncate">{c.borclu}</p>
-              <p className="text-xs text-slate-400">
-                {c.customer?.name && <span className="mr-2 text-blue-600">{c.customer.name}</span>}
+              <p className="text-sm font-medium text-ink-800 truncate">{c.borclu}</p>
+              <p className="text-xs text-ink-400">
+                {c.customer?.name && <span className="mr-2 text-brand-700">{c.customer.name}</span>}
                 {t('dashboard', 'maturity')} {fmtDate(c.vadesi)}
-                {c.seriNo && <span className="ml-2 text-slate-400">({c.seriNo})</span>}
+                {c.seriNo && <span className="ml-2 text-ink-400">({c.seriNo})</span>}
               </p>
             </div>
             <div className="text-right flex-shrink-0 ml-3">
-              <p className="text-sm font-semibold text-slate-800">{fmt(c.tutar)} TL</p>
+              <p className="text-sm font-semibold text-ink-800">{fmt(c.tutar)} TL</p>
               <div className="flex items-center justify-end gap-1.5 mt-0.5">
                 <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
                   daysLeft <= 7 ? 'bg-red-100 text-red-700' :
                   daysLeft <= 14 ? 'bg-amber-100 text-amber-700' :
-                  'bg-blue-100 text-blue-700'
+                  'bg-brand-100 text-brand-800'
                 }`}>
                   {daysLeft}{t('dashboard', 'daysLeft')}
                 </span>
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${CEK_DURUM_COLOR[c.durum] || 'bg-slate-100 text-slate-600'}`}>
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${CEK_DURUM_COLOR[c.durum] || 'bg-ink-100 text-ink-600'}`}>
                   {CEK_DURUM[c.durum] || c.durum}
                 </span>
               </div>
@@ -241,7 +240,7 @@ export default function DashboardPage() {
     return (
       <AppShell>
         <div className="flex justify-center py-24">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <Loader2 className="w-8 h-8 animate-spin text-brand-700" />
         </div>
       </AppShell>
     );
@@ -266,9 +265,9 @@ export default function DashboardPage() {
     },
     orders: {
       title: 'Bekleyen Siparişler',
-      icon: <ClipboardList className="w-4 h-4 text-blue-500" />,
+      icon: <ClipboardList className="w-4 h-4 text-brand-600" />,
       headerExtra: (
-        <Link href="/orders" className="text-xs text-blue-600 hover:underline flex items-center gap-0.5">
+        <Link href="/orders" className="text-xs text-brand-700 hover:underline flex items-center gap-0.5">
           Tümünü Gör <ChevronRight className="w-3 h-3" />
         </Link>
       ),
@@ -281,33 +280,34 @@ export default function DashboardPage() {
       <div className="space-y-5">
         {/* Welcome */}
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">
-            {t('dashboard', 'welcomeUser')}, {user?.name ?? 'Kullanıcı'} 👋
+          <p className="section-title">{new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <h1 className="page-title mt-1.5">
+            {t('dashboard', 'welcomeUser')}, {user?.name ?? 'Kullanıcı'}
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">{user?.companyName ?? ''}</p>
+          <p className="page-subtitle">{user?.companyName ?? ''}</p>
         </div>
 
         <LinkRequests />
 
         {/* Onboarding */}
         {isEmpty && (
-          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
-            <p className="text-sm font-semibold text-blue-800 mb-3">Hesabınız hazır! Başlamak için aşağıdaki adımları takip edin:</p>
+          <div className="bg-brand-50 border border-brand-200 rounded-2xl p-5">
+            <p className="text-sm font-semibold text-brand-900 mb-3">Hesabınız hazır! Başlamak için aşağıdaki adımları takip edin:</p>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { href: '/customers', icon: Users, color: 'bg-blue-100 text-blue-600', label: 'Müşteri Ekle', desc: 'İlk müşterinizi ekleyin' },
-                { href: '/materials', icon: Layers, color: 'bg-violet-100 text-violet-600', label: 'Hammadde Ekle', desc: 'Stok takibine başlayın' },
+                { href: '/customers', icon: Users, color: 'bg-brand-100 text-brand-700', label: 'Müşteri Ekle', desc: 'İlk müşterinizi ekleyin' },
+                { href: '/materials', icon: Layers, color: 'bg-brand-100 text-brand-700', label: 'Hammadde Ekle', desc: 'Stok takibine başlayın' },
                 { href: '/products', icon: Package, color: 'bg-emerald-100 text-emerald-600', label: 'Ürün Ekle', desc: 'Ürün kataloğunuzu oluşturun' },
-                { href: '/invoices/new', icon: FileText, color: 'bg-orange-100 text-orange-600', label: 'Fatura Oluştur', desc: 'İlk faturanızı kesin' },
+                { href: '/invoices/new', icon: FileText, color: 'bg-amber-100 text-amber-600', label: 'Fatura Oluştur', desc: 'İlk faturanızı kesin' },
               ].map(item => (
                 <Link key={item.href} href={item.href}
-                  className="flex items-start gap-3 p-3 bg-white rounded-xl border border-blue-100 hover:border-blue-300 hover:shadow-sm transition-all">
+                  className="flex items-start gap-3 p-3 bg-white rounded-xl border border-brand-100 hover:border-brand-300 hover:shadow-card transition-all">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${item.color}`}>
                     <item.icon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-800">{item.label}</p>
-                    <p className="text-xs text-slate-400">{item.desc}</p>
+                    <p className="text-sm font-semibold text-ink-800">{item.label}</p>
+                    <p className="text-xs text-ink-400">{item.desc}</p>
                   </div>
                 </Link>
               ))}
@@ -353,24 +353,24 @@ export default function DashboardPage() {
         {/* Exchange rates */}
         {(rates.usd || rates.eur) && (
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-ink-400 font-medium">
               TCMB Döviz Kuru{rates.date ? ` · ${new Date(rates.date).toLocaleDateString('tr-TR')}` : ''}:
             </span>
             {rates.usd && (
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-lg shadow-sm border border-slate-100 text-sm font-semibold text-slate-700">
-                <span className="text-green-500 text-xs font-bold">$</span> 1 USD = {rates.usd.toLocaleString('tr-TR', { minimumFractionDigits: 4 })} TL
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-lg shadow-sm border border-ink-100 text-sm font-semibold text-ink-700">
+                <span className="text-ink-400 text-xs font-bold">$</span> 1 USD = {rates.usd.toLocaleString('tr-TR', { minimumFractionDigits: 4 })} TL
               </span>
             )}
             {rates.eur && (
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-lg shadow-sm border border-slate-100 text-sm font-semibold text-slate-700">
-                <span className="text-blue-500 text-xs font-bold">€</span> 1 EUR = {rates.eur.toLocaleString('tr-TR', { minimumFractionDigits: 4 })} TL
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-lg shadow-sm border border-ink-100 text-sm font-semibold text-ink-700">
+                <span className="text-brand-600 text-xs font-bold">€</span> 1 EUR = {rates.eur.toLocaleString('tr-TR', { minimumFractionDigits: 4 })} TL
               </span>
             )}
           </div>
         )}
 
         {/* Hint */}
-        <p className="text-xs text-slate-400 flex items-center gap-1.5">
+        <p className="text-xs text-ink-400 flex items-center gap-1.5">
           <span className="inline-block w-3.5 h-3.5 text-center leading-none">⠿</span>
           Widget başlıklarındaki tutamaçtan sürükleyerek sıralayabilir, ok ikonuyla küçültebilirsiniz.
         </p>
@@ -394,7 +394,7 @@ export default function DashboardPage() {
                         title: 'Varlıklar',
                         icon: <TrendingUp className="w-4 h-4" />,
                         headerExtra: (
-                          <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full tabular-nums">
+                          <span className="text-xs font-semibold text-ink-600 bg-ink-100 px-2 py-0.5 rounded-full tabular-nums">
                             {fmt(assetTotal)} TL
                           </span>
                         ),
@@ -406,7 +406,7 @@ export default function DashboardPage() {
                         title: t('dashboard', 'upcomingChecks'),
                         icon: <AlertCircle className="w-4 h-4 text-amber-500" />,
                         headerExtra: (
-                          <Link href="/cek-portfolyo" className="text-xs text-blue-600 hover:underline flex items-center gap-0.5">
+                          <Link href="/cek-portfolyo" className="text-xs text-brand-700 hover:underline flex items-center gap-0.5">
                             {t('dashboard', 'viewAll')} <ChevronRight className="w-3 h-3" />
                           </Link>
                         ),

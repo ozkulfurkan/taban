@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Check, Copy, FileText, Link2, Loader2, RefreshCw, ShoppingCart, X, Network } from 'lucide-react';
+import { Check, Copy, FileText, Link2, Loader2, RefreshCw, ShoppingCart, X, Network } from '@/app/components/icons';
 
 type BuyerLink = { id: string; status: 'PENDING' | 'ACTIVE' | 'REJECTED' | 'REVOKED'; buyerSupplierId: string | null; sellerCompany: { name: string } };
 type SellerLink = {
@@ -47,21 +47,21 @@ export function CompanyCodeCard() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 space-y-3" data-testid="company-code-card">
+    <div className="bg-white rounded-xl shadow-card p-6 space-y-3 border border-ink-200/80" data-testid="company-code-card">
       <div className="flex items-center gap-3 pb-3 border-b">
-        <Network className="w-5 h-5 text-blue-600" />
-        <h2 className="font-semibold text-slate-700">SoleCost firma kodu</h2>
+        <Network className="w-5 h-5 text-brand-700" />
+        <h2 className="font-semibold text-ink-700">SoleCost firma kodu</h2>
       </div>
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-ink-500">
         Size SoleCost üzerinden sipariş vermek isteyen firmalar bu kodla sizi tedarikçi olarak ekler. İstek size gelir; onaylarsanız sipariş verebilirler.
       </p>
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="font-mono text-lg font-bold tracking-wider px-3 py-1.5 bg-slate-100 rounded-lg" data-testid="company-code">{code ?? '…'}</span>
-        <button onClick={copy} className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50">
-          {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />} {copied ? 'Kopyalandı' : 'Kopyala'}
+        <span className="font-mono text-lg font-bold tracking-wider px-3 py-1.5 bg-ink-100 rounded-lg" data-testid="company-code">{code ?? '…'}</span>
+        <button onClick={copy} className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white border border-ink-200 rounded-lg hover:bg-ink-50">
+          {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />} {copied ? 'Kopyalandı' : 'Kopyala'}
         </button>
         {canEdit && (
-          <button onClick={regenerate} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 rounded-lg disabled:opacity-50">
+          <button onClick={regenerate} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 text-sm text-ink-600 hover:bg-ink-50 rounded-lg disabled:opacity-50">
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Yeni kod
           </button>
         )}
@@ -99,23 +99,23 @@ export function SupplierNetworkCard({ supplierId }: { supplierId: string }) {
   const canRequest = !link || link.status === 'REJECTED' || link.status === 'REVOKED';
 
   return (
-    <div className={`rounded-xl border p-4 flex flex-wrap items-center gap-3 ${active ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200'}`} data-testid="supplier-network">
-      <Link2 className={`w-5 h-5 ${active ? 'text-emerald-600' : 'text-slate-400'}`} />
+    <div className={`rounded-xl border p-4 flex flex-wrap items-center gap-3 ${active ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-ink-200'}`} data-testid="supplier-network">
+      <Link2 className={`w-5 h-5 ${active ? 'text-emerald-600' : 'text-ink-400'}`} />
       <div className="flex-1 min-w-[200px]">
-        <p className="text-sm font-semibold text-slate-700">
+        <p className="text-sm font-semibold text-ink-700">
           {link ? `SoleCost · ${link.sellerCompany.name}` : 'SoleCost bağlantısı yok'}
         </p>
-        <p className="text-xs text-slate-500" data-testid="supplier-network-status">
+        <p className="text-xs text-ink-500" data-testid="supplier-network-status">
           {link ? STATUS_TEXT[link.status] : 'Tedarikçi SoleCost kullanıyorsa firma koduyla bağlanıp doğrudan sipariş verebilirsiniz.'}
         </p>
       </div>
       {active && (
         <>
           <Link href={`/suppliers/${supplierId}/karsi-ekstre`} data-testid="supplier-link-statement"
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-white rounded-lg">
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-ink-600 hover:bg-white rounded-lg">
             <FileText className="w-4 h-4" /> Karşı ekstre
           </Link>
-          <Link href={`/verilen-siparisler?linkId=${link!.id}`} className="px-3 py-2 text-sm text-slate-600 hover:bg-white rounded-lg">Siparişlerim</Link>
+          <Link href={`/verilen-siparisler?linkId=${link!.id}`} className="px-3 py-2 text-sm text-ink-600 hover:bg-white rounded-lg">Siparişlerim</Link>
           {canWrite && (
             <Link href={`/suppliers/${supplierId}/siparis`} data-testid="supplier-order"
               className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
@@ -125,21 +125,21 @@ export function SupplierNetworkCard({ supplierId }: { supplierId: string }) {
         </>
       )}
       {canWrite && canRequest && !open && (
-        <button onClick={() => setOpen(true)} className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium" data-testid="supplier-connect">
+        <button onClick={() => setOpen(true)} className="px-3 py-2 text-sm bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium" data-testid="supplier-connect">
           Firma koduyla bağla
         </button>
       )}
       {open && (
         <div className="w-full flex flex-wrap items-center gap-2">
           <input value={code} onChange={e => setCode(e.target.value)} placeholder="SC-XXXXXX" autoFocus data-testid="supplier-code"
-            className="flex-1 min-w-[160px] px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono uppercase focus:ring-2 focus:ring-blue-500 outline-none" />
+            className="flex-1 min-w-[160px] px-3 py-2 border border-ink-200 rounded-lg text-sm font-mono uppercase focus:ring-2 focus:ring-brand-600 outline-none" />
           <button onClick={connect} disabled={busy || !code.trim()} data-testid="supplier-code-send"
-            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+            className="flex items-center gap-1.5 px-4 py-2 bg-brand-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
             {busy && <Loader2 className="w-4 h-4 animate-spin" />} İstek gönder
           </button>
-          <button onClick={() => { setOpen(false); setError(''); }} className="p-2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
+          <button onClick={() => { setOpen(false); setError(''); }} className="p-2 text-ink-400 hover:text-ink-600"><X className="w-4 h-4" /></button>
           {error && <p className="w-full text-sm text-red-600" data-testid="supplier-code-error">{error}</p>}
-          <p className="w-full text-xs text-slate-400">Kodu tedarikçinizden isteyin (SoleCost → Ayarlar → Firma kodu). İstek onaylanınca sipariş verebilirsiniz.</p>
+          <p className="w-full text-xs text-ink-400">Kodu tedarikçinizden isteyin (SoleCost → Ayarlar → Firma kodu). İstek onaylanınca sipariş verebilirsiniz.</p>
         </div>
       )}
     </div>
@@ -159,11 +159,11 @@ export function CustomerNetworkCard({ customerId }: { customerId: string }) {
     <div className="rounded-xl border p-4 flex flex-wrap items-center gap-3 bg-emerald-50 border-emerald-200" data-testid="customer-network">
       <Link2 className="w-5 h-5 text-emerald-600" />
       <div className="flex-1 min-w-[200px]">
-        <p className="text-sm font-semibold text-slate-700">SoleCost · {link.buyerCompany.name}</p>
-        <p className="text-xs text-slate-500">Bağlı firma: siparişleri doğrudan size gelir, ekstrenizi karşılıklı görebilirsiniz.</p>
+        <p className="text-sm font-semibold text-ink-700">SoleCost · {link.buyerCompany.name}</p>
+        <p className="text-xs text-ink-500">Bağlı firma: siparişleri doğrudan size gelir, ekstrenizi karşılıklı görebilirsiniz.</p>
       </div>
       <Link href={`/customers/${customerId}/karsi-ekstre`} data-testid="customer-link-statement"
-        className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:bg-white rounded-lg">
+        className="flex items-center gap-1.5 px-3 py-2 text-sm text-ink-600 hover:bg-white rounded-lg">
         <FileText className="w-4 h-4" /> Karşı ekstre
       </Link>
     </div>
@@ -208,15 +208,15 @@ export function LinkRequests() {
       {items.map(l => (
         <div key={l.id} className="bg-white rounded-lg p-3 flex flex-wrap items-center gap-3" data-testid={`link-request-${l.id}`}>
           <div className="flex-1 min-w-[200px]">
-            <p className="text-sm font-semibold text-slate-700">{l.buyerCompany.name}</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm font-semibold text-ink-700">{l.buyerCompany.name}</p>
+            <p className="text-xs text-ink-500">
               Sizi tedarikçi olarak eklemek ve size sipariş vermek istiyor{l.buyerCompany.taxId ? ` · VKN ${l.buyerCompany.taxId}` : ''}
             </p>
           </div>
           {canApprove ? (
             <>
               <select value={choice[l.id] ?? 'new'} onChange={e => setChoice(c => ({ ...c, [l.id]: e.target.value }))} data-testid={`link-customer-${l.id}`}
-                className="px-2 py-2 border border-slate-200 rounded-lg text-sm max-w-[240px]">
+                className="px-2 py-2 border border-ink-200 rounded-lg text-sm max-w-[240px]">
                 <option value="new">Yeni müşteri olarak aç</option>
                 {(customers ?? []).map(c => <option key={c.id} value={c.id}>Mevcut: {c.name}</option>)}
               </select>
@@ -225,7 +225,7 @@ export function LinkRequests() {
               <button onClick={() => respond(l, false)} disabled={busy === l.id}
                 className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg">Reddet</button>
             </>
-          ) : <span className="text-xs text-slate-500">Firma yöneticisi onaylayabilir</span>}
+          ) : <span className="text-xs text-ink-500">Firma yöneticisi onaylayabilir</span>}
         </div>
       ))}
     </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/app/components/icons';
 import AppShell from '@/app/components/app-shell';
 import DocumentEditor, { type DocHeader } from '@/app/components/document-editor';
 import { type DocLine, purchaseItemsPayload, lineFromPurchaseMaterial } from '@/lib/document-lines';
@@ -24,8 +24,8 @@ export default function EditPurchasePage() {
   if (!purchase) {
     return (
       <AppShell>
-        {error ? <p className="text-center py-16 text-slate-500">{error}</p>
-          : <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>}
+        {error ? <p className="text-center py-16 text-ink-500">{error}</p>
+          : <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>}
       </AppShell>
     );
   }

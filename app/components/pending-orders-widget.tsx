@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ClipboardList, ChevronRight, SlidersHorizontal,
   AlertTriangle, Clock, Loader2, PackageOpen, Check,
-} from 'lucide-react';
+} from '@/app/components/icons';
 
 interface OrderRow {
   id: string;
@@ -50,9 +50,9 @@ const IN_PRODUCTION_SET = new Set(['IN_PRODUCTION', 'MOLDING', 'PAINTING', 'PACK
 function getStatusBadge(order: OrderRow) {
   if (order.isOverdue) return { label: 'Gecikti', cls: 'bg-red-100 text-red-700 border border-red-200' };
   if (IN_PRODUCTION_SET.has(order.status)) return { label: STATUS_LABEL[order.status] ?? 'Hazırlanıyor', cls: 'bg-amber-100 text-amber-700 border border-amber-200' };
-  if (order.status === 'ORDER_RECEIVED') return { label: 'Onay Bekliyor', cls: 'bg-blue-100 text-blue-700 border border-blue-200' };
-  if (order.status === 'READY_FOR_SHIPMENT') return { label: 'Hazır', cls: 'bg-green-100 text-green-700 border border-green-200' };
-  return { label: STATUS_LABEL[order.status] ?? order.status, cls: 'bg-slate-100 text-slate-600 border border-slate-200' };
+  if (order.status === 'ORDER_RECEIVED') return { label: 'Onay Bekliyor', cls: 'bg-brand-100 text-brand-800 border border-brand-200' };
+  if (order.status === 'READY_FOR_SHIPMENT') return { label: 'Hazır', cls: 'bg-emerald-100 text-emerald-700 border border-emerald-200' };
+  return { label: STATUS_LABEL[order.status] ?? order.status, cls: 'bg-ink-100 text-ink-600 border border-ink-200' };
 }
 
 function getPriority(order: OrderRow) {
@@ -60,19 +60,19 @@ function getPriority(order: OrderRow) {
     return { dot: 'bg-red-500', label: 'Kritik', cls: 'text-red-600' };
   if (order.isDueSoon)
     return { dot: 'bg-amber-400', label: 'Yakın', cls: 'text-amber-600' };
-  return { dot: 'bg-green-400', label: 'Normal', cls: 'text-green-600' };
+  return { dot: 'bg-emerald-400', label: 'Normal', cls: 'text-emerald-600' };
 }
 
 function formatDue(dueDate: string | null, isOverdue: boolean, isDueToday: boolean): { text: string; cls: string } {
-  if (!dueDate) return { text: '—', cls: 'text-slate-400' };
+  if (!dueDate) return { text: '—', cls: 'text-ink-400' };
   if (isOverdue) {
     const days = Math.ceil((Date.now() - new Date(dueDate).getTime()) / 86400000);
     return { text: `${days} gün önce`, cls: 'text-red-600 font-semibold' };
   }
-  if (isDueToday) return { text: 'Bugün', cls: 'text-orange-600 font-semibold' };
+  if (isDueToday) return { text: 'Bugün', cls: 'text-amber-600 font-semibold' };
   return {
     text: new Date(dueDate).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }),
-    cls: 'text-slate-600',
+    cls: 'text-ink-600',
   };
 }
 
@@ -128,11 +128,11 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
   const alerts = data?.alerts;
 
   const KPI_ITEMS = stats ? [
-    { label: 'Toplam Bekleyen', value: stats.totalPending, cls: 'text-slate-800', bg: 'bg-slate-50 border-slate-200' },
-    { label: 'Bugün Teslim', value: stats.todayDue, cls: stats.todayDue > 0 ? 'text-orange-600' : 'text-slate-800', bg: stats.todayDue > 0 ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-200' },
-    { label: 'Geciken', value: stats.overdue, cls: stats.overdue > 0 ? 'text-red-600' : 'text-slate-800', bg: stats.overdue > 0 ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200' },
+    { label: 'Toplam Bekleyen', value: stats.totalPending, cls: 'text-ink-800', bg: 'bg-ink-50 border-ink-200' },
+    { label: 'Bugün Teslim', value: stats.todayDue, cls: stats.todayDue > 0 ? 'text-amber-600' : 'text-ink-800', bg: stats.todayDue > 0 ? 'bg-amber-50 border-amber-200' : 'bg-ink-50 border-ink-200' },
+    { label: 'Geciken', value: stats.overdue, cls: stats.overdue > 0 ? 'text-red-600' : 'text-ink-800', bg: stats.overdue > 0 ? 'bg-red-50 border-red-200' : 'bg-ink-50 border-ink-200' },
     { label: 'Hazırlanıyor', value: stats.inProduction, cls: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
-    { label: 'Onay Bekliyor', value: stats.awaitingApproval, cls: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+    { label: 'Onay Bekliyor', value: stats.awaitingApproval, cls: 'text-brand-800', bg: 'bg-brand-50 border-brand-200' },
   ] : [];
 
   const activeFilterLabel = FILTER_OPTIONS.find(o => o.key === filterKey)?.label ?? 'Filtrele';
@@ -140,15 +140,15 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
   const inner = (
     <div className="overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-ink-100">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-            <ClipboardList className="w-4 h-4 text-blue-600" />
+          <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
+            <ClipboardList className="w-4 h-4 text-brand-700" />
           </div>
           <div className="flex items-center gap-2">
-            <h2 className="font-bold text-slate-800 text-base">Bekleyen Siparişler</h2>
+            <h2 className="font-bold text-ink-800 text-base">Bekleyen Siparişler</h2>
             {stats && stats.totalPending > 0 && (
-              <span className="text-xs font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold bg-brand-700 text-white px-2 py-0.5 rounded-full">
                 {stats.totalPending}
               </span>
             )}
@@ -162,8 +162,8 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
               onClick={() => setShowFilter(v => !v)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 filterKey
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  ? 'bg-brand-700 text-white border-brand-700'
+                  : 'bg-white text-ink-600 border-ink-200 hover:bg-ink-50'
               }`}
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -177,14 +177,14 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -4 }}
                   transition={{ duration: 0.12 }}
-                  className="absolute right-0 top-full mt-1.5 z-20 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 min-w-[160px]"
+                  className="absolute right-0 top-full mt-1.5 z-20 bg-white rounded-xl shadow-lg border border-ink-200 py-1.5 min-w-[160px]"
                 >
                   {FILTER_OPTIONS.map(opt => (
                     <button
                       key={String(opt.key)}
                       onClick={() => { setFilterKey(opt.key); setShowFilter(false); }}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50 transition-colors ${
-                        filterKey === opt.key ? 'text-blue-600 font-semibold' : 'text-slate-700'
+                      className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-ink-50 transition-colors ${
+                        filterKey === opt.key ? 'text-brand-700 font-semibold' : 'text-ink-700'
                       }`}
                     >
                       {opt.label}
@@ -198,7 +198,7 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
 
           <Link
             href="/orders"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-ink-600 border border-ink-200 bg-white hover:bg-ink-50 transition-colors"
           >
             Tümünü Gör <ChevronRight className="w-3.5 h-3.5" />
           </Link>
@@ -207,25 +207,25 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
+          <Loader2 className="w-7 h-7 animate-spin text-brand-600" />
         </div>
       ) : !data || stats?.totalPending === 0 ? (
         /* Empty state */
         <div className="py-14 text-center">
-          <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <PackageOpen className="w-7 h-7 text-slate-300" />
+          <div className="w-14 h-14 bg-ink-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <PackageOpen className="w-7 h-7 text-ink-300" />
           </div>
-          <p className="text-slate-500 text-sm font-medium">Bekleyen sipariş yok</p>
-          <p className="text-slate-400 text-xs mt-1">Tüm siparişler tamamlandı</p>
+          <p className="text-ink-500 text-sm font-medium">Bekleyen sipariş yok</p>
+          <p className="text-ink-400 text-xs mt-1">Tüm siparişler tamamlandı</p>
         </div>
       ) : (
         <>
           {/* KPI row */}
-          <div className="grid grid-cols-3 lg:grid-cols-5 gap-px bg-slate-100 border-b border-slate-100">
+          <div className="grid grid-cols-3 lg:grid-cols-5 gap-px bg-ink-100 border-b border-ink-100">
             {KPI_ITEMS.map(k => (
               <div key={k.label} className={`flex flex-col items-center justify-center py-3 px-2 ${k.bg} border`}>
                 <span className={`text-xl font-bold tabular-nums ${k.cls}`}>{k.value}</span>
-                <span className="text-xs text-slate-500 mt-0.5 text-center leading-tight">{k.label}</span>
+                <span className="text-xs text-ink-500 mt-0.5 text-center leading-tight">{k.label}</span>
               </div>
             ))}
           </div>
@@ -240,8 +240,8 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
                 </div>
               )}
               {alerts.todayDueCount > 0 && (
-                <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-orange-50 border border-orange-200 rounded-xl text-sm text-orange-700">
-                  <Clock className="w-4 h-4 flex-shrink-0 text-orange-500" />
+                <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                  <Clock className="w-4 h-4 flex-shrink-0 text-amber-500" />
                   <span className="font-medium">{alerts.todayDueCount} sipariş bugün teslim edilmeli</span>
                 </div>
               )}
@@ -250,22 +250,22 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
 
           {/* Table */}
           {displayOrders.length === 0 ? (
-            <div className="py-10 text-center text-slate-400 text-sm">Bu filtreyle eşleşen sipariş yok</div>
+            <div className="py-10 text-center text-ink-400 text-sm">Bu filtreyle eşleşen sipariş yok</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-slate-50 border-y border-slate-100">
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">Sipariş No</th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Müşteri</th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Ürün / Model</th>
-                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap hidden sm:table-cell">Adet</th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">Termin</th>
-                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Durum</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Öncelik</th>
+                  <tr className="bg-ink-50 border-y border-ink-100">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-ink-500 uppercase tracking-wide whitespace-nowrap">Sipariş No</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-ink-500 uppercase tracking-wide">Müşteri</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-ink-500 uppercase tracking-wide hidden lg:table-cell">Ürün / Model</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-ink-500 uppercase tracking-wide whitespace-nowrap hidden sm:table-cell">Adet</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-ink-500 uppercase tracking-wide whitespace-nowrap">Termin</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-ink-500 uppercase tracking-wide">Durum</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-ink-500 uppercase tracking-wide hidden md:table-cell">Öncelik</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-ink-50">
                   {displayOrders.map((order, i) => {
                     const badge = getStatusBadge(order);
                     const priority = getPriority(order);
@@ -273,8 +273,8 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
                     const rowHighlight = order.isOverdue
                       ? 'bg-red-50/40 hover:bg-red-50/70'
                       : order.isDueToday
-                      ? 'bg-orange-50/40 hover:bg-orange-50/70'
-                      : 'hover:bg-slate-50/60';
+                      ? 'bg-amber-50/40 hover:bg-amber-50/70'
+                      : 'hover:bg-ink-50/60';
 
                     return (
                       <motion.tr
@@ -286,30 +286,30 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
                       >
                         <td className="px-5 py-3">
                           <Link href={`/orders/${order.id}`} className="block">
-                            <span className="font-bold text-blue-600 text-sm tracking-wide hover:underline">
+                            <span className="font-bold text-brand-700 text-sm tracking-wide hover:underline">
                               #{order.orderNo}
                             </span>
                           </Link>
                         </td>
                         <td className="px-3 py-3">
                           <Link href={`/orders/${order.id}`} className="block">
-                            <span className="text-slate-800 font-medium text-sm truncate max-w-[140px] block">{order.customerName}</span>
+                            <span className="text-ink-800 font-medium text-sm truncate max-w-[140px] block">{order.customerName}</span>
                           </Link>
                         </td>
                         <td className="px-3 py-3 hidden lg:table-cell">
                           <Link href={`/orders/${order.id}`} className="block">
-                            <span className="text-slate-700 text-sm truncate max-w-[160px] block">{order.productName}</span>
+                            <span className="text-ink-700 text-sm truncate max-w-[160px] block">{order.productName}</span>
                             {order.productCode && (
-                              <span className="text-xs text-slate-400">{order.productCode}</span>
+                              <span className="text-xs text-ink-400">{order.productCode}</span>
                             )}
                           </Link>
                         </td>
                         <td className="px-3 py-3 text-right hidden sm:table-cell">
                           <Link href={`/orders/${order.id}`} className="block">
-                            <span className="font-semibold text-slate-700 tabular-nums">
+                            <span className="font-semibold text-ink-700 tabular-nums">
                               {formatQty(order.totalQuantity, order.unit).split(' ')[0]}
                             </span>
-                            <span className="text-xs text-slate-400 ml-1">{formatQty(0, order.unit).split(' ').slice(1).join(' ')}</span>
+                            <span className="text-xs text-ink-400 ml-1">{formatQty(0, order.unit).split(' ').slice(1).join(' ')}</span>
                           </Link>
                         </td>
                         <td className="px-3 py-3">
@@ -342,11 +342,11 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
 
           {/* Footer — remaining count */}
           {remaining > 0 && (
-            <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/60">
-              <span className="text-xs text-slate-500">{remaining} sipariş daha gösterilmiyor</span>
+            <div className="px-5 py-3 border-t border-ink-100 flex items-center justify-between bg-ink-50/60">
+              <span className="text-xs text-ink-500">{remaining} sipariş daha gösterilmiyor</span>
               <Link
                 href="/orders"
-                className="text-xs text-blue-600 hover:underline font-medium flex items-center gap-1"
+                className="text-xs text-brand-700 hover:underline font-medium flex items-center gap-1"
               >
                 Tümünü Gör <ChevronRight className="w-3 h-3" />
               </Link>
@@ -364,7 +364,7 @@ export default function PendingOrdersWidget({ embedded = false }: { embedded?: b
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100"
+      className="bg-white rounded-2xl shadow-card overflow-hidden border border-ink-100"
     >
       {inner}
     </motion.div>

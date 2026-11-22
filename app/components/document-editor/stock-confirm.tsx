@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { X, Loader2, CheckCircle, AlertTriangle } from '@/app/components/icons';
 import { fmtQty } from '@/lib/stock-display';
 import { fromPriceInput } from '@/lib/price-input';
 import type { DocLine } from '@/lib/document-lines';
@@ -43,8 +43,8 @@ export default function StockConfirm({ deductions, shortages, saving, onConfirm,
   return (
     <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
-      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[90vh] flex flex-col">
-        <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[90vh] flex flex-col border border-ink-200/80">
+        <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold">{tx('stockConfirmTitle')}</h3>
           <button onClick={onCancel} aria-label={tx('close')} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
@@ -65,17 +65,17 @@ export default function StockConfirm({ deductions, shortages, saving, onConfirm,
           )}
           {deductions.length > 0 && (
             <div>
-              <p className="text-sm text-slate-600 mb-2">{tx('materialDeduction')}</p>
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
+              <p className="text-sm text-ink-600 mb-2">{tx('materialDeduction')}</p>
+              <div className="border border-ink-200 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-ink-100">
                     {deductions.map(d => {
                       const short = d.currentStock < d.kgAmount;
                       return (
                         <tr key={d.name + d.parts} className={short ? 'bg-red-50' : ''}>
                           <td className="px-3 py-2">
-                            <p className="font-medium text-slate-700">{d.name}</p>
-                            <p className="text-xs text-slate-400">{d.parts}</p>
+                            <p className="font-medium text-ink-700">{d.name}</p>
+                            <p className="text-xs text-ink-400">{d.parts}</p>
                           </td>
                           <td className="px-3 py-2 text-right font-semibold text-red-600 whitespace-nowrap">−{fmtQty(d.kgAmount)} kg</td>
                           <td className={`px-3 py-2 text-right whitespace-nowrap ${short ? 'text-red-600 font-medium' : 'text-emerald-600'}`}>{fmtQty(d.currentStock)} kg</td>
@@ -89,9 +89,9 @@ export default function StockConfirm({ deductions, shortages, saving, onConfirm,
           )}
         </div>
         <div className="p-5 pt-0 flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">{tx('goBack')}</button>
+          <button onClick={onCancel} className="flex-1 py-2.5 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">{tx('goBack')}</button>
           <button onClick={onConfirm} disabled={saving}
-            className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60">
+            className="flex-1 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} {tx('confirmSave')}
           </button>
         </div>

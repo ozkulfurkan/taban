@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Plus, ChevronDown, Loader2, Pencil, Trash2, X, Save, Landmark, CreditCard, ArrowDownCircle, ArrowUpCircle, AlertTriangle } from 'lucide-react';
+import { Plus, ChevronDown, Loader2, Pencil, Trash2, X, Save, Landmark, CreditCard, ArrowDownCircle, ArrowUpCircle, AlertTriangle } from '@/app/components/icons';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DecimalInput from '@/app/components/decimal-input';
@@ -11,11 +11,11 @@ import DecimalInput from '@/app/components/decimal-input';
 const ACCOUNT_TYPES = ['Kasa', 'Banka', 'POS'];
 const CURRENCIES = ['TRY', 'USD', 'EUR'];
 const COLORS = [
-  { labelTr: 'Mavi',    labelEn: 'Blue',   value: '#3B82F6' },
+  { labelTr: 'Mavi',    labelEn: 'Blue',   value: '#8A2438' },
   { labelTr: 'Yeşil',   labelEn: 'Green',  value: '#10B981' },
   { labelTr: 'Turuncu', labelEn: 'Orange', value: '#F59E0B' },
   { labelTr: 'Kırmızı', labelEn: 'Red',    value: '#EF4444' },
-  { labelTr: 'Mor',     labelEn: 'Purple', value: '#8B5CF6' },
+  { labelTr: 'Mor',     labelEn: 'Purple', value: '#A8455A' },
   { labelTr: 'Gri',     labelEn: 'Gray',   value: '#6B7280' },
 ];
 
@@ -49,7 +49,7 @@ function AccountModal({
     type: initial?.type ?? typeOverride ?? 'Kasa',
     currency: initial?.currency ?? 'TRY',
     balance: initial != null ? String(initial.balance) : '0',
-    color: initial?.color ?? '#3B82F6',
+    color: initial?.color ?? '#8A2438',
   });
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState('');
@@ -74,46 +74,46 @@ function AccountModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-ink-200/80">
         <div className="rounded-t-2xl px-5 py-4 flex items-center justify-between" style={{ backgroundColor: form.color }}>
           <h3 className="text-white font-semibold">{isEdit ? t('accounts', 'editTitle') : `${form.type} ${t('accounts', 'add')}`}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('accounts', 'description')} <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">{t('accounts', 'description')} <span className="text-red-500">*</span></label>
             <input value={form.name}
               onChange={e => { set('name', e.target.value); if (e.target.value.trim()) setNameError(''); }}
               placeholder="Örn. TL Kasa, Garanti TL"
-              className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none ${nameError ? 'border-red-400 ring-1 ring-red-400' : 'border-slate-200'}`} />
+              className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none ${nameError ? 'border-red-400 ring-1 ring-red-400' : 'border-ink-200'}`} />
             {nameError && <p className="mt-1 text-xs text-red-500">{nameError}</p>}
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('accounts', 'accountType')}</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">{t('accounts', 'accountType')}</label>
             <select value={form.type} onChange={e => set('type', e.target.value)} disabled={!!typeOverride && !isEdit}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white disabled:bg-slate-50 disabled:text-slate-500">
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white disabled:bg-ink-50 disabled:text-ink-500">
               {ACCOUNT_TYPES.map(tp => <option key={tp}>{tp}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">{t('common', 'currency')}</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">{t('common', 'currency')}</label>
               <select value={form.currency} onChange={e => set('currency', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white">
                 {CURRENCIES.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">{t('accounts', 'currentBalance')}</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">{t('accounts', 'currentBalance')}</label>
               <DecimalInput step="0.01" value={form.balance} onChange={e => set('balance', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right" />
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-2">
+            <label className="block text-xs font-medium text-ink-500 mb-2">
               {t('accounts', 'labelColor')}
               {COLORS.find(c => c.value === form.color) && (
-                <span className="ml-2 font-normal text-slate-400">
+                <span className="ml-2 font-normal text-ink-400">
                   — {isEn ? COLORS.find(c => c.value === form.color)!.labelEn : COLORS.find(c => c.value === form.color)!.labelTr}
                 </span>
               )}
@@ -125,16 +125,16 @@ function AccountModal({
                   className="w-10 h-10 rounded-full border-2 transition-all"
                   style={{
                     backgroundColor: c.value,
-                    borderColor: form.color === c.value ? '#1e293b' : 'transparent',
+                    borderColor: form.color === c.value ? '#342E28' : 'transparent',
                     transform: form.color === c.value ? 'scale(1.2)' : 'scale(1)',
                   }} />
               ))}
             </div>
           </div>
           <div className="flex gap-3 pt-1">
-            <button onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">{t('common', 'cancel')}</button>
+            <button onClick={onClose} className="flex-1 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">{t('common', 'cancel')}</button>
             <button onClick={handleSave} disabled={saving || !form.name.trim()}
-              className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
+              className="flex-1 py-2 bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {t('common', 'save')}
             </button>
           </div>
@@ -158,23 +158,23 @@ function AccountCard({ account, onEdit, onDelete, t }: { account: Account; onEdi
   const formatted = account.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <div ref={ref} className="relative bg-white rounded-xl shadow-sm border-l-4 p-4 cursor-pointer hover:shadow-md transition-shadow"
+    <div ref={ref} className="relative bg-white rounded-xl shadow-card border-l-4 p-4 cursor-pointer hover:shadow-md transition-shadow-card"
       style={{ borderLeftColor: account.color }}
       onClick={() => router.push(`/accounts/${account.id}`)}>
-      <p className="text-sm font-semibold text-slate-700 truncate">{account.name}</p>
+      <p className="text-sm font-semibold text-ink-700 truncate">{account.name}</p>
       <p className="text-base font-bold mt-1" style={{ color: account.color }}>
         {account.currency} {formatted}
       </p>
       <div className="absolute right-2 top-2">
         <button
           onClick={(e) => { e.stopPropagation(); setShowMenu(s => !s); }}
-          className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600">
+          className="p-1 rounded hover:bg-ink-100 text-ink-400 hover:text-ink-600">
           <ChevronDown className="w-4 h-4" />
         </button>
         {showMenu && (
-          <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 py-1 min-w-[120px]">
+          <div className="absolute right-0 top-full mt-1 bg-white border border-ink-200 rounded-lg shadow-lg z-10 py-1 min-w-[120px]">
             <button onClick={(e) => { e.stopPropagation(); onEdit(); setShowMenu(false); }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-ink-700 hover:bg-ink-50">
               <Pencil className="w-3.5 h-3.5" /> {t('common', 'edit')}
             </button>
             <button onClick={(e) => { e.stopPropagation(); onDelete(); setShowMenu(false); }}
@@ -253,20 +253,20 @@ export default function AccountsPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">{t('accounts', 'title')}</h1>
-            <p className="text-slate-500 text-sm">{accounts.length} {isEn ? 'accounts' : 'hesap'}</p>
+            <h1 className="page-title">{t('accounts', 'title')}</h1>
+            <p className="text-ink-500 text-sm">{accounts.length} {isEn ? 'accounts' : 'hesap'}</p>
           </div>
           <div ref={dropRef} className="relative">
             <button onClick={() => setDropdownOpen(d => !d)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm">
+              className="flex items-center gap-2 px-4 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium transition-colors shadow-sm">
               <Plus className="w-4 h-4" /> {t('accounts', 'newAccount')} <ChevronDown className="w-4 h-4" />
             </button>
             {dropdownOpen && (
-              <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-20 py-1 min-w-[180px]">
+              <div className="absolute right-0 top-full mt-1 bg-white border border-ink-200 rounded-xl shadow-lg z-20 py-1 min-w-[180px]">
                 {ACCOUNT_TYPES.map(tp => (
                   <button key={tp} onClick={() => openAdd(tp)}
-                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 text-left">
-                    <Landmark className="w-4 h-4 text-slate-400" /> {tp} {t('accounts', 'add')}
+                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50 text-left">
+                    <Landmark className="w-4 h-4 text-ink-400" /> {tp} {t('accounts', 'add')}
                   </button>
                 ))}
               </div>
@@ -275,7 +275,7 @@ export default function AccountsPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+          <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>
         ) : (
           <div className="space-y-8">
             {sections.map(({ type, label }) => {
@@ -285,8 +285,8 @@ export default function AccountsPage() {
               return (
                 <div key={type}>
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</h2>
-                    {totals && <span className="text-xs text-slate-500 font-medium">{totals}</span>}
+                    <h2 className="text-xs font-bold text-ink-500 uppercase tracking-widest">{label}</h2>
+                    {totals && <span className="text-xs text-ink-500 font-medium">{totals}</span>}
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {items.map(a => (
@@ -299,37 +299,37 @@ export default function AccountsPage() {
               );
             })}
             {accounts.length === 0 && (
-              <div className="text-center py-20 bg-white rounded-xl shadow-sm">
-                <Landmark className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-400">{t('accounts', 'empty')}</p>
-                <p className="text-sm text-slate-400 mt-1">{t('accounts', 'emptyHint')}</p>
+              <div className="text-center py-20 bg-white rounded-xl shadow-card border border-ink-200/80">
+                <Landmark className="w-12 h-12 text-ink-300 mx-auto mb-3" />
+                <p className="text-ink-400">{t('accounts', 'empty')}</p>
+                <p className="text-sm text-ink-400 mt-1">{t('accounts', 'emptyHint')}</p>
               </div>
             )}
           </div>
         )}
 
         {/* Payments collapsible */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
         <button
           onClick={togglePayments}
-          className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors"
+          className="w-full flex items-center justify-between px-5 py-4 hover:bg-ink-50 transition-colors"
         >
-          <span className="flex items-center gap-2 font-semibold text-slate-700">
-            <CreditCard className="w-4 h-4 text-slate-400" /> Ödemeler
+          <span className="flex items-center gap-2 font-semibold text-ink-700">
+            <CreditCard className="w-4 h-4 text-ink-400" /> Ödemeler
           </span>
-          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${paymentsOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-4 h-4 text-ink-400 transition-transform ${paymentsOpen ? 'rotate-180' : ''}`} />
         </button>
         {paymentsOpen && (
-          <div className="border-t border-slate-100">
+          <div className="border-t border-ink-100">
             {paymentsLoading ? (
-              <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
+              <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-brand-700" /></div>
             ) : payments.length === 0 ? (
-              <div className="text-center py-10 text-slate-400 text-sm">Henüz ödeme yok</div>
+              <div className="text-center py-10 text-ink-400 text-sm">Henüz ödeme yok</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    <tr className="bg-ink-50 border-b text-xs font-semibold text-ink-500 uppercase tracking-wide">
                       <th className="px-4 py-3 text-left">Tarih</th>
                       <th className="px-4 py-3 text-left">Tür</th>
                       <th className="px-4 py-3 text-left">Müşteri / Tedarikçi</th>
@@ -338,13 +338,13 @@ export default function AccountsPage() {
                       <th className="px-4 py-3 text-right">Tutar</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-ink-100">
                     {payments.map((p: any) => (
-                      <tr key={p.id} className="hover:bg-slate-50/50">
-                        <td className="px-4 py-3 text-slate-500">{new Date(p.date).toLocaleDateString('tr-TR')}</td>
+                      <tr key={p.id} className="hover:bg-ink-50/50">
+                        <td className="px-4 py-3 text-ink-500">{new Date(p.date).toLocaleDateString('tr-TR')}</td>
                         <td className="px-4 py-3">
                           {p.type === 'RECEIVED' ? (
-                            <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
+                            <span className="flex items-center gap-1 text-emerald-600 text-xs font-medium">
                               <ArrowDownCircle className="w-3.5 h-3.5" /> Tahsilat
                             </span>
                           ) : (
@@ -353,13 +353,13 @@ export default function AccountsPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-700">{p.customer?.name ?? p.supplier?.name ?? '—'}</td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">{p.invoice?.invoiceNo ?? '—'}</td>
-                        <td className="px-4 py-3 text-slate-500">{p.method}</td>
+                        <td className="px-4 py-3 text-ink-700">{p.customer?.name ?? p.supplier?.name ?? '—'}</td>
+                        <td className="px-4 py-3 text-ink-500 text-xs">{p.invoice?.invoiceNo ?? '—'}</td>
+                        <td className="px-4 py-3 text-ink-500">{p.method}</td>
                         <td className="px-4 py-3 text-right font-semibold">
-                          <span className={p.type === 'RECEIVED' ? 'text-green-600' : 'text-red-500'}>
+                          <span className={p.type === 'RECEIVED' ? 'text-emerald-600' : 'text-red-500'}>
                             {p.type === 'RECEIVED' ? '+' : '-'}{p.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
+                            <span className="text-xs font-normal text-ink-400 ml-1">{p.currency}</span>
                           </span>
                         </td>
                       </tr>
@@ -367,8 +367,8 @@ export default function AccountsPage() {
                   </tbody>
                 </table>
                 {payments.length >= 100 && (
-                  <p className="px-4 py-2.5 text-xs text-slate-500 border-t border-slate-100">
-                    Son 100 hareket gösteriliyor. Tamamı için <Link href="/payments" className="text-blue-600 underline">Ödemeler</Link> sayfasına gidin.
+                  <p className="px-4 py-2.5 text-xs text-ink-500 border-t border-ink-100">
+                    Son 100 hareket gösteriliyor. Tamamı için <Link href="/payments" className="text-brand-700 underline">Ödemeler</Link> sayfasına gidin.
                   </p>
                 )}
               </div>
@@ -391,18 +391,18 @@ export default function AccountsPage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-ink-600 whitespace-pre-line">{confirmModal.message}</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg text-sm hover:bg-ink-50">İptal</button>
               <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>
           </div>

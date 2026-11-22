@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, CheckCheck, Loader2 } from 'lucide-react';
+import { Bell, CheckCheck, Loader2 } from '@/app/components/icons';
 import { webUrlOf } from '@/lib/notification-link';
 import { markRead, NotificationRows, type NotificationItem } from './notification-bell';
 
@@ -51,18 +51,18 @@ export default function NotificationList({ portal, texts }: { portal: boolean; t
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Bell className="w-5 h-5" /> {texts.title}</h1>
+        <h1 className="page-title flex items-center gap-2"><Bell className="w-5 h-5" /> {texts.title}</h1>
         {unread > 0 && (
-          <button onClick={markAll} className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700" data-testid="notifications-mark-all">
+          <button onClick={markAll} className="flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-800" data-testid="notifications-mark-all">
             <CheckCheck className="w-4 h-4" /> {texts.markAll}
           </button>
         )}
       </div>
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden" data-testid="notification-list">
+      <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80" data-testid="notification-list">
         {items === null ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+          <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-ink-400" /></div>
         ) : items.length === 0 ? (
-          <p className="text-center text-sm text-slate-400 py-12">{texts.empty}</p>
+          <p className="text-center text-sm text-ink-400 py-12">{texts.empty}</p>
         ) : (
           <NotificationRows items={items} onClick={open} />
         )}
@@ -70,7 +70,7 @@ export default function NotificationList({ portal, texts }: { portal: boolean; t
       {cursor && (
         <div className="flex justify-center">
           <button onClick={() => load(cursor)} disabled={busy}
-            className="px-4 py-2 rounded-lg bg-white border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+            className="px-4 py-2 rounded-lg bg-white border border-ink-200 text-sm font-medium text-ink-600 hover:bg-ink-50 disabled:opacity-50">
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : texts.more}
           </button>
         </div>

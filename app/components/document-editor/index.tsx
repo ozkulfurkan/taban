@@ -3,7 +3,7 @@
 import { isPairUnit } from '@/lib/order-units';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Pencil, Trash2, AlertTriangle, X, ChevronDown, Info } from 'lucide-react';
+import { Plus, Pencil, Trash2, AlertTriangle, X, ChevronDown, Info } from '@/app/components/icons';
 import { matchesText } from '@/lib/search';
 import { fmtQty } from '@/lib/stock-display';
 import { fromPriceInput, toPriceInput } from '@/lib/price-input';
@@ -225,8 +225,8 @@ export default function DocumentEditor({
   };
 
   const partyLabel = isPurchase ? tx('supplier') : tx('customer');
-  const input = `w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 ${a.ring}`;
-  const label = 'block text-xs font-medium text-slate-500 mb-1';
+  const input = `w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 ${a.ring}`;
+  const label = 'block text-xs font-medium text-ink-500 mb-1';
   const showDiscountCol = lines.some(l => fromPriceInput(l.discount || '0') > 0);
 
   return (
@@ -246,7 +246,7 @@ export default function DocumentEditor({
           prefix={header.partyId ? (isPurchase ? tx('supplier') : tx('customer')) : undefined}
           label={header.partyId ? party?.name ?? '…' : isPurchase ? tx('purchasesList') : tx('salesList')}
         />
-        <h1 className="text-lg font-bold text-slate-800 truncate">{title}</h1>
+        <h1 className="page-title truncate">{title}</h1>
       </div>
 
       {notice && (
@@ -257,7 +257,7 @@ export default function DocumentEditor({
 
       <div className="flex gap-4 items-start flex-col lg:flex-row">
         {/* SOL: belge bilgileri */}
-        <section className="w-full lg:w-[340px] lg:flex-shrink-0 bg-white rounded-xl shadow-sm overflow-hidden" aria-label={title}>
+        <section className="w-full lg:w-[340px] lg:flex-shrink-0 bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80" aria-label={title}>
           <div className={`${a.head} px-4 py-3`}>
             <p className="text-white font-semibold text-sm truncate">{party?.name || (isPurchase ? tx('noSupplier') : tx('noCustomer'))}</p>
           </div>
@@ -265,7 +265,7 @@ export default function DocumentEditor({
             <div>
               <label className={label} htmlFor="doc-party">{partyLabel} *</label>
               {lockedPartyId || mode === 'edit' ? (
-                <div className="px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg text-sm text-slate-700 font-medium">{party?.name ?? '…'}</div>
+                <div className="px-3 py-2 border border-ink-200 bg-ink-50 rounded-lg text-sm text-ink-700 font-medium">{party?.name ?? '…'}</div>
               ) : (
                 <select id="doc-party" value={header.partyId}
                   onChange={e => { setField('partyId', e.target.value); setErrors(x => ({ ...x, party: undefined })); }}
@@ -283,7 +283,7 @@ export default function DocumentEditor({
             {infoRows.map(r => (
               <div key={r.label}>
                 <span className={label}>{r.label}</span>
-                <div className="px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg text-sm text-slate-700 font-medium">{r.value}</div>
+                <div className="px-3 py-2 border border-ink-200 bg-ink-50 rounded-lg text-sm text-ink-700 font-medium">{r.value}</div>
               </div>
             ))}
             <div className="grid grid-cols-2 gap-2">
@@ -294,7 +294,7 @@ export default function DocumentEditor({
               <div>
                 <label className={label} htmlFor="doc-currency">{tx('currency')}</label>
                 {party || mode === 'edit' ? (
-                  <div className="px-3 py-2 border border-slate-200 bg-slate-50 rounded-lg text-sm font-semibold text-slate-700" title={tx('partyCurrency')}>{header.currency}</div>
+                  <div className="px-3 py-2 border border-ink-200 bg-ink-50 rounded-lg text-sm font-semibold text-ink-700" title={tx('partyCurrency')}>{header.currency}</div>
                 ) : (
                   <select id="doc-currency" value={header.currency} onChange={e => setField('currency', e.target.value)} className={`${input} bg-white`}>
                     {CURRENCIES.map(c => <option key={c}>{c}</option>)}
@@ -352,9 +352,9 @@ export default function DocumentEditor({
         </section>
 
         {/* SAĞ: kalemler */}
-        <section className="flex-1 min-w-0 w-full bg-white rounded-xl shadow-sm overflow-hidden" aria-label={tx('lines')}>
-          <div className="bg-slate-700 px-4 py-3">
-            <p className="text-white font-semibold text-sm uppercase tracking-wide">{tx('lines')}</p>
+        <section className="flex-1 min-w-0 w-full bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80" aria-label={tx('lines')}>
+          <div className="bg-ink-50 border-b border-ink-200 px-4 py-3">
+            <p className="section-title">{tx('lines')}</p>
           </div>
           <div className="p-4 space-y-4">
             <div className="relative">
@@ -376,28 +376,28 @@ export default function DocumentEditor({
                 }}
                 placeholder={isPurchase ? tx('searchProductsMaterials') : tx('searchProducts')}
                 aria-label={isPurchase ? tx('searchProductsMaterials') : tx('searchProducts')}
-                className={`w-full px-3 py-2.5 border-2 border-slate-200 ${a.border} rounded-lg text-sm outline-none`}
+                className={`w-full px-3 py-2.5 border-2 border-ink-200 ${a.border} rounded-lg text-sm outline-none`}
               />
               {showResults && search.trim().length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto" role="listbox">
+                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-ink-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto" role="listbox">
                   {search.trim().length < 2 ? (
-                    <div className="px-4 py-3 text-sm text-slate-400">{tx('typeMore')}</div>
+                    <div className="px-4 py-3 text-sm text-ink-400">{tx('typeMore')}</div>
                   ) : results.length === 0 ? (
-                    <div className="px-4 py-3 text-sm text-slate-400">{tx('noResults')}</div>
+                    <div className="px-4 py-3 text-sm text-ink-400">{tx('noResults')}</div>
                   ) : results.map((r, idx) => (
                     <button key={`${r.type}-${r.ref.id}`} type="button" role="option" aria-selected={idx === highlight}
                       onMouseDown={() => openFromCatalog(r.type, r.ref)} onMouseEnter={() => setHighlight(idx)}
-                      className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-sm text-left ${idx === highlight ? `${a.soft}` : 'hover:bg-slate-50'}`}>
+                      className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-sm text-left ${idx === highlight ? `${a.soft}` : 'hover:bg-ink-50'}`}>
                       <span className="min-w-0 truncate">
                         {isPurchase && (
-                          <span className={`mr-2 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${r.type === 'material' ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'}`}>
+                          <span className={`mr-2 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${r.type === 'material' ? 'bg-amber-100 text-amber-700' : 'bg-brand-100 text-brand-800'}`}>
                             {r.type === 'material' ? tx('material') : tx('product')}
                           </span>
                         )}
-                        <span className="font-medium text-slate-800">{r.ref.name}</span>
-                        {r.ref.code && <span className="ml-1.5 text-xs text-slate-400">{r.ref.code}</span>}
+                        <span className="font-medium text-ink-800">{r.ref.name}</span>
+                        {r.ref.code && <span className="ml-1.5 text-xs text-ink-400">{r.ref.code}</span>}
                       </span>
-                      <span className="text-xs text-slate-400 flex-shrink-0 tabular-nums">
+                      <span className="text-xs text-ink-400 flex-shrink-0 tabular-nums">
                         {fmtQty(r.ref.stock ?? 0)} {r.type === 'material' ? 'kg' : r.ref.unit ?? ''}
                       </span>
                     </button>
@@ -410,13 +410,13 @@ export default function DocumentEditor({
               <button type="button" onClick={openManual} className={`flex items-center gap-1.5 text-sm font-medium ${a.text}`}>
                 <Plus className="w-4 h-4" /> {tx('manualLine')}
               </button>
-              <button type="button" onClick={() => setQuickAdd(true)} className="flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-800">
+              <button type="button" onClick={() => setQuickAdd(true)} className="flex items-center gap-1.5 text-sm font-medium text-ink-600 hover:text-ink-800">
                 <Plus className="w-4 h-4" /> {isPurchase ? tx('quickAddItem') : tx('quickAddProduct')}
               </button>
             </div>
 
             {lines.length === 0 ? (
-              <div className={`text-center py-10 border-2 border-dashed rounded-xl text-sm ${errors.lines ? 'border-red-300 bg-red-50 text-red-500' : 'border-slate-200 text-slate-400'}`}>
+              <div className={`text-center py-10 border-2 border-dashed rounded-xl text-sm ${errors.lines ? 'border-red-300 bg-red-50 text-red-500' : 'border-ink-200 text-ink-400'}`}>
                 {errors.lines ? <span className="inline-flex items-center gap-1.5"><AlertTriangle className="w-4 h-4" />{errors.lines}</span>
                   : isPurchase ? tx('emptyLinesPurchase') : tx('emptyLines')}
               </div>
@@ -426,7 +426,7 @@ export default function DocumentEditor({
                 <div className="hidden sm:block overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-xs text-slate-500 font-medium border-b">
+                      <tr className="text-xs text-ink-500 font-medium border-b">
                         <th className="text-left pb-2">{tx('item')}</th>
                         <th className="text-right pb-2 px-2 w-24">{tx('qty')}</th>
                         <th className="text-right pb-2 px-2 w-28">{tx('unitPrice')}</th>
@@ -435,18 +435,18 @@ export default function DocumentEditor({
                         <th className="w-16"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-ink-100">
                       {lines.map((l, i) => (
-                        <tr key={l.key} className="hover:bg-slate-50/50 cursor-pointer" onClick={() => setLineModal({ index: i, line: l })}>
+                        <tr key={l.key} className="hover:bg-ink-50/50 cursor-pointer" onClick={() => setLineModal({ index: i, line: l })}>
                           <td className="py-2 pr-2"><LineName l={l} kind={kind} products={products} tx={tx} /></td>
-                          <td className="py-2 px-2 text-right text-slate-600 whitespace-nowrap tabular-nums">{fmtQty(fromPriceInput(l.quantity))}{l.itemType === 'material' ? ' kg' : ''}</td>
-                          <td className="py-2 px-2 text-right text-slate-600 whitespace-nowrap tabular-nums">{fmtMoney(fromPriceInput(l.unitPrice))}</td>
-                          {showDiscountCol && <td className="py-2 px-2 text-right text-slate-500">{fromPriceInput(l.discount) > 0 ? `%${l.discount}` : '—'}</td>}
-                          <td className="py-2 text-right font-semibold text-slate-800 whitespace-nowrap tabular-nums">{fmtMoney(lineNet(l))}</td>
+                          <td className="py-2 px-2 text-right text-ink-600 whitespace-nowrap tabular-nums">{fmtQty(fromPriceInput(l.quantity))}{l.itemType === 'material' ? ' kg' : ''}</td>
+                          <td className="py-2 px-2 text-right text-ink-600 whitespace-nowrap tabular-nums">{fmtMoney(fromPriceInput(l.unitPrice))}</td>
+                          {showDiscountCol && <td className="py-2 px-2 text-right text-ink-500">{fromPriceInput(l.discount) > 0 ? `%${l.discount}` : '—'}</td>}
+                          <td className="py-2 text-right font-semibold text-ink-800 whitespace-nowrap tabular-nums">{fmtMoney(lineNet(l))}</td>
                           <td className="py-2 pl-2" onClick={e => e.stopPropagation()}>
                             <div className="flex items-center gap-1 justify-end">
-                              <button type="button" onClick={() => setLineModal({ index: i, line: l })} aria-label={tx('edit')} title={tx('edit')} className="p-1.5 text-slate-400 hover:text-slate-700 rounded"><Pencil className="w-3.5 h-3.5" /></button>
-                              <button type="button" onClick={() => removeLine(i)} aria-label={tx('remove')} title={tx('remove')} className="p-1.5 text-slate-400 hover:text-red-500 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
+                              <button type="button" onClick={() => setLineModal({ index: i, line: l })} aria-label={tx('edit')} title={tx('edit')} className="p-1.5 text-ink-400 hover:text-ink-700 rounded"><Pencil className="w-3.5 h-3.5" /></button>
+                              <button type="button" onClick={() => removeLine(i)} aria-label={tx('remove')} title={tx('remove')} className="p-1.5 text-ink-400 hover:text-red-500 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
                             </div>
                           </td>
                         </tr>
@@ -457,18 +457,18 @@ export default function DocumentEditor({
                 {/* Telefon: kartlar */}
                 <ul className="sm:hidden space-y-2">
                   {lines.map((l, i) => (
-                    <li key={l.key} className="border border-slate-200 rounded-lg p-3">
+                    <li key={l.key} className="border border-ink-200 rounded-lg p-3">
                       <div className="flex items-start justify-between gap-2">
                         <button type="button" className="min-w-0 text-left flex-1" onClick={() => setLineModal({ index: i, line: l })}>
                           <LineName l={l} kind={kind} products={products} tx={tx} />
-                          <p className="text-xs text-slate-500 mt-1 tabular-nums">
+                          <p className="text-xs text-ink-500 mt-1 tabular-nums">
                             {fmtQty(fromPriceInput(l.quantity))}{l.itemType === 'material' ? ' kg' : ''} × {fmtMoney(fromPriceInput(l.unitPrice))}
                             {fromPriceInput(l.discount) > 0 ? ` · %${l.discount}` : ''}
                           </p>
                         </button>
                         <div className="text-right flex-shrink-0">
-                          <p className="font-semibold text-slate-800 tabular-nums">{fmtMoney(lineNet(l))}</p>
-                          <button type="button" onClick={() => removeLine(i)} aria-label={tx('remove')} className="mt-1 p-1 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                          <p className="font-semibold text-ink-800 tabular-nums">{fmtMoney(lineNet(l))}</p>
+                          <button type="button" onClick={() => removeLine(i)} aria-label={tx('remove')} className="mt-1 p-1 text-ink-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                         </div>
                       </div>
                     </li>
@@ -481,20 +481,20 @@ export default function DocumentEditor({
               <div className="border-t pt-4 space-y-2">
                 {!isPurchase && (
                   <div className="flex items-center justify-between">
-                    <label className="text-sm text-slate-500" htmlFor="doc-vat">{tx('vatRate')}</label>
+                    <label className="text-sm text-ink-500" htmlFor="doc-vat">{tx('vatRate')}</label>
                     <select id="doc-vat" value={header.vatRate} onChange={e => setField('vatRate', e.target.value)}
-                      className={`px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white w-24 outline-none focus:ring-2 ${a.ring}`}>
+                      className={`px-3 py-1.5 border border-ink-200 rounded-lg text-sm bg-white w-24 outline-none focus:ring-2 ${a.ring}`}>
                       {Array.from(new Set([...VAT_RATES, String(parseFloat(header.vatRate) || 0)])).map(r => <option key={r} value={r}>%{r}</option>)}
                     </select>
                   </div>
                 )}
                 {!isPurchase && (
-                  <div className="flex justify-between text-sm text-slate-600"><span>{tx('subtotal')}</span><span className="tabular-nums">{fmtMoney(totals.subtotal)} {header.currency}</span></div>
+                  <div className="flex justify-between text-sm text-ink-600"><span>{tx('subtotal')}</span><span className="tabular-nums">{fmtMoney(totals.subtotal)} {header.currency}</span></div>
                 )}
                 {vatRate > 0 && (
-                  <div className="flex justify-between text-sm text-slate-600"><span>{tx('vat')} (%{vatRate})</span><span className="tabular-nums">{fmtMoney(totals.vatAmount)} {header.currency}</span></div>
+                  <div className="flex justify-between text-sm text-ink-600"><span>{tx('vat')} (%{vatRate})</span><span className="tabular-nums">{fmtMoney(totals.vatAmount)} {header.currency}</span></div>
                 )}
-                <div className={`flex justify-between text-base font-bold text-slate-800 ${isPurchase ? '' : 'border-t pt-2'}`}>
+                <div className={`flex justify-between text-base font-bold text-ink-800 ${isPurchase ? '' : 'border-t pt-2'}`}>
                   <span>{tx('grandTotal')}</span><span className="tabular-nums">{fmtMoney(totals.total)} {header.currency}</span>
                 </div>
               </div>
@@ -544,9 +544,9 @@ function LineName({ l, kind, products, tx }: { l: DocLine; kind: DocKind; produc
   const product = l.productId ? products.find(p => p.id === l.productId) : null;
   return (
     <div className="min-w-0">
-      <p className="font-medium text-slate-800 truncate">
+      <p className="font-medium text-ink-800 truncate">
         {isPurchaseKind(kind) && (
-          <span className={`mr-1.5 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded align-middle ${l.itemType === 'material' ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'}`}>
+          <span className={`mr-1.5 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded align-middle ${l.itemType === 'material' ? 'bg-amber-100 text-amber-700' : 'bg-brand-100 text-brand-800'}`}>
             {l.itemType === 'material' ? tx('material') : tx('product')}
           </span>
         )}
@@ -554,10 +554,10 @@ function LineName({ l, kind, products, tx }: { l: DocLine; kind: DocKind; produc
       </p>
       {kind === 'sale' && product && (
         (product.parts ?? []).length
-          ? <p className="text-xs text-purple-600 truncate">{product.parts.map((p: any) => p.name).join(', ')}</p>
+          ? <p className="text-xs text-brand-700 truncate">{product.parts.map((p: any) => p.name).join(', ')}</p>
           : isPairUnit(product.unit) ? <p className="text-xs text-amber-600">⚠ {tx('noPartsShort')}</p> : null
       )}
-      {l.notes && <p className="text-xs text-slate-400 truncate">{l.notes}</p>}
+      {l.notes && <p className="text-xs text-ink-400 truncate">{l.notes}</p>}
     </div>
   );
 }

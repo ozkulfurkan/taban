@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/app/components/icons';
 import AppShell from '@/app/components/app-shell';
 import BackLink from '@/app/components/back-link';
 import { SharedStatement } from '@/app/components/shared-statement';
@@ -32,14 +32,14 @@ export function LinkStatementPage({ kind, partyId }: { kind: 'supplier' | 'custo
       <div className="space-y-4">
         <BackLink href={back} label={kind === 'supplier' ? 'Tedarikçi' : 'Müşteri'} />
         {link === undefined ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+          <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-ink-400" /></div>
         ) : !link || link.status !== 'ACTIVE' ? (
-          <div className="bg-white rounded-xl p-8 text-center text-slate-500 shadow-sm" data-testid="link-statement-none">
+          <div className="bg-white rounded-xl p-8 text-center text-ink-500 shadow-card border border-ink-200/80" data-testid="link-statement-none">
             Bu cariyle onaylı bir SoleCost bağlantısı yok.
           </div>
         ) : (
           <>
-            <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-800">
+            <div className="bg-brand-50 border border-brand-100 rounded-xl px-4 py-3 text-sm text-brand-900">
               <b>{link.name}</b> firmasının sizin için tuttuğu hesap ekstresi. Kendi kayıtlarınızla karşılaştırarak mutabakat yapabilirsiniz.
             </div>
             <SharedStatement

@@ -28,9 +28,9 @@ export default function OrderStepper({ status, unit }: { status: string; unit?: 
             <div key={step.key} className="flex items-center">
               <div className="flex flex-col items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${
-                  done ? 'bg-blue-600 border-blue-600 text-white' :
-                  active ? 'bg-white border-blue-600 text-blue-600' :
-                  'bg-white border-slate-300 text-slate-400'
+                  done ? 'bg-brand-700 border-brand-700 text-white' :
+                  active ? 'bg-white border-brand-700 text-brand-700' :
+                  'bg-white border-ink-300 text-ink-400'
                 }`}>
                   {done ? (
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,11 +39,11 @@ export default function OrderStepper({ status, unit }: { status: string; unit?: 
                   ) : i + 1}
                 </div>
                 <span className={`mt-1.5 text-xs font-medium whitespace-nowrap ${
-                  active ? 'text-blue-600' : done ? 'text-slate-600' : 'text-slate-400'
+                  active ? 'text-brand-700' : done ? 'text-ink-600' : 'text-ink-400'
                 }`}>{tp(step.label)}</span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`h-0.5 w-10 mx-1 mb-5 transition-all ${i < currentIdx ? 'bg-blue-600' : 'bg-slate-200'}`} />
+                <div className={`h-0.5 w-10 mx-1 mb-5 transition-all ${i < currentIdx ? 'bg-brand-700' : 'bg-ink-200'}`} />
               )}
             </div>
           );

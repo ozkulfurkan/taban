@@ -1,10 +1,11 @@
 'use client';
+import { AuthShell } from '@/app/components/auth-shell';
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AccountChooser, fetchPortalAccounts, portalHome, type PortalAccountChoice } from '@/app/portal/components/account-chooser';
-import { Loader2, Eye, EyeOff, Factory } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Factory } from '@/app/components/icons';
 
 export default function FasonLoginPage() {
   const router = useRouter();
@@ -67,26 +68,21 @@ export default function FasonLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-slate-900 to-amber-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-orange-600 rounded-2xl mb-4 shadow-lg shadow-orange-600/30">
-            <Factory className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">Fasoncu Portalı</h1>
-          <p className="text-orange-300 text-sm mt-1">SoleCost Üretim Takip Sistemi</p>
-        </div>
-
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/10">
-          <h2 className="text-lg font-semibold text-white mb-5">Giriş Yap</h2>
+    <AuthShell
+      title="Fasoncu Portalı"
+      subtitle="SoleCost Üretim Takip Sistemi"
+      panelTitle={<>Fason işleriniz,<br /><em className="italic font-normal text-[#EBC8CE]">tek ekranda.</em></>}
+      panelPoints={['Gelen fason siparişlerini görün', 'Malzeme ve stok hareketlerini takip edin', 'Teslimatları kaydedin']}
+    >
+        <div>
 
           {verified && (
-            <div className="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-lg text-green-200 text-sm">
+            <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-sm">
               E-posta adresiniz doğrulandı. Giriş yapabilirsiniz.
             </div>
           )}
           {error && (
-            <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-sm">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
               {error}
             </div>
           )}
@@ -105,31 +101,30 @@ export default function FasonLoginPage() {
           ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-orange-200 mb-1.5">E-posta</label>
+                <label className="block text-sm font-medium text-amber-200 mb-1.5">E-posta</label>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                  className="w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white placeholder-orange-300/50 focus:ring-2 focus:ring-orange-500 outline-none"
+                  className="input py-2.5 text-[15px]"
                   placeholder="email@firma.com" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-orange-200 mb-1.5">Şifre</label>
+                <label className="block text-sm font-medium text-amber-200 mb-1.5">Şifre</label>
                 <div className="relative">
                   <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required
-                    className="w-full px-3 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white placeholder-orange-300/50 focus:ring-2 focus:ring-orange-500 outline-none pr-10" />
+                    className="input py-2.5 text-[15px] pr-10" />
                   <button type="button" onClick={() => setShowPass(p => !p)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-300">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-500">
                     {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
               <button type="submit" disabled={loading}
-                className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                className="w-full py-2.5 bg-brand-700 hover:bg-brand-800 disabled:opacity-60 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 Giriş Yap
               </button>
             </form>
           )}
         </div>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

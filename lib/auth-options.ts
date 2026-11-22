@@ -75,7 +75,7 @@ export async function authorizePortalCustomer(credentials: Record<string, string
       subject: 'Portal - E-posta adresinizi doğrulayın',
       html: `<p>Merhaba ${esc(portalCustomer.name ?? portalCustomer.email)},</p>
         <p>Giriş yapabilmek için e-posta adresinizi doğrulayın:</p>
-        <p><a href="${verifyUrl}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>`,
+        <p><a href="${verifyUrl}" style="background:#6B1A2C;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>`,
       text: `Doğrulama linki: ${verifyUrl}`,
     });
     throw new Error('EMAIL_NOT_VERIFIED');
@@ -133,7 +133,7 @@ export async function authorizeStaff(credentials: Record<string, string> | undef
         html: `
           <p>Merhaba ${user.name ?? user.email},</p>
           <p>Hesabınıza giriş yapmak için e-posta adresinizi doğrulamanız gerekmektedir.</p>
-          <p><a href="${verifyUrl}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
+          <p><a href="${verifyUrl}" style="background:#6B1A2C;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
           <p>Butona tıklayamıyorsanız şu bağlantıyı kopyalayın: ${verifyUrl}</p>
         `,
         text: `E-postanızı doğrulamak için: ${verifyUrl}`,
