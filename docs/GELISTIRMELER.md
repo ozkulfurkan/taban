@@ -1,5 +1,7 @@
 # Yeni geliştirmeler
 
+Mobil derleme sayacı: [DERLEME.md](DERLEME.md) (10 mobil işte bir derleme).
+
 "Yeni geliştirme" olarak istenenler burada toplanır. Liste gözden geçirilip "başla" denince seçilen maddeler yapılır.
 Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büyüklük: **S** (birkaç saat) · **M** (bir gün) · **L** (birkaç gün).
 
@@ -10,6 +12,7 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 | G-3 | Hammadde siparişinde renk yerine shore seçimi (Yumuşak / Standart / Sert) | Web + mobil + API | M | Tamamlandı [#40](https://github.com/ozkulfurkan/taban/pull/40) |
 | G-4 | Shore değeri elle girilebilsin (örn. 65), "±2 shore oynayabilir" notu | Web + mobil + API | S | Tamamlandı [#40](https://github.com/ozkulfurkan/taban/pull/40) |
 | G-5 | Mobilde ürünleri portalda göster/gizle (tekli ve çoklu); daha önce alınanlar üstte | Web + mobil + API | M | Tamamlandı [#39](https://github.com/ozkulfurkan/taban/pull/39) |
+| G-6 | Web ve mobilde bildirim kutusu (geçmiş bildirimler) | Web + mobil + API | M | Tamamlandı [#41](https://github.com/ozkulfurkan/taban/pull/41) |
 
 ---
 

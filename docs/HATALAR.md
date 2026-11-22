@@ -1,5 +1,7 @@
 # Hatalar
 
+Mobil derleme sayacı: [DERLEME.md](DERLEME.md) (10 mobil işte bir derleme).
+
 Bildirilen hatalar burada toplanır. Durum: **Bekliyor** → **Yapılıyor** → **Düzeltildi** (PR linkiyle).
 Öncelik: **Acil** (iş durduruyor) · **Normal** · **Düşük**.
 
