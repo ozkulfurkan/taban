@@ -8,11 +8,13 @@ mobil uygulamayı etkileyen **10 iş** (hata düzeltmesi ya da yeni geliştirme)
 - Yalnızca web'i etkileyen işler sayılmaz; onlar Vercel'e anında gider.
 - Her derlemeden sonra sayaç sıfırlanır ve aşağıya not edilir.
 
-## Derleme bekleyen mobil işler: 1 / 10
+## Derleme bekleyen mobil işler: 3 / 10
 
 | İş | Açıklama | PR |
 | --- | --- | --- |
 | G-6 | Bildirim kutusu (zil, Bildirimler ekranı) | [#41](https://github.com/ozkulfurkan/taban/pull/41) |
+| — | Giriş/karşılama alt yazısı: ayakkabı sektörü | [#43](https://github.com/ozkulfurkan/taban/pull/43) |
+| — | Android: ekran yönü ve Wi-Fi donanım özellikleri isteğe bağlı (Play uyarısı) | [#44](https://github.com/ozkulfurkan/taban/pull/44) |
 
 Not: İlk Android derlemesi (Google Play dahili test, [#42](https://github.com/ozkulfurkan/taban/pull/42)) sayaçtan bağımsız yapılır; o derleme yukarıdaki işleri de Android'e getirir.
 
