@@ -33,7 +33,8 @@ export default function PrivacyPage() {
             <li><b>Firma bilgileri:</b> unvan, adres, vergi numarası, telefon, logo.</li>
             <li><b>İşlem kayıtları:</b> firmanın girdiği cari, fatura, ödeme, çek, stok, sipariş ve personel kayıtları.</li>
             <li><b>Güvenlik kayıtları:</b> giriş denemeleri, IP adresi, işlem günlükleri.</li>
-            <li><b>Mobil uygulama:</b> kamera yalnızca barkod okurken kullanılır, görüntü saklanmaz ve gönderilmez.
+            <li><b>Ürün fotoğrafları:</b> firmanın ürün kartına eklediği fotoğraflar (katalog ve sipariş ekranlarında gösterilir).</li>
+            <li><b>Mobil uygulama:</b> kamera ve fotoğraf arşivi yalnızca ürün fotoğrafı eklerken, siz başlattığınızda kullanılır. Anlık bildirim için cihazın bildirim anahtarı ve gönderilen bildirimlerin listesi saklanır.
               Face ID / parmak izi doğrulaması cihazda yapılır; biyometrik veri bize ulaşmaz.</li>
           </ul>
         </Section>
@@ -48,7 +49,7 @@ export default function PrivacyPage() {
 
         <Section title="4. Aktarım">
           <p>
-            Hizmet; barındırma (Vercel), veritabanı (Neon) ve e-posta gönderimi için hizmet sağlayıcılardan yararlanır.
+            Hizmet; barındırma (Vercel), veritabanı (Neon), e-posta gönderimi ve mobil anlık bildirim (Expo, Apple, Google) için hizmet sağlayıcılardan yararlanır.
             Bu sağlayıcıların sunucuları yurt dışında bulunabileceğinden veriler, KVKK m.9 kapsamındaki güvencelerle yurt dışına aktarılabilir.
             Yetkili kurumların hukuka uygun talepleri dışında başka bir aktarım yapılmaz.
           </p>
@@ -58,7 +59,8 @@ export default function PrivacyPage() {
           <p>
             Veriler hesap süresince ve ilgili mevzuatta öngörülen süreler boyunca saklanır. Hesabın kapatılmasıyla birlikte veriler,
             yasal saklama yükümlülükleri saklı kalmak kaydıyla silinir veya anonim hâle getirilir.
-            Hesap ve veri silme talebinizi <Link href="/destek" className="text-blue-600 underline">destek sayfasından</Link> iletebilirsiniz.
+            Hesabınızı mobil uygulamada Ayarlar → Hesabı sil bölümünden silebilirsiniz; adımlar ve silinen veriler
+            {' '}<Link href="/hesap-silme" className="text-blue-600 underline">hesap silme sayfasında</Link> anlatılır.
           </p>
         </Section>
 

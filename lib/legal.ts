@@ -5,5 +5,5 @@ export const LEGAL = {
   controller: process.env.NEXT_PUBLIC_LEGAL_ENTITY || '',   // veri sorumlusunun ticari unvanı
   address: process.env.NEXT_PUBLIC_LEGAL_ADDRESS || '',
   email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || '',
-  updatedAt: '18.11.2026',
+  updatedAt: '22.11.2026',
 };
