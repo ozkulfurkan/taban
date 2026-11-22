@@ -10,7 +10,7 @@ import {
   CalendarDays, Clock, Upload, X, Loader2,
   CheckCircle2, AlertCircle, FileText, StickyNote, BarChart3,
   ChevronDown, Users, ClipboardList, Trash2, AlertTriangle
-} from 'lucide-react';
+} from '@/app/components/icons';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,17 +46,17 @@ function formatMoney(n: number, currency = 'TRY') {
 }
 
 const ENTRY_COLORS: Record<EntryType, string> = {
-  Maaş: 'bg-blue-100 text-blue-700',
-  Avans: 'bg-orange-100 text-orange-700',
-  Prim: 'bg-green-100 text-green-700',
+  Maaş: 'bg-brand-100 text-brand-800',
+  Avans: 'bg-amber-100 text-amber-700',
+  Prim: 'bg-emerald-100 text-emerald-700',
   Kesinti: 'bg-red-100 text-red-700',
-  İzin: 'bg-purple-100 text-purple-700',
-  Mesai: 'bg-indigo-100 text-indigo-700',
-  Hakediş: 'bg-teal-100 text-teal-700',
-  Diğer: 'bg-gray-100 text-gray-600',
+  İzin: 'bg-brand-100 text-brand-800',
+  Mesai: 'bg-brand-100 text-brand-800',
+  Hakediş: 'bg-brand-100 text-brand-800',
+  Diğer: 'bg-ink-100 text-ink-600',
 };
 
-const inputCls = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none';
+const inputCls = 'w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none';
 
 // ─── Payment Modal (Maaş / Avans — kasa gerekli) ─────────────────────────────
 
@@ -115,27 +115,27 @@ function PaymentModal({ type, emp, empId, onClose, onSave }: {
   };
 
   const ICON_MAP: Record<PaymentModalType, React.ReactNode> = {
-    Maaş: <CreditCard className="w-5 h-5 text-blue-600" />,
-    Avans: <Banknote className="w-5 h-5 text-orange-600" />,
+    Maaş: <CreditCard className="w-5 h-5 text-brand-700" />,
+    Avans: <Banknote className="w-5 h-5 text-amber-600" />,
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
           <div className="flex items-center gap-2">
             {ICON_MAP[type]}
-            <h2 className="text-base font-semibold text-gray-900">{type} Öde</h2>
+            <h2 className="text-base font-semibold text-ink-900">{type} Öde</h2>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+          <button onClick={onClose} className="p-1 hover:bg-ink-100 rounded-lg"><X className="w-5 h-5 text-ink-500" /></button>
         </div>
         <form onSubmit={handle} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tutar ({emp.currency}) *</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tutar ({emp.currency}) *</label>
             <DecimalInput min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Kasa / Banka *</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Kasa / Banka *</label>
             <select className={inputCls} value={accountId} onChange={e => {
               setAccountId(e.target.value);
               setAccountName(accounts.find(a => a.id === e.target.value)?.name || '');
@@ -145,17 +145,17 @@ function PaymentModal({ type, emp, empId, onClose, onSave }: {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Açıklama</label>
             <textarea rows={2} className={inputCls} value={description} onChange={e => setDescription(e.target.value)} placeholder={`${type} açıklaması...`} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tarih</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tarih</label>
             <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-brand-700 text-white rounded-lg text-sm font-medium hover:bg-brand-800 disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}Öde
             </button>
           </div>
@@ -206,32 +206,32 @@ function HakedisModal({ emp, empId, onClose, onSave }: {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
           <div className="flex items-center gap-2">
-            <ClipboardList className="w-5 h-5 text-teal-600" />
-            <h2 className="text-base font-semibold text-gray-900">Hakediş Ekle</h2>
+            <ClipboardList className="w-5 h-5 text-brand-700" />
+            <h2 className="text-base font-semibold text-ink-900">Hakediş Ekle</h2>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+          <button onClick={onClose} className="p-1 hover:bg-ink-100 rounded-lg"><X className="w-5 h-5 text-ink-500" /></button>
         </div>
         <form onSubmit={handle} className="p-6 space-y-4">
-          <p className="text-xs text-gray-500 bg-teal-50 px-3 py-2 rounded-lg">Personeli alacaklandırır. Kasadan para çıkmaz.</p>
+          <p className="text-xs text-ink-500 bg-brand-50 px-3 py-2 rounded-lg">Personeli alacaklandırır. Kasadan para çıkmaz.</p>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tutar ({emp.currency}) *</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tutar ({emp.currency}) *</label>
             <DecimalInput min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Açıklama</label>
             <input className={inputCls} value={description} onChange={e => setDescription(e.target.value)} placeholder="Nisan 2026 hakedişi..." />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tarih</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tarih</label>
             <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-60 flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-brand-700 text-white rounded-lg text-sm font-medium hover:bg-brand-800 disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}Kaydet
             </button>
           </div>
@@ -282,32 +282,32 @@ function PrimModal({ emp, empId, onClose, onSave }: {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-green-600" />
-            <h2 className="text-base font-semibold text-gray-900">Prim Ekle</h2>
+            <TrendingUp className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-base font-semibold text-ink-900">Prim Ekle</h2>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+          <button onClick={onClose} className="p-1 hover:bg-ink-100 rounded-lg"><X className="w-5 h-5 text-ink-500" /></button>
         </div>
         <form onSubmit={handle} className="p-6 space-y-4">
-          <p className="text-xs text-gray-500 bg-green-50 px-3 py-2 rounded-lg">Personeli alacaklandırır. Kasadan para çıkmaz.</p>
+          <p className="text-xs text-ink-500 bg-emerald-50 px-3 py-2 rounded-lg">Personeli alacaklandırır. Kasadan para çıkmaz.</p>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Prim Tutarı ({emp.currency}) *</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Prim Tutarı ({emp.currency}) *</label>
             <DecimalInput min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Açıklama</label>
             <input className={inputCls} value={description} onChange={e => setDescription(e.target.value)} placeholder="Performans primi..." />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tarih</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tarih</label>
             <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60 flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}Kaydet
             </button>
           </div>
@@ -358,31 +358,31 @@ function KesModal({ emp, empId, onClose, onSave }: {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
           <div className="flex items-center gap-2">
             <Scissors className="w-5 h-5 text-red-600" />
-            <h2 className="text-base font-semibold text-gray-900">Kesinti Yap</h2>
+            <h2 className="text-base font-semibold text-ink-900">Kesinti Yap</h2>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+          <button onClick={onClose} className="p-1 hover:bg-ink-100 rounded-lg"><X className="w-5 h-5 text-ink-500" /></button>
         </div>
         <form onSubmit={handle} className="p-6 space-y-4">
-          <p className="text-xs text-gray-500 bg-red-50 px-3 py-2 rounded-lg">Personeli borçlandırır. Kasadan para çıkmaz.</p>
+          <p className="text-xs text-ink-500 bg-red-50 px-3 py-2 rounded-lg">Personeli borçlandırır. Kasadan para çıkmaz.</p>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Kesinti Tutarı ({emp.currency}) *</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Kesinti Tutarı ({emp.currency}) *</label>
             <DecimalInput min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Açıklama</label>
             <input className={inputCls} value={description} onChange={e => setDescription(e.target.value)} placeholder="Kesinti nedeni..." />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tarih</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tarih</label>
             <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
             <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}Kaydet
             </button>
@@ -428,37 +428,37 @@ function LeaveModal({ empId, onClose, onSave }: { empId: string; onClose: () => 
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-2"><CalendarDays className="w-5 h-5 text-purple-600" /><h2 className="text-base font-semibold">İzin Gir</h2></div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
+          <div className="flex items-center gap-2"><CalendarDays className="w-5 h-5 text-brand-700" /><h2 className="text-base font-semibold">İzin Gir</h2></div>
+          <button onClick={onClose} className="p-1 hover:bg-ink-100 rounded-lg"><X className="w-5 h-5 text-ink-500" /></button>
         </div>
         <form onSubmit={handle} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">İzin Türü</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">İzin Türü</label>
             <select className={inputCls} value={form.type} onChange={e => set('type', e.target.value)}>
               {['Yıllık', 'Mazeret', 'Ücretsiz', 'Hastalık'].map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Başlangıç</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Başlangıç</label>
               <input type="date" className={inputCls} value={form.startDate} onChange={e => set('startDate', e.target.value)} required />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Bitiş</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Bitiş</label>
               <input type="date" className={inputCls} value={form.endDate} onChange={e => set('endDate', e.target.value)} required />
             </div>
           </div>
-          {days > 0 && <p className="text-xs text-blue-600 font-medium">{days} iş günü</p>}
+          {days > 0 && <p className="text-xs text-brand-700 font-medium">{days} iş günü</p>}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Açıklama</label>
             <input className={inputCls} value={form.note} onChange={e => set('note', e.target.value)} placeholder="İzin nedeni..." />
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">İptal</button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-60 flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50 transition-colors">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-brand-700 text-white rounded-lg text-sm font-medium hover:bg-brand-800 disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}Kaydet
             </button>
           </div>
@@ -496,34 +496,34 @@ function OvertimeModal({ empId, onClose, onSave }: { empId: string; onClose: () 
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-2"><Clock className="w-5 h-5 text-indigo-600" /><h2 className="text-base font-semibold">Mesai Ekle</h2></div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
+          <div className="flex items-center gap-2"><Clock className="w-5 h-5 text-brand-700" /><h2 className="text-base font-semibold">Mesai Ekle</h2></div>
+          <button onClick={onClose} className="p-1 hover:bg-ink-100 rounded-lg"><X className="w-5 h-5 text-ink-500" /></button>
         </div>
         <form onSubmit={handle} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tarih</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tarih</label>
             <input type="date" className={inputCls} value={form.date} onChange={e => set('date', e.target.value)} required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Saat</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Saat</label>
               <DecimalInput min="0.5" step="0.5" className={inputCls} value={form.hours} onChange={e => set('hours', e.target.value)} placeholder="4" required />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Tutar (TRY)</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Tutar (TRY)</label>
               <DecimalInput min="0" step="0.01" className={inputCls} value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="800" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Açıklama</label>
             <input className={inputCls} value={form.note} onChange={e => set('note', e.target.value)} placeholder="Mesai nedeni..." />
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-60 flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-brand-700 text-white rounded-lg text-sm font-medium hover:bg-brand-800 disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}Kaydet
             </button>
           </div>
@@ -581,31 +581,31 @@ function DocumentModal({ empId, onClose, onSave }: { empId: string; onClose: () 
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-2"><Upload className="w-5 h-5 text-gray-600" /><h2 className="text-base font-semibold">Evrak Yükle</h2></div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
+          <div className="flex items-center gap-2"><Upload className="w-5 h-5 text-ink-600" /><h2 className="text-base font-semibold">Evrak Yükle</h2></div>
+          <button onClick={onClose} className="p-1 hover:bg-ink-100 rounded-lg"><X className="w-5 h-5 text-ink-500" /></button>
         </div>
         <form onSubmit={handle} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Dosya * (max 5 MB)</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Dosya * (max 5 MB)</label>
             <input
               type="file"
               onChange={handleFile}
-              className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer"
+              className="w-full text-sm text-ink-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
             />
-            {file && <p className="text-xs text-gray-400 mt-1">{file.name} · {formatSize(file.size)}</p>}
+            {file && <p className="text-xs text-ink-400 mt-1">{file.name} · {formatSize(file.size)}</p>}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Belge Türü</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Belge Türü</label>
             <select className={inputCls} value={docType} onChange={e => setDocType(e.target.value)}>
               {['Sözleşme', 'Kimlik', 'SGK', 'Diploma', 'Sertifika', 'Diğer'].map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-60 flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-ink-700 text-white rounded-lg text-sm font-medium hover:bg-ink-800 disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}Yükle
             </button>
           </div>
@@ -668,36 +668,36 @@ function EditModal({ emp, empId, onClose, onSave, onLeave }: {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-2"><Pencil className="w-5 h-5 text-gray-600" /><h2 className="text-base font-semibold">Personel Düzenle</h2></div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
+          <div className="flex items-center gap-2"><Pencil className="w-5 h-5 text-ink-600" /><h2 className="text-base font-semibold">Personel Düzenle</h2></div>
+          <button onClick={onClose} className="p-1 hover:bg-ink-100 rounded-lg"><X className="w-5 h-5 text-ink-500" /></button>
         </div>
         <form onSubmit={handle} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Ad Soyad</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Ad Soyad</label>
             <input className={inputCls} value={form.name} onChange={e => set('name', e.target.value)} required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Departman</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Departman</label>
               <input className={inputCls} value={form.department} onChange={e => set('department', e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Görev</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Görev</label>
               <input className={inputCls} value={form.role} onChange={e => set('role', e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Maaş</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Maaş</label>
               <DecimalInput min="0" className={inputCls} value={form.salary} onChange={e => set('salary', e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Maaş Günü</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Maaş Günü</label>
               <DecimalInput min="1" max="31" className={inputCls} value={form.payday} onChange={e => set('payday', e.target.value)} />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Durum</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Durum</label>
             <select className={inputCls} value={form.status} onChange={e => set('status', e.target.value)}>
               <option value="active">Aktif</option>
               <option value="left">Ayrıldı</option>
@@ -705,17 +705,17 @@ function EditModal({ emp, empId, onClose, onSave, onLeave }: {
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-brand-700 text-white rounded-lg text-sm font-medium hover:bg-brand-800 disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}Kaydet
             </button>
           </div>
-          <div className="pt-2 border-t border-gray-100">
+          <div className="pt-2 border-t border-ink-100">
             {confirmLeave ? (
               <div className="bg-red-50 rounded-lg p-3">
                 <p className="text-sm text-red-700 mb-3">Personeli işten çıkarmak istediğinizden emin misiniz?</p>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setConfirmLeave(false)} className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm">Hayır</button>
+                  <button type="button" onClick={() => setConfirmLeave(false)} className="flex-1 px-3 py-1.5 border border-ink-200 rounded-lg text-sm">Hayır</button>
                   <button type="button" onClick={handleLeave} className="flex-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">Evet, Çıkar</button>
                 </div>
               </div>
@@ -794,22 +794,22 @@ function LedgerEditModal({ entry, empId, onClose, onSaved }: {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
           <div className="flex items-center gap-2">
-            <Pencil className="w-5 h-5 text-gray-600" />
-            <h2 className="text-base font-semibold text-gray-900">{entry.type} Düzenle</h2>
+            <Pencil className="w-5 h-5 text-ink-600" />
+            <h2 className="text-base font-semibold text-ink-900">{entry.type} Düzenle</h2>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5 text-gray-500" /></button>
+          <button onClick={onClose} className="p-1 hover:bg-ink-100 rounded-lg"><X className="w-5 h-5 text-ink-500" /></button>
         </div>
         <form onSubmit={handle} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tutar *</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tutar *</label>
             <DecimalInput min="0.01" step="0.01" className={inputCls} value={amount} onChange={e => setAmount(e.target.value)} required />
           </div>
           {hasCash && accounts.length > 0 && (
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Kasa *</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Kasa *</label>
               <select className={inputCls} value={accountId} onChange={e => {
                 setAccountId(e.target.value);
                 setAccountName(accounts.find(a => a.id === e.target.value)?.name || '');
@@ -819,17 +819,17 @@ function LedgerEditModal({ entry, empId, onClose, onSaved }: {
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Açıklama</label>
             <input className={inputCls} value={description} onChange={e => setDescription(e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Tarih</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tarih</label>
             <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
           </div>
           {err && <p className="text-xs text-red-600">{err}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">İptal</button>
-            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
+            <button type="submit" disabled={saving} className="flex-1 px-4 py-2 bg-brand-700 text-white rounded-lg text-sm font-medium hover:bg-brand-800 disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}Güncelle
             </button>
           </div>
@@ -935,7 +935,7 @@ export default function PersonnelDetailPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center h-64 text-gray-400">
+        <div className="flex items-center justify-center h-64 text-ink-400">
           <Loader2 className="w-8 h-8 animate-spin" />
         </div>
       </AppShell>
@@ -945,11 +945,11 @@ export default function PersonnelDetailPage() {
   if (!emp) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center h-64 text-gray-400">
+        <div className="flex items-center justify-center h-64 text-ink-400">
           <div className="text-center">
             <Users className="w-10 h-10 mx-auto mb-3" />
             <p>Personel bulunamadı</p>
-            <button onClick={() => router.push('/personnel')} className="mt-3 text-blue-600 text-sm hover:underline">← Listeye Dön</button>
+            <button onClick={() => router.push('/personnel')} className="mt-3 text-brand-700 text-sm hover:underline">← Listeye Dön</button>
           </div>
         </div>
       </AppShell>
@@ -957,15 +957,15 @@ export default function PersonnelDetailPage() {
   }
 
   const ACTION_BUTTONS = [
-    { label: 'Hakediş Ekle', icon: ClipboardList, color: 'bg-teal-600 hover:bg-teal-700 text-white', modal: 'Hakediş' as ModalType },
-    { label: 'Maaş Öde', icon: CreditCard, color: 'bg-blue-600 hover:bg-blue-700 text-white', modal: 'Maaş' as ModalType },
-    { label: 'Avans Ver', icon: Banknote, color: 'bg-orange-500 hover:bg-orange-600 text-white', modal: 'Avans' as ModalType },
-    { label: 'Prim Ekle', icon: TrendingUp, color: 'bg-green-600 hover:bg-green-700 text-white', modal: 'Prim' as ModalType },
+    { label: 'Hakediş Ekle', icon: ClipboardList, color: 'bg-brand-700 hover:bg-brand-800 text-white', modal: 'Hakediş' as ModalType },
+    { label: 'Maaş Öde', icon: CreditCard, color: 'bg-brand-700 hover:bg-brand-800 text-white', modal: 'Maaş' as ModalType },
+    { label: 'Avans Ver', icon: Banknote, color: 'bg-brand-600 hover:bg-brand-700 text-white', modal: 'Avans' as ModalType },
+    { label: 'Prim Ekle', icon: TrendingUp, color: 'bg-emerald-600 hover:bg-emerald-700 text-white', modal: 'Prim' as ModalType },
     { label: 'Kesinti Yap', icon: Scissors, color: 'bg-red-500 hover:bg-red-600 text-white', modal: 'Kesinti' as ModalType },
-    { label: 'İzin Gir', icon: CalendarDays, color: 'bg-purple-600 hover:bg-purple-700 text-white', modal: 'İzin' as ModalType },
-    { label: 'Mesai Ekle', icon: Clock, color: 'bg-indigo-600 hover:bg-indigo-700 text-white', modal: 'Mesai' as ModalType },
-    { label: 'Evrak Yükle', icon: Upload, color: 'bg-gray-600 hover:bg-gray-700 text-white', modal: 'Evrak' as ModalType },
-    { label: 'Düzenle', icon: Pencil, color: 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200', modal: 'Düzenle' as ModalType },
+    { label: 'İzin Gir', icon: CalendarDays, color: 'bg-brand-700 hover:bg-brand-800 text-white', modal: 'İzin' as ModalType },
+    { label: 'Mesai Ekle', icon: Clock, color: 'bg-brand-700 hover:bg-brand-800 text-white', modal: 'Mesai' as ModalType },
+    { label: 'Evrak Yükle', icon: Upload, color: 'bg-ink-600 hover:bg-ink-700 text-white', modal: 'Evrak' as ModalType },
+    { label: 'Düzenle', icon: Pencil, color: 'bg-white hover:bg-ink-50 text-ink-700 border border-ink-200', modal: 'Düzenle' as ModalType },
   ];
 
   const TABS: { key: TabType; label: string; icon: React.ElementType }[] = [
@@ -984,38 +984,38 @@ export default function PersonnelDetailPage() {
       <div className="p-4 md:p-6 max-w-7xl mx-auto">
 
         {/* Back */}
-        <button onClick={() => router.push('/personnel')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-4 transition-colors">
+        <button onClick={() => router.push('/personnel')} className="flex items-center gap-2 text-sm text-ink-500 hover:text-ink-800 mb-4 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Personel Listesi
         </button>
 
         {/* Info Card */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-4">
+        <div className="bg-white border border-ink-200 rounded-2xl p-5 mb-4">
           <div className="flex flex-wrap items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl font-bold text-blue-600">{emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}</span>
+            <div className="w-14 h-14 rounded-2xl bg-brand-100 flex items-center justify-center flex-shrink-0">
+              <span className="text-xl font-bold text-brand-700">{emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}</span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-xl font-bold text-gray-900">{emp.name}</h1>
-                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${emp.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${emp.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                <h1 className="page-title">{emp.name}</h1>
+                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${emp.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-ink-100 text-ink-500'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${emp.status === 'active' ? 'bg-emerald-500' : 'bg-ink-400'}`} />
                   {emp.status === 'active' ? 'Aktif' : 'Ayrıldı'}
                 </span>
               </div>
-              <p className="text-sm text-gray-500 mt-0.5">{emp.role} · {emp.department}</p>
+              <p className="text-sm text-ink-500 mt-0.5">{emp.role} · {emp.department}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-4 border-t border-gray-100">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-4 border-t border-ink-100">
             {[
               { label: 'İşe Giriş', value: formatDate(emp.hireDate) },
               { label: 'Maaş', value: formatMoney(emp.salary, emp.currency) },
               { label: 'Kalan İzin', value: emp.leaveBalance + ' gün' },
-              { label: 'Bakiye', value: balance === 0 ? '—' : (balance > 0 ? '+' : '') + formatMoney(balance, emp.currency), color: balance < 0 ? 'text-red-600' : balance > 0 ? 'text-green-600' : 'text-gray-700' },
+              { label: 'Bakiye', value: balance === 0 ? '—' : (balance > 0 ? '+' : '') + formatMoney(balance, emp.currency), color: balance < 0 ? 'text-red-600' : balance > 0 ? 'text-emerald-600' : 'text-ink-700' },
             ].map(item => (
               <div key={item.label}>
-                <p className="text-xs text-gray-400 mb-1">{item.label}</p>
-                <p className={`text-sm font-semibold ${item.color ?? 'text-gray-800'}`}>{item.value}</p>
+                <p className="text-xs text-ink-400 mb-1">{item.label}</p>
+                <p className={`text-sm font-semibold ${item.color ?? 'text-ink-800'}`}>{item.value}</p>
               </div>
             ))}
           </div>
@@ -1035,7 +1035,7 @@ export default function PersonnelDetailPage() {
         {/* Action Buttons — Mobile Dropdown */}
         <div className="sm:hidden mb-4">
           <button onClick={() => setMobileActionsOpen(o => !o)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 shadow-sm">
+            className="w-full flex items-center justify-between px-4 py-3 bg-white border border-ink-200 rounded-xl text-sm font-medium text-ink-700 shadow-card">
             İşlemler
             <ChevronDown className={`w-4 h-4 transition-transform ${mobileActionsOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -1056,45 +1056,45 @@ export default function PersonnelDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
           {/* Left: Ledger */}
-          <div className="lg:col-span-3 bg-white border border-gray-200 rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="text-sm font-semibold text-gray-800">Ekstre</h2>
+          <div className="lg:col-span-3 bg-white border border-ink-200 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-ink-100">
+              <h2 className="text-sm font-semibold text-ink-800">Ekstre</h2>
             </div>
             {ledgerWithBalance.length === 0 ? (
-              <div className="flex items-center justify-center h-40 text-gray-400 text-sm">Hareket yok</div>
+              <div className="flex items-center justify-center h-40 text-ink-400 text-sm">Hareket yok</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Tarih</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Tür</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 hidden md:table-cell">Açıklama</th>
+                    <tr className="bg-ink-50 border-b border-ink-100">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-ink-500">Tarih</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-ink-500">Tür</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-ink-500 hidden md:table-cell">Açıklama</th>
                       <th className="text-right px-4 py-3 text-xs font-semibold text-red-500">Borç</th>
-                      <th className="text-right px-4 py-3 text-xs font-semibold text-green-600">Alacak</th>
-                      <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Bakiye</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-emerald-600">Alacak</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-ink-500">Bakiye</th>
                       <th className="px-2 py-3 w-16"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-ink-50">
                     {ledgerWithBalance.map(e => (
-                      <tr key={e.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(e.date)}</td>
+                      <tr key={e.id} className="hover:bg-ink-50 transition-colors">
+                        <td className="px-4 py-3 text-ink-500 whitespace-nowrap">{formatDate(e.date)}</td>
                         <td className="px-4 py-3">
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${ENTRY_COLORS[e.type as EntryType] ?? 'bg-gray-100 text-gray-600'}`}>{e.type}</span>
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${ENTRY_COLORS[e.type as EntryType] ?? 'bg-ink-100 text-ink-600'}`}>{e.type}</span>
                         </td>
-                        <td className="px-4 py-3 text-gray-600 hidden md:table-cell max-w-[160px] truncate">{e.description}</td>
+                        <td className="px-4 py-3 text-ink-600 hidden md:table-cell max-w-[160px] truncate">{e.description}</td>
                         <td className="px-4 py-3 text-right text-red-500 font-medium">{Number(e.debit) > 0 ? formatMoney(Number(e.debit)) : '—'}</td>
-                        <td className="px-4 py-3 text-right text-green-600 font-medium">{Number(e.credit) > 0 ? formatMoney(Number(e.credit)) : '—'}</td>
-                        <td className={`px-4 py-3 text-right font-semibold ${e.runningBalance < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+                        <td className="px-4 py-3 text-right text-emerald-600 font-medium">{Number(e.credit) > 0 ? formatMoney(Number(e.credit)) : '—'}</td>
+                        <td className={`px-4 py-3 text-right font-semibold ${e.runningBalance < 0 ? 'text-red-600' : 'text-ink-800'}`}>
                           {formatMoney(e.runningBalance)}
                         </td>
                         <td className="px-2 py-3 w-16">
                           <div className="flex items-center gap-0.5">
-                            <button onClick={() => handleDeleteEntry(e as any)} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-600 transition-colors" title="Sil">
+                            <button onClick={() => handleDeleteEntry(e as any)} className="p-1.5 hover:bg-red-50 rounded-lg text-ink-400 hover:text-red-600 transition-colors" title="Sil">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => setEditingEntry(e as any)} className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-400 hover:text-blue-600 transition-colors" title="Düzenle">
+                            <button onClick={() => setEditingEntry(e as any)} className="p-1.5 hover:bg-brand-50 rounded-lg text-ink-400 hover:text-brand-700 transition-colors" title="Düzenle">
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -1108,11 +1108,11 @@ export default function PersonnelDetailPage() {
           </div>
 
           {/* Right: Tabs */}
-          <div className="lg:col-span-2 bg-white border border-gray-200 rounded-2xl overflow-hidden">
-            <div className="flex border-b border-gray-100 overflow-x-auto">
+          <div className="lg:col-span-2 bg-white border border-ink-200 rounded-2xl overflow-hidden">
+            <div className="flex border-b border-ink-100 overflow-x-auto">
               {TABS.map(t => (
                 <button key={t.key} onClick={() => setTab(t.key)}
-                  className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium whitespace-nowrap transition-colors border-b-2 ${tab === t.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                  className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium whitespace-nowrap transition-colors border-b-2 ${tab === t.key ? 'border-brand-700 text-brand-700' : 'border-transparent text-ink-500 hover:text-ink-700'}`}>
                   <t.icon className="w-3.5 h-3.5" />
                   {t.label}
                 </button>
@@ -1123,15 +1123,15 @@ export default function PersonnelDetailPage() {
 
               {tab === 'izinler' && (
                 <div className="space-y-2">
-                  {leaves.length === 0 ? <p className="text-sm text-gray-400 text-center py-8">İzin kaydı yok</p> :
+                  {leaves.length === 0 ? <p className="text-sm text-ink-400 text-center py-8">İzin kaydı yok</p> :
                     leaves.map((l: any) => (
-                      <div key={l.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-xl">
+                      <div key={l.id} className="flex items-start justify-between p-3 bg-ink-50 rounded-xl">
                         <div>
-                          <span className="text-xs font-semibold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">{l.type}</span>
-                          <p className="text-sm text-gray-700 mt-1">{formatDate(l.startDate)} – {formatDate(l.endDate)}</p>
-                          {l.note && <p className="text-xs text-gray-400 mt-0.5">{l.note}</p>}
+                          <span className="text-xs font-semibold text-brand-800 bg-brand-100 px-2 py-0.5 rounded-full">{l.type}</span>
+                          <p className="text-sm text-ink-700 mt-1">{formatDate(l.startDate)} – {formatDate(l.endDate)}</p>
+                          {l.note && <p className="text-xs text-ink-400 mt-0.5">{l.note}</p>}
                         </div>
-                        <span className="text-sm font-bold text-gray-700 ml-3">{l.days}g</span>
+                        <span className="text-sm font-bold text-ink-700 ml-3">{l.days}g</span>
                       </div>
                     ))}
                 </div>
@@ -1139,16 +1139,16 @@ export default function PersonnelDetailPage() {
 
               {tab === 'mesailer' && (
                 <div className="space-y-2">
-                  {overtimes.length === 0 ? <p className="text-sm text-gray-400 text-center py-8">Mesai kaydı yok</p> :
+                  {overtimes.length === 0 ? <p className="text-sm text-ink-400 text-center py-8">Mesai kaydı yok</p> :
                     overtimes.map((o: any) => (
-                      <div key={o.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-xl">
+                      <div key={o.id} className="flex items-start justify-between p-3 bg-ink-50 rounded-xl">
                         <div>
-                          <p className="text-sm font-medium text-gray-800">{formatDate(o.date)}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{o.note}</p>
+                          <p className="text-sm font-medium text-ink-800">{formatDate(o.date)}</p>
+                          <p className="text-xs text-ink-400 mt-0.5">{o.note}</p>
                         </div>
                         <div className="text-right ml-3">
-                          <p className="text-sm font-bold text-indigo-600">{o.hours} saat</p>
-                          {o.amount > 0 && <p className="text-xs text-gray-500">{formatMoney(o.amount)}</p>}
+                          <p className="text-sm font-bold text-brand-700">{o.hours} saat</p>
+                          {o.amount > 0 && <p className="text-xs text-ink-500">{formatMoney(o.amount)}</p>}
                         </div>
                       </div>
                     ))}
@@ -1157,20 +1157,20 @@ export default function PersonnelDetailPage() {
 
               {tab === 'belgeler' && (
                 <div className="space-y-2">
-                  {docs.length === 0 ? <p className="text-sm text-gray-400 text-center py-8">Belge yok</p> :
+                  {docs.length === 0 ? <p className="text-sm text-ink-400 text-center py-8">Belge yok</p> :
                     docs.map(d => (
-                      <div key={d.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                      <div key={d.id} className="flex items-center justify-between p-3 bg-ink-50 rounded-xl">
                         <div className="flex items-center gap-3 min-w-0">
-                          <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <FileText className="w-4 h-4 text-ink-400 flex-shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-sm text-gray-800 font-medium truncate">{d.name}</p>
-                            <p className="text-xs text-gray-400">{d.docType} · {formatDate(d.createdAt)} · {d.size < 1048576 ? (d.size / 1024).toFixed(0) + ' KB' : (d.size / 1048576).toFixed(1) + ' MB'}</p>
+                            <p className="text-sm text-ink-800 font-medium truncate">{d.name}</p>
+                            <p className="text-xs text-ink-400">{d.docType} · {formatDate(d.createdAt)} · {d.size < 1048576 ? (d.size / 1024).toFixed(0) + ' KB' : (d.size / 1048576).toFixed(1) + ' MB'}</p>
                           </div>
                         </div>
                         <a
                           href={`/api/personnel/${id}/documents/${d.id}`}
                           download={d.name}
-                          className="text-xs text-blue-600 hover:underline ml-2 flex-shrink-0"
+                          className="text-xs text-brand-700 hover:underline ml-2 flex-shrink-0"
                         >
                           İndir
                         </a>
@@ -1187,21 +1187,21 @@ export default function PersonnelDetailPage() {
                       value={noteInput}
                       onChange={e => setNoteInput(e.target.value)}
                       placeholder="Yeni not ekle..."
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                      className="flex-1 px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none resize-none"
                     />
                     <button
                       onClick={handleAddNote}
                       disabled={savingNote || !noteInput.trim()}
-                      className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                      className="px-3 py-2 bg-brand-700 text-white rounded-lg text-sm font-medium hover:bg-brand-800 disabled:opacity-50 flex items-center"
                     >
                       {savingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <StickyNote className="w-4 h-4" />}
                     </button>
                   </div>
-                  {notes.length === 0 ? <p className="text-sm text-gray-400 text-center py-6">Not yok</p> :
+                  {notes.length === 0 ? <p className="text-sm text-ink-400 text-center py-6">Not yok</p> :
                     notes.map(n => (
-                      <div key={n.id} className="p-3 bg-gray-50 rounded-xl">
-                        <p className="text-sm text-gray-700">{n.content}</p>
-                        <p className="text-xs text-gray-400 mt-1.5">{formatDate(n.createdAt)} · {n.createdBy || 'Sistem'}</p>
+                      <div key={n.id} className="p-3 bg-ink-50 rounded-xl">
+                        <p className="text-sm text-ink-700">{n.content}</p>
+                        <p className="text-xs text-ink-400 mt-1.5">{formatDate(n.createdAt)} · {n.createdBy || 'Sistem'}</p>
                       </div>
                     ))}
                 </div>
@@ -1209,17 +1209,17 @@ export default function PersonnelDetailPage() {
 
               {tab === 'performans' && (
                 <div className="space-y-3">
-                  {perfs.length === 0 ? <p className="text-sm text-gray-400 text-center py-8">Değerlendirme yok</p> :
+                  {perfs.length === 0 ? <p className="text-sm text-ink-400 text-center py-8">Değerlendirme yok</p> :
                     perfs.map(p => (
-                      <div key={p.id} className="p-3 bg-gray-50 rounded-xl">
+                      <div key={p.id} className="p-3 bg-ink-50 rounded-xl">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-gray-800">{p.period}</span>
-                          <span className={`text-sm font-bold ${p.score >= 90 ? 'text-green-600' : p.score >= 75 ? 'text-blue-600' : 'text-orange-500'}`}>{p.score}/100</span>
+                          <span className="text-sm font-medium text-ink-800">{p.period}</span>
+                          <span className={`text-sm font-bold ${p.score >= 90 ? 'text-emerald-600' : p.score >= 75 ? 'text-brand-700' : 'text-amber-500'}`}>{p.score}/100</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1.5">
-                          <div className={`h-1.5 rounded-full ${p.score >= 90 ? 'bg-green-500' : p.score >= 75 ? 'bg-blue-500' : 'bg-orange-400'}`} style={{ width: p.score + '%' }} />
+                        <div className="w-full bg-ink-200 rounded-full h-1.5 mb-1.5">
+                          <div className={`h-1.5 rounded-full ${p.score >= 90 ? 'bg-emerald-500' : p.score >= 75 ? 'bg-brand-600' : 'bg-brand-500'}`} style={{ width: p.score + '%' }} />
                         </div>
-                        <p className="text-xs text-gray-400">{p.comment}</p>
+                        <p className="text-xs text-ink-400">{p.comment}</p>
                       </div>
                     ))}
                 </div>
@@ -1350,7 +1350,7 @@ export default function PersonnelDetailPage() {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
           {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
           {toast.msg}
         </div>
@@ -1358,18 +1358,18 @@ export default function PersonnelDetailPage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-ink-600 whitespace-pre-line">{confirmModal.message}</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg text-sm hover:bg-ink-50">İptal</button>
               <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>
           </div>

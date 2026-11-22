@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { formatDate } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Loader2, ChevronLeft, ChevronRight, RefreshCw, X, AlertTriangle, Upload, Download, CheckCircle2, AlertCircle, Landmark, Truck, Wallet } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, RefreshCw, X, AlertTriangle, Upload, Download, CheckCircle2, AlertCircle, Landmark, Truck, Wallet } from '@/app/components/icons';
 import { matchesText } from '@/lib/search';
 import FitText from '@/app/components/fit-text';
 import { vadeTone, daysToVade, weightedAvgVade, totalsByCurrency } from '@/lib/cek';
@@ -17,12 +17,12 @@ const fmtDate = formatDate;
 type SortDir = 'asc' | 'desc';
 
 const DURUM_COLOR: Record<string, string> = {
-  PORTFOY: 'bg-blue-100 text-blue-700',
-  BANKAYA_VERILDI: 'bg-purple-100 text-purple-700',
-  TEDARIKCI_VERILDI: 'bg-orange-100 text-orange-700',
-  ODENDI: 'bg-green-100 text-green-700',
+  PORTFOY: 'bg-brand-100 text-brand-800',
+  BANKAYA_VERILDI: 'bg-brand-100 text-brand-800',
+  TEDARIKCI_VERILDI: 'bg-amber-100 text-amber-700',
+  ODENDI: 'bg-emerald-100 text-emerald-700',
   KARSILIKS: 'bg-red-100 text-red-700',
-  IPTAL: 'bg-slate-100 text-slate-600',
+  IPTAL: 'bg-ink-100 text-ink-600',
 };
 
 function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
@@ -52,35 +52,35 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="bg-teal-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold flex items-center gap-2">
             <Upload className="w-4 h-4" /> Çek İçeri Aktar
           </h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div className="bg-ink-50 border border-ink-200 rounded-xl p-4 flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-slate-700">Şablon dosyası</p>
-              <p className="text-xs text-slate-400 mt-0.5">Gerekli sütunlar: Müşteri Adı, Vadesi, Çek No, Bankası, Tutar</p>
+              <p className="text-sm font-medium text-ink-700">Şablon dosyası</p>
+              <p className="text-xs text-ink-400 mt-0.5">Gerekli sütunlar: Müşteri Adı, Vadesi, Çek No, Bankası, Tutar</p>
             </div>
             <a href="/api/cek/import/template"
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
-              <Download className="w-4 h-4 text-teal-500" /> İndir
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-white border border-ink-200 rounded-lg text-sm font-medium text-ink-700 hover:bg-ink-100 transition-colors">
+              <Download className="w-4 h-4 text-brand-600" /> İndir
             </a>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Excel Dosyası (.xlsx)</label>
-            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-teal-400 hover:bg-teal-50 transition-colors"
+            <label className="block text-xs font-medium text-ink-500 mb-1.5">Excel Dosyası (.xlsx)</label>
+            <div className="border-2 border-dashed border-ink-200 rounded-xl p-6 text-center cursor-pointer hover:border-brand-500 hover:bg-brand-50 transition-colors"
               onClick={() => fileRef.current?.click()}>
               {file ? (
-                <p className="text-sm font-medium text-teal-600">{file.name}</p>
+                <p className="text-sm font-medium text-brand-700">{file.name}</p>
               ) : (
                 <>
-                  <Upload className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-sm text-slate-400">Dosya seçmek için tıklayın</p>
+                  <Upload className="w-8 h-8 text-ink-300 mx-auto mb-2" />
+                  <p className="text-sm text-ink-400">Dosya seçmek için tıklayın</p>
                 </>
               )}
             </div>
@@ -95,8 +95,8 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
           {result && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                <span className="text-green-700 font-medium">{result.created} çek başarıyla aktarıldı</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                <span className="text-emerald-700 font-medium">{result.created} çek başarıyla aktarıldı</span>
               </div>
               {result.skipped > 0 && (
                 <div className="flex items-start gap-2 text-sm">
@@ -115,12 +115,12 @@ function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
           )}
 
           <div className="flex gap-2 pt-1">
-            <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+            <button onClick={onClose} className="flex-1 py-2.5 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50 transition-colors">
               {result ? 'Kapat' : 'Vazgeç'}
             </button>
             {!result && (
               <button onClick={handleUpload} disabled={!file || loading}
-                className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                className="flex-1 py-2.5 bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 Yükle
               </button>
@@ -218,8 +218,8 @@ export default function CekPortfoyuPage() {
   };
 
   const SortIcon = ({ field }: { field: string }) => {
-    if (sortBy !== field) return <span className="text-slate-300 ml-1">↕</span>;
-    return <span className="text-teal-400 ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
+    if (sortBy !== field) return <span className="text-ink-300 ml-1">↕</span>;
+    return <span className="text-brand-500 ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
   };
 
   const handleDurumChange = (cek: any, durum: string) => {
@@ -281,7 +281,7 @@ export default function CekPortfoyuPage() {
     if (pageAllSelected) filtered.forEach(c => n.delete(c.id)); else filtered.forEach(c => n.set(c.id, c));
     return n;
   });
-  const VADE_TEXT = { overdue: 'text-red-600', soon: 'text-orange-600', normal: 'text-slate-500' } as const;
+  const VADE_TEXT = { overdue: 'text-red-600', soon: 'text-amber-600', normal: 'text-ink-500' } as const;
   const vadeNote = (c: any) => {
     const tone = vadeTone(c);
     if (tone === 'normal') return null;
@@ -292,11 +292,11 @@ export default function CekPortfoyuPage() {
   return (
     <AppShell>
       <div className={`space-y-5 ${sel.length ? 'pb-40 lg:pb-0' : ''}`}>
-        <div className="bg-teal-600 rounded-xl px-6 py-4 flex items-center justify-between">
-          <h1 className="text-white font-bold text-lg uppercase tracking-wide">{t('checks', 'title')}</h1>
+        <div className="flex items-end justify-between gap-4">
+          <h1 className="page-title">{t('checks', 'title')}</h1>
           <button
             onClick={() => setShowImport(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-colors"
+            className="btn-secondary"
           >
             <Upload className="w-4 h-4" /> İçeri Aktar
           </button>
@@ -305,31 +305,31 @@ export default function CekPortfoyuPage() {
         {/* Seçim çubuğu: masaüstünde sağ üstte, telefonda altta sabit */}
         {sel.length > 0 && (
           <div role="region" aria-label="Seçili çekler"
-            className="fixed bottom-[60px] inset-x-0 z-30 lg:sticky lg:bottom-auto lg:inset-x-auto lg:top-16 lg:ml-auto lg:w-[460px] bg-white border border-slate-200 shadow-xl lg:rounded-xl p-3 space-y-2">
+            className="fixed bottom-[60px] inset-x-0 z-30 lg:sticky lg:bottom-auto lg:inset-x-auto lg:top-16 lg:ml-auto lg:w-[460px] bg-white border border-ink-200 shadow-xl lg:rounded-xl p-3 space-y-2">
             <div className="flex items-start justify-between gap-2">
               <div className="text-sm">
-                <p className="font-semibold text-slate-800">{sel.length} çek seçildi</p>
-                <p className="text-slate-600 tabular-nums">{selTotals.map(x => `${fmt(x.total)} ${x.currency}`).join(' + ')}</p>
+                <p className="font-semibold text-ink-800">{sel.length} çek seçildi</p>
+                <p className="text-ink-600 tabular-nums">{selTotals.map(x => `${fmt(x.total)} ${x.currency}`).join(' + ')}</p>
                 {selAvg && (
-                  <p className="text-slate-600">Ortalama vade: <b data-testid="sel-avg-vade">{fmtDate(selAvg.date)}</b> ({selAvg.days} {t('checks', 'days')})</p>
+                  <p className="text-ink-600">Ortalama vade: <b data-testid="sel-avg-vade">{fmtDate(selAvg.date)}</b> ({selAvg.days} {t('checks', 'days')})</p>
                 )}
               </div>
-              <button onClick={() => setSelected(new Map())} className="text-xs text-slate-500 hover:text-slate-800 underline flex-shrink-0">Seçimi temizle</button>
+              <button onClick={() => setSelected(new Map())} className="text-xs text-ink-500 hover:text-ink-800 underline flex-shrink-0">Seçimi temizle</button>
             </div>
             <div className="flex flex-wrap gap-2">
               <button disabled={!allPortfoy} title={allPortfoy ? '' : 'Sadece portföydeki çekler bankaya verilebilir'}
                 onClick={() => setBulk({ kind: 'bank', cekler: sel })}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold disabled:opacity-40">
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-xs font-semibold disabled:opacity-40">
                 <Landmark className="w-3.5 h-3.5" /> Bankaya Gönder
               </button>
               <button disabled={!allPortfoy} title={allPortfoy ? '' : 'Sadece portföydeki çekler tedarikçiye verilebilir'}
                 onClick={() => setBulk({ kind: 'supplier', cekler: sel })}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold disabled:opacity-40">
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold disabled:opacity-40">
                 <Truck className="w-3.5 h-3.5" /> Tedarikçiye Ödeme Yap
               </button>
               <button disabled={!allBank} title={allBank ? '' : 'Bankadaki çekler tahsil edilebilir'}
                 onClick={() => setBulk({ kind: 'collect', cekler: sel })}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold disabled:opacity-40">
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-xs font-semibold disabled:opacity-40">
                 <Wallet className="w-3.5 h-3.5" /> Tahsil Et
               </button>
             </div>
@@ -337,12 +337,12 @@ export default function CekPortfoyuPage() {
         )}
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
-          <div className="flex border-b border-slate-100 min-w-max">
+        <div className="bg-white rounded-xl shadow-card overflow-x-auto border border-ink-200/80">
+          <div className="flex border-b border-ink-100 min-w-max">
             {TABS.map(tb => (
               <button key={tb.key} onClick={() => handleTabChange(tb.key)}
                 className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
-                  tab === tb.key ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+                  tab === tb.key ? 'border-brand-600 text-brand-700' : 'border-transparent text-ink-500 hover:text-ink-700'
                 }`}>
                 {tb.label}
               </button>
@@ -356,8 +356,8 @@ export default function CekPortfoyuPage() {
             <button key={k} onClick={() => { setVadeFilter(k); setPage(1); }} aria-pressed={vadeFilter === k}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
                 vadeFilter === k
-                  ? k === 'overdue' ? 'bg-red-600 border-red-600 text-white' : k === 'week' ? 'bg-orange-500 border-orange-500 text-white' : 'bg-teal-600 border-teal-600 text-white'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                  ? k === 'overdue' ? 'bg-red-600 border-red-600 text-white' : k === 'week' ? 'bg-brand-600 border-brand-600 text-white' : 'bg-brand-700 border-brand-700 text-white'
+                  : 'bg-white border-ink-200 text-ink-600 hover:bg-ink-50'}`}>
               {label}
             </button>
           ))}
@@ -366,10 +366,10 @@ export default function CekPortfoyuPage() {
         {/* Özet: döviz bazında */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {(totals.length ? totals : [{ currency: 'TRY', count: 0, total: 0, avgVadeMs: null }]).map(tt => (
-            <div key={tt.currency} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-              <p className="text-xs font-medium text-slate-500 mb-1">{tt.currency} · {tt.count} {t('checks', 'count').toLowerCase()}</p>
-              <FitText className="text-2xl font-bold text-slate-800">{`${fmt(tt.total)} ${tt.currency}`}</FitText>
-              <p className="text-xs text-slate-500 mt-1">
+            <div key={tt.currency} className="bg-white border border-ink-200 rounded-xl p-4 shadow-card">
+              <p className="text-xs font-medium text-ink-500 mb-1">{tt.currency} · {tt.count} {t('checks', 'count').toLowerCase()}</p>
+              <FitText className="text-2xl font-bold text-ink-800">{`${fmt(tt.total)} ${tt.currency}`}</FitText>
+              <p className="text-xs text-ink-500 mt-1">
                 {t('checks', 'avgMaturity')}: {tt.avgVadeMs ? `${fmtDate(new Date(tt.avgVadeMs))} (${daysToVade(new Date(tt.avgVadeMs))} ${t('checks', 'days')})` : '—'}
               </p>
             </div>
@@ -379,19 +379,19 @@ export default function CekPortfoyuPage() {
         {/* Search + Refresh */}
         <div className="flex gap-2">
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('checks', 'searchPlaceholder')}
-            className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500 bg-white" />
-          <button onClick={load} className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm">
+            className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600 bg-white" />
+          <button onClick={load} className="flex items-center gap-2 px-4 py-2 bg-ink-600 hover:bg-ink-700 text-white rounded-lg text-sm">
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
 
         {/* Table */}
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-teal-500" /></div>
+          <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-600" /></div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm py-16 text-center text-slate-400">{t('checks', 'noResults')}</div>
+          <div className="bg-white rounded-xl shadow-card py-16 text-center text-ink-400 border border-ink-200/80">{t('checks', 'noResults')}</div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm">
                 <colgroup>
@@ -407,10 +407,10 @@ export default function CekPortfoyuPage() {
                   <col className="w-[7%]" />
                 </colgroup>
                 <thead>
-                  <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50 select-none">
+                  <tr className="text-xs font-semibold text-ink-500 border-b bg-ink-50 select-none">
                     <th className="px-2 py-2.5">
                       <input type="checkbox" aria-label="Sayfadaki tüm çekleri seç" checked={pageAllSelected} onChange={togglePage}
-                        className="w-4 h-4 rounded border-slate-300 accent-teal-600" />
+                        className="w-4 h-4 rounded border-ink-300 accent-brand-700" />
                     </th>
                     {[
                       { label: t('checks', 'debtor'), field: 'borclu', align: 'left' },
@@ -426,7 +426,7 @@ export default function CekPortfoyuPage() {
                       <th
                         key={col.label}
                         onClick={() => col.field && handleSort(col.field)}
-                        className={`px-2 py-2.5 text-${col.align} ${col.field ? 'cursor-pointer hover:text-slate-700 hover:bg-slate-100' : ''} transition-colors`}
+                        className={`px-2 py-2.5 text-${col.align} ${col.field ? 'cursor-pointer hover:text-ink-700 hover:bg-ink-100' : ''} transition-colors`}
                       >
                         {col.label}{col.field && <SortIcon field={col.field} />}
                       </th>
@@ -438,25 +438,25 @@ export default function CekPortfoyuPage() {
                     const tone = vadeTone(c);
                     return (
                     <tr key={c.id} data-vade={tone}
-                      className={`border-b border-slate-100 ${selected.has(c.id) ? 'bg-teal-50' : tone === 'overdue' ? 'bg-red-50/60 hover:bg-red-50' : 'hover:bg-slate-50/50'}`}>
+                      className={`border-b border-ink-100 ${selected.has(c.id) ? 'bg-brand-50' : tone === 'overdue' ? 'bg-red-50/60 hover:bg-red-50' : 'hover:bg-ink-50/50'}`}>
                       <td className="px-2 py-2">
                         <input type="checkbox" aria-label={`${c.borclu} ${c.seriNo || ''} çekini seç`} checked={selected.has(c.id)} onChange={() => toggle(c)}
-                          className="w-4 h-4 rounded border-slate-300 accent-teal-600" />
+                          className="w-4 h-4 rounded border-ink-300 accent-brand-700" />
                       </td>
-                      <td className={`px-2 py-2 font-medium max-w-0 truncate ${tone === 'overdue' ? 'text-red-700' : 'text-slate-800'}`} title={c.borclu}>{c.borclu}</td>
-                      <td className="px-2 py-2 text-slate-500 whitespace-nowrap">{fmtDate(c.islemTarihi)}</td>
+                      <td className={`px-2 py-2 font-medium max-w-0 truncate ${tone === 'overdue' ? 'text-red-700' : 'text-ink-800'}`} title={c.borclu}>{c.borclu}</td>
+                      <td className="px-2 py-2 text-ink-500 whitespace-nowrap">{fmtDate(c.islemTarihi)}</td>
                       <td className={`px-2 py-2 whitespace-nowrap ${VADE_TEXT[tone]} ${tone !== 'normal' ? 'font-semibold' : ''}`}>
                         {fmtDate(c.vadesi)}
                         {vadeNote(c) && <span className="block text-[11px] font-medium">{vadeNote(c)}</span>}
                       </td>
-                      <td className="px-2 py-2 text-slate-500 truncate max-w-0" title={c.bankasi || ''}>{c.bankasi || '—'}</td>
-                      <td className="px-2 py-2 text-slate-600 font-medium truncate max-w-0">{c.seriNo || '—'}</td>
-                      <td className="px-2 py-2 text-slate-500 truncate max-w-0" title={c.aciklama || c.islem}>
+                      <td className="px-2 py-2 text-ink-500 truncate max-w-0" title={c.bankasi || ''}>{c.bankasi || '—'}</td>
+                      <td className="px-2 py-2 text-ink-600 font-medium truncate max-w-0">{c.seriNo || '—'}</td>
+                      <td className="px-2 py-2 text-ink-500 truncate max-w-0" title={c.aciklama || c.islem}>
                         {c.durum === 'BANKAYA_VERILDI' && c.bankAccount ? `${c.bankAccount.name} — ` : ''}{c.aciklama || c.islem}
                       </td>
-                      <td className={`px-2 py-2 text-right font-semibold whitespace-nowrap ${tone === 'overdue' ? 'text-red-700' : 'text-slate-800'}`}>{fmt(c.tutar)} {c.currency}</td>
+                      <td className={`px-2 py-2 text-right font-semibold whitespace-nowrap ${tone === 'overdue' ? 'text-red-700' : 'text-ink-800'}`}>{fmt(c.tutar)} {c.currency}</td>
                       <td className="px-2 py-2 text-center">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${DURUM_COLOR[c.durum] || 'bg-slate-100 text-slate-600'}`}>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${DURUM_COLOR[c.durum] || 'bg-ink-100 text-ink-600'}`}>
                           {DURUM_LABEL[c.durum] || c.durum}
                         </span>
                       </td>
@@ -472,7 +472,7 @@ export default function CekPortfoyuPage() {
                               setOpenDropdown(c.id);
                             }
                           }}
-                          className="px-2 py-1 bg-slate-600 hover:bg-slate-700 text-white text-xs rounded-lg whitespace-nowrap"
+                          className="px-2 py-1 bg-ink-600 hover:bg-ink-700 text-white text-xs rounded-lg whitespace-nowrap"
                         >
                           {t('checks', 'actions')} ▾
                         </button>
@@ -486,29 +486,29 @@ export default function CekPortfoyuPage() {
 
             {/* Telefon: seçilebilir kartlar */}
             <div className="sm:hidden">
-              <label className="flex items-center gap-2 px-4 py-2 border-b border-slate-100 text-xs text-slate-500">
-                <input type="checkbox" checked={pageAllSelected} onChange={togglePage} className="w-4 h-4 accent-teal-600" /> Sayfadakilerin tümünü seç
+              <label className="flex items-center gap-2 px-4 py-2 border-b border-ink-100 text-xs text-ink-500">
+                <input type="checkbox" checked={pageAllSelected} onChange={togglePage} className="w-4 h-4 accent-brand-700" /> Sayfadakilerin tümünü seç
               </label>
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-ink-100">
                 {filtered.map(c => {
                   const tone = vadeTone(c);
                   return (
-                    <li key={c.id} data-vade={tone} className={`flex items-start gap-3 px-4 py-3 ${selected.has(c.id) ? 'bg-teal-50' : tone === 'overdue' ? 'bg-red-50/60' : ''}`}>
-                      <input type="checkbox" aria-label={`${c.borclu} çekini seç`} checked={selected.has(c.id)} onChange={() => toggle(c)} className="mt-1 w-5 h-5 accent-teal-600 flex-shrink-0" />
+                    <li key={c.id} data-vade={tone} className={`flex items-start gap-3 px-4 py-3 ${selected.has(c.id) ? 'bg-brand-50' : tone === 'overdue' ? 'bg-red-50/60' : ''}`}>
+                      <input type="checkbox" aria-label={`${c.borclu} çekini seç`} checked={selected.has(c.id)} onChange={() => toggle(c)} className="mt-1 w-5 h-5 accent-brand-700 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="flex justify-between gap-2">
-                          <p className={`font-medium truncate ${tone === 'overdue' ? 'text-red-700' : 'text-slate-800'}`}>{c.borclu}</p>
-                          <p className={`font-semibold whitespace-nowrap tabular-nums ${tone === 'overdue' ? 'text-red-700' : 'text-slate-800'}`}>{fmt(c.tutar)} {c.currency}</p>
+                          <p className={`font-medium truncate ${tone === 'overdue' ? 'text-red-700' : 'text-ink-800'}`}>{c.borclu}</p>
+                          <p className={`font-semibold whitespace-nowrap tabular-nums ${tone === 'overdue' ? 'text-red-700' : 'text-ink-800'}`}>{fmt(c.tutar)} {c.currency}</p>
                         </div>
                         <div className="flex justify-between gap-2 mt-0.5 text-xs">
                           <span className={`${VADE_TEXT[tone]} ${tone !== 'normal' ? 'font-semibold' : ''}`}>Vade {fmtDate(c.vadesi)}{vadeNote(c) ? ` · ${vadeNote(c)}` : ''}</span>
-                          <span className={`px-2 py-0.5 rounded-full font-semibold ${DURUM_COLOR[c.durum] || 'bg-slate-100 text-slate-600'}`}>{DURUM_LABEL[c.durum] || c.durum}</span>
+                          <span className={`px-2 py-0.5 rounded-full font-semibold ${DURUM_COLOR[c.durum] || 'bg-ink-100 text-ink-600'}`}>{DURUM_LABEL[c.durum] || c.durum}</span>
                         </div>
-                        <p className="text-xs text-slate-400 truncate mt-0.5">{[c.bankasi, c.seriNo].filter(Boolean).join(' · ') || '—'}</p>
+                        <p className="text-xs text-ink-400 truncate mt-0.5">{[c.bankasi, c.seriNo].filter(Boolean).join(' · ') || '—'}</p>
                       </div>
                       <button aria-label="İşlemler"
                         onClick={(e) => { const rect = (e.currentTarget as HTMLElement).getBoundingClientRect(); setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right }); setOpenDropdown(c.id); }}
-                        className="px-2 py-1 text-slate-500 hover:bg-slate-100 rounded-lg">⋯</button>
+                        className="px-2 py-1 text-ink-500 hover:bg-ink-100 rounded-lg">⋯</button>
                     </li>
                   );
                 })}
@@ -517,15 +517,15 @@ export default function CekPortfoyuPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
-                <span className="text-xs text-slate-500">{t('checks', 'page')} {page} / {totalPages} — {data.total} {t('checks', 'records')}</span>
+              <div className="flex items-center justify-between px-4 py-3 border-t border-ink-100">
+                <span className="text-xs text-ink-500">{t('checks', 'page')} {page} / {totalPages} — {data.total} {t('checks', 'records')}</span>
                 <div className="flex gap-1">
                   <button disabled={page === 1} onClick={() => setPage(p => p - 1)}
-                    className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-40">
+                    className="p-1.5 rounded-lg hover:bg-ink-100 disabled:opacity-40">
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)}
-                    className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-40">
+                    className="p-1.5 rounded-lg hover:bg-ink-100 disabled:opacity-40">
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -541,14 +541,14 @@ export default function CekPortfoyuPage() {
         return (
           <>
             <div className="fixed inset-0 z-30" onClick={() => { setOpenDropdown(null); setMenuPos(null); }} />
-            <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right }} className="bg-white rounded-xl shadow-lg border border-slate-100 z-40 min-w-[220px] overflow-hidden">
+            <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right }} className="bg-white rounded-xl shadow-lg border border-ink-100 z-40 min-w-[220px] overflow-hidden">
               {ISLEMLER.filter(i => i.key !== cek.durum && (cek.durum === 'PORTFOY' || (i.key !== 'TEDARIKCI_VERILDI' && i.key !== 'BANKAYA_VERILDI'))).map(i => (
                 <button key={i.key} onClick={() => handleDurumChange(cek, i.key)}
-                  className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                  className="w-full text-left px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50">
                   {i.label}
                 </button>
               ))}
-              <div className="border-t border-slate-100" />
+              <div className="border-t border-ink-100" />
               <button onClick={() => { setOpenDropdown(null); setMenuPos(null); handleDelete(cek.id); }}
                 className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
                 {t('checks', 'deleteCheck')}
@@ -573,15 +573,15 @@ export default function CekPortfoyuPage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <span className="text-amber-500 text-lg">⚠</span>
               </div>
               <div>
-                <h3 className="font-bold text-slate-800 text-base">Çek Portföye Geri Alınıyor</h3>
-                <p className="text-sm text-slate-500 mt-1">
-                  <span className="font-semibold text-slate-700">{confirmModal.cek.borclu}</span> çeki{' '}
+                <h3 className="font-bold text-ink-800 text-base">Çek Portföye Geri Alınıyor</h3>
+                <p className="text-sm text-ink-500 mt-1">
+                  <span className="font-semibold text-ink-700">{confirmModal.cek.borclu}</span> çeki{' '}
                   {confirmModal.cek.durum === 'ODENDI' ? 'tahsil edilmiş' : 'tedarikçiye verilmiş'} durumda.
                 </p>
               </div>
@@ -593,7 +593,7 @@ export default function CekPortfoyuPage() {
             </div>
             <div className="flex gap-2 justify-end pt-1">
               <button onClick={() => setConfirmModal(null)}
-                className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+                className="px-4 py-2 text-sm font-medium text-ink-600 bg-ink-100 hover:bg-ink-200 rounded-lg transition-colors">
                 Vazgeç
               </button>
               <button
@@ -612,18 +612,18 @@ export default function CekPortfoyuPage() {
       {deleteConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-line">{deleteConfirmModal.message}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-ink-600 whitespace-pre-line">{deleteConfirmModal.message}</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => setDeleteConfirmModal(null)} className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg text-sm hover:bg-ink-50">İptal</button>
               <button onClick={() => { const fn = deleteConfirmModal.onConfirm; setDeleteConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>
           </div>

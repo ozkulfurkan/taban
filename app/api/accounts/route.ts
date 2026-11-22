@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       type: body.type || 'Kasa',
       currency: body.currency || 'TRY',
       balance: parseFloat(body.balance) || 0,
-      color: body.color || '#3B82F6',
+      color: body.color || '#8A2438',
     },
   });
   return NextResponse.json(account);

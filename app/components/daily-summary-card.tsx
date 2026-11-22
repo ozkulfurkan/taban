@@ -2,7 +2,7 @@
 
 // Ayarlar: günlük özet e-postası (her sabah 10:00, firma sahibi ve yöneticilere) aç / kapat.
 import { useEffect, useState } from 'react';
-import { Mail } from 'lucide-react';
+import { Mail } from '@/app/components/icons';
 
 export function DailySummaryCard() {
   const [on, setOn] = useState<boolean | null>(null);
@@ -24,16 +24,16 @@ export function DailySummaryCard() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 flex items-center gap-4" data-testid="daily-summary-card">
-      <Mail className="w-5 h-5 text-blue-600 shrink-0" />
+    <div className="bg-white rounded-xl shadow-card p-6 flex items-center gap-4 border border-ink-200/80" data-testid="daily-summary-card">
+      <Mail className="w-5 h-5 text-brand-700 shrink-0" />
       <div className="flex-1">
-        <h2 className="font-semibold text-slate-700">Günlük özet e-postası</h2>
-        <p className="text-sm text-slate-500">Her sabah 10:00&apos;da bekleyen siparişler ve kasa/banka detayı firma sahibi ve yöneticilere gönderilir.</p>
+        <h2 className="font-semibold text-ink-700">Günlük özet e-postası</h2>
+        <p className="text-sm text-ink-500">Her sabah 10:00&apos;da bekleyen siparişler ve kasa/banka detayı firma sahibi ve yöneticilere gönderilir.</p>
         {error ? <p className="text-sm text-red-600 mt-1">{error}</p> : null}
       </div>
       <button type="button" role="switch" aria-checked={!!on} aria-label="Günlük özet e-postası" onClick={toggle} disabled={busy || on === null}
         data-testid="daily-summary-toggle"
-        className={`relative w-12 h-7 rounded-full transition-colors disabled:opacity-50 ${on ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+        className={`relative w-12 h-7 rounded-full transition-colors disabled:opacity-50 ${on ? 'bg-emerald-500' : 'bg-ink-300'}`}>
         <span className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : ''}`} />
       </button>
     </div>

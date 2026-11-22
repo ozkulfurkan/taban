@@ -10,7 +10,7 @@ export default function PortalAccountPage() {
   return (
     <PortalShell>
       <div className="space-y-4 max-w-2xl">
-        <h1 className="text-xl font-bold text-slate-800">{tp('Hesabım')}</h1>
+        <h1 className="page-title">{tp('Hesabım')}</h1>
         <ChangePasswordCard provider="portal-credentials" />
       </div>
     </PortalShell>

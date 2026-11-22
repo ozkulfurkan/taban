@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Camera, ImageIcon, Loader2, Package, Trash2 } from 'lucide-react';
+import { Camera, ImageIcon, Loader2, Package, Trash2 } from '@/app/components/icons';
 
 // Ürün fotoğrafı (web): seçilen dosya tarayıcıda 1200 px JPEG'e küçültülüp yüklenir (mobil ile aynı uç ve ayar).
 
@@ -18,13 +18,13 @@ export function ProductThumb({ productId, imageUpdatedAt, className = 'w-10 h-10
   const src = productImageSrc(productId, imageUpdatedAt, base);
   if (!src) {
     return (
-      <div className={`${className} rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0`}>
-        <Package className="w-1/2 h-1/2 text-blue-500" />
+      <div className={`${className} rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0`}>
+        <Package className="w-1/2 h-1/2 text-brand-600" />
       </div>
     );
   }
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="" loading="lazy" className={`${className} rounded-lg object-cover bg-slate-100 flex-shrink-0`} />;
+  return <img src={src} alt="" loading="lazy" className={`${className} rounded-lg object-cover bg-ink-100 flex-shrink-0`} />;
 }
 
 async function resizeToJpeg(file: File): Promise<string> {
@@ -86,23 +86,23 @@ export function ProductImageEditor({ productId, imageUpdatedAt, canEdit, onChang
 
   if (!canEdit && !src) return null;
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col sm:flex-row gap-4 items-start" data-testid="product-image-editor">
-      <div className="relative w-full sm:w-48 aspect-square rounded-xl overflow-hidden bg-slate-50 border border-dashed border-slate-300 flex items-center justify-center flex-shrink-0">
+    <div className="bg-white rounded-xl shadow-card p-4 flex flex-col sm:flex-row gap-4 items-start border border-ink-200/80" data-testid="product-image-editor">
+      <div className="relative w-full sm:w-48 aspect-square rounded-xl overflow-hidden bg-ink-50 border border-dashed border-ink-300 flex items-center justify-center flex-shrink-0">
         {src ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={src} alt="Ürün fotoğrafı" className="w-full h-full object-cover" />
         ) : (
-          <ImageIcon className="w-10 h-10 text-slate-300" />
+          <ImageIcon className="w-10 h-10 text-ink-300" />
         )}
-        {busy && <div className="absolute inset-0 bg-white/70 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>}
+        {busy && <div className="absolute inset-0 bg-white/70 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-brand-700" /></div>}
       </div>
       <div className="space-y-2">
-        <p className="text-sm font-semibold text-slate-700">Ürün fotoğrafı</p>
-        <p className="text-xs text-slate-500">Katalog PDF&apos;inde, müşteri portalında ve firma ağı sipariş kataloğunda görünür.</p>
+        <p className="text-sm font-semibold text-ink-700">Ürün fotoğrafı</p>
+        <p className="text-xs text-ink-500">Katalog PDF&apos;inde, müşteri portalında ve firma ağı sipariş kataloğunda görünür.</p>
         {canEdit && (
           <div className="flex flex-wrap gap-2 pt-1">
             <button type="button" onClick={() => input.current?.click()} disabled={busy} data-testid="product-image-upload"
-              className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+              className="flex items-center gap-1.5 px-3 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium disabled:opacity-50">
               <Camera className="w-4 h-4" /> {src ? 'Fotoğrafı değiştir' : 'Fotoğraf yükle'}
             </button>
             {src && (

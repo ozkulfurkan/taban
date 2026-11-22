@@ -21,11 +21,11 @@ export default function Indir() {
 
   return (
     <main className="min-h-screen bg-[#6B1A2C] flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center space-y-6">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center space-y-6 border border-ink-200/80">
         <div className="flex flex-col items-center gap-3">
           <BrandMark size={72} />
-          <h1 className="text-2xl font-bold text-slate-800">SoleCost</h1>
-          <p className="text-slate-500 text-sm">Siparişlerinizi verin, durumunu takip edin, ekstrenizi ve kataloğu görün.</p>
+          <h1 className="page-title">SoleCost</h1>
+          <p className="text-ink-500 text-sm">Siparişlerinizi verin, durumunu takip edin, ekstrenizi ve kataloğu görün.</p>
         </div>
         <div className="space-y-3">
           {appStore ? (
@@ -33,16 +33,16 @@ export default function Indir() {
               App Store&apos;dan indir (iPhone)
             </a>
           ) : (
-            <div className="w-full py-3 rounded-xl bg-slate-100 text-slate-500 font-medium" data-testid="indir-soon">iPhone uygulaması yakında App Store&apos;da</div>
+            <div className="w-full py-3 rounded-xl bg-ink-100 text-ink-500 font-medium" data-testid="indir-soon">iPhone uygulaması yakında App Store&apos;da</div>
           )}
           <Link href="/portal/login" className="block w-full py-3 rounded-xl bg-[#6B1A2C] text-white font-semibold" data-testid="indir-portal">
             Müşteri olarak web&apos;den giriş
           </Link>
-          <Link href="/login" className="block w-full py-3 rounded-xl border border-slate-200 text-slate-700 font-medium">
+          <Link href="/login" className="block w-full py-3 rounded-xl border border-ink-200 text-ink-700 font-medium">
             Firma girişi
           </Link>
         </div>
-        <p className="text-xs text-slate-400">Giriş bilgilerinizi size davet gönderen firmadan alabilirsiniz.</p>
+        <p className="text-xs text-ink-400">Giriş bilgilerinizi size davet gönderen firmadan alabilirsiniz.</p>
       </div>
     </main>
   );

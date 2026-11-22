@@ -8,7 +8,7 @@ import { formatDate, toDateInputValue } from '@/lib/time';
 
 import { postPayment } from '@/lib/post-payment';
 import { parseAmount } from '@/lib/money';
-import { Loader2, Printer, Pencil, X, CreditCard, User, Package, CheckCircle, ChevronDown, ChevronRight, Layers, AlertTriangle } from 'lucide-react';
+import { Loader2, Printer, Pencil, X, CreditCard, User, Package, CheckCircle, ChevronDown, ChevronRight, Layers, AlertTriangle } from '@/app/components/icons';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
 
@@ -124,8 +124,8 @@ export default function InvoiceDetailPage() {
     } finally { setPayLoading(false); }
   };
 
-  if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div></AppShell>;
-  if (!invoice) return <AppShell><div className="text-center py-16 text-slate-400">Fatura bulunamadı</div></AppShell>;
+  if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-600" /></div></AppShell>;
+  if (!invoice) return <AppShell><div className="text-center py-16 text-ink-400">Fatura bulunamadı</div></AppShell>;
 
   const remaining = invoice.total - invoice.paidAmount;
 
@@ -149,7 +149,7 @@ export default function InvoiceDetailPage() {
           <button onClick={() => {
             const { default: jsPDF } = require('jspdf'); void handlePdf(invoice);
           }}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium">
+            className="flex items-center gap-2 px-3 py-1.5 bg-ink-100 hover:bg-ink-200 text-ink-700 rounded-lg text-sm font-medium">
             <Printer className="w-4 h-4" /> Yazdır
           </button>
           <Link href={`/invoices/${invoice.id}/edit`}
@@ -161,11 +161,11 @@ export default function InvoiceDetailPage() {
             <X className="w-4 h-4" /> İptal Et
           </button>
           <button onClick={() => setShowPayForm(s => !s)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium">
+            className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium">
             <CreditCard className="w-4 h-4" /> Tahsilat Gir
           </button>
           <Link href={`/customers/${invoice.customerId}`}
-            className="flex items-center gap-2 px-3 py-1.5 bg-orange-400 hover:bg-orange-500 text-white rounded-lg text-sm font-medium">
+            className="flex items-center gap-2 px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm font-medium">
             <User className="w-4 h-4" /> Müşteri Sayfası
           </Link>
           {/* Stok düşümü butonu */}
@@ -185,38 +185,38 @@ export default function InvoiceDetailPage() {
 
         {/* Payment form inline */}
         {showPayForm && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <form onSubmit={handlePayment} className="flex flex-wrap gap-3 items-end">
               <div>
-                <label className="block text-xs font-medium text-green-700 mb-1">Tutar</label>
+                <label className="block text-xs font-medium text-emerald-700 mb-1">Tutar</label>
                 <DecimalInput required step="0.01" value={payForm.amount}
                   onChange={e => setPayForm(p => ({ ...p, amount: e.target.value }))}
                   placeholder={`Kalan: ${fmt(remaining)}`}
-                  className="w-36 px-3 py-2 border border-green-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-green-400" />
+                  className="w-36 px-3 py-2 border border-emerald-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-400" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-green-700 mb-1">Yöntem</label>
+                <label className="block text-xs font-medium text-emerald-700 mb-1">Yöntem</label>
                 <select value={payForm.method} onChange={e => setPayForm(p => ({ ...p, method: e.target.value }))}
-                  className="px-3 py-2 border border-green-300 rounded-lg text-sm outline-none bg-white">
+                  className="px-3 py-2 border border-emerald-300 rounded-lg text-sm outline-none bg-white">
                   {METHODS.map(m => <option key={m}>{m}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-green-700 mb-1">Tarih</label>
+                <label className="block text-xs font-medium text-emerald-700 mb-1">Tarih</label>
                 <input type="date" value={payForm.date} onChange={e => setPayForm(p => ({ ...p, date: e.target.value }))}
-                  className="px-3 py-2 border border-green-300 rounded-lg text-sm outline-none" />
+                  className="px-3 py-2 border border-emerald-300 rounded-lg text-sm outline-none" />
               </div>
               <div className="flex-1 min-w-[140px]">
-                <label className="block text-xs font-medium text-green-700 mb-1">Not</label>
+                <label className="block text-xs font-medium text-emerald-700 mb-1">Not</label>
                 <input value={payForm.notes} onChange={e => setPayForm(p => ({ ...p, notes: e.target.value }))}
-                  className="w-full px-3 py-2 border border-green-300 rounded-lg text-sm outline-none" />
+                  className="w-full px-3 py-2 border border-emerald-300 rounded-lg text-sm outline-none" />
               </div>
               <button type="submit" disabled={payLoading}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-60">
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-60">
                 {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />} Kaydet
               </button>
               <button type="button" onClick={() => setShowPayForm(false)}
-                className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                className="px-3 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">
                 İptal
               </button>
             </form>
@@ -229,17 +229,17 @@ export default function InvoiceDetailPage() {
           {/* LEFT: Customer info + Invoice meta */}
           <div className="space-y-3">
             {/* Customer header */}
-            <div className="bg-blue-700 rounded-xl px-4 py-3 flex items-center justify-between">
+            <div className="bg-brand-800 rounded-xl px-4 py-3 flex items-center justify-between">
               <div>
                 <p className="text-white font-bold text-sm">{invoice.customer?.name}</p>
-                {invoice.customer?.taxId && <p className="text-blue-200 text-xs mt-0.5">VKN: {invoice.customer.taxId}</p>}
+                {invoice.customer?.taxId && <p className="text-brand-200 text-xs mt-0.5">VKN: {invoice.customer.taxId}</p>}
               </div>
-              <User className="w-5 h-5 text-blue-300" />
+              <User className="w-5 h-5 text-brand-300" />
             </div>
 
             {/* Invoice meta card */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="divide-y divide-slate-100">
+            <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+              <div className="divide-y divide-ink-100">
                 {[
                   { label: 'Belge No', field: 'invoiceNo', type: 'text', value: invoice.invoiceNo },
                   { label: 'Tarihi', field: 'date', type: 'date', value: fmtDate(invoice.date) },
@@ -250,27 +250,27 @@ export default function InvoiceDetailPage() {
                   ...(invoice.sevkTarihi ? [{ label: 'Sevk Tarihi', field: 'sevkTarihi', type: 'date', value: fmtDate(invoice.sevkTarihi) }] : []),
                 ].map(row => (
                   <div key={row.field} className="flex items-center px-4 py-2.5">
-                    <span className="text-xs font-semibold text-slate-500 w-24 flex-shrink-0">{row.label}</span>
-                    <span className="text-sm text-slate-700 font-medium">{row.value}</span>
+                    <span className="text-xs font-semibold text-ink-500 w-24 flex-shrink-0">{row.label}</span>
+                    <span className="text-sm text-ink-700 font-medium">{row.value}</span>
                   </div>
                 ))}
                 {/* Notes */}
                 <div className="px-4 py-2.5">
-                  <span className="text-xs font-semibold text-slate-500 block mb-1">Açıklama</span>
-                  <p className="text-sm text-slate-600">{invoice.notes || <span className="text-slate-300 italic">—</span>}</p>
+                  <span className="text-xs font-semibold text-ink-500 block mb-1">Açıklama</span>
+                  <p className="text-sm text-ink-600">{invoice.notes || <span className="text-ink-300 italic">—</span>}</p>
                 </div>
               </div>
             </div>
 
             {/* Payment summary */}
             {invoice.payments?.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Tahsilat Geçmişi</p>
+              <div className="bg-white rounded-xl shadow-card p-4 border border-ink-200/80">
+                <p className="text-xs font-bold text-ink-500 uppercase tracking-wide mb-3">Tahsilat Geçmişi</p>
                 <div className="space-y-2">
                   {invoice.payments.map((p: any) => (
                     <div key={p.id} className="flex justify-between text-sm">
-                      <span className="text-slate-500">{fmtDate(p.date)} — {p.method}</span>
-                      <span className="font-semibold text-green-600">+{fmt(p.amount)}</span>
+                      <span className="text-ink-500">{fmtDate(p.date)} — {p.method}</span>
+                      <span className="font-semibold text-emerald-600">+{fmt(p.amount)}</span>
                     </div>
                   ))}
                   {remaining > 0 && (
@@ -280,7 +280,7 @@ export default function InvoiceDetailPage() {
                     </div>
                   )}
                   {remaining <= 0 && (
-                    <div className="text-center text-xs text-green-600 font-semibold pt-1">Tümü Tahsil Edildi ✓</div>
+                    <div className="text-center text-xs text-emerald-600 font-semibold pt-1">Tümü Tahsil Edildi ✓</div>
                   )}
                 </div>
               </div>
@@ -289,9 +289,9 @@ export default function InvoiceDetailPage() {
 
           {/* RIGHT: Items + Totals */}
           <div className="lg:col-span-2 space-y-3">
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
               {/* Header */}
-              <div className="bg-green-600 px-4 py-3 flex items-center justify-between">
+              <div className="bg-emerald-600 px-4 py-3 flex items-center justify-between">
                 <h2 className="text-white font-bold text-sm uppercase tracking-wide">Ürün / Hizmetler</h2>
               </div>
 
@@ -299,7 +299,7 @@ export default function InvoiceDetailPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[600px]">
                   <thead>
-                    <tr className="bg-green-50 text-xs font-semibold text-slate-600 border-b border-green-100">
+                    <tr className="bg-emerald-50 text-xs font-semibold text-ink-600 border-b border-emerald-100">
                       <th className="px-3 py-2.5 text-left w-8">#</th>
                       <th className="px-3 py-2.5 text-left">Açıklama</th>
                       <th className="px-3 py-2.5 text-right">Miktar</th>
@@ -310,7 +310,7 @@ export default function InvoiceDetailPage() {
                       <th className="px-3 py-2.5 text-right">KDV</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-ink-50">
                     {(invoice.items || []).map((item: any, idx: number) => {
                       const tutar = item.quantity * item.unitPrice;
                       const indirimTL = tutar * (item.discount ?? 0) / 100;
@@ -320,15 +320,15 @@ export default function InvoiceDetailPage() {
                       const isExpanded = expandedItems.has(item.id);
                       return (
                         <>
-                          <tr key={item.id} className={`hover:bg-slate-50/50 ${isExpanded ? 'bg-blue-50/30' : ''}`}>
-                            <td className="px-3 py-2.5 text-slate-400 text-xs">{idx + 1}</td>
-                            <td className="px-3 py-2.5 text-slate-700">
+                          <tr key={item.id} className={`hover:bg-ink-50/50 ${isExpanded ? 'bg-brand-50/30' : ''}`}>
+                            <td className="px-3 py-2.5 text-ink-400 text-xs">{idx + 1}</td>
+                            <td className="px-3 py-2.5 text-ink-700">
                               <div className="flex items-center gap-1.5">
                                 {parts.length > 0 && (
                                   <button
                                     type="button"
                                     onClick={() => toggleItem(item.id)}
-                                    className="flex-shrink-0 p-0.5 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-100 transition-colors"
+                                    className="flex-shrink-0 p-0.5 rounded text-ink-400 hover:text-brand-700 hover:bg-brand-100 transition-colors"
                                     title="Ürün bileşenlerini göster"
                                   >
                                     {isExpanded
@@ -337,36 +337,36 @@ export default function InvoiceDetailPage() {
                                   </button>
                                 )}
                                 {item.product?.code && (
-                                  <span className="text-xs font-mono text-slate-400">[{item.product.code}]</span>
+                                  <span className="text-xs font-mono text-ink-400">[{item.product.code}]</span>
                                 )}
                                 <span>{item.description}</span>
                               </div>
                             </td>
-                            <td className="px-3 py-2.5 text-right text-slate-600">{item.quantity.toLocaleString('tr-TR')}</td>
-                            <td className="px-3 py-2.5 text-right text-slate-600">{fmt(item.unitPrice)}</td>
-                            <td className="px-3 py-2.5 text-right text-slate-600">{fmt(tutar)}</td>
-                            <td className="px-3 py-2.5 text-right text-slate-500">{fmt(indirimTL)}</td>
-                            <td className="px-3 py-2.5 text-right font-medium text-slate-700">{fmt(net)}</td>
-                            <td className="px-3 py-2.5 text-right text-slate-500">{fmt(kdv)}</td>
+                            <td className="px-3 py-2.5 text-right text-ink-600">{item.quantity.toLocaleString('tr-TR')}</td>
+                            <td className="px-3 py-2.5 text-right text-ink-600">{fmt(item.unitPrice)}</td>
+                            <td className="px-3 py-2.5 text-right text-ink-600">{fmt(tutar)}</td>
+                            <td className="px-3 py-2.5 text-right text-ink-500">{fmt(indirimTL)}</td>
+                            <td className="px-3 py-2.5 text-right font-medium text-ink-700">{fmt(net)}</td>
+                            <td className="px-3 py-2.5 text-right text-ink-500">{fmt(kdv)}</td>
                           </tr>
                           {isExpanded && parts.length > 0 && (
-                            <tr key={`${item.id}-parts`} className="bg-blue-50/40">
+                            <tr key={`${item.id}-parts`} className="bg-brand-50/40">
                               <td></td>
                               <td colSpan={7} className="px-4 py-2.5">
                                 <div className="flex items-center gap-1.5 mb-2">
-                                  <Layers className="w-3.5 h-3.5 text-blue-500" />
-                                  <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Ürün Bileşenleri</span>
+                                  <Layers className="w-3.5 h-3.5 text-brand-600" />
+                                  <span className="text-xs font-semibold text-brand-800 uppercase tracking-wide">Ürün Bileşenleri</span>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                   {parts.map((part: any) => {
                                     const matName = part.material?.name ?? null;
                                     return (
-                                      <div key={part.id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-xs shadow-sm">
-                                        <span className="font-semibold text-slate-700">{part.name}</span>
+                                      <div key={part.id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-brand-200 rounded-lg text-xs shadow-sm">
+                                        <span className="font-semibold text-ink-700">{part.name}</span>
                                         {matName && (
                                           <>
-                                            <span className="text-slate-400">-</span>
-                                            <span className="text-slate-500">{matName}</span>
+                                            <span className="text-ink-400">-</span>
+                                            <span className="text-ink-500">{matName}</span>
                                           </>
                                         )}
                                       </div>
@@ -384,7 +384,7 @@ export default function InvoiceDetailPage() {
               </div>
 
               {/* Totals summary */}
-              <div className="px-4 py-4 border-t border-slate-100">
+              <div className="px-4 py-4 border-t border-ink-100">
                 <div className="flex justify-end">
                   <div className="w-64 space-y-1.5 text-sm">
                     {(() => {
@@ -394,27 +394,27 @@ export default function InvoiceDetailPage() {
                       const total = t.net + kdv;
                       return (
                         <>
-                          <div className="flex justify-between text-slate-500">
+                          <div className="flex justify-between text-ink-500">
                             <span>Toplam Miktar</span>
                             <span>{t.totalQty.toLocaleString('tr-TR')}</span>
                           </div>
-                          <div className="flex justify-between text-slate-600">
+                          <div className="flex justify-between text-ink-600">
                             <span>Brüt Toplam</span>
                             <span>{fmt(t.brut)} {invoice.currency}</span>
                           </div>
-                          <div className="flex justify-between text-slate-500">
+                          <div className="flex justify-between text-ink-500">
                             <span>İndirim</span>
                             <span>{fmt(t.indirim)} {invoice.currency}</span>
                           </div>
-                          <div className="flex justify-between text-slate-600">
+                          <div className="flex justify-between text-ink-600">
                             <span>Net Toplam</span>
                             <span>{fmt(t.net)} {invoice.currency}</span>
                           </div>
-                          <div className="flex justify-between text-slate-600">
+                          <div className="flex justify-between text-ink-600">
                             <span>KDV (%{vr})</span>
                             <span>{fmt(kdv)} {invoice.currency}</span>
                           </div>
-                          <div className="flex justify-between font-bold text-slate-800 text-base pt-2 border-t">
+                          <div className="flex justify-between font-bold text-ink-800 text-base pt-2 border-t">
                             <span>TOPLAM</span>
                             <span>{fmt(invoice.total)} {invoice.currency}</span>
                           </div>
@@ -434,8 +434,8 @@ export default function InvoiceDetailPage() {
       {showStokModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowStokModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
-            <div className="bg-amber-500 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl border border-ink-200/80">
+            <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
               <h3 className="text-white font-semibold text-base flex items-center gap-2">
                 <Package className="w-5 h-5" /> Hammadde Stok Düşümü
               </h3>
@@ -447,18 +447,18 @@ export default function InvoiceDetailPage() {
               {stokLoading ? (
                 <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin text-amber-500" /></div>
               ) : stokAdjustments.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-sm">
+                <div className="text-center py-8 text-ink-400 text-sm">
                   Bu faturada ürün kataloğundan seçilmiş kalem bulunamadı.
                 </div>
               ) : (
                 <>
-                  <p className="text-sm text-slate-500 mb-4">
+                  <p className="text-sm text-ink-500 mb-4">
                     Aşağıdaki miktarlar ürün reçetesine göre hesaplandı. Düzenleyebilirsiniz.
                   </p>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-xs font-semibold text-slate-500 border-b bg-slate-50">
+                        <tr className="text-xs font-semibold text-ink-500 border-b bg-ink-50">
                           <th className="px-3 py-2 text-left">Hammadde</th>
                           <th className="px-3 py-2 text-right">Mevcut Stok (kg)</th>
                           <th className="px-3 py-2 text-right">Hesaplanan (kg)</th>
@@ -466,17 +466,17 @@ export default function InvoiceDetailPage() {
                           <th className="px-3 py-2 text-right">Sonraki Stok (kg)</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-ink-100">
                         {stokAdjustments.map((adj: any, idx: number) => {
                           const dusulecek = parseFloat(adj.kgInput) || 0;
                           const sonraki = adj.currentStock - dusulecek;
                           return (
-                            <tr key={adj.materialId} className="hover:bg-slate-50/50">
-                              <td className="px-3 py-2.5 font-medium text-slate-700">{adj.name}</td>
-                              <td className="px-3 py-2.5 text-right text-slate-500">
+                            <tr key={adj.materialId} className="hover:bg-ink-50/50">
+                              <td className="px-3 py-2.5 font-medium text-ink-700">{adj.name}</td>
+                              <td className="px-3 py-2.5 text-right text-ink-500">
                                 {adj.currentStock.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
-                              <td className="px-3 py-2.5 text-right text-slate-400 text-xs">
+                              <td className="px-3 py-2.5 text-right text-ink-400 text-xs">
                                 {adj.kgAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                               <td className="px-3 py-2.5 text-right">
@@ -487,7 +487,7 @@ export default function InvoiceDetailPage() {
                                   className="w-28 px-2 py-1 border border-amber-300 rounded text-sm text-right outline-none focus:ring-2 focus:ring-amber-400"
                                 />
                               </td>
-                              <td className={`px-3 py-2.5 text-right font-semibold ${sonraki < 0 ? 'text-red-600' : 'text-slate-700'}`}>
+                              <td className={`px-3 py-2.5 text-right font-semibold ${sonraki < 0 ? 'text-red-600' : 'text-ink-700'}`}>
                                 {sonraki.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                             </tr>
@@ -503,7 +503,7 @@ export default function InvoiceDetailPage() {
                   )}
                   <div className="flex justify-end gap-3 mt-5">
                     <button onClick={() => setShowStokModal(false)}
-                      className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+                      className="px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">
                       Vazgeç
                     </button>
                     <button onClick={handleStokOnayla} disabled={stokSaving}
@@ -521,19 +521,19 @@ export default function InvoiceDetailPage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-ink-600 whitespace-pre-line">{confirmModal.message}</p>
               </div>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setConfirmModal(null)}
-                className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+                className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg text-sm hover:bg-ink-50">İptal</button>
               <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }}
                 className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>

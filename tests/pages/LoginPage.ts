@@ -9,7 +9,7 @@ export class LoginPage {
   }
 
   async login(email: string, password: string) {
-    await this.page.getByPlaceholder('email@example.com').fill(email);
+    await this.page.getByPlaceholder('ornek@firma.com').fill(email);
     await this.page.getByPlaceholder('••••••••').fill(password);
     await this.page.getByRole('button', { name: /giriş|login/i }).click();
   }

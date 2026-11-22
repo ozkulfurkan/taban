@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Settings, Shield, Menu, X, ChevronLeft,
   FileText, Users, Truck, BoxIcon, Receipt, Package, Landmark, ScrollText,
   UserCog, Calculator, Globe, Factory, ClipboardList, UserCheck, LifeBuoy, LogOut, Send
-} from 'lucide-react';
+} from '@/app/components/icons';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/lib/i18n/language-context';
@@ -110,21 +110,22 @@ export default function Sidebar() {
         <Link
           href={link.href}
           onClick={() => setMobileOpen(false)}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+          aria-current={active ? 'page' : undefined}
+          className={`relative flex items-center gap-3 px-3 py-[7px] rounded-md text-[13px] transition-colors duration-150 ${
             link.special
               ? active
-                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'
-                : 'text-amber-300 hover:bg-amber-500/20 hover:text-amber-200'
+                ? 'bg-brand-700 text-white font-medium shadow-card'
+                : 'bg-brand-50 text-brand-700 font-medium ring-1 ring-inset ring-brand-100 hover:bg-brand-100'
               : active
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                : 'text-blue-200 hover:bg-blue-800/50 hover:text-white'
-          }`}
+                ? 'bg-brand-50/80 text-brand-800 font-semibold before:absolute before:left-[-8px] before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r before:bg-brand-700'
+                : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900'
+          } ${collapsed ? 'justify-center' : ''}`}
         >
-          {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
+          {Icon && <Icon className={`w-[18px] h-[18px] flex-shrink-0 ${active && !link.special ? 'text-brand-700' : ''}`} weight={active ? 'fill' : 'regular'} />}
           {!collapsed && <span>{link.label}</span>}
         </Link>
         {collapsed && (
-          <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
+          <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-ink-900 text-ink-50 text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
             {link.label}
           </span>
         )}
@@ -135,11 +136,11 @@ export default function Sidebar() {
   const NavContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="p-4 flex items-center justify-between border-b border-blue-800/30">
+      <div className="h-16 px-4 flex items-center justify-between">
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <BrandMark size={36} />
-            <span className="text-white font-semibold text-lg">SoleCost</span>
+            <BrandMark size={34} />
+            <span className="font-display text-[22px] font-semibold text-ink-900 tracking-tight">SoleCost</span>
           </Link>
         )}
         {collapsed && (
@@ -149,16 +150,18 @@ export default function Sidebar() {
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="text-blue-300 hover:text-white transition-colors hidden lg:block"
+          aria-label={collapsed ? 'Menüyü genişlet' : 'Menüyü daralt'}
+          className="text-ink-400 hover:text-ink-800 transition-colors hidden lg:block"
         >
           <ChevronLeft className={`w-5 h-5 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
         </button>
-        <button onClick={() => setMobileOpen(false)} className="text-blue-300 hover:text-white lg:hidden">
+        <button onClick={() => setMobileOpen(false)} aria-label="Menüyü kapat" className="text-ink-400 hover:text-ink-800 lg:hidden">
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Nav */}
+      <div className="mx-4 stitch text-ink-200" aria-hidden />
       <nav className="flex-1 overflow-y-auto sidebar-scroll py-2">
         {sections.map((section, si) => {
           const visibleLinks = section.links.filter(link => canSee(link.href));
@@ -166,14 +169,14 @@ export default function Sidebar() {
           return (
             <div key={si}>
               {section.title && !collapsed && (
-                <p className="text-[10px] text-blue-300/60 px-4 pt-3.5 pb-1 uppercase tracking-widest font-semibold">
+                <p className="section-title px-5 pt-4 pb-1.5 text-[10px]">
                   {section.title}
                 </p>
               )}
               {section.title && collapsed && si > 0 && (
-                <div className="mx-3 my-2 border-t border-blue-800/40" />
+                <div className="mx-3 my-2 border-t border-ink-200" />
               )}
-              <div className="px-2 space-y-0.5">
+              <div className="px-3 space-y-px">
                 {visibleLinks.map((link) => (
                   <NavLink key={link.href} link={link} />
                 ))}
@@ -184,10 +187,10 @@ export default function Sidebar() {
       </nav>
 
       {/* Logout — shown only in mobile drawer */}
-      <div className="px-2 pb-3 border-t border-blue-800/30 pt-2 lg:hidden">
+      <div className="px-3 pb-3 border-t border-ink-200 pt-2 lg:hidden">
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-red-300 hover:bg-red-500/20 hover:text-red-200 transition-all w-full"
+          className="flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium text-red-700 hover:bg-red-50 transition-colors w-full"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           <span>Çıkış Yap</span>
@@ -200,25 +203,25 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-slate-900 border-t border-blue-800/40 flex">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur border-t border-ink-200 flex pb-[env(safe-area-inset-bottom)]">
         {bottomTabs.map(tab => {
           const active = isActive(tab.href);
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex-1 flex flex-col items-center py-2 gap-0.5 text-xs transition-colors ${
-                active ? 'text-blue-400' : 'text-blue-300/60 hover:text-blue-200'
+              className={`flex-1 flex flex-col items-center py-2 gap-0.5 text-[11px] font-medium transition-colors ${
+                active ? 'text-brand-700' : 'text-ink-500 hover:text-ink-800'
               }`}
             >
-              <tab.icon className="w-5 h-5" />
+              <tab.icon className="w-5 h-5" weight={active ? 'fill' : 'regular'} />
               <span>{tab.label}</span>
             </Link>
           );
         })}
         <button
           onClick={() => setMobileOpen(true)}
-          className="flex-1 flex flex-col items-center py-2 gap-0.5 text-xs text-blue-300/60 hover:text-blue-200 transition-colors"
+          className="flex-1 flex flex-col items-center py-2 gap-0.5 text-[11px] font-medium text-ink-500 hover:text-ink-800 transition-colors"
         >
           <Menu className="w-5 h-5" />
           <span>{t('nav', 'menu')}</span>
@@ -232,7 +235,7 @@ export default function Sidebar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-ink-950/40 z-40 lg:hidden"
             onClick={() => setMobileOpen(false)}
           />
         )}
@@ -246,7 +249,7 @@ export default function Sidebar() {
             animate={{ x: 0 }}
             exit={{ x: -280 }}
             transition={{ type: 'spring', damping: 25 }}
-            className="fixed left-0 top-0 h-full w-[260px] bg-gradient-to-b from-blue-900 to-slate-900 z-50 lg:hidden shadow-2xl"
+            className="fixed left-0 top-0 h-full w-[268px] bg-[#FDFCFA] border-r border-ink-200 z-50 lg:hidden shadow-pop"
           >
             <NavContent />
           </motion.aside>
@@ -256,7 +259,7 @@ export default function Sidebar() {
       {/* Desktop sidebar */}
       <aside
         data-testid="sidebar"
-        className={`hidden lg:block h-screen bg-gradient-to-b from-blue-900 to-slate-900 transition-all duration-300 flex-shrink-0 ${
+        className={`hidden lg:block h-screen bg-[#FDFCFA] border-r border-ink-200 transition-all duration-300 flex-shrink-0 ${
           collapsed ? 'w-[68px]' : 'w-[250px]'
         }`}
       >

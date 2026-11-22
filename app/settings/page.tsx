@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Settings, Save, Loader2, Globe, DollarSign, User, Building2, CreditCard, Plus, Trash2, Image, RefreshCw, QrCode, ChevronDown, ChevronUp } from 'lucide-react';
+import { Settings, Save, Loader2, Globe, DollarSign, User, Building2, CreditCard, Plus, Trash2, Image, RefreshCw, QrCode, ChevronDown, ChevronUp } from '@/app/components/icons';
 import { motion } from 'framer-motion';
 import DecimalInput from '@/app/components/decimal-input';
 import { CompanyCodeCard } from '@/app/components/network';
@@ -215,40 +215,40 @@ export default function SettingsPage() {
     <AppShell>
       <div className="space-y-6 max-w-2xl">
         <div className="flex items-center gap-3">
-          <Settings className="w-6 h-6 text-blue-600" />
-          <h1 className="text-2xl font-bold text-slate-800">{t('settings', 'title')}</h1>
+          <Settings className="w-6 h-6 text-brand-700" />
+          <h1 className="page-title">{t('settings', 'title')}</h1>
         </div>
 
         {/* Profile */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl shadow-sm p-6 space-y-5">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl shadow-card p-6 space-y-5 border border-ink-200/80">
           <div className="flex items-center gap-3 pb-4 border-b">
-            <User className="w-5 h-5 text-blue-600" />
-            <h2 className="font-semibold text-slate-700">{t('settings', 'profile')}</h2>
+            <User className="w-5 h-5 text-brand-700" />
+            <h2 className="font-semibold text-ink-700">{t('settings', 'profile')}</h2>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">{t('common', 'name')}</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            <label className="block text-sm font-medium text-ink-700 mb-1">{t('common', 'name')}</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">{t('auth', 'email')}</label>
-            <input value={user?.email ?? ''} disabled className="w-full px-3 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-500" />
+            <label className="block text-sm font-medium text-ink-700 mb-1">{t('auth', 'email')}</label>
+            <input value={user?.email ?? ''} disabled className="w-full px-3 py-2.5 border border-ink-200 rounded-lg bg-ink-50 text-ink-500" />
           </div>
 
           <div className="flex items-center gap-3 pb-2 pt-2 border-b">
-            <Globe className="w-5 h-5 text-blue-600" />
-            <h2 className="font-semibold text-slate-700">{t('settings', 'preferences')}</h2>
+            <Globe className="w-5 h-5 text-brand-700" />
+            <h2 className="font-semibold text-ink-700">{t('settings', 'preferences')}</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{t('common', 'language')}</label>
-              <select value={lang} onChange={(e) => setLang(e.target.value as 'tr' | 'en')} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+              <label className="block text-sm font-medium text-ink-700 mb-1">{t('common', 'language')}</label>
+              <select value={lang} onChange={(e) => setLang(e.target.value as 'tr' | 'en')} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none">
                 <option value="tr">Türkçe</option>
                 <option value="en">English</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{t('common', 'currency')}</label>
-              <select value={cur} onChange={(e) => setCur(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+              <label className="block text-sm font-medium text-ink-700 mb-1">{t('common', 'currency')}</label>
+              <select value={cur} onChange={(e) => setCur(e.target.value)} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none">
                 <option value="USD">USD ($)</option>
                 <option value="EUR">EUR (€)</option>
                 <option value="TRY">TRY (₺)</option>
@@ -257,12 +257,12 @@ export default function SettingsPage() {
           </div>
 
           {success && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm text-center">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm text-center">
               ✓ {t('settings', 'updateSuccess')}
             </motion.div>
           )}
 
-          <button onClick={handleSaveProfile} disabled={saving} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-blue-600/20">
+          <button onClick={handleSaveProfile} disabled={saving} className="w-full py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-brand-700/20">
             {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
             {t('common', 'save')}
           </button>
@@ -276,29 +276,29 @@ export default function SettingsPage() {
 
         {/* Company Info */}
         {!companyLoading && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-xl shadow-sm p-6 space-y-5">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-xl shadow-card p-6 space-y-5 border border-ink-200/80">
             <div className="flex items-center gap-3 pb-4 border-b">
-              <Building2 className="w-5 h-5 text-blue-600" />
-              <h2 className="font-semibold text-slate-700">{t('settings', 'companyInfo')}</h2>
-              {!canEditCompany && <span className="text-xs text-slate-400 ml-auto">(Sadece yöneticiler düzenleyebilir)</span>}
+              <Building2 className="w-5 h-5 text-brand-700" />
+              <h2 className="font-semibold text-ink-700">{t('settings', 'companyInfo')}</h2>
+              {!canEditCompany && <span className="text-xs text-ink-400 ml-auto">(Sadece yöneticiler düzenleyebilir)</span>}
             </div>
 
             {/* Logo */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">{t('settings', 'logo')}</label>
+              <label className="block text-sm font-medium text-ink-700 mb-2">{t('settings', 'logo')}</label>
               <div className="flex items-center gap-4">
                 {logoUrl ? (
-                  <img src={logoUrl} alt="Logo" className="h-16 w-auto max-w-[160px] object-contain rounded border border-slate-200 p-1" />
+                  <img src={logoUrl} alt="Logo" className="h-16 w-auto max-w-[160px] object-contain rounded border border-ink-200 p-1" />
                 ) : (
-                  <div className="h-16 w-24 bg-slate-100 rounded border border-slate-200 flex items-center justify-center">
-                    <Image className="w-6 h-6 text-slate-400" />
+                  <div className="h-16 w-24 bg-ink-100 rounded border border-ink-200 flex items-center justify-center">
+                    <Image className="w-6 h-6 text-ink-400" />
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => logoInputRef.current?.click()}
                     disabled={!canEditCompany}
-                    className="px-3 py-1.5 text-sm border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 text-sm border border-brand-300 text-brand-700 rounded-lg hover:bg-brand-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {t('settings', 'uploadLogo')}
                   </button>
@@ -314,20 +314,20 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t('auth', 'companyName')}</label>
-                <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
+                <label className="block text-sm font-medium text-ink-700 mb-1">{t('auth', 'companyName')}</label>
+                <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none disabled:bg-ink-50 disabled:text-ink-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t('settings', 'companyPhone')}</label>
-                <input value={companyPhone} onChange={(e) => setCompanyPhone(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
+                <label className="block text-sm font-medium text-ink-700 mb-1">{t('settings', 'companyPhone')}</label>
+                <input value={companyPhone} onChange={(e) => setCompanyPhone(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none disabled:bg-ink-50 disabled:text-ink-500" />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t('settings', 'companyAddress')}</label>
-                <textarea value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} disabled={!canEditCompany} rows={2} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-slate-50 disabled:text-slate-500" />
+                <label className="block text-sm font-medium text-ink-700 mb-1">{t('settings', 'companyAddress')}</label>
+                <textarea value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} disabled={!canEditCompany} rows={2} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none resize-none disabled:bg-ink-50 disabled:text-ink-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">{t('settings', 'companyTaxId')}</label>
-                <input value={companyTaxId} onChange={(e) => setCompanyTaxId(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
+                <label className="block text-sm font-medium text-ink-700 mb-1">{t('settings', 'companyTaxId')}</label>
+                <input value={companyTaxId} onChange={(e) => setCompanyTaxId(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none disabled:bg-ink-50 disabled:text-ink-500" />
               </div>
             </div>
 
@@ -335,8 +335,8 @@ export default function SettingsPage() {
             <div className="pt-2">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-blue-600" />
-                  <h3 className="font-medium text-slate-700">{t('settings', 'exchangeRates')}</h3>
+                  <DollarSign className="w-4 h-4 text-brand-700" />
+                  <h3 className="font-medium text-ink-700">{t('settings', 'exchangeRates')}</h3>
                 </div>
                 {canEditCompany && (
                   <button
@@ -350,7 +350,7 @@ export default function SettingsPage() {
                         if (d.eur) setEurToTry(String(d.eur));
                       } finally { setTcmbLoading(false); }
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-60"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-800 rounded-lg text-xs font-medium transition-colors disabled:opacity-60"
                   >
                     {tcmbLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                     TCMB&apos;den Al
@@ -359,28 +359,28 @@ export default function SettingsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('settings', 'usdToTry')}</label>
-                  <DecimalInput step="0.01" value={usdToTry} onChange={(e) => setUsdToTry(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
+                  <label className="block text-sm font-medium text-ink-700 mb-1">{t('settings', 'usdToTry')}</label>
+                  <DecimalInput step="0.01" value={usdToTry} onChange={(e) => setUsdToTry(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none disabled:bg-ink-50 disabled:text-ink-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('settings', 'eurToTry')}</label>
-                  <DecimalInput step="0.01" value={eurToTry} onChange={(e) => setEurToTry(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
+                  <label className="block text-sm font-medium text-ink-700 mb-1">{t('settings', 'eurToTry')}</label>
+                  <DecimalInput step="0.01" value={eurToTry} onChange={(e) => setEurToTry(e.target.value)} disabled={!canEditCompany} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none disabled:bg-ink-50 disabled:text-ink-500" />
                 </div>
               </div>
             </div>
 
             {/* VAT */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{t('settings', 'vatRate')}</label>
+              <label className="block text-sm font-medium text-ink-700 mb-1">{t('settings', 'vatRate')}</label>
               <div className="flex items-center gap-2">
-                <DecimalInput step="0.1" min="0" max="100" value={vatRate} onChange={(e) => setVatRate(e.target.value)} disabled={!canEditCompany} className="w-32 px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-500" />
-                <span className="text-slate-500">%</span>
+                <DecimalInput step="0.1" min="0" max="100" value={vatRate} onChange={(e) => setVatRate(e.target.value)} disabled={!canEditCompany} className="w-32 px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none disabled:bg-ink-50 disabled:text-ink-500" />
+                <span className="text-ink-500">%</span>
               </div>
             </div>
 
             {/* Company Type */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Şirket Tipi</label>
+              <label className="block text-sm font-medium text-ink-700 mb-2">Şirket Tipi</label>
               <div className="flex gap-3">
                 {[
                   { value: 'SOLE_MANUFACTURER', label: 'Taban Üreticisi', desc: 'Parçalar, numara, maliyet hesaplama' },
@@ -393,12 +393,12 @@ export default function SettingsPage() {
                     onClick={() => setCompanyType(opt.value)}
                     className={`flex-1 px-4 py-3 rounded-xl border-2 text-left transition-all disabled:cursor-not-allowed ${
                       companyType === opt.value
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-slate-200 hover:border-slate-300'
+                        ? 'border-brand-600 bg-brand-50'
+                        : 'border-ink-200 hover:border-ink-300'
                     }`}
                   >
-                    <div className="font-medium text-sm text-slate-800">{opt.label}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">{opt.desc}</div>
+                    <div className="font-medium text-sm text-ink-800">{opt.label}</div>
+                    <div className="text-xs text-ink-500 mt-0.5">{opt.desc}</div>
                   </button>
                 ))}
               </div>
@@ -408,20 +408,20 @@ export default function SettingsPage() {
             <div className="pt-2">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-blue-600" />
-                  <h3 className="font-medium text-slate-700">{t('settings', 'bankInfo')}</h3>
+                  <CreditCard className="w-4 h-4 text-brand-700" />
+                  <h3 className="font-medium text-ink-700">{t('settings', 'bankInfo')}</h3>
                 </div>
                 {canEditCompany && (
-                  <button onClick={addBank} className="flex items-center gap-1 text-sm text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-lg">
+                  <button onClick={addBank} className="flex items-center gap-1 text-sm text-brand-700 hover:bg-brand-50 px-2 py-1 rounded-lg">
                     <Plus className="w-4 h-4" /> {t('settings', 'addBank')}
                   </button>
                 )}
               </div>
               <div className="space-y-3">
                 {banks.map((bank, i) => (
-                  <div key={i} className="p-3 bg-slate-50 rounded-lg space-y-2">
+                  <div key={i} className="p-3 bg-ink-50 rounded-lg space-y-2">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-slate-500">#{i + 1}</span>
+                      <span className="text-xs font-medium text-ink-500">#{i + 1}</span>
                       {canEditCompany && (
                         <button onClick={() => removeBank(i)} className="text-red-400 hover:text-red-600 p-1">
                           <Trash2 className="w-3.5 h-3.5" />
@@ -434,37 +434,37 @@ export default function SettingsPage() {
                         value={bank.bankName}
                         onChange={(e) => updateBank(i, 'bankName', e.target.value)}
                         disabled={!canEditCompany}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-white disabled:text-slate-500"
+                        className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none disabled:bg-white disabled:text-ink-500"
                       />
                       <input
                         placeholder={t('settings', 'accountName')}
                         value={bank.accountName}
                         onChange={(e) => updateBank(i, 'accountName', e.target.value)}
                         disabled={!canEditCompany}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-white disabled:text-slate-500"
+                        className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none disabled:bg-white disabled:text-ink-500"
                       />
                       <input
                         placeholder={t('settings', 'iban')}
                         value={bank.iban}
                         onChange={(e) => updateBank(i, 'iban', e.target.value)}
                         disabled={!canEditCompany}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-white disabled:text-slate-500 font-mono"
+                        className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none disabled:bg-white disabled:text-ink-500 font-mono"
                       />
                     </div>
                   </div>
                 ))}
-                {banks.length === 0 && <p className="text-sm text-slate-400 text-center py-2">Banka bilgisi eklenmemiş</p>}
+                {banks.length === 0 && <p className="text-sm text-ink-400 text-center py-2">Banka bilgisi eklenmemiş</p>}
               </div>
             </div>
 
             {companySuccess && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm text-center">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm text-center">
                 ✓ {t('settings', 'updateSuccess')}
               </motion.div>
             )}
 
             {canEditCompany && (
-              <button onClick={handleSaveCompany} disabled={companySaving} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-blue-600/20">
+              <button onClick={handleSaveCompany} disabled={companySaving} className="w-full py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-brand-700/20">
                 {companySaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                 {t('common', 'save')}
               </button>
@@ -474,12 +474,12 @@ export default function SettingsPage() {
 
         {/* Barkod Ayarları */}
         {canEditCompany && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-white rounded-xl shadow-sm p-6 space-y-5">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-white rounded-xl shadow-card p-6 space-y-5 border border-ink-200/80">
             <div className="flex items-center gap-3 pb-4 border-b">
-              <QrCode className="w-5 h-5 text-purple-600" />
+              <QrCode className="w-5 h-5 text-brand-700" />
               <div>
-                <h2 className="text-lg font-semibold text-slate-800">Barkod Ayarları</h2>
-                <p className="text-xs text-slate-500">Yazdırılacak etiketin boyutu ve şablonu</p>
+                <h2 className="text-lg font-semibold text-ink-800">Barkod Ayarları</h2>
+                <p className="text-xs text-ink-500">Yazdırılacak etiketin boyutu ve şablonu</p>
               </div>
             </div>
 
@@ -491,9 +491,9 @@ export default function SettingsPage() {
                 { label: 'Kenar Boşluğu (mm)', val: labelPadding, set: setLabelPadding },
               ].map(({ label, val, set }) => (
                 <div key={label}>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
+                  <label className="block text-xs font-medium text-ink-600 mb-1">{label}</label>
                   <DecimalInput min="0" max="300" value={val} onChange={e => set(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+                    className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
                 </div>
               ))}
             </div>
@@ -501,7 +501,7 @@ export default function SettingsPage() {
             {/* Şablon ayarları toggle */}
             <button
               onClick={() => setShowTemplateSettings(s => !s)}
-              className="w-full flex items-center justify-between px-4 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-2.5 bg-ink-50 hover:bg-ink-100 rounded-lg border border-ink-200 text-sm font-medium text-ink-700 transition-colors"
             >
               <span>Barkod Şablon Ayarları</span>
               {showTemplateSettings ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -512,15 +512,15 @@ export default function SettingsPage() {
                 {/* Varsayılan paket bilgileri */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Varsayılan Paket Miktarı</label>
+                    <label className="block text-xs font-medium text-ink-600 mb-1">Varsayılan Paket Miktarı</label>
                     <input type="text" inputMode="decimal" value={defaultQtyPerPack}
                       onChange={e => setDefaultQtyPerPack(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+                      className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Varsayılan Birim</label>
+                    <label className="block text-xs font-medium text-ink-600 mb-1">Varsayılan Birim</label>
                     <select value={defaultQtyUnit} onChange={e => setDefaultQtyUnit(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none bg-white">
+                      className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white">
                       <option value="adet">adet</option>
                       <option value="çift">çift</option>
                       <option value="kg">kg</option>
@@ -529,7 +529,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Font boyutları */}
-                <p className="text-xs text-slate-400">Yazı boyutları pt cinsindendir. Barkod çubuğu yüksekliği piksel cinsinden.</p>
+                <p className="text-xs text-ink-400">Yazı boyutları pt cinsindendir. Barkod çubuğu yüksekliği piksel cinsinden.</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: 'Firma Adı (pt)', val: companyFontSize, set: setCompanyFontSize },
@@ -541,9 +541,9 @@ export default function SettingsPage() {
                     { label: 'Barkod Yüksekliği (px)', val: barcodeHeight, set: setBarcodeHeight },
                   ].map(({ label, val, set }) => (
                     <div key={label}>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
+                      <label className="block text-xs font-medium text-ink-600 mb-1">{label}</label>
                       <DecimalInput min="1" max="72" value={val} onChange={e => set(e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+                        className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
                     </div>
                   ))}
                 </div>
@@ -551,11 +551,11 @@ export default function SettingsPage() {
             )}
 
             {barcodeSuccess && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm text-center">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm text-center">
                 ✓ Barkod ayarları kaydedildi
               </motion.div>
             )}
-            <button onClick={handleSaveBarcode} disabled={barcodeSaving} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
+            <button onClick={handleSaveBarcode} disabled={barcodeSaving} className="w-full py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
               {barcodeSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
               Kaydet
             </button>

@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { useEffect, useState } from 'react';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon } from '@/app/components/icons';
 
 interface StatCardProps {
   title: string;
@@ -37,10 +37,10 @@ export default function StatCard({ title, value, prefix, suffix, icon: Icon, col
   }, [inView, value]);
 
   const colorStyles: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    purple: 'bg-purple-50 text-purple-600',
-    orange: 'bg-orange-50 text-orange-600',
+    blue: 'bg-brand-50 text-brand-700',
+    green: 'bg-emerald-50 text-emerald-600',
+    purple: 'bg-brand-50 text-brand-700',
+    orange: 'bg-amber-50 text-amber-600',
   };
 
   return (
@@ -49,15 +49,15 @@ export default function StatCard({ title, value, prefix, suffix, icon: Icon, col
       initial={{ opacity: 0, y: 20 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5 }}
-      className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow"
+      className="bg-white rounded-xl p-5 shadow-card hover:shadow-md transition-shadow-card border border-ink-200/80"
     >
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-slate-500">{title}</span>
+        <span className="text-sm font-medium text-ink-500">{title}</span>
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorStyles[color] ?? colorStyles.blue}`}>
           <Icon className="w-5 h-5" />
         </div>
       </div>
-      <p className="text-2xl font-bold text-slate-800">
+      <p className="text-2xl font-bold text-ink-800">
         {prefix ?? ''}{displayValue?.toFixed?.(decimals) ?? '0'}{suffix ?? ''}
       </p>
     </motion.div>

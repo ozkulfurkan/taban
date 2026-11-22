@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Link2, Copy, Check, MessageCircle, Mail, Share2, RefreshCw, Ban, Loader2, Eye } from 'lucide-react';
+import { Link2, Copy, Check, MessageCircle, Mail, Share2, RefreshCw, Ban, Loader2, Eye } from '@/app/components/icons';
 import Modal from '@/app/components/modal';
 import { formatDate, formatDateTime } from '@/lib/time';
 
@@ -24,7 +24,7 @@ export default function StatementShareButton({ party, accent = 'blue' }: { party
     <>
       <button onClick={() => setOpen(true)} disabled={!party.id}
         className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60 ${
-          accent === 'teal' ? 'bg-teal-600 hover:bg-teal-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+          accent === 'teal' ? 'bg-brand-700 hover:bg-brand-800' : 'bg-brand-700 hover:bg-brand-800'}`}>
         <Link2 className="w-4 h-4" /> Link Gönder
       </button>
       {open && <ShareModal party={party} onClose={() => setOpen(false)} />}
@@ -111,20 +111,20 @@ function ShareModal({ party, onClose }: { party: Party; onClose: () => void }) {
   return (
     <Modal isOpen onClose={onClose} title="Ekstreyi Link ile Gönder">
       <div className="space-y-4" data-testid="statement-share">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-ink-600">
           Bu linki açan kişi <b>{party.name}</b> hesap ekstresini giriş yapmadan görür. Ekstre her açılışta günceldir.
         </p>
 
         {busy === 'load' ? (
-          <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+          <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-ink-400" /></div>
         ) : link ? (
           <>
             <div className="flex gap-2">
               <input id="statement-share-url" readOnly value={link.url} aria-label="Ekstre linki"
                 onFocus={e => e.currentTarget.select()}
-                className="flex-1 min-w-0 px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-700" />
+                className="flex-1 min-w-0 px-3 py-2 border border-ink-200 rounded-lg text-sm bg-ink-50 text-ink-700" />
               <button onClick={copy}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-white transition-colors ${copied ? 'bg-emerald-600' : 'bg-slate-800 hover:bg-slate-900'}`}>
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-white transition-colors ${copied ? 'bg-emerald-600' : 'bg-ink-800 hover:bg-ink-900'}`}>
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 {copied ? 'Kopyalandı' : 'Kopyala'}
               </button>
@@ -132,22 +132,22 @@ function ShareModal({ party, onClose }: { party: Party; onClose: () => void }) {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <a href={wa} target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-700 text-white">
+                className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white">
                 <MessageCircle className="w-4 h-4" /> WhatsApp
               </a>
               <a href={mail}
-                className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700">
+                className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-ink-100 hover:bg-ink-200 text-ink-700">
                 <Mail className="w-4 h-4" /> E-posta
               </a>
               {canNativeShare && (
                 <button onClick={() => (navigator as any).share({ title: 'Hesap Ekstresi', text: message, url: link.url }).catch(() => {})}
-                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700">
+                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-ink-100 hover:bg-ink-200 text-ink-700">
                   <Share2 className="w-4 h-4" /> Paylaş
                 </button>
               )}
             </div>
 
-            <p className="flex items-center gap-1.5 text-xs text-slate-500" data-testid="statement-share-info">
+            <p className="flex items-center gap-1.5 text-xs text-ink-500" data-testid="statement-share-info">
               <Eye className="w-3.5 h-3.5 shrink-0" />
               <span>
                 Oluşturulma: {formatDate(link.createdAt)} · {link.viewCount} kez görüntülendi
@@ -156,7 +156,7 @@ function ShareModal({ party, onClose }: { party: Party; onClose: () => void }) {
             </p>
           </>
         ) : closed ? (
-          <div className="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-600">
+          <div className="rounded-lg bg-ink-50 border border-ink-200 px-4 py-3 text-sm text-ink-600">
             Link kapatıldı. Gönderilen link artık açılmaz. İsterseniz yeni link oluşturabilirsiniz.
           </div>
         ) : null}
@@ -171,7 +171,7 @@ function ShareModal({ party, onClose }: { party: Party; onClose: () => void }) {
                 : 'Link kapatılınca gönderdiğiniz link artık açılmaz. Devam edilsin mi?'}
             </p>
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setConfirm(null)} className="px-3 py-1.5 rounded-lg text-sm text-slate-600 hover:bg-white">Vazgeç</button>
+              <button onClick={() => setConfirm(null)} className="px-3 py-1.5 rounded-lg text-sm text-ink-600 hover:bg-white">Vazgeç</button>
               <button onClick={confirm === 'regen' ? regenerate : closeLink}
                 className="px-3 py-1.5 rounded-lg text-sm font-medium text-white bg-amber-600 hover:bg-amber-700">
                 {confirm === 'regen' ? 'Evet, yeni link oluştur' : 'Evet, linki kapat'}
@@ -181,7 +181,7 @@ function ShareModal({ party, onClose }: { party: Party; onClose: () => void }) {
         ) : (
           <div className="flex flex-wrap gap-2 justify-between border-t pt-4">
             <button onClick={() => (link ? setConfirm('regen') : regenerate())} disabled={!!busy}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-60">
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-ink-200 text-ink-700 hover:bg-ink-50 disabled:opacity-60">
               {busy === 'regen' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
               Yeni Link Oluştur
             </button>

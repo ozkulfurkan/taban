@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ShieldAlert, X } from 'lucide-react';
+import { ShieldAlert, X } from '@/app/components/icons';
 
 // Bir API isteği yetki nedeniyle (403) reddedildiğinde kullanıcıya sebebini gösterir.
 // Ekranlardaki silme/kaydetme düğmeleri rol bilmediği için, bu olmadan istek
@@ -39,10 +39,10 @@ export function AccessDeniedNotice() {
   if (!message) return null;
   return (
     <div role="alert"
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 max-w-[calc(100vw-32px)] rounded-xl bg-slate-900 text-white px-4 py-3 shadow-xl text-sm">
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 max-w-[calc(100vw-32px)] rounded-xl bg-ink-900 text-white px-4 py-3 shadow-xl text-sm">
       <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
       <span>{message}</span>
-      <button onClick={() => setMessage(null)} aria-label="Kapat" className="text-slate-400 hover:text-white">
+      <button onClick={() => setMessage(null)} aria-label="Kapat" className="text-ink-400 hover:text-white">
         <X className="w-4 h-4" />
       </button>
     </div>

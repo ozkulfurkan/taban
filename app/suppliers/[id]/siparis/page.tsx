@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/app/components/icons';
 import AppShell from '@/app/components/app-shell';
 import BackLink from '@/app/components/back-link';
 import OrderCatalog from '@/app/components/order-catalog';
@@ -26,9 +26,9 @@ export default function SupplierOrderPage() {
       <div className="space-y-4">
         <BackLink href={`/suppliers/${supplierId}`} label="Tedarikçi" />
         {link === undefined ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+          <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-ink-400" /></div>
         ) : !link || link.status !== 'ACTIVE' ? (
-          <div className="bg-white rounded-xl p-8 text-center text-slate-500 shadow-sm">
+          <div className="bg-white rounded-xl p-8 text-center text-ink-500 shadow-card border border-ink-200/80">
             Bu tedarikçiyle onaylı bir SoleCost bağlantısı yok. Tedarikçi sayfasından firma koduyla bağlantı isteği gönderebilirsiniz.
           </div>
         ) : (

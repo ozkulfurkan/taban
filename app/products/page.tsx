@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { BoxIcon, Plus, Trash2, Loader2, Search, Globe, X, Check, Upload, Download, Tag, Pencil, AlertTriangle } from 'lucide-react';
+import { BoxIcon, Plus, Trash2, Loader2, Search, Globe, X, Check, Upload, Download, Tag, Pencil, AlertTriangle } from '@/app/components/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -178,10 +178,10 @@ export default function ProductsPage() {
   };
 
   const getPortalBadge = (p: any) => {
-    if (!p.portalVisible) return { label: 'Gizli', cls: 'bg-slate-100 text-slate-500' };
+    if (!p.portalVisible) return { label: 'Gizli', cls: 'bg-ink-100 text-ink-500' };
     const count = p._count?.portalCustomers ?? 0;
     if (count === 0) return { label: 'Tüm Müşteriler', cls: 'bg-emerald-100 text-emerald-700' };
-    return { label: `${count} Müşteri`, cls: 'bg-blue-100 text-blue-700' };
+    return { label: `${count} Müşteri`, cls: 'bg-brand-100 text-brand-800' };
   };
 
   const filtered = products.filter(p => {
@@ -195,14 +195,14 @@ export default function ProductsPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">{t('products', 'title')}</h1>
-            <p className="text-slate-500 text-sm">{products.length} {t('products', 'title').toLowerCase()}</p>
+            <h1 className="page-title">{t('products', 'title')}</h1>
+            <p className="text-ink-500 text-sm">{products.length} {t('products', 'title').toLowerCase()}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={() => setCatModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 rounded-lg text-sm font-medium transition-colors">
+            <button onClick={() => setCatModalOpen(true)} className="flex items-center gap-1.5 px-3 py-2 border border-ink-200 bg-white hover:bg-ink-50 text-ink-600 rounded-lg text-sm font-medium transition-colors">
               <Tag className="w-4 h-4" /> Kategoriler
             </button>
-            <button onClick={downloadTemplate} className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 rounded-lg text-sm font-medium transition-colors">
+            <button onClick={downloadTemplate} className="flex items-center gap-1.5 px-3 py-2 border border-ink-200 bg-white hover:bg-ink-50 text-ink-600 rounded-lg text-sm font-medium transition-colors">
               <Download className="w-4 h-4" /> Şablon
             </button>
             <button onClick={() => fileInputRef.current?.click()} disabled={importing} className="flex items-center gap-1.5 px-3 py-2 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium transition-colors">
@@ -210,7 +210,7 @@ export default function ProductsPage() {
               {importing ? 'İçe Aktarılıyor...' : 'Excel\'den İçe Aktar'}
             </button>
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
-            <Link href="/products/new" className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm text-sm">
+            <Link href="/products/new" className="flex items-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium transition-colors shadow-sm text-sm">
               <Plus className="w-4 h-4" /> {t('products', 'newProduct')}
             </Link>
           </div>
@@ -228,7 +228,7 @@ export default function ProductsPage() {
                 </ul>
               )}
             </div>
-            <button onClick={() => setImportResult(null)} className="text-slate-400 hover:text-slate-600 flex-shrink-0"><X className="w-4 h-4" /></button>
+            <button onClick={() => setImportResult(null)} className="text-ink-400 hover:text-ink-600 flex-shrink-0"><X className="w-4 h-4" /></button>
           </div>
         )}
 
@@ -237,7 +237,7 @@ export default function ProductsPage() {
           <div className="flex gap-1.5 flex-wrap">
             <button
               onClick={() => setSelectedCategory(null)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!selectedCategory ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!selectedCategory ? 'bg-brand-700 text-white' : 'bg-white border border-ink-200 text-ink-600 hover:bg-ink-50'}`}
             >
               Tümü
             </button>
@@ -245,7 +245,7 @@ export default function ProductsPage() {
               <button
                 key={c.id}
                 onClick={() => setSelectedCategory(selectedCategory === c.id ? null : c.id)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${selectedCategory === c.id ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${selectedCategory === c.id ? 'bg-brand-700 text-white' : 'bg-white border border-ink-200 text-ink-600 hover:bg-ink-50'}`}
               >
                 {c.name} <span className="opacity-60 text-xs">({c._count?.products ?? 0})</span>
               </button>
@@ -254,32 +254,32 @@ export default function ProductsPage() {
         )}
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={t('products', 'searchPlaceholder')}
-            className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm"
+            className="w-full pl-9 pr-4 py-2.5 border border-ink-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white shadow-sm"
           />
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>
         ) : !filtered.length ? (
-          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
-            <BoxIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-400 text-sm mb-3">{search ? t('products', 'noResults') : t('products', 'empty')}</p>
+          <div className="text-center py-16 bg-white rounded-xl shadow-card border border-ink-200/80">
+            <BoxIcon className="w-12 h-12 text-ink-300 mx-auto mb-3" />
+            <p className="text-ink-400 text-sm mb-3">{search ? t('products', 'noResults') : t('products', 'empty')}</p>
             {!search && (
-              <Link href="\products\new" className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+              <Link href="\products\new" className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium transition-colors">
                 <Plus className="w-4 h-4" /> Ürün ekle
               </Link>
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                <tr className="bg-ink-50 border-b text-xs font-semibold text-ink-500 uppercase tracking-wide">
                   <th className="px-4 py-3 text-left">{t('products', 'code')}</th>
                   <th className="px-4 py-3 text-left">{t('products', 'productName')}</th>
                   <th className="px-4 py-3 text-left">Kategori</th>
@@ -290,7 +290,7 @@ export default function ProductsPage() {
                   <th className="px-4 py-3 w-16"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-ink-100">
                 {filtered.map((p, i) => {
                   const badge = getPortalBadge(p);
                   return (
@@ -299,24 +299,24 @@ export default function ProductsPage() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: i * 0.03 }}
-                      className="hover:bg-blue-50/50 cursor-pointer"
+                      className="hover:bg-brand-50/50 cursor-pointer"
                       onClick={() => router.push(`/products/${p.id}?edit=true`)}
                     >
-                      <td className="px-4 py-3 text-slate-500">{p.code || '—'}</td>
+                      <td className="px-4 py-3 text-ink-500">{p.code || '—'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <ProductThumb productId={p.id} imageUpdatedAt={p.imageUpdatedAt} />
                           <div className="min-w-0">
-                            <p className="font-medium text-slate-800">{p.name}</p>
-                            {p.description && <p className="text-xs text-slate-400 mt-0.5">{p.description}</p>}
+                            <p className="font-medium text-ink-800">{p.name}</p>
+                            {p.description && <p className="text-xs text-ink-400 mt-0.5">{p.description}</p>}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{p.category?.name ?? '—'}</td>
-                      <td className="px-4 py-3 text-slate-500">{p.unit}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-blue-600">
+                      <td className="px-4 py-3 text-ink-500 text-xs">{p.category?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-ink-500">{p.unit}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-brand-700">
                         {p.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
+                        <span className="text-xs font-normal text-ink-400 ml-1">{p.currency}</span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <span className={`font-medium tabular-nums ${stockTextClass(p.stock)}`}>
@@ -328,7 +328,7 @@ export default function ProductsPage() {
                           {badge ? (
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.cls} group-hover:opacity-80`}>{badge.label}</span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-400 group-hover:opacity-80">Gizli</span>
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-ink-100 text-ink-400 group-hover:opacity-80">Gizli</span>
                           )}
                         </button>
                       </td>
@@ -350,13 +350,13 @@ export default function ProductsPage() {
       {/* Category Management Modal */}
       {catModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => { setCatModalOpen(false); setEditingCat(null); setNewCatName(''); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-ink-200/80" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-ink-100">
               <div className="flex items-center gap-2">
-                <Tag className="w-5 h-5 text-blue-600" />
-                <h3 className="font-semibold text-slate-800">Kategori Yönetimi</h3>
+                <Tag className="w-5 h-5 text-brand-700" />
+                <h3 className="font-semibold text-ink-800">Kategori Yönetimi</h3>
               </div>
-              <button onClick={() => { setCatModalOpen(false); setEditingCat(null); setNewCatName(''); }} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"><X className="w-4 h-4" /></button>
+              <button onClick={() => { setCatModalOpen(false); setEditingCat(null); setNewCatName(''); }} className="p-1.5 text-ink-400 hover:text-ink-600 rounded-lg hover:bg-ink-100"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="flex gap-2">
@@ -365,23 +365,23 @@ export default function ProductsPage() {
                   onChange={e => setNewCatName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && saveCategory()}
                   placeholder={editingCat ? 'Yeni isim...' : 'Kategori adı...'}
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="flex-1 px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                 />
-                <button onClick={saveCategory} disabled={catSaving || !newCatName.trim()} className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium">
+                <button onClick={saveCategory} disabled={catSaving || !newCatName.trim()} className="px-3 py-2 bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white rounded-lg text-sm font-medium">
                   {catSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingCat ? 'Güncelle' : 'Ekle'}
                 </button>
                 {editingCat && (
-                  <button onClick={() => { setEditingCat(null); setNewCatName(''); }} className="px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">İptal</button>
+                  <button onClick={() => { setEditingCat(null); setNewCatName(''); }} className="px-3 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
                 )}
               </div>
               <div className="space-y-1 max-h-64 overflow-y-auto">
-                {categories.length === 0 && <p className="text-sm text-slate-400 text-center py-4">Henüz kategori yok</p>}
+                {categories.length === 0 && <p className="text-sm text-ink-400 text-center py-4">Henüz kategori yok</p>}
                 {categories.map(c => (
-                  <div key={c.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50">
-                    <span className="text-sm text-slate-700">{c.name} <span className="text-slate-400 text-xs">({c._count?.products ?? 0} ürün)</span></span>
+                  <div key={c.id} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-ink-50">
+                    <span className="text-sm text-ink-700">{c.name} <span className="text-ink-400 text-xs">({c._count?.products ?? 0} ürün)</span></span>
                     <div className="flex gap-1">
-                      <button onClick={() => { setEditingCat({ id: c.id, name: c.name }); setNewCatName(c.name); }} className="p-1.5 text-slate-400 hover:text-blue-600 rounded transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => deleteCategory(c.id)} className="p-1.5 text-slate-400 hover:text-red-500 rounded transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => { setEditingCat({ id: c.id, name: c.name }); setNewCatName(c.name); }} className="p-1.5 text-ink-400 hover:text-brand-700 rounded transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => deleteCategory(c.id)} className="p-1.5 text-ink-400 hover:text-red-500 rounded transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </div>
                 ))}
@@ -394,45 +394,45 @@ export default function ProductsPage() {
       {/* Portal Visibility Modal */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setModal(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-ink-100">
               <div className="flex items-center gap-2">
-                <Globe className="w-5 h-5 text-blue-600" />
-                <h3 className="font-semibold text-slate-800">Portal Görünürlüğü</h3>
+                <Globe className="w-5 h-5 text-brand-700" />
+                <h3 className="font-semibold text-ink-800">Portal Görünürlüğü</h3>
               </div>
-              <button onClick={() => setModal(null)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"><X className="w-4 h-4" /></button>
+              <button onClick={() => setModal(null)} className="p-1.5 text-ink-400 hover:text-ink-600 rounded-lg hover:bg-ink-100"><X className="w-4 h-4" /></button>
             </div>
             {modalLoading ? (
-              <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
+              <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-brand-700" /></div>
             ) : (
               <div className="p-5 space-y-4">
-                <p className="text-sm text-slate-500 font-medium truncate">{modal.productName}</p>
-                <label className="flex items-center justify-between cursor-pointer p-3 bg-slate-50 rounded-xl">
-                  <span className="text-sm font-medium text-slate-700">Portala Ekle</span>
+                <p className="text-sm text-ink-500 font-medium truncate">{modal.productName}</p>
+                <label className="flex items-center justify-between cursor-pointer p-3 bg-ink-50 rounded-xl">
+                  <span className="text-sm font-medium text-ink-700">Portala Ekle</span>
                   <button type="button" role="switch" aria-checked={modal.portalVisible}
                     onClick={() => setModal(m => m ? ({ ...m, portalVisible: !m.portalVisible }) : null)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${modal.portalVisible ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${modal.portalVisible ? 'bg-brand-700' : 'bg-ink-300'}`}>
                     <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform ${modal.portalVisible ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
                 </label>
                 {modal.portalVisible && (
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Müşteri Kısıtlaması</p>
-                    <p className="text-xs text-slate-400">{modal.assignedCustomerIds.length === 0 ? 'Hiçbiri seçilmezse tüm portal müşterileri görebilir.' : `${modal.assignedCustomerIds.length} müşteri seçili — sadece onlar görebilir.`}</p>
+                    <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Müşteri Kısıtlaması</p>
+                    <p className="text-xs text-ink-400">{modal.assignedCustomerIds.length === 0 ? 'Hiçbiri seçilmezse tüm portal müşterileri görebilir.' : `${modal.assignedCustomerIds.length} müşteri seçili — sadece onlar görebilir.`}</p>
                     {portalCustomers.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic py-2">Portal müşterisi henüz eklenmemiş.</p>
+                      <p className="text-xs text-ink-400 italic py-2">Portal müşterisi henüz eklenmemiş.</p>
                     ) : (
                       <div className="space-y-1 max-h-48 overflow-y-auto">
                         {portalCustomers.map(pc => {
                           const checked = modal.assignedCustomerIds.includes(pc.id);
                           return (
-                            <label key={pc.id} className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${checked ? 'bg-blue-50' : 'hover:bg-slate-50'}`}>
-                              <div onClick={() => toggleCustomer(pc.id)} className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${checked ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
+                            <label key={pc.id} className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${checked ? 'bg-brand-50' : 'hover:bg-ink-50'}`}>
+                              <div onClick={() => toggleCustomer(pc.id)} className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${checked ? 'bg-brand-700 border-brand-700' : 'border-ink-300'}`}>
                                 {checked && <Check className="w-2.5 h-2.5 text-white" />}
                               </div>
                               <div className="flex-1 min-w-0" onClick={() => toggleCustomer(pc.id)}>
-                                <p className="text-sm font-medium text-slate-700 truncate">{pc.name || pc.email}</p>
-                                <p className="text-xs text-slate-400 truncate">{pc.customer?.name}</p>
+                                <p className="text-sm font-medium text-ink-700 truncate">{pc.name || pc.email}</p>
+                                <p className="text-xs text-ink-400 truncate">{pc.customer?.name}</p>
                               </div>
                               {!pc.isActive && <span className="text-xs bg-red-100 text-red-500 px-1.5 py-0.5 rounded-full flex-shrink-0">Pasif</span>}
                             </label>
@@ -443,8 +443,8 @@ export default function ProductsPage() {
                   </div>
                 )}
                 <div className="flex gap-2 pt-1">
-                  <button onClick={() => setModal(null)} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">İptal</button>
-                  <button onClick={savePortalModal} disabled={modalSaving} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium">
+                  <button onClick={() => setModal(null)} className="flex-1 px-4 py-2 border border-ink-200 rounded-lg text-sm font-medium text-ink-600 hover:bg-ink-50">İptal</button>
+                  <button onClick={savePortalModal} disabled={modalSaving} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 disabled:opacity-60 text-white rounded-lg text-sm font-medium">
                     {modalSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Kaydet
                   </button>
                 </div>
@@ -456,19 +456,19 @@ export default function ProductsPage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-ink-600 whitespace-pre-line">{confirmModal.message}</p>
               </div>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setConfirmModal(null)}
-                className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+                className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg text-sm hover:bg-ink-50">İptal</button>
               <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }}
                 className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>
@@ -478,18 +478,18 @@ export default function ProductsPage() {
       {errorMsg && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
-                <p className="text-sm text-slate-600">{errorMsg}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Hata</h3>
+                <p className="text-sm text-ink-600">{errorMsg}</p>
               </div>
             </div>
             <button onClick={() => setErrorMsg('')}
-              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              className="w-full py-2 bg-ink-700 hover:bg-ink-800 text-white rounded-lg text-sm font-medium">
               Tamam
             </button>
           </div>

@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       html: `
         <p>Merhaba ${user.name ?? user.email},</p>
         <p>Hesabınızı aktifleştirmek için e-posta adresinizi doğrulamanız gerekmektedir.</p>
-        <p><a href="${verifyUrl}" style="background:#2563eb;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
+        <p><a href="${verifyUrl}" style="background:#6B1A2C;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
         <p>Butona tıklayamıyorsanız şu bağlantıyı kopyalayın: ${verifyUrl}</p>
         <p>Bu e-posta, SoleCost hesabınız için otomatik olarak gönderildi.</p>
       `,

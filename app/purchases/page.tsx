@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
-import { Plus, Loader2, ShoppingCart, Building2, Printer, Trash2, Package, Search, X, AlertTriangle } from 'lucide-react';
+import { Plus, Loader2, ShoppingCart, Building2, Printer, Trash2, Package, Search, X, AlertTriangle } from '@/app/components/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { matchesText } from '@/lib/search';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  DRAFT:     { label: 'Taslak',    color: 'bg-slate-100 text-slate-600' },
+  DRAFT:     { label: 'Taslak',    color: 'bg-ink-100 text-ink-600' },
   PENDING:   { label: 'Bekliyor',  color: 'bg-yellow-100 text-yellow-700' },
-  PARTIAL:   { label: 'Kısmi',     color: 'bg-blue-100 text-blue-700' },
-  PAID:      { label: 'Ödendi',    color: 'bg-green-100 text-green-700' },
+  PARTIAL:   { label: 'Kısmi',     color: 'bg-brand-100 text-brand-800' },
+  PAID:      { label: 'Ödendi',    color: 'bg-emerald-100 text-emerald-700' },
   CANCELLED: { label: 'İptal',     color: 'bg-red-100 text-red-600' },
 };
 
@@ -60,27 +60,27 @@ export default function PurchasesListPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Alışlar</h1>
-            <p className="text-slate-500 text-sm">{purchases.length} alış faturası</p>
+            <h1 className="page-title">Alışlar</h1>
+            <p className="text-ink-500 text-sm">{purchases.length} alış faturası</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             {/* Search */}
-            <div className="flex items-center gap-2 border border-slate-200 rounded-lg bg-white px-3 py-1.5 shadow-sm">
-              <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            <div className="flex items-center gap-2 border border-ink-200 rounded-lg bg-white px-3 py-1.5 shadow-sm">
+              <Search className="w-4 h-4 text-ink-400 flex-shrink-0" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Tedarikçi veya belge no..."
-                className="text-sm outline-none w-44 placeholder:text-slate-300"
+                className="text-sm outline-none w-44 placeholder:text-ink-300"
               />
               {search && (
-                <button onClick={() => setSearch('')} className="text-slate-300 hover:text-slate-500">
+                <button onClick={() => setSearch('')} className="text-ink-300 hover:text-ink-500">
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
             <Link href="/purchases/new"
-              className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors shadow-sm text-sm">
+              className="flex items-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium transition-colors shadow-sm text-sm">
               <Plus className="w-4 h-4" /> Yeni Alış
             </Link>
           </div>
@@ -88,19 +88,19 @@ export default function PurchasesListPage() {
 
         {/* Table */}
         {loading ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-teal-600" /></div>
+          <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>
         ) : !filtered.length ? (
-          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
-            <Package className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-            <p className="text-slate-400 text-sm">
+          <div className="text-center py-16 bg-white rounded-xl shadow-card border border-ink-200/80">
+            <Package className="w-12 h-12 text-ink-200 mx-auto mb-3" />
+            <p className="text-ink-400 text-sm">
               {search.length >= 3 ? 'Arama sonucu bulunamadı' : 'Henüz alış faturası yok'}
             </p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-800 text-white text-xs font-semibold uppercase tracking-wide">
+                <tr className="bg-ink-50 text-ink-500 text-[11px] font-semibold uppercase tracking-[0.08em] border-b border-ink-200">
                   <th className="w-10 px-3 py-3" />
                   <th className="px-4 py-3 text-left">Tarih</th>
                   <th className="px-4 py-3 text-left">Tedarikçi</th>
@@ -117,33 +117,33 @@ export default function PurchasesListPage() {
                       <tr
                         key={p.id}
                         onClick={() => toggle(p.id)}
-                        className={`border-b border-slate-100 cursor-pointer transition-colors ${isOpen ? 'bg-slate-50' : 'hover:bg-slate-50/60'}`}
+                        className={`border-b border-ink-100 cursor-pointer transition-colors ${isOpen ? 'bg-ink-50' : 'hover:bg-ink-50/60'}`}
                       >
                         <td className="px-3 py-3 text-center">
                           <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full border-2 text-xs font-bold ${
-                            isOpen ? 'border-slate-500 text-slate-600 bg-slate-100' : 'border-slate-400 text-slate-500'
+                            isOpen ? 'border-ink-500 text-ink-600 bg-ink-100' : 'border-ink-400 text-ink-500'
                           }`}>
                             {isOpen ? '−' : '+'}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                        <td className="px-4 py-3 text-ink-600 whitespace-nowrap">
                           <div>{new Date(p.date).toLocaleDateString('tr-TR')}</div>
-                          <div className="text-xs text-slate-400">{new Date(p.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div className="text-xs text-ink-400">{new Date(p.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
                         </td>
-                        <td className="px-4 py-3 font-medium text-slate-800">{p.supplier?.name ?? '—'}</td>
-                        <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                        <td className="px-4 py-3 font-medium text-ink-800">{p.supplier?.name ?? '—'}</td>
+                        <td className="px-4 py-3 text-ink-600 whitespace-nowrap">
                           {p.invoiceNo || '—'}
                           {p.isReturn && <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-semibold uppercase align-middle">İade</span>}
                         </td>
-                        <td className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${p.isReturn ? 'text-amber-700' : 'text-slate-800'}`}>
+                        <td className={`px-4 py-3 text-right font-semibold whitespace-nowrap ${p.isReturn ? 'text-amber-700' : 'text-ink-800'}`}>
                           {p.isReturn ? '−' : ''}{p.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          <span className="text-xs font-normal text-slate-400 ml-1">{p.currency}</span>
+                          <span className="text-xs font-normal text-ink-400 ml-1">{p.currency}</span>
                         </td>
                       </tr>
 
                       {/* Expanded row */}
                       {isOpen && (
-                        <tr key={`${p.id}-expanded`} className="border-b border-slate-200 bg-slate-50">
+                        <tr key={`${p.id}-expanded`} className="border-b border-ink-200 bg-ink-50">
                           <td colSpan={5} className="px-6 py-4">
                             {/* Action buttons */}
                             <div className="flex flex-wrap gap-2 mb-4">
@@ -164,7 +164,7 @@ export default function PurchasesListPage() {
                               <Link
                                 href={`/purchases/${p.id}`}
                                 onClick={e => e.stopPropagation()}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-400 hover:bg-sky-500 text-white rounded-lg text-xs font-medium transition-colors"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-medium transition-colors"
                               >
                                 <Printer className="w-3.5 h-3.5" /> Yazdır
                               </Link>
@@ -178,30 +178,30 @@ export default function PurchasesListPage() {
 
                             {/* Materials table */}
                             {p.purchaseMaterials && p.purchaseMaterials.length > 0 && (
-                              <table className="w-full text-sm border border-slate-200 rounded-lg overflow-hidden mb-3">
+                              <table className="w-full text-sm border border-ink-200 rounded-lg overflow-hidden mb-3">
                                 <thead>
-                                  <tr className="bg-white border-b border-slate-200">
-                                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Ürün/Hizmet</th>
-                                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Fiyat</th>
-                                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Tutar (KDV Dahil)</th>
+                                  <tr className="bg-white border-b border-ink-200">
+                                    <th className="px-4 py-2 text-left text-xs font-semibold text-ink-600">Ürün/Hizmet</th>
+                                    <th className="px-4 py-2 text-right text-xs font-semibold text-ink-600">Fiyat</th>
+                                    <th className="px-4 py-2 text-right text-xs font-semibold text-ink-600">Tutar (KDV Dahil)</th>
                                   </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 bg-white">
+                                <tbody className="divide-y divide-ink-100 bg-white">
                                   {p.purchaseMaterials.map((pm: any) => {
                                     const tutar = (pm.kgAmount ?? 0) * (pm.pricePerKg ?? 0);
                                     return (
                                       <tr key={pm.id}>
-                                        <td className="px-4 py-2.5 text-slate-700">
-                                          <span className="text-slate-400 mr-1">{pm.kgAmount} kg</span>
+                                        <td className="px-4 py-2.5 text-ink-700">
+                                          <span className="text-ink-400 mr-1">{pm.kgAmount} kg</span>
                                           {pm.material?.name ?? (pm.product ? `${pm.product.name}${pm.product.code ? ` [${pm.product.code}]` : ''}` : '—')}
                                           {pm.subcontractor && (
-                                            <span className="ml-2 text-xs text-orange-600">→ {pm.subcontractor.name}</span>
+                                            <span className="ml-2 text-xs text-amber-600">→ {pm.subcontractor.name}</span>
                                           )}
                                         </td>
-                                        <td className="px-4 py-2.5 text-right text-slate-600">
+                                        <td className="px-4 py-2.5 text-right text-ink-600">
                                           {pm.pricePerKg ? pm.pricePerKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
                                         </td>
-                                        <td className="px-4 py-2.5 text-right font-medium text-slate-800">
+                                        <td className="px-4 py-2.5 text-right font-medium text-ink-800">
                                           {tutar > 0 ? tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
                                         </td>
                                       </tr>
@@ -212,16 +212,16 @@ export default function PurchasesListPage() {
                             )}
 
                             {/* Ödeme özeti */}
-                            <div className="flex gap-4 text-xs text-slate-500 bg-white border border-slate-100 rounded-lg px-4 py-2.5 inline-flex w-full max-w-xs">
+                            <div className="flex gap-4 text-xs text-ink-500 bg-white border border-ink-100 rounded-lg px-4 py-2.5 inline-flex w-full max-w-xs">
                               <div>
-                                <span className="text-slate-400">Ödenen:</span>{' '}
-                                <span className="font-semibold text-teal-600">
+                                <span className="text-ink-400">Ödenen:</span>{' '}
+                                <span className="font-semibold text-brand-700">
                                   {p.paidAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {p.currency}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-slate-400">Kalan:</span>{' '}
-                                <span className={`font-semibold ${(p.total - p.paidAmount) > 0 ? 'text-red-500' : 'text-teal-600'}`}>
+                                <span className="text-ink-400">Kalan:</span>{' '}
+                                <span className={`font-semibold ${(p.total - p.paidAmount) > 0 ? 'text-red-500' : 'text-brand-700'}`}>
                                   {(p.total - p.paidAmount).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {p.currency}
                                 </span>
                               </div>
@@ -240,18 +240,18 @@ export default function PurchasesListPage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-ink-600 whitespace-pre-line">{confirmModal.message}</p>
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+              <button onClick={() => setConfirmModal(null)} className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg text-sm hover:bg-ink-50">İptal</button>
               <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>
           </div>

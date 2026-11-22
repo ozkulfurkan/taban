@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { Plus, Trash2, Loader2, FileText, Banknote, CreditCard, Calendar, X } from 'lucide-react';
+import { Plus, Trash2, Loader2, FileText, Banknote, CreditCard, Calendar, X } from '@/app/components/icons';
 import { matchesText } from '@/lib/search';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
@@ -334,20 +334,20 @@ function QuoteForm() {
         <div className="flex items-center gap-3">
           <BackLink variant="icon" href={customerId ? `/customers/${customerId}` : "/customers"} label="Müşteri" />
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Teklif Oluştur</h1>
-            {calcName && <p className="text-slate-500 text-sm">{calcName}</p>}
+            <h1 className="page-title">Teklif Oluştur</h1>
+            {calcName && <p className="text-ink-500 text-sm">{calcName}</p>}
           </div>
         </div>
 
         {/* Doc Type */}
-        <div className="bg-white rounded-xl shadow-sm p-5">
-          <label className="block text-sm font-semibold text-slate-700 mb-3">Belge Türü</label>
+        <div className="bg-white rounded-xl shadow-card p-5 border border-ink-200/80">
+          <label className="block text-sm font-semibold text-ink-700 mb-3">Belge Türü</label>
           <div className="flex gap-3">
             {(['teklif', 'siparis'] as const).map((type) => (
               <button
                 key={type}
                 onClick={() => setDocType(type)}
-                className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-colors border-2 ${docType === type ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-colors border-2 ${docType === type ? 'border-brand-700 bg-brand-50 text-brand-800' : 'border-ink-200 text-ink-600 hover:border-ink-300'}`}
               >
                 {type === 'teklif' ? 'Teklif' : 'Sipariş Onayı'}
               </button>
@@ -356,11 +356,11 @@ function QuoteForm() {
         </div>
 
         {/* Customer */}
-        <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
-          <h2 className="font-semibold text-blue-600 text-sm uppercase tracking-wide">Müşteri Bilgileri</h2>
+        <div className="bg-white rounded-xl shadow-card p-5 space-y-4 border border-ink-200/80">
+          <h2 className="font-semibold text-brand-700 text-sm uppercase tracking-wide">Müşteri Bilgileri</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="relative">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Firma Adı</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Firma Adı</label>
               <input
                 value={customer.firmName}
                 onChange={e => {
@@ -369,7 +369,7 @@ function QuoteForm() {
                 }}
                 onFocus={() => setShowCustomerDrop(true)}
                 onBlur={() => setTimeout(() => setShowCustomerDrop(false), 150)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                 autoComplete="off"
               />
               {showCustomerDrop && customer.firmName.length > 0 && (() => {
@@ -377,7 +377,7 @@ function QuoteForm() {
                 const filtered = customers.filter(c => matchesText(c.name, q));
                 if (!filtered.length) return null;
                 return (
-                  <ul className="absolute z-30 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                  <ul className="absolute z-30 left-0 right-0 top-full mt-1 bg-white border border-ink-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
                     {filtered.map(c => (
                       <li key={c.id}>
                         <button
@@ -391,10 +391,10 @@ function QuoteForm() {
                             });
                             setShowCustomerDrop(false);
                           }}
-                          className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-sm text-slate-700"
+                          className="w-full text-left px-4 py-2.5 hover:bg-brand-50 text-sm text-ink-700"
                         >
                           <span className="font-medium">{c.name}</span>
-                          {c.taxId && <span className="text-slate-400 text-xs ml-2">VKN: {c.taxId}</span>}
+                          {c.taxId && <span className="text-ink-400 text-xs ml-2">VKN: {c.taxId}</span>}
                         </button>
                       </li>
                     ))}
@@ -403,28 +403,28 @@ function QuoteForm() {
               })()}
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Vergi Kimlik No</label>
-              <input value={customer.taxId} onChange={e => setCustomer({ ...customer, taxId: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">Vergi Kimlik No</label>
+              <input value={customer.taxId} onChange={e => setCustomer({ ...customer, taxId: e.target.value })} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">E-posta</label>
-              <input type="email" value={customer.email} onChange={e => setCustomer({ ...customer, email: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">E-posta</label>
+              <input type="email" value={customer.email} onChange={e => setCustomer({ ...customer, email: e.target.value })} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Geçerlilik Süresi (Gün)</label>
-              <DecimalInput value={validityDays} onChange={e => setValidityDays(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">Geçerlilik Süresi (Gün)</label>
+              <DecimalInput value={validityDays} onChange={e => setValidityDays(e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Firma Adresi</label>
-              <textarea value={customer.address} onChange={e => setCustomer({ ...customer, address: e.target.value })} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1">Firma Adresi</label>
+              <textarea value={customer.address} onChange={e => setCustomer({ ...customer, address: e.target.value })} rows={2} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none resize-none" />
             </div>
           </div>
         </div>
 
         {/* Main Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
           <div className="p-5 border-b">
-            <h2 className="font-semibold text-blue-600 text-sm uppercase tracking-wide mb-4">Taban & Numara Bilgileri</h2>
+            <h2 className="font-semibold text-brand-700 text-sm uppercase tracking-wide mb-4">Taban & Numara Bilgileri</h2>
 
             {/* Numara yönetimi */}
             <div className="flex flex-wrap items-center gap-3">
@@ -434,11 +434,11 @@ function QuoteForm() {
                   onChange={e => setNumaraInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addNumara()}
                   placeholder="Numara girin (ör. 36)"
-                  className="w-40 px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-40 px-3 py-1.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                 />
                 <button
                   onClick={addNumara}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-brand-700 text-white rounded-lg text-sm font-medium hover:bg-brand-800 transition-colors"
                 >
                   <Plus className="w-4 h-4" /> Numara Ekle
                 </button>
@@ -446,7 +446,7 @@ function QuoteForm() {
               {numaralar.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {numaralar.map(n => (
-                    <span key={n} className="flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                    <span key={n} className="flex items-center gap-1 px-2.5 py-1 bg-brand-100 text-brand-800 rounded-full text-xs font-semibold">
                       {n}
                       <button onClick={() => removeNumara(n)} className="hover:text-red-600 transition-colors">
                         <X className="w-3 h-3" />
@@ -462,7 +462,7 @@ function QuoteForm() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse" style={{ minWidth: `${600 + numaralar.length * 80}px` }}>
               <thead>
-                <tr className="bg-blue-600 text-white text-xs font-semibold uppercase tracking-wide">
+                <tr className="bg-brand-700 text-white text-xs font-semibold uppercase tracking-wide">
                   <th className="px-3 py-3 text-left whitespace-nowrap">Taban Adı</th>
                   <th className="px-3 py-3 text-left whitespace-nowrap">Taban Kod</th>
                   <th className="px-3 py-3 text-left whitespace-nowrap">Renk</th>
@@ -475,22 +475,22 @@ function QuoteForm() {
                   <th className="px-3 py-3 w-10"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-ink-100">
                 {numaralar.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-sm italic">
+                    <td colSpan={6} className="px-4 py-8 text-center text-ink-400 text-sm italic">
                       Önce yukarıdan numara ekleyin
                     </td>
                   </tr>
                 ) : (
                   rows.map((row, i) => (
-                    <tr key={row.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                    <tr key={row.id} className={i % 2 === 0 ? 'bg-white' : 'bg-ink-50/50'}>
                       <td className="px-2 py-2">
                         <input
                           value={row.tabanAd}
                           onChange={e => updateRow(row.id, 'tabanAd', e.target.value)}
                           placeholder="Campus"
-                          className="w-28 px-2 py-1.5 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="w-28 px-2 py-1.5 border border-ink-200 rounded text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                         />
                       </td>
                       <td className="px-2 py-2">
@@ -498,7 +498,7 @@ function QuoteForm() {
                           value={row.tabanKod}
                           onChange={e => updateRow(row.id, 'tabanKod', e.target.value)}
                           placeholder="Ozk001"
-                          className="w-24 px-2 py-1.5 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="w-24 px-2 py-1.5 border border-ink-200 rounded text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                         />
                       </td>
                       <td className="px-2 py-2">
@@ -506,7 +506,7 @@ function QuoteForm() {
                           value={row.renk}
                           onChange={e => updateRow(row.id, 'renk', e.target.value)}
                           placeholder="Siyah/Beyaz"
-                          className="w-32 px-2 py-1.5 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="w-32 px-2 py-1.5 border border-ink-200 rounded text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                         />
                       </td>
                       <td className="px-2 py-2">
@@ -515,7 +515,7 @@ function QuoteForm() {
                           value={row.birimFiyat}
                           onChange={e => updateRow(row.id, 'birimFiyat', e.target.value)}
                           placeholder="0.00"
-                          className="w-24 px-2 py-1.5 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="w-24 px-2 py-1.5 border border-ink-200 rounded text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                         />
                       </td>
                       {numaralar.map(n => (
@@ -525,19 +525,19 @@ function QuoteForm() {
                             value={row.adetler[n] ?? ''}
                             onChange={e => updateAdet(row.id, n, e.target.value)}
                             placeholder="0"
-                            className="w-16 px-2 py-1.5 border border-slate-200 rounded text-sm text-center focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-16 px-2 py-1.5 border border-ink-200 rounded text-sm text-center focus:ring-2 focus:ring-brand-600 outline-none"
                           />
                         </td>
                       ))}
-                      <td className="px-3 py-2 text-right font-semibold text-slate-700 whitespace-nowrap">
+                      <td className="px-3 py-2 text-right font-semibold text-ink-700 whitespace-nowrap">
                         {rowTotal(row)} çift
                       </td>
-                      <td className="px-3 py-2 text-right font-semibold text-blue-600 whitespace-nowrap">
+                      <td className="px-3 py-2 text-right font-semibold text-brand-700 whitespace-nowrap">
                         {formatCurrency(rowFiyat(row))}
                       </td>
                       <td className="px-2 py-2">
                         {rows.length > 1 && (
-                          <button onClick={() => removeRow(row.id)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors">
+                          <button onClick={() => removeRow(row.id)} className="p-1.5 text-ink-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
@@ -548,7 +548,7 @@ function QuoteForm() {
               </tbody>
               {numaralar.length > 0 && rows.length > 0 && (
                 <tfoot>
-                  <tr className="bg-slate-100 border-t-2 border-slate-200 text-xs font-semibold text-slate-600">
+                  <tr className="bg-ink-100 border-t-2 border-ink-200 text-xs font-semibold text-ink-600">
                     <td colSpan={4} className="px-3 py-2">TOPLAM</td>
                     {numaralar.map(n => (
                       <td key={n} className="px-3 py-2 text-center">
@@ -556,7 +556,7 @@ function QuoteForm() {
                       </td>
                     ))}
                     <td className="px-3 py-2 text-right">{totalPairs} çift</td>
-                    <td className="px-3 py-2 text-right text-blue-600">{formatCurrency(subtotal)}</td>
+                    <td className="px-3 py-2 text-right text-brand-700">{formatCurrency(subtotal)}</td>
                     <td></td>
                   </tr>
                 </tfoot>
@@ -568,13 +568,13 @@ function QuoteForm() {
             <div className="flex gap-2">
               <button
                 onClick={() => setRows(prev => [...prev, newRow()])}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-ink-200 text-ink-600 rounded-lg text-sm font-medium hover:bg-ink-50 transition-colors"
               >
                 <Plus className="w-4 h-4" /> Satır Ekle
               </button>
               <button
                 onClick={openProductModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <Plus className="w-4 h-4" /> Ürün Ekle
               </button>
@@ -584,18 +584,18 @@ function QuoteForm() {
             <div className="text-right space-y-1">
               {Number(vatRate) > 0 ? (
                 <>
-                  <div className="text-sm text-slate-600">
-                    Ara Toplam: <span className="font-semibold text-slate-800">{formatCurrency(subtotal)}</span>
+                  <div className="text-sm text-ink-600">
+                    Ara Toplam: <span className="font-semibold text-ink-800">{formatCurrency(subtotal)}</span>
                   </div>
-                  <div className="text-sm text-slate-600">
-                    KDV (%{vatRate}): <span className="font-semibold text-slate-800">{formatCurrency(vatAmount)}</span>
+                  <div className="text-sm text-ink-600">
+                    KDV (%{vatRate}): <span className="font-semibold text-ink-800">{formatCurrency(vatAmount)}</span>
                   </div>
-                  <div className="text-base font-bold text-blue-700">
+                  <div className="text-base font-bold text-brand-800">
                     Genel Toplam (KDV Dahil): {formatCurrency(grandTotal)}
                   </div>
                 </>
               ) : (
-                <div className="text-base font-bold text-blue-700">
+                <div className="text-base font-bold text-brand-800">
                   Genel Toplam: {formatCurrency(subtotal)}
                 </div>
               )}
@@ -604,57 +604,57 @@ function QuoteForm() {
         </div>
 
         {/* Payment */}
-        <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
-          <h2 className="font-semibold text-blue-600 text-sm uppercase tracking-wide">Ödeme & Teslimat</h2>
+        <div className="bg-white rounded-xl shadow-card p-5 space-y-4 border border-ink-200/80">
+          <h2 className="font-semibold text-brand-700 text-sm uppercase tracking-wide">Ödeme & Teslimat</h2>
           <div className="flex gap-3">
             <button
               onClick={() => setPaymentMethod('nakit')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm border-2 transition-colors ${paymentMethod === 'nakit' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm border-2 transition-colors ${paymentMethod === 'nakit' ? 'border-brand-700 bg-brand-50 text-brand-800' : 'border-ink-200 text-ink-600 hover:border-ink-300'}`}
             >
               <Banknote className="w-4 h-4" /> Nakit
             </button>
             <button
               onClick={() => setPaymentMethod('cek')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm border-2 transition-colors ${paymentMethod === 'cek' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm border-2 transition-colors ${paymentMethod === 'cek' ? 'border-brand-700 bg-brand-50 text-brand-800' : 'border-ink-200 text-ink-600 hover:border-ink-300'}`}
             >
               <CreditCard className="w-4 h-4" /> Çek
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1 flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Teslim Tarihi</label>
-              <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-xs font-medium text-ink-600 mb-1 flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Teslim Tarihi</label>
+              <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
             {paymentMethod === 'cek' && (
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Kaç Aylık Çek</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Kaç Aylık Çek</label>
                 <div className="flex items-center gap-2">
-                  <DecimalInput min="1" value={checkMonths} onChange={e => setCheckMonths(e.target.value)} placeholder="3" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  <span className="text-slate-500 text-sm whitespace-nowrap">ay vadeli</span>
+                  <DecimalInput min="1" value={checkMonths} onChange={e => setCheckMonths(e.target.value)} placeholder="3" className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
+                  <span className="text-ink-500 text-sm whitespace-nowrap">ay vadeli</span>
                 </div>
               </div>
             )}
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">KDV Oranı</label>
+              <label className="block text-xs font-medium text-ink-600 mb-1">KDV Oranı</label>
               <div className="flex items-center gap-2">
-                <DecimalInput min="0" max="100" value={vatRate} onChange={e => setVatRate(e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                <span className="text-slate-500 text-sm">%</span>
+                <DecimalInput min="0" max="100" value={vatRate} onChange={e => setVatRate(e.target.value)} placeholder="0" className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
+                <span className="text-ink-500 text-sm">%</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Notes */}
-        <div className="bg-white rounded-xl shadow-sm p-5">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Notlar</label>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="w-full px-3 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+        <div className="bg-white rounded-xl shadow-card p-5 border border-ink-200/80">
+          <label className="block text-sm font-medium text-ink-700 mb-1">Notlar</label>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="w-full px-3 py-2.5 border border-ink-200 rounded-lg focus:ring-2 focus:ring-brand-600 outline-none resize-none" />
         </div>
 
         {/* Generate Button */}
         <button
           onClick={handleGeneratePdf}
           disabled={generating}
-          className="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-3 disabled:opacity-60 shadow-lg shadow-green-600/20"
+          className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-3 disabled:opacity-60 shadow-lg shadow-emerald-600/20"
         >
           {generating ? <Loader2 className="w-6 h-6 animate-spin" /> : <FileText className="w-6 h-6" />}
           {docType === 'teklif' ? 'Teklif PDF Oluştur' : 'Sipariş Onayı PDF Oluştur'}
@@ -665,8 +665,8 @@ function QuoteForm() {
       {showProductModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowProductModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh]">
-            <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[80vh] border border-ink-200/80">
+            <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
               <h3 className="text-white font-semibold">Ürün Seç</h3>
               <button onClick={() => setShowProductModal(false)} className="text-white/80 hover:text-white">
                 <X className="w-5 h-5" />
@@ -678,14 +678,14 @@ function QuoteForm() {
                 onChange={e => setProductSearch(e.target.value)}
                 placeholder="Ürün adı veya kodu ara..."
                 autoFocus
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
               />
             </div>
             <div className="overflow-y-auto flex-1">
               {products.length === 0 ? (
-                <div className="py-10 text-center text-slate-400 text-sm">Ürün bulunamadı</div>
+                <div className="py-10 text-center text-ink-400 text-sm">Ürün bulunamadı</div>
               ) : (
-                <ul className="divide-y divide-slate-100">
+                <ul className="divide-y divide-ink-100">
                   {products
                     .filter(p => {
                       const q = productSearch.toLowerCase();
@@ -695,22 +695,22 @@ function QuoteForm() {
                       <li key={prod.id}>
                         <button
                           onClick={() => selectProduct(prod)}
-                          className="w-full flex items-center justify-between px-5 py-3 hover:bg-blue-50 transition-colors text-left"
+                          className="w-full flex items-center justify-between px-5 py-3 hover:bg-brand-50 transition-colors text-left"
                         >
                           <div>
-                            <p className="font-medium text-slate-800 text-sm">{prod.name}</p>
-                            <p className="text-xs text-slate-400">{prod.code ? `Kod: ${prod.code}` : ''}</p>
+                            <p className="font-medium text-ink-800 text-sm">{prod.name}</p>
+                            <p className="text-xs text-ink-400">{prod.code ? `Kod: ${prod.code}` : ''}</p>
                             {(prod.sizes || []).length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {prod.sizes.map((s: string) => (
-                                  <span key={s} className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-semibold">{s}</span>
+                                  <span key={s} className="px-1.5 py-0.5 bg-brand-100 text-brand-800 rounded text-xs font-semibold">{s}</span>
                                 ))}
                               </div>
                             )}
                           </div>
                           <div className="text-right ml-4">
-                            <p className="font-semibold text-blue-600 text-sm">{prod.unitPrice?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                            <p className="text-xs text-slate-400">{prod.currency}</p>
+                            <p className="font-semibold text-brand-700 text-sm">{prod.unitPrice?.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            <p className="text-xs text-ink-400">{prod.currency}</p>
                           </div>
                         </button>
                       </li>

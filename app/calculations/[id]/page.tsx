@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { FileDown, Loader2, Package, Wrench, Paintbrush, TrendingUp, Pencil, Copy, FileText } from 'lucide-react';
+import { FileDown, Loader2, Package, Wrench, Paintbrush, TrendingUp, Pencil, Copy, FileText } from '@/app/components/icons';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import BackLink from '@/app/components/back-link';
@@ -78,11 +78,11 @@ export default function CalculationDetailPage() {
   };
 
   if (loading) {
-    return <AppShell><div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div></AppShell>;
+    return <AppShell><div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div></AppShell>;
   }
 
   if (!calc || calc.error) {
-    return <AppShell><div className="text-center py-12 text-slate-400">{t('common', 'noData')}</div></AppShell>;
+    return <AppShell><div className="text-center py-12 text-ink-400">{t('common', 'noData')}</div></AppShell>;
   }
 
   return (
@@ -92,20 +92,20 @@ export default function CalculationDetailPage() {
           <div className="flex items-center gap-3">
             <BackLink variant="icon" href="/calculations" label="Maliyet Hesaplamaları" />
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">{calc.name ?? ''}</h1>
-              <p className="text-slate-500 text-sm">{calc.createdAt ? new Date(calc.createdAt).toLocaleDateString() : ''} • {calc.user?.name ?? ''}</p>
+              <h1 className="page-title">{calc.name ?? ''}</h1>
+              <p className="text-ink-500 text-sm">{calc.createdAt ? new Date(calc.createdAt).toLocaleDateString() : ''} • {calc.user?.name ?? ''}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Link href={`/calculations/${calc.id}/edit`} className="flex items-center gap-2 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg font-medium transition-colors text-sm">
+            <Link href={`/calculations/${calc.id}/edit`} className="flex items-center gap-2 px-3 py-2 border border-ink-200 hover:bg-ink-50 text-ink-700 rounded-lg font-medium transition-colors text-sm">
               <Pencil className="w-4 h-4" />
               {t('common', 'edit')}
             </Link>
-            <Link href={`/calculations/new?copyFrom=${calc.id}`} className="flex items-center gap-2 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg font-medium transition-colors text-sm">
+            <Link href={`/calculations/new?copyFrom=${calc.id}`} className="flex items-center gap-2 px-3 py-2 border border-ink-200 hover:bg-ink-50 text-ink-700 rounded-lg font-medium transition-colors text-sm">
               <Copy className="w-4 h-4" />
               {t('common', 'copy')}
             </Link>
-            <button onClick={handleExportPdf} className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm text-sm">
+            <button onClick={handleExportPdf} className="flex items-center gap-2 px-3 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium transition-colors shadow-sm text-sm">
               <FileDown className="w-4 h-4" />
               {t('common', 'exportPdf')}
             </button>
@@ -113,21 +113,21 @@ export default function CalculationDetailPage() {
         </div>
 
         {/* Parts */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
           <div className="p-4 border-b flex items-center gap-2">
-            <Package className="w-5 h-5 text-blue-600" />
-            <h2 className="font-semibold text-slate-700">{t('calculation', 'parts')}</h2>
+            <Package className="w-5 h-5 text-brand-700" />
+            <h2 className="font-semibold text-ink-700">{t('calculation', 'parts')}</h2>
           </div>
           <div className="divide-y">
             {(calc.parts ?? []).map((part: any, i: number) => (
               <div key={part.id ?? i} className="p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-slate-700">{part.partName ?? '-'}</p>
-                  <p className="text-xs text-slate-400">{part.material?.name ?? '-'}</p>
+                  <p className="font-medium text-ink-700">{part.partName ?? '-'}</p>
+                  <p className="text-xs text-ink-400">{part.material?.name ?? '-'}</p>
                 </div>
                 <div className="text-right text-sm">
-                  <p className="text-slate-600">{part.grossWeight ?? 0}g → {part.netWeight?.toFixed?.(2) ?? '0'}g (fire: {part.wasteRate ?? 0}%)</p>
-                  <p className="font-semibold text-blue-600">{formatCurrency(part.cost ?? 0)}</p>
+                  <p className="text-ink-600">{part.grossWeight ?? 0}g → {part.netWeight?.toFixed?.(2) ?? '0'}g (fire: {part.wasteRate ?? 0}%)</p>
+                  <p className="font-semibold text-brand-700">{formatCurrency(part.cost ?? 0)}</p>
                 </div>
               </div>
             ))}
@@ -135,19 +135,19 @@ export default function CalculationDetailPage() {
         </motion.div>
 
         {/* Cost Summary */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white shadow-lg">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-brand-700 rounded-xl p-6 text-white shadow-lg">
           <h3 className="text-lg font-semibold mb-4">{t('calculation', 'summary')}</h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="flex items-center gap-2 text-blue-200"><Package className="w-4 h-4" />{t('calculation', 'totalMaterialCost')}</span>
+              <span className="flex items-center gap-2 text-brand-200"><Package className="w-4 h-4" />{t('calculation', 'totalMaterialCost')}</span>
               <span className="font-medium">{formatCurrency(calc.totalMaterialCost ?? 0)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="flex items-center gap-2 text-blue-200"><Wrench className="w-4 h-4" />{t('calculation', 'laborCostPerPair')} {calc.laborCurrency && calc.laborCurrency !== calc.currency ? `(${calc.laborCurrency})` : ''}</span>
+              <span className="flex items-center gap-2 text-brand-200"><Wrench className="w-4 h-4" />{t('calculation', 'laborCostPerPair')} {calc.laborCurrency && calc.laborCurrency !== calc.currency ? `(${calc.laborCurrency})` : ''}</span>
               <span className="font-medium">{formatCurrency(calc.laborCostPerPair ?? 0)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="flex items-center gap-2 text-blue-200"><Paintbrush className="w-4 h-4" />{t('calculation', 'paintCost')}</span>
+              <span className="flex items-center gap-2 text-brand-200"><Paintbrush className="w-4 h-4" />{t('calculation', 'paintCost')}</span>
               <span className="font-medium">{formatCurrency(calc.paintCost ?? 0)}</span>
             </div>
             <div className="border-t border-white/20 pt-3">
@@ -162,7 +162,7 @@ export default function CalculationDetailPage() {
             </div>
             <div className="flex justify-between text-xl pt-2 border-t border-white/20">
               <span>{t('calculation', 'sellingPrice')}</span>
-              <span className="font-bold text-green-300">{formatCurrency(calc.sellingPrice ?? 0)}</span>
+              <span className="font-bold text-emerald-300">{formatCurrency(calc.sellingPrice ?? 0)}</span>
             </div>
             {(calc.vatRate ?? 0) > 0 && (
               <div className="flex justify-between text-xl bg-white/10 rounded-lg px-3 py-2">
@@ -185,9 +185,9 @@ export default function CalculationDetailPage() {
         </motion.div>
 
         {calc.notes && (
-          <div className="bg-white rounded-xl shadow-sm p-5">
-            <h3 className="font-semibold text-slate-700 mb-2">{t('calculation', 'notes')}</h3>
-            <p className="text-slate-600 text-sm">{calc.notes}</p>
+          <div className="bg-white rounded-xl shadow-card p-5 border border-ink-200/80">
+            <h3 className="font-semibold text-ink-700 mb-2">{t('calculation', 'notes')}</h3>
+            <p className="text-ink-600 text-sm">{calc.notes}</p>
           </div>
         )}
       </div>

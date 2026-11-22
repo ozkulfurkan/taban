@@ -5,7 +5,7 @@ import AppShell from '@/app/components/app-shell';
 import { useSession } from 'next-auth/react';
 import {
   Users, Plus, Loader2, Trash2, Edit2, Key, X, Save, Eye, EyeOff, Copy, CheckCircle, Shield, AlertTriangle
-} from 'lucide-react';
+} from '@/app/components/icons';
 
 const ALL_PAGES = [
   { key: 'dashboard', label: 'Ana Sayfa' },
@@ -29,10 +29,10 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  ADMIN: 'bg-purple-100 text-purple-700',
-  COMPANY_OWNER: 'bg-blue-100 text-blue-700',
+  ADMIN: 'bg-brand-100 text-brand-800',
+  COMPANY_OWNER: 'bg-brand-100 text-brand-800',
   EDITOR: 'bg-emerald-100 text-emerald-700',
-  VIEWER: 'bg-slate-100 text-slate-600',
+  VIEWER: 'bg-ink-100 text-ink-600',
 };
 
 const ASSIGNABLE_ROLES = ['COMPANY_OWNER', 'EDITOR', 'VIEWER'];
@@ -81,40 +81,40 @@ function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-slate-100">
-          <h3 className="text-lg font-semibold text-slate-800">Yeni Kullanıcı Ekle</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-ink-200/80">
+        <div className="flex items-center justify-between p-5 border-b border-ink-100">
+          <h3 className="text-lg font-semibold text-ink-800">Yeni Kullanıcı Ekle</h3>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-600"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ad Soyad</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Ad Soyad</label>
               <input value={name} onChange={e => setName(e.target.value)} placeholder="Ad Soyad"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Rol</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Rol</label>
               <select value={role} onChange={e => setRole(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600">
                 {ASSIGNABLE_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">E-posta *</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">E-posta *</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Şifre *</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Şifre *</label>
             <div className="relative">
               <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
                 placeholder="En az 6 karakter"
-                className="w-full px-3 py-2 pr-9 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full px-3 py-2 pr-9 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
               <button type="button" onClick={() => setShowPass(!showPass)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-400">
                 {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
@@ -122,33 +122,33 @@ function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
 
           {!hasFullAccess(role) && (
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-2">Sayfa İzinleri</label>
+              <label className="block text-xs font-medium text-ink-500 mb-2">Sayfa İzinleri</label>
               <div className="grid grid-cols-2 gap-1.5">
                 <button type="button"
                   onClick={() => setAllowedPages(allowedPages.length === ALL_PAGES.length ? [] : ALL_PAGES.map(p => p.key))}
-                  className="col-span-2 text-xs text-blue-600 hover:underline text-left mb-1">
+                  className="col-span-2 text-xs text-brand-700 hover:underline text-left mb-1">
                   {allowedPages.length === ALL_PAGES.length ? 'Tümünü kaldır' : 'Tümünü seç'}
                 </button>
                 {ALL_PAGES.map(p => (
                   <label key={p.key} className="flex items-center gap-2 cursor-pointer group">
                     <input type="checkbox" checked={allowedPages.includes(p.key)} onChange={() => togglePage(p.key)}
-                      className="w-4 h-4 rounded accent-blue-600" />
-                    <span className="text-sm text-slate-700 group-hover:text-blue-600">{p.label}</span>
+                      className="w-4 h-4 rounded accent-brand-700" />
+                    <span className="text-sm text-ink-700 group-hover:text-brand-700">{p.label}</span>
                   </label>
                 ))}
               </div>
             </div>
           )}
           {hasFullAccess(role) && (
-            <p className="text-xs text-slate-400 bg-slate-50 rounded-lg p-3">
+            <p className="text-xs text-ink-400 bg-ink-50 rounded-lg p-3">
               Firma Yöneticisi tüm sayfalara tam erişime sahiptir.
             </p>
           )}
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
-          <button onClick={onClose} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm">İptal</button>
+          <button onClick={onClose} className="px-4 py-2 text-ink-600 hover:bg-ink-100 rounded-lg text-sm">İptal</button>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
+            className="flex items-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium disabled:opacity-60">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Kaydet
           </button>
@@ -219,26 +219,26 @@ function EditUserModal({ user, onClose, onSaved }: { user: User; onClose: () => 
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-slate-100">
-          <h3 className="text-lg font-semibold text-slate-800">Kullanıcıyı Düzenle</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-ink-200/80">
+        <div className="flex items-center justify-between p-5 border-b border-ink-100">
+          <h3 className="text-lg font-semibold text-ink-800">Kullanıcıyı Düzenle</h3>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-600"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
 
-          <div className="text-sm text-slate-500 bg-slate-50 rounded-lg px-3 py-2 font-medium">{user.email}</div>
+          <div className="text-sm text-ink-500 bg-ink-50 rounded-lg px-3 py-2 font-medium">{user.email}</div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Ad Soyad</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Ad Soyad</label>
               <input value={name} onChange={e => setName(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Rol</label>
+              <label className="block text-xs font-medium text-ink-500 mb-1">Rol</label>
               <select value={role} onChange={e => setRole(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600">
                 {ASSIGNABLE_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
               </select>
             </div>
@@ -246,57 +246,57 @@ function EditUserModal({ user, onClose, onSaved }: { user: User; onClose: () => 
 
           {!hasFullAccess(role) && (
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-2">Sayfa İzinleri</label>
+              <label className="block text-xs font-medium text-ink-500 mb-2">Sayfa İzinleri</label>
               <div className="grid grid-cols-2 gap-1.5">
                 <button type="button"
                   onClick={() => setAllowedPages(allowedPages.length === ALL_PAGES.length ? [] : ALL_PAGES.map(p => p.key))}
-                  className="col-span-2 text-xs text-blue-600 hover:underline text-left mb-1">
+                  className="col-span-2 text-xs text-brand-700 hover:underline text-left mb-1">
                   {allowedPages.length === ALL_PAGES.length ? 'Tümünü kaldır' : 'Tümünü seç'}
                 </button>
                 {ALL_PAGES.map(p => (
                   <label key={p.key} className="flex items-center gap-2 cursor-pointer group">
                     <input type="checkbox" checked={allowedPages.includes(p.key)} onChange={() => togglePage(p.key)}
-                      className="w-4 h-4 rounded accent-blue-600" />
-                    <span className="text-sm text-slate-700 group-hover:text-blue-600">{p.label}</span>
+                      className="w-4 h-4 rounded accent-brand-700" />
+                    <span className="text-sm text-ink-700 group-hover:text-brand-700">{p.label}</span>
                   </label>
                 ))}
               </div>
             </div>
           )}
           {hasFullAccess(role) && (
-            <p className="text-xs text-slate-400 bg-slate-50 rounded-lg p-3">
+            <p className="text-xs text-ink-400 bg-ink-50 rounded-lg p-3">
               Firma Yöneticisi tüm sayfalara tam erişime sahiptir.
             </p>
           )}
 
-          <div className="border-t border-slate-100 pt-4">
-            <label className="block text-xs font-medium text-slate-500 mb-1">Yeni Şifre Belirle (isteğe bağlı)</label>
+          <div className="border-t border-ink-100 pt-4">
+            <label className="block text-xs font-medium text-ink-500 mb-1">Yeni Şifre Belirle (isteğe bağlı)</label>
             <div className="relative">
               <input type={showPass ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)}
                 placeholder="Değiştirmek için girin"
-                className="w-full px-3 py-2 pr-9 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                className="w-full px-3 py-2 pr-9 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
               <button type="button" onClick={() => setShowPass(!showPass)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-400">
                 {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
-          <div className="border-t border-slate-100 pt-4">
-            <p className="text-xs font-medium text-slate-500 mb-2">Şifre Sıfırlama Bağlantısı</p>
+          <div className="border-t border-ink-100 pt-4">
+            <p className="text-xs font-medium text-ink-500 mb-2">Şifre Sıfırlama Bağlantısı</p>
             {!resetUrl ? (
               <button onClick={generateResetLink} disabled={generatingLink}
-                className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-60">
+                className="flex items-center gap-2 px-3 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50 disabled:opacity-60">
                 {generatingLink ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
                 Bağlantı Oluştur (24 saat geçerli)
               </button>
             ) : (
               <div className="space-y-2">
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 break-all text-xs text-slate-600 font-mono">
+                <div className="bg-ink-50 border border-ink-200 rounded-lg p-2 break-all text-xs text-ink-600 font-mono">
                   {resetUrl}
                 </div>
                 <button onClick={handleCopy}
-                  className="flex items-center gap-2 text-xs text-blue-600 hover:underline">
+                  className="flex items-center gap-2 text-xs text-brand-700 hover:underline">
                   {copied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   {copied ? 'Kopyalandı!' : 'Kopyala'}
                 </button>
@@ -305,9 +305,9 @@ function EditUserModal({ user, onClose, onSaved }: { user: User; onClose: () => 
           </div>
         </div>
         <div className="flex justify-end gap-2 px-5 pb-5">
-          <button onClick={onClose} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm">İptal</button>
+          <button onClick={onClose} className="px-4 py-2 text-ink-600 hover:bg-ink-100 rounded-lg text-sm">İptal</button>
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
+            className="flex items-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium disabled:opacity-60">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Kaydet
           </button>
@@ -354,9 +354,9 @@ export default function UsersPage() {
     return (
       <AppShell>
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <Shield className="w-16 h-16 text-slate-300 mb-4" />
-          <h2 className="text-xl font-bold text-slate-700 mb-2">Erişim Kısıtlı</h2>
-          <p className="text-slate-500">Bu sayfayı görüntüleme yetkiniz yok.</p>
+          <Shield className="w-16 h-16 text-ink-300 mb-4" />
+          <h2 className="text-xl font-bold text-ink-700 mb-2">Erişim Kısıtlı</h2>
+          <p className="text-ink-500">Bu sayfayı görüntüleme yetkiniz yok.</p>
         </div>
       </AppShell>
     );
@@ -375,12 +375,12 @@ export default function UsersPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Kullanıcı Yönetimi</h1>
-            <p className="text-slate-500 text-sm">{users.length} kullanıcı</p>
+            <h1 className="page-title">Kullanıcı Yönetimi</h1>
+            <p className="text-ink-500 text-sm">{users.length} kullanıcı</p>
           </div>
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium text-sm transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" /> Yeni Kullanıcı
           </button>
@@ -388,41 +388,41 @@ export default function UsersPage() {
 
         {/* Table */}
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+          <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>
         ) : users.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl shadow-sm">
-            <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-400">Henüz kullanıcı yok</p>
+          <div className="text-center py-16 bg-white rounded-xl shadow-card border border-ink-200/80">
+            <Users className="w-12 h-12 text-ink-300 mx-auto mb-3" />
+            <p className="text-ink-400">Henüz kullanıcı yok</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-700 text-white text-xs font-semibold uppercase tracking-wide">
+                <tr className="bg-ink-50 text-ink-500 text-[11px] font-semibold uppercase tracking-[0.08em] border-b border-ink-200">
                   <th className="px-4 py-3 text-left">Ad / E-posta</th>
                   <th className="px-4 py-3 text-left">Rol</th>
                   <th className="px-4 py-3 text-left hidden md:table-cell">Sayfa İzinleri</th>
                   <th className="px-4 py-3 text-right">İşlemler</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-ink-100">
                 {users.map(u => (
-                  <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={u.id} className="hover:bg-ink-50 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="font-medium text-slate-800">{u.name || '—'}</p>
-                      <p className="text-slate-400 text-xs">{u.email}</p>
+                      <p className="font-medium text-ink-800">{u.name || '—'}</p>
+                      <p className="text-ink-400 text-xs">{u.email}</p>
                       {u.id === currentUser?.id && (
-                        <span className="text-xs text-blue-500 font-medium">(siz)</span>
+                        <span className="text-xs text-brand-600 font-medium">(siz)</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${ROLE_COLORS[u.role] || 'bg-slate-100 text-slate-600'}`}>
+                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${ROLE_COLORS[u.role] || 'bg-ink-100 text-ink-600'}`}>
                         {ROLE_LABELS[u.role] || u.role}
                       </span>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">
                       {hasFullAccess(u.role) ? (
-                        <span className="text-xs text-slate-400 italic">Tam erişim</span>
+                        <span className="text-xs text-ink-400 italic">Tam erişim</span>
                       ) : u.allowedPages.length === 0 ? (
                         <span className="text-xs text-red-400 italic">Erişim yok</span>
                       ) : u.allowedPages.length === ALL_PAGES.length ? (
@@ -432,13 +432,13 @@ export default function UsersPage() {
                           {u.allowedPages.slice(0, 4).map(p => {
                             const pg = ALL_PAGES.find(x => x.key === p);
                             return (
-                              <span key={p} className="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                              <span key={p} className="text-xs bg-ink-100 text-ink-600 px-1.5 py-0.5 rounded">
                                 {pg?.label || p}
                               </span>
                             );
                           })}
                           {u.allowedPages.length > 4 && (
-                            <span className="text-xs text-slate-400">+{u.allowedPages.length - 4} daha</span>
+                            <span className="text-xs text-ink-400">+{u.allowedPages.length - 4} daha</span>
                           )}
                         </div>
                       )}
@@ -447,7 +447,7 @@ export default function UsersPage() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setEditUser(u)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-1.5 text-ink-400 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors"
                           title="Düzenle"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -455,7 +455,7 @@ export default function UsersPage() {
                         {u.id !== currentUser?.id && (
                           <button
                             onClick={() => handleDelete(u)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-1.5 text-ink-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Sil"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -471,9 +471,9 @@ export default function UsersPage() {
         )}
 
         {/* Info Box */}
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700">
+        <div className="bg-brand-50 border border-brand-100 rounded-xl p-4 text-sm text-brand-800">
           <p className="font-medium mb-1">Rol Açıklamaları</p>
-          <ul className="space-y-1 text-xs text-blue-600">
+          <ul className="space-y-1 text-xs text-brand-700">
             <li><strong>Firma Yöneticisi:</strong> Tüm sayfalara tam erişim, kullanıcı yönetimi yetkisi</li>
             <li><strong>Editör:</strong> Atanan sayfalarda düzenleme yapabilir</li>
             <li><strong>Görüntüleyici:</strong> Atanan sayfalarda sadece görüntüleme yapabilir</li>
@@ -483,19 +483,19 @@ export default function UsersPage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-ink-600 whitespace-pre-line">{confirmModal.message}</p>
               </div>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setConfirmModal(null)}
-                className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+                className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg text-sm hover:bg-ink-50">İptal</button>
               <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }}
                 className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>
@@ -505,18 +505,18 @@ export default function UsersPage() {
       {errorMsg && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setErrorMsg('')} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Hata</h3>
-                <p className="text-sm text-slate-600">{errorMsg}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Hata</h3>
+                <p className="text-sm text-ink-600">{errorMsg}</p>
               </div>
             </div>
             <button onClick={() => setErrorMsg('')}
-              className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+              className="w-full py-2 bg-ink-700 hover:bg-ink-800 text-white rounded-lg text-sm font-medium">
               Tamam
             </button>
           </div>

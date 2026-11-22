@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserPlus, Eye, EyeOff, Loader2, Mail, CheckCircle2, ArrowRight, RotateCcw, XCircle } from 'lucide-react';
+import { UserPlus, Eye, EyeOff, Loader2, Mail, CheckCircle2, ArrowRight, RotateCcw, XCircle } from '@/app/components/icons';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/language-context';
+import { AuthShell } from '@/app/components/auth-shell';
 import { BrandMark } from '@/app/components/brand-mark';
 
 function SuccessModal({
@@ -62,7 +63,7 @@ function SuccessModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/70 backdrop-blur-md"
+        className="absolute inset-0 bg-ink-950/40 backdrop-blur-sm"
       />
 
       {/* Card */}
@@ -71,7 +72,7 @@ function SuccessModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.92, y: 16 }}
         transition={{ type: 'spring', stiffness: 300, damping: 26 }}
-        className="relative z-10 bg-slate-900 border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl shadow-black/60"
+        className="relative z-10 bg-white border border-ink-200 rounded-2xl p-8 max-w-md w-full shadow-pop"
       >
         {/* Success icon */}
         <div className="flex justify-center mb-6">
@@ -80,21 +81,21 @@ function SuccessModal({
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.15 }}
-              className="w-20 h-20 rounded-full bg-green-500/15 border border-green-500/25 flex items-center justify-center"
+              className="w-20 h-20 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center"
             >
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 18, delay: 0.25 }}
-                className="w-12 h-12 rounded-full bg-green-500/25 flex items-center justify-center"
+                className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center"
               >
-                <CheckCircle2 className="w-7 h-7 text-green-400" strokeWidth={2.5} />
+                <CheckCircle2 className="w-7 h-7 text-emerald-600" strokeWidth={2.5} />
               </motion.div>
             </motion.div>
             <motion.div
               animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0, 0.4] }}
               transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute inset-0 rounded-full border border-green-500/30"
+              className="absolute inset-0 rounded-full border border-emerald-300"
             />
           </div>
         </div>
@@ -105,7 +106,7 @@ function SuccessModal({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-2xl font-bold text-white mb-4"
+            className="text-2xl font-bold text-ink-900 mb-4"
           >
             Hesabınız Oluşturuldu 🎉
           </motion.h2>
@@ -113,11 +114,11 @@ function SuccessModal({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="space-y-1.5 text-slate-300 text-sm leading-relaxed"
+            className="space-y-1.5 text-ink-600 text-sm leading-relaxed"
           >
             <p>E-posta adresinize doğrulama bağlantısı gönderdik.</p>
             <p>Hesabınızı aktifleştirmek için lütfen e-postanızı kontrol edin.</p>
-            <p className="text-slate-500 text-xs mt-3">
+            <p className="text-ink-500 text-xs mt-3">
               Doğrulama tamamlandıktan sonra giriş yapabilirsiniz.
             </p>
           </motion.div>
@@ -127,10 +128,10 @@ function SuccessModal({
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="mt-4 inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-2"
+            className="mt-4 inline-flex items-center gap-2 bg-brand-50 border border-brand-100 rounded-full px-4 py-2"
           >
-            <Mail className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-            <span className="text-blue-300 text-sm font-medium truncate max-w-[240px]">{email}</span>
+            <Mail className="w-3.5 h-3.5 text-brand-700 flex-shrink-0" />
+            <span className="text-ink-500 text-sm font-medium truncate max-w-[240px]">{email}</span>
           </motion.div>
         </div>
 
@@ -147,7 +148,7 @@ function SuccessModal({
               <circle
                 cx="18" cy="18" r="14"
                 fill="none"
-                stroke="#3B82F6"
+                stroke="#8A2438"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -155,11 +156,11 @@ function SuccessModal({
                 style={{ transition: 'stroke-dashoffset 0.9s linear' }}
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold">
+            <span className="absolute inset-0 flex items-center justify-center text-ink-900 text-xs font-bold">
               {countdown}
             </span>
           </div>
-          <span className="text-slate-400 text-xs">
+          <span className="text-ink-400 text-xs">
             saniye içinde giriş sayfasına yönlendiriliyorsunuz
           </span>
         </motion.div>
@@ -173,7 +174,7 @@ function SuccessModal({
         >
           <button
             onClick={onGoToLogin}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 hover:shadow-blue-500/30"
+            className="w-full py-3 bg-brand-700 hover:bg-brand-600 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-brand-700/25 hover:shadow-brand-600/30"
           >
             <ArrowRight className="w-4 h-4" />
             Giriş Sayfasına Git
@@ -181,16 +182,16 @@ function SuccessModal({
           <button
             onClick={handleResend}
             disabled={resendLoading || resendSent}
-            className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-300 hover:text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-ink-50 hover:bg-ink-100 border border-ink-200 hover:border-ink-200 text-ink-300 hover:text-ink-900 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {resendLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : resendSent ? (
-              <CheckCircle2 className="w-4 h-4 text-green-400" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             ) : (
               <RotateCcw className="w-4 h-4" />
             )}
-            <span className={resendSent ? 'text-green-400' : ''}>
+            <span className={resendSent ? 'text-emerald-600' : ''}>
               {resendSent ? 'Mail Gönderildi!' : 'Tekrar Mail Gönder'}
             </span>
           </button>
@@ -212,9 +213,9 @@ function PasswordRule({ ok, text }: { ok: boolean; text: string }) {
   return (
     <div className="flex items-center gap-1.5">
       {ok
-        ? <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-        : <XCircle className="w-3.5 h-3.5 text-red-400/70 flex-shrink-0" />}
-      <span className={`text-xs ${ok ? 'text-green-300' : 'text-slate-400'}`}>{text}</span>
+        ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+        : <XCircle className="w-3.5 h-3.5 text-red-500/70 flex-shrink-0" />}
+      <span className={`text-xs ${ok ? 'text-emerald-700' : 'text-ink-400'}`}>{text}</span>
     </div>
   );
 }
@@ -265,34 +266,24 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-900 to-blue-950 flex items-center justify-center p-4">
+    <AuthShell
+      title={t('auth', 'registerTitle')}
+      subtitle={t('auth', 'registerDesc')}
+      panelTitle={<>İlk faturanızı<br /><em className="italic font-normal text-[#EBC8CE]">bugün kesin.</em></>}
+    >
       <AnimatePresence>
         {showSuccessModal && (
           <SuccessModal email={registeredEmail} onGoToLogin={handleGoToLogin} />
         )}
       </AnimatePresence>
-
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: showSuccessModal ? 0.3 : 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md"
-      >
-        <div className="text-center mb-8">
-          <BrandMark size={64} className="mb-4" />
-          <h1 className="text-3xl font-bold text-white mb-2">SoleCost</h1>
-          <p className="text-blue-300 text-sm">{t('auth', 'registerDesc')}</p>
-        </div>
-
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/10">
-          <h2 className="text-xl font-semibold text-white mb-6">{t('auth', 'registerTitle')}</h2>
+        <div>
 
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               role="alert"
-              className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-200 text-sm"
+              className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm"
             >
               {error}
             </motion.div>
@@ -300,43 +291,43 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="reg-name" className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'fullName')}</label>
+              <label htmlFor="reg-name" className="block text-sm font-medium text-ink-700 mb-1.5">{t('auth', 'fullName')}</label>
               <input
                 id="reg-name"
                 autoComplete="name"
                 type="text"
                 value={form.name}
                 onChange={(e) => updateField('name', e.target.value)}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="input py-2.5 text-[15px]"
                 required
               />
             </div>
             <div>
-              <label htmlFor="reg-company" className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'companyName')}</label>
+              <label htmlFor="reg-company" className="block text-sm font-medium text-ink-700 mb-1.5">{t('auth', 'companyName')}</label>
               <input
                 id="reg-company"
                 autoComplete="organization"
                 type="text"
                 value={form.companyName}
                 onChange={(e) => updateField('companyName', e.target.value)}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="input py-2.5 text-[15px]"
                 required
               />
             </div>
             <div>
-              <label htmlFor="reg-email" className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'email')}</label>
+              <label htmlFor="reg-email" className="block text-sm font-medium text-ink-700 mb-1.5">{t('auth', 'email')}</label>
               <input
                 id="reg-email"
                 autoComplete="email"
                 type="email"
                 value={form.email}
                 onChange={(e) => updateField('email', e.target.value)}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="input py-2.5 text-[15px]"
                 required
               />
             </div>
             <div>
-              <label htmlFor="reg-password" className="block text-sm font-medium text-blue-200 mb-1.5">{t('auth', 'password')}</label>
+              <label htmlFor="reg-password" className="block text-sm font-medium text-ink-700 mb-1.5">{t('auth', 'password')}</label>
               <div className="relative">
                 <input
                   id="reg-password"
@@ -344,7 +335,7 @@ export default function RegisterPage() {
                   type={showPass ? 'text' : 'password'}
                   value={form.password}
                   onChange={(e) => updateField('password', e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition pr-12"
+                  className="input py-2.5 text-[15px] pr-12"
                   required
                   minLength={6}
                 />
@@ -352,7 +343,7 @@ export default function RegisterPage() {
                   type="button"
                   aria-label={showPass ? 'Şifreyi gizle' : 'Şifreyi göster'}
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-300 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 hover:text-ink-900"
                 >
                   {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -368,21 +359,20 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading || !passwordValid}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5" />}
               {t('auth', 'register')}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-blue-300">
+          <p className="mt-8 text-sm text-ink-600">
             {t('auth', 'hasAccount')}{' '}
-            <Link href="/login" className="text-blue-400 hover:text-white font-medium transition-colors">
+            <Link href="/login" className="font-semibold text-brand-700 hover:text-brand-800 hover:underline underline-offset-4">
               {t('auth', 'login')}
             </Link>
           </p>
         </div>
-      </motion.div>
-    </div>
+    </AuthShell>
   );
 }

@@ -41,9 +41,9 @@ export async function POST(req: NextRequest) {
       subject: `SoleCost Production Mail Test - ${timestamp}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
-          <h2 style="color: #2563eb; margin-top: 0;">SoleCost Production Mail Testi</h2>
+          <h2 style="color: #6B1A2C; margin-top: 0;">SoleCost Production Mail Testi</h2>
           <p>Bu production ortamından gönderilen test mailidir.</p>
-          <div style="background: #f8fafc; padding: 15px; border-radius: 6px; margin: 15px 0;">
+          <div style="background: #FAF8F5; padding: 15px; border-radius: 6px; margin: 15px 0;">
             <p><strong>Gönderim zamanı:</strong> ${timestamp}</p>
             <p><strong>Environment:</strong> ${process.env.NODE_ENV || 'development'}</p>
             <p><strong>SMTP Host:</strong> ${process.env.SMTP_HOST || 'Not configured'}</p>

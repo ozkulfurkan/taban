@@ -7,12 +7,12 @@ export const metadata: Metadata = { title: 'Hesap ve Veri Silme — SoleCost' };
 // Mağazaların (Google Play, App Store) istediği herkese açık hesap silme sayfası
 export default function AccountDeletionPage() {
   return (
-    <main className="min-h-screen bg-slate-50">
-      <article className="max-w-3xl mx-auto px-4 py-10 sm:py-14 text-slate-700 leading-relaxed space-y-6 text-[15px]">
+    <main className="min-h-screen bg-ink-50">
+      <article className="max-w-3xl mx-auto px-4 py-10 sm:py-14 text-ink-700 leading-relaxed space-y-6 text-[15px]">
         <header className="space-y-2">
-          <Link href="/" className="text-sm text-blue-600">SoleCost</Link>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Hesap ve veri silme</h1>
-          <p className="text-sm text-slate-500">{LEGAL.product} hesabınızı ve verilerinizi nasıl sileceğiniz</p>
+          <Link href="/" className="text-sm text-brand-700">SoleCost</Link>
+          <h1 className="page-title">Hesap ve veri silme</h1>
+          <p className="text-sm text-ink-500">{LEGAL.product} hesabınızı ve verilerinizi nasıl sileceğiniz</p>
         </header>
 
         <Section title="Mobil uygulamadan">
@@ -27,8 +27,8 @@ export default function AccountDeletionPage() {
           <p>
             Hesabınıza kayıtlı e-posta adresiyle{' '}
             {LEGAL.email
-              ? <a href={`mailto:${LEGAL.email}?subject=Hesap%20silme%20talebi`} className="text-blue-600 underline">{LEGAL.email}</a>
-              : <Link href="/destek" className="text-blue-600 underline">destek sayfası</Link>}
+              ? <a href={`mailto:${LEGAL.email}?subject=Hesap%20silme%20talebi`} className="text-brand-700 underline">{LEGAL.email}</a>
+              : <Link href="/destek" className="text-brand-700 underline">destek sayfası</Link>}
             {' '}üzerinden &quot;hesap silme talebi&quot; iletin. Kimliğinizi doğruladıktan sonra talebiniz işleme alınır.
           </p>
         </Section>
@@ -51,8 +51,8 @@ export default function AccountDeletionPage() {
           </p>
         </Section>
 
-        <p className="text-sm text-slate-500">
-          Ayrıntılar için <Link href="/gizlilik" className="text-blue-600 underline">Gizlilik Politikası</Link>.
+        <p className="text-sm text-ink-500">
+          Ayrıntılar için <Link href="/gizlilik" className="text-brand-700 underline">Gizlilik Politikası</Link>.
         </p>
       </article>
     </main>
@@ -62,7 +62,7 @@ export default function AccountDeletionPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+      <h2 className="text-lg font-semibold text-ink-900">{title}</h2>
       {children}
     </section>
   );

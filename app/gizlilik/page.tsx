@@ -7,12 +7,12 @@ export const metadata: Metadata = { title: 'Gizlilik Politikası ve KVKK Aydınl
 export default function PrivacyPage() {
   const controller = LEGAL.controller || LEGAL.product;
   return (
-    <main className="min-h-screen bg-slate-50">
-      <article className="max-w-3xl mx-auto px-4 py-10 sm:py-14 text-slate-700 leading-relaxed space-y-6 text-[15px]">
+    <main className="min-h-screen bg-ink-50">
+      <article className="max-w-3xl mx-auto px-4 py-10 sm:py-14 text-ink-700 leading-relaxed space-y-6 text-[15px]">
         <header className="space-y-2">
-          <Link href="/" className="text-sm text-blue-600">SoleCost</Link>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Gizlilik Politikası ve KVKK Aydınlatma Metni</h1>
-          <p className="text-sm text-slate-500">Son güncelleme: {LEGAL.updatedAt}</p>
+          <Link href="/" className="text-sm text-brand-700">SoleCost</Link>
+          <h1 className="page-title">Gizlilik Politikası ve KVKK Aydınlatma Metni</h1>
+          <p className="text-sm text-ink-500">Son güncelleme: {LEGAL.updatedAt}</p>
         </header>
 
         <Section title="1. Veri sorumlusu">
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
             Veriler hesap süresince ve ilgili mevzuatta öngörülen süreler boyunca saklanır. Hesabın kapatılmasıyla birlikte veriler,
             yasal saklama yükümlülükleri saklı kalmak kaydıyla silinir veya anonim hâle getirilir.
             Hesabınızı mobil uygulamada Ayarlar → Hesabı sil bölümünden silebilirsiniz; adımlar ve silinen veriler
-            {' '}<Link href="/hesap-silme" className="text-blue-600 underline">hesap silme sayfasında</Link> anlatılır.
+            {' '}<Link href="/hesap-silme" className="text-brand-700 underline">hesap silme sayfasında</Link> anlatılır.
           </p>
         </Section>
 
@@ -80,8 +80,8 @@ export default function PrivacyPage() {
             KVKK m.11 uyarınca verilerinizin işlenip işlenmediğini öğrenme, bilgi talep etme, düzeltilmesini veya silinmesini isteme,
             aktarıldığı kişileri öğrenme, itiraz etme ve zararın giderilmesini talep etme haklarına sahipsiniz.
             {LEGAL.email
-              ? <> Taleplerinizi <a href={`mailto:${LEGAL.email}`} className="text-blue-600 underline">{LEGAL.email}</a> adresine iletebilirsiniz.</>
-              : <> Taleplerinizi <Link href="/destek" className="text-blue-600 underline">destek sayfası</Link> üzerinden iletebilirsiniz.</>}
+              ? <> Taleplerinizi <a href={`mailto:${LEGAL.email}`} className="text-brand-700 underline">{LEGAL.email}</a> adresine iletebilirsiniz.</>
+              : <> Taleplerinizi <Link href="/destek" className="text-brand-700 underline">destek sayfası</Link> üzerinden iletebilirsiniz.</>}
           </p>
         </Section>
       </article>
@@ -92,7 +92,7 @@ export default function PrivacyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+      <h2 className="text-lg font-semibold text-ink-900">{title}</h2>
       {children}
     </section>
   );

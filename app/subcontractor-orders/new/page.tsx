@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import SizeTable from '@/app/portal/components/size-table';
-import { ChevronLeft, ChevronRight, Loader2, Factory, CheckCircle2, Package } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Factory, CheckCircle2, Package } from '@/app/components/icons';
 import BackLink from '@/app/components/back-link';
 
 const STEPS = ['Fasoncu & Ürün', 'Numara Dağılımı', 'Hammadde Gereksinimi', 'Termin & Notlar'];
@@ -130,8 +130,8 @@ export default function NewSubcontractorOrderPage() {
         <div className="flex items-center gap-2">
           <BackLink href="/subcontractor-orders" label="Fason Siparişleri" />
           <div className="flex items-center gap-2">
-            <Factory className="w-5 h-5 text-orange-600" />
-            <h1 className="text-lg font-bold text-slate-800">Yeni Fason Sipariş</h1>
+            <Factory className="w-5 h-5 text-amber-600" />
+            <h1 className="page-title">Yeni Fason Sipariş</h1>
           </div>
         </div>
 
@@ -139,31 +139,31 @@ export default function NewSubcontractorOrderPage() {
         <div className="flex items-center gap-0">
           {STEPS.map((s, i) => (
             <div key={i} className="flex items-center">
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${i === step ? 'bg-orange-100 text-orange-700' : i < step ? 'text-green-600' : 'text-slate-400'}`}>
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ${i === step ? 'bg-amber-100 text-amber-700' : i < step ? 'text-emerald-600' : 'text-ink-400'}`}>
                 {i < step ? <CheckCircle2 className="w-3.5 h-3.5" /> : <span className="w-4 h-4 rounded-full border flex items-center justify-center text-[10px]">{i + 1}</span>}
                 {s}
               </div>
-              {i < STEPS.length - 1 && <div className="w-4 h-px bg-slate-300 mx-1" />}
+              {i < STEPS.length - 1 && <div className="w-4 h-px bg-ink-300 mx-1" />}
             </div>
           ))}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+        <div className="bg-white rounded-xl shadow-card p-6 space-y-4 border border-ink-200/80">
           {/* Step 0: Fasoncu & Ürün */}
           {step === 0 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Fasoncu *</label>
+                <label className="block text-sm font-medium text-ink-700 mb-2">Fasoncu *</label>
                 <select value={form.subcontractorId} onChange={e => setForm(p => ({ ...p, subcontractorId: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400">
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-brand-500">
                   <option value="">— Fasoncu Seçin —</option>
                   {subcontractors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Ürün (opsiyonel)</label>
+                <label className="block text-sm font-medium text-ink-700 mb-2">Ürün (opsiyonel)</label>
                 <select value={form.productId} onChange={e => setForm(p => ({ ...p, productId: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400">
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-brand-500">
                   <option value="">— Ürün Seçin —</option>
                   {products.map((p: any) => <option key={p.id} value={p.id}>{p.name}{p.code ? ` (${p.code})` : ''}</option>)}
                 </select>
@@ -174,15 +174,15 @@ export default function NewSubcontractorOrderPage() {
           {/* Step 1: Numara Dağılımı */}
           {step === 1 && (
             <div className="space-y-4">
-              <h3 className="font-medium text-slate-700">Numara Dağılımı</h3>
+              <h3 className="font-medium text-ink-700">Numara Dağılımı</h3>
               <SizeTable value={form.sizeDistribution} onChange={v => setForm(p => ({ ...p, sizeDistribution: v }))} />
-              <p className="text-sm text-slate-500">Toplam: <span className="font-bold text-slate-700">{totalPairs} çift</span></p>
+              <p className="text-sm text-ink-500">Toplam: <span className="font-bold text-ink-700">{totalPairs} çift</span></p>
 
               {/* Hammadde Seçimi */}
               {selectedProduct?.parts?.length > 0 && (
-                <div className="border-t border-slate-100 pt-4 space-y-3">
-                  <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                    <Package className="w-4 h-4 text-orange-500" />
+                <div className="border-t border-ink-100 pt-4 space-y-3">
+                  <h4 className="text-sm font-semibold text-ink-700 flex items-center gap-2">
+                    <Package className="w-4 h-4 text-amber-500" />
                     Kullanılacak Hammaddeler
                   </h4>
                   <div className="space-y-2">
@@ -198,11 +198,11 @@ export default function NewSubcontractorOrderPage() {
                         : materials;
                       return (
                         <div key={part.id} className="flex items-center gap-3">
-                          <span className="text-sm text-slate-500 w-28 flex-shrink-0 truncate" title={part.name}>{part.name}</span>
+                          <span className="text-sm text-ink-500 w-28 flex-shrink-0 truncate" title={part.name}>{part.name}</span>
                           <select
                             value={selectedMatId}
                             onChange={e => setPartMaterialOverrides(p => ({ ...p, [part.id]: e.target.value }))}
-                            className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400"
+                            className="flex-1 px-2 py-1.5 border border-ink-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-brand-500"
                           >
                             <option value="">— Hammadde Seçin —</option>
                             {grouped.map((m: any) => (
@@ -215,7 +215,7 @@ export default function NewSubcontractorOrderPage() {
                       );
                     })}
                   </div>
-                  <p className="text-xs text-slate-400">Aynı kategorideki hammaddeler listede üstte gösterilir</p>
+                  <p className="text-xs text-ink-400">Aynı kategorideki hammaddeler listede üstte gösterilir</p>
                 </div>
               )}
             </div>
@@ -224,31 +224,31 @@ export default function NewSubcontractorOrderPage() {
           {/* Step 2: Hammadde Gereksinimi */}
           {step === 2 && (
             <div className="space-y-4">
-              <h3 className="font-medium text-slate-700">Hammadde Gereksinimleri</h3>
+              <h3 className="font-medium text-ink-700">Hammadde Gereksinimleri</h3>
               {bomReqs.length === 0 ? (
-                <p className="text-slate-400 text-sm">Ürün seçilmedi veya BOM tanımlı değil</p>
+                <p className="text-ink-400 text-sm">Ürün seçilmedi veya BOM tanımlı değil</p>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50 border-b text-xs font-semibold text-slate-500">
+                    <tr className="bg-ink-50 border-b text-xs font-semibold text-ink-500">
                       <th className="px-3 py-2 text-left">Parça</th>
                       <th className="px-3 py-2 text-left">Hammadde</th>
                       <th className="px-3 py-2 text-right">Gereken (kg)</th>
                       <th className="px-3 py-2 text-right">Fasoncu Stoğu (kg)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-ink-100">
                     {bomReqs.map((r: any, i: number) => {
                       const stockOk = r.subcontractorStock !== null && r.subcontractorStock >= r.kgRequired;
                       const stockLow = r.subcontractorStock !== null && r.subcontractorStock > 0 && r.subcontractorStock < r.kgRequired;
                       return (
                         <tr key={i} className="align-top">
-                          <td className="px-3 py-2.5 text-slate-700 font-medium">{r.name}</td>
-                          <td className="px-3 py-2.5 text-slate-700 font-medium">{r.material}</td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-orange-600">{r.kgRequired.toFixed(3)}</td>
+                          <td className="px-3 py-2.5 text-ink-700 font-medium">{r.name}</td>
+                          <td className="px-3 py-2.5 text-ink-700 font-medium">{r.material}</td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-amber-600">{r.kgRequired.toFixed(3)}</td>
                           <td className="px-3 py-2.5 text-right">
                             {r.subcontractorStock === null ? (
-                              <span className="text-slate-300 text-xs">—</span>
+                              <span className="text-ink-300 text-xs">—</span>
                             ) : (
                               <span className={`font-semibold ${stockOk ? 'text-emerald-600' : stockLow ? 'text-yellow-600' : 'text-red-500'}`}>
                                 {r.subcontractorStock.toFixed(3)}
@@ -261,7 +261,7 @@ export default function NewSubcontractorOrderPage() {
                   </tbody>
                 </table>
               )}
-              <p className="text-xs text-slate-400">* Gereken: fire payı dahil · Fasoncu stoğu yeşil = yeterli, sarı = kısmen yeterli, kırmızı = yetersiz</p>
+              <p className="text-xs text-ink-400">* Gereken: fire payı dahil · Fasoncu stoğu yeşil = yeterli, sarı = kısmen yeterli, kırmızı = yetersiz</p>
             </div>
           )}
 
@@ -269,28 +269,28 @@ export default function NewSubcontractorOrderPage() {
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Termin Tarihi</label>
+                <label className="block text-sm font-medium text-ink-700 mb-2">Termin Tarihi</label>
                 <input type="date" value={form.dueDate} onChange={e => setForm(p => ({ ...p, dueDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-400" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Notlar</label>
+                <label className="block text-sm font-medium text-ink-700 mb-2">Notlar</label>
                 <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={3}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   placeholder="Özel talimatlar..." />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Sevk Adresi</label>
+                <label className="block text-sm font-medium text-ink-700 mb-2">Sevk Adresi</label>
                 <textarea value={form.shippingAddress} onChange={e => setForm(p => ({ ...p, shippingAddress: e.target.value }))} rows={2}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                   placeholder="Ürünlerin gönderileceği adres..." />
               </div>
 
               {/* Özet */}
-              <div className="bg-orange-50 rounded-lg p-4 text-sm space-y-1">
-                <p><span className="text-slate-500">Fasoncu:</span> <span className="font-medium">{subcontractors.find(s => s.id === form.subcontractorId)?.name}</span></p>
-                <p><span className="text-slate-500">Ürün:</span> <span className="font-medium">{selectedProduct?.name || '—'}</span></p>
-                <p><span className="text-slate-500">Toplam:</span> <span className="font-bold text-orange-700">{totalPairs} çift</span></p>
+              <div className="bg-amber-50 rounded-lg p-4 text-sm space-y-1">
+                <p><span className="text-ink-500">Fasoncu:</span> <span className="font-medium">{subcontractors.find(s => s.id === form.subcontractorId)?.name}</span></p>
+                <p><span className="text-ink-500">Ürün:</span> <span className="font-medium">{selectedProduct?.name || '—'}</span></p>
+                <p><span className="text-ink-500">Toplam:</span> <span className="font-bold text-amber-700">{totalPairs} çift</span></p>
               </div>
             </div>
           )}
@@ -299,17 +299,17 @@ export default function NewSubcontractorOrderPage() {
         {/* Navigation */}
         <div className="flex justify-between">
           <button onClick={() => setStep(s => s - 1)} disabled={step === 0}
-            className="flex items-center gap-1.5 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-medium disabled:opacity-40">
+            className="flex items-center gap-1.5 px-4 py-2 bg-ink-200 hover:bg-ink-300 text-ink-700 rounded-lg text-sm font-medium disabled:opacity-40">
             <ChevronLeft className="w-4 h-4" /> Önceki
           </button>
           {step < STEPS.length - 1 ? (
             <button onClick={() => setStep(s => s + 1)} disabled={!canNext()}
-              className="flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium disabled:opacity-40">
+              className="flex items-center gap-1.5 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium disabled:opacity-40">
               Sonraki <ChevronRight className="w-4 h-4" />
             </button>
           ) : (
             <button onClick={handleSubmit} disabled={saving || totalPairs === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60">
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold disabled:opacity-60">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               Siparişi Oluştur
             </button>

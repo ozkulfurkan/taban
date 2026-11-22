@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
-import { Loader2, Pencil, FileText, ShoppingCart, Download, RotateCcw, Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Building2, CheckCircle2, Banknote, ChevronDown, PlusCircle, Trash2, CreditCard, AlertTriangle } from 'lucide-react';
+import { Loader2, Pencil, FileText, ShoppingCart, Download, RotateCcw, Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Building2, CheckCircle2, Banknote, ChevronDown, PlusCircle, Trash2, CreditCard, AlertTriangle } from '@/app/components/icons';
 import Link from 'next/link';
 import { formatDate, toDateInputValue } from '@/lib/time';
 import { useLanguage } from '@/lib/i18n/language-context';
@@ -21,10 +21,10 @@ function nowIstanbulISO(): string {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  DRAFT: 'bg-slate-100 text-slate-600',
-  PENDING: 'bg-orange-100 text-orange-700',
+  DRAFT: 'bg-ink-100 text-ink-600',
+  PENDING: 'bg-amber-100 text-amber-700',
   PARTIAL: 'bg-yellow-100 text-yellow-700',
-  PAID: 'bg-green-100 text-green-700',
+  PAID: 'bg-emerald-100 text-emerald-700',
   CANCELLED: 'bg-red-100 text-red-600',
 };
 const METHODS = ['Nakit', 'Havale/EFT', 'Çek', 'Kredi Kartı'];
@@ -137,8 +137,8 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="bg-blue-600 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-ink-200/80">
+        <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold">{t('customerDetail', 'collect')}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
@@ -147,9 +147,9 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
             {customer.name}
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'account')}</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">{t('modal', 'account')}</label>
             <select required value={form.accountId} onChange={e => set('accountId', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white ${!form.accountId ? 'border-orange-300 bg-orange-50' : 'border-slate-200'}`}>
+              className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white ${!form.accountId ? 'border-amber-300 bg-amber-50' : 'border-ink-200'}`}>
               <option value="">{t('modal', 'selectAccount')}</option>
               {accounts.map(a => (
                 <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>
@@ -157,45 +157,45 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')} {form.paymentCurrency ? `(${form.paymentCurrency})` : ''}</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">{t('modal', 'amount')} {form.paymentCurrency ? `(${form.paymentCurrency})` : ''}</label>
             <DecimalInput required step="0.01" min="0.01" value={form.amount} onChange={e => handleAmountChange(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-right" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-right" />
           </div>
           {!isSameCurrency && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
+            <div className="bg-brand-50 border border-brand-200 rounded-xl p-3 space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-blue-700 mb-1">
+                  <label className="block text-xs font-medium text-brand-800 mb-1">
                     {t('modal', 'rate')} (1 {customer.currency || 'TRY'}={form.paymentCurrency})
                   </label>
                   <DecimalInput step="0.0001" min="0.0001" value={form.exchangeRate}
                     onChange={e => handleRateChange(e.target.value)} placeholder="0.0000"
-                    className="w-full px-2 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white" />
+                    className="w-full px-2 py-2 border border-brand-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right bg-white" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-blue-700 mb-1">
+                  <label className="block text-xs font-medium text-brand-800 mb-1">
                     {t('modal', 'recordedAmount')} ({customer.currency || 'TRY'}) *
                   </label>
                   <DecimalInput step="0.01" min="0.01" value={form.recordedAmount}
                     onChange={e => handleRecordedChange(e.target.value)} placeholder="0.00"
-                    className="w-full px-2 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right bg-white font-semibold" />
+                    className="w-full px-2 py-2 border border-brand-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right bg-white font-semibold" />
                 </div>
               </div>
-              <p className="text-xs text-blue-500">{t('modal', 'rateHint')}</p>
+              <p className="text-xs text-brand-600">{t('modal', 'rateHint')}</p>
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tarih</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Tarih</label>
             <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'notes')}</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">{t('modal', 'notes')}</label>
             <input value={form.notes} onChange={e => set('notes', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">{t('common', 'cancel')}</button>
+            <button type="button" onClick={onClose} className="flex-1 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">{t('common', 'cancel')}</button>
             <button type="submit" disabled={saving || !canSave}
               className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />} {t('common', 'save')}
@@ -238,31 +238,31 @@ function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="bg-amber-500 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-ink-200/80">
+        <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold">{t('modal', 'returnTitle')}</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <form onSubmit={handle} className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'amount')}</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">{t('modal', 'amount')}</label>
             <DecimalInput required step="0.01" min="0.01" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('customerDetail', 'method')}</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">{t('customerDetail', 'method')}</label>
             <select value={form.method} onChange={e => setForm(p => ({ ...p, method: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white">
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white">
               {METHODS.map(m => <option key={m}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">{t('modal', 'notes')}</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">{t('modal', 'notes')}</label>
             <input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
           </div>
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">{t('common', 'cancel')}</button>
+            <button type="button" onClick={onClose} className="flex-1 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50 transition-colors">{t('common', 'cancel')}</button>
             <button type="submit" disabled={saving} className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} {t('common', 'save')}
             </button>
@@ -310,8 +310,8 @@ function BorcAlacakFisModal({ customer, onClose, onSaved }: { customer: any; onC
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="bg-teal-500 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-ink-200/80">
+        <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold">Borç-Alacak Fişleri</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
@@ -320,34 +320,34 @@ function BorcAlacakFisModal({ customer, onClose, onSaved }: { customer: any; onC
             Herhangi bir tahsilat, ödeme, satış ya da iade işlemi olmadan müşterinizin bakiyesini değiştirmek için borç ya da alacak fişi kaydı oluşturabilirsiniz. Müşterinizin güncel borç bakiyesi burada gireceğiniz tutar kadar değişecek ve ekstresine yansıyacaktır.
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">İşlem Tipi</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">İşlem Tipi</label>
             <select value={form.tip} onChange={e => set('tip', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none bg-white">
               <option>Alacak Fişi</option>
               <option>Borç Fişi</option>
             </select>
-            <p className="text-xs mt-1 text-slate-400">
+            <p className="text-xs mt-1 text-ink-400">
               {form.tip === 'Borç Fişi' ? 'müşteri borçlanacak' : 'müşteri alacaklanacak'}
             </p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Vade Tarihi</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Vade Tarihi</label>
             <input type="date" value={form.dueDate} onChange={e => set('dueDate', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Tutar</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Tutar</label>
             <DecimalInput required step="0.01" min="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Açıklama</label>
             <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={3}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none resize-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none resize-none" />
           </div>
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition-colors">
+              className="flex-1 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold transition-colors">
               ✕ Vazgeç
             </button>
             <button type="submit" disabled={saving || !form.amount || parseFloat(form.amount) <= 0}
@@ -398,24 +398,24 @@ function BakiyeDuzeltModal({ customer, currentBalance, onClose, onSaved }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="bg-teal-500 rounded-t-2xl px-5 py-4 flex items-center justify-between">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-ink-200/80">
+        <div className="bg-brand-700 rounded-t-2xl px-5 py-4 flex items-center justify-between">
           <h3 className="text-white font-semibold">Bakiye Değiştirme</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <form onSubmit={handle} className="p-5 space-y-4">
-          <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600">
-            Mevcut Bakiye: <span className="font-semibold text-slate-800">
+          <div className="bg-ink-50 border border-ink-200 rounded-lg px-3 py-2 text-sm text-ink-600">
+            Mevcut Bakiye: <span className="font-semibold text-ink-800">
               {currentBalance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {customer.currency || 'TRY'}
             </span>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">
+            <label className="block text-xs font-medium text-ink-500 mb-1">
               Yeni Bakiye ({customer.currency || 'TL'})
             </label>
             <DecimalInput required step="0.01" value={targetBalance} onChange={e => setTargetBalance(e.target.value)}
               placeholder="0,00"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none text-right" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right" />
             {delta !== null && delta !== 0 && (
               <p className={`text-xs mt-1 ${delta > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
                 {delta > 0 ? `+${delta.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} borç eklenir` : `${Math.abs(delta).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} borç silinir`}
@@ -423,9 +423,9 @@ function BakiyeDuzeltModal({ customer, currentBalance, onClose, onSaved }: {
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Açıklama</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Açıklama</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none resize-none" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none resize-none" />
           </div>
           <div className="flex justify-end">
             <button type="submit" disabled={saving || delta === null || delta === 0}
@@ -498,43 +498,43 @@ function CekTanimModal({ borclu: defaultBorclu, customerCurrency, onClose, onAdd
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="bg-teal-500 rounded-t-2xl px-6 py-4 flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-ink-200/80">
+        <div className="bg-brand-700 rounded-t-2xl px-6 py-4 flex items-center justify-between">
           <h3 className="text-white font-bold text-base">Çek Tanımı</h3>
           <button onClick={onClose} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">İşlem Tarihi & Saati</label>
+              <label className="text-xs font-medium text-ink-500 mb-1 block">İşlem Tarihi & Saati</label>
               <input type="datetime-local" value={form.islemTarihi} onChange={e => set('islemTarihi', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Vadesi *</label>
+              <label className="text-xs font-medium text-ink-500 mb-1 block">Vadesi *</label>
               <input type="date" value={form.vadesi} onChange={e => set('vadesi', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+                className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Borçlu</label>
+            <label className="text-xs font-medium text-ink-500 mb-1 block">Borçlu</label>
             <input value={form.borclu} onChange={e => set('borclu', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Tutar *</label>
+            <label className="text-xs font-medium text-ink-500 mb-1 block">Tutar *</label>
             <div className="flex gap-2">
               <DecimalInput placeholder="0.00" value={form.tutar} onChange={e => set('tutar', e.target.value)}
-                className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+                className="flex-1 px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
               <select value={form.currency} onChange={e => set('currency', e.target.value)}
-                className="px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500">
+                className="px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600">
                 <option>TRY</option><option>USD</option><option>EUR</option>
               </select>
             </div>
           </div>
           {isCrossCurrency && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-1">
-              <label className="text-xs font-medium text-blue-700 block">
+            <div className="bg-brand-50 border border-brand-200 rounded-xl p-3 space-y-1">
+              <label className="text-xs font-medium text-brand-800 block">
                 Müşteri Para Birimi Karşılığı ({customerCurrency}) *
               </label>
               <DecimalInput
@@ -545,28 +545,28 @@ function CekTanimModal({ borclu: defaultBorclu, customerCurrency, onClose, onAdd
                 value={form.customerAmount}
                 onChange={e => set('customerAmount', e.target.value)}
                 placeholder={`Bu çekin ${customerCurrency} karşılığı`}
-                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 text-right font-semibold bg-white"
+                className="w-full px-3 py-2 border border-brand-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600 text-right font-semibold bg-white"
               />
-              <p className="text-xs text-blue-500">Çek {form.currency} üzerinden, müşteri hesabı {customerCurrency} — bakiyeye bu tutar yansıyacak</p>
+              <p className="text-xs text-brand-600">Çek {form.currency} üzerinden, müşteri hesabı {customerCurrency} — bakiyeye bu tutar yansıyacak</p>
             </div>
           )}
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Seri No</label>
+            <label className="text-xs font-medium text-ink-500 mb-1 block">Seri No</label>
             <input value={form.seriNo} onChange={e => set('seriNo', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Bankası</label>
+            <label className="text-xs font-medium text-ink-500 mb-1 block">Bankası</label>
             <select value={form.bankasi} onChange={e => set('bankasi', e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500">
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600">
               <option value="">Seçin</option>
               {BANKS.map(b => <option key={b}>{b}</option>)}
             </select>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">{t('common', 'cancel')}</button>
+            <button onClick={onClose} className="px-4 py-2 text-sm text-ink-600 border border-ink-200 rounded-lg hover:bg-ink-50">{t('common', 'cancel')}</button>
             <button onClick={handleAdd} disabled={!form.vadesi || !form.tutar || (isCrossCurrency && !form.customerAmount)}
-              className="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg disabled:opacity-50">Tamam</button>
+              className="px-4 py-2 text-sm bg-brand-700 hover:bg-brand-800 text-white rounded-lg disabled:opacity-50">Tamam</button>
           </div>
         </div>
       </div>
@@ -615,8 +615,8 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-          <div className="bg-blue-600 rounded-t-2xl px-6 py-4 flex items-center justify-between flex-shrink-0">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-ink-200/80">
+          <div className="bg-brand-700 rounded-t-2xl px-6 py-4 flex items-center justify-between flex-shrink-0">
             <h2 className="text-white font-bold text-base flex items-center gap-2">
               <CreditCard className="w-5 h-5" /> Çek Kaydı — {customer.name}
             </h2>
@@ -627,16 +627,16 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
             {/* İşlem + Açıklama */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">İşlem</label>
+                <label className="text-xs font-medium text-ink-500 mb-1 block">İşlem</label>
                 <select value={islem} onChange={e => setIslem(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500">
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600">
                   {ISLEM_OPTIONS.map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">Açıklama</label>
+                <label className="text-xs font-medium text-ink-500 mb-1 block">Açıklama</label>
                 <input value={aciklama} onChange={e => setAciklama(e.target.value)} placeholder="İsteğe bağlı"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-500" />
+                  className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
               </div>
             </div>
 
@@ -648,9 +648,9 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
 
             {/* Check list */}
             {checks.length > 0 && (
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
+              <div className="border border-ink-200 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
-                  <thead className="bg-slate-50 text-xs font-semibold text-slate-500">
+                  <thead className="bg-ink-50 text-xs font-semibold text-ink-500">
                     <tr>
                       <th className="px-3 py-2 text-left">{t('customerDetail', 'amount')}</th>
                       <th className="px-3 py-2 text-left">Vade</th>
@@ -661,11 +661,11 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
                   </thead>
                   <tbody>
                     {checks.map(c => (
-                      <tr key={c.id} className="border-t border-slate-100">
+                      <tr key={c.id} className="border-t border-ink-100">
                         <td className="px-3 py-2 font-medium">{fmt(parseFloat(c.tutar))} {c.currency}</td>
-                        <td className="px-3 py-2 text-slate-500">{fmtDate(c.vadesi)}</td>
-                        <td className="px-3 py-2 text-slate-500">{c.bankasi || '—'}</td>
-                        <td className="px-3 py-2 text-slate-500">{c.seriNo || '—'}</td>
+                        <td className="px-3 py-2 text-ink-500">{fmtDate(c.vadesi)}</td>
+                        <td className="px-3 py-2 text-ink-500">{c.bankasi || '—'}</td>
+                        <td className="px-3 py-2 text-ink-500">{c.seriNo || '—'}</td>
                         <td className="px-3 py-2 text-center">
                           <button onClick={() => setChecks(prev => prev.filter(x => x.id !== c.id))}
                             className="text-red-400 hover:text-red-600">
@@ -677,11 +677,11 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
                   </tbody>
                 </table>
                 {/* Totals */}
-                <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex flex-wrap gap-6 text-sm">
-                  <div><span className="text-slate-500 font-medium">Toplam Tutar: </span><span className="font-bold">{totalsByCurrency(checks.map(c => ({ tutar: parseFloat(c.tutar) || 0, currency: c.currency }))).map(x => `${fmt(x.total)} ${x.currency}`).join(' + ')}</span></div>
+                <div className="bg-ink-50 px-4 py-3 border-t border-ink-200 flex flex-wrap gap-6 text-sm">
+                  <div><span className="text-ink-500 font-medium">Toplam Tutar: </span><span className="font-bold">{totalsByCurrency(checks.map(c => ({ tutar: parseFloat(c.tutar) || 0, currency: c.currency }))).map(x => `${fmt(x.total)} ${x.currency}`).join(' + ')}</span></div>
                   {avgVade && (
                     <div>
-                      <span className="text-slate-500 font-medium">Ortalama Vade: </span>
+                      <span className="text-ink-500 font-medium">Ortalama Vade: </span>
                       <span className="font-bold">{fmtDate(avgVade.date)} ({avgVade.days} gün)</span>
                     </div>
                   )}
@@ -696,10 +696,10 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
             )}
           </div>
 
-          <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 flex-shrink-0">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">{t('common', 'cancel')}</button>
+          <div className="flex justify-end gap-2 px-6 py-4 border-t border-ink-100 flex-shrink-0">
+            <button onClick={onClose} className="px-4 py-2 text-sm text-ink-600 border border-ink-200 rounded-lg hover:bg-ink-50">{t('common', 'cancel')}</button>
             <button onClick={handleSave} disabled={saving || checks.length === 0}
-              className="px-5 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium disabled:opacity-50 flex items-center gap-2">
+              className="px-5 py-2 text-sm bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium disabled:opacity-50 flex items-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />} {t('common', 'save')}
             </button>
           </div>
@@ -881,8 +881,8 @@ export default function CustomerDetailPage() {
     doc.save(`${tr(customer.name)}_Hesap_Ekstresi.pdf`);
   };
 
-  if (loading) return <AppShell><div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div></AppShell>;
-  if (!customer || customer.error) return <AppShell><div className="text-center py-12 text-slate-400">Müşteri bulunamadı</div></AppShell>;
+  if (loading) return <AppShell><div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div></AppShell>;
+  if (!customer || customer.error) return <AppShell><div className="text-center py-12 text-ink-400">Müşteri bulunamadı</div></AppShell>;
 
   return (
     <AppShell>
@@ -891,67 +891,67 @@ export default function CustomerDetailPage() {
         <BackLink href="/customers" label="Müşteriler" />
 
         {/* Customer Info Card (BizimHesap style) */}
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-start gap-4">
-          <div className="w-16 h-16 rounded-full bg-slate-300 flex items-center justify-center flex-shrink-0">
-            <User className="w-8 h-8 text-slate-500" />
+        <div className="card p-5 flex items-start gap-4">
+          <div className="w-16 h-16 rounded-full bg-ink-300 flex items-center justify-center flex-shrink-0">
+            <User className="w-8 h-8 text-ink-500" />
           </div>
           <div className="flex-1 min-w-0">
             {editing ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[['name','Firma Adı'], ['taxId','VKN'], ['taxOffice','Vergi Dairesi'], ['phone','Telefon'], ['email','E-posta']].map(([f, l]) => (
                   <div key={f}>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">{l}</label>
+                    <label className="block text-xs font-medium text-ink-600 mb-1">{l}</label>
                     <input value={form[f] ?? ''} onChange={e => setForm((p: any) => ({...p, [f]: e.target.value}))}
                       className="w-full px-3 py-1.5 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white" />
                   </div>
                 ))}
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Para Birimi</label>
-                  <div className="flex items-center gap-2 px-3 py-1.5 border border-slate-200 rounded-lg bg-slate-50">
-                    <span className="text-sm font-semibold text-slate-700">{customer.currency || 'TRY'}</span>
-                    <span className="text-xs text-slate-400">(değiştirilemez)</span>
+                  <label className="block text-xs font-medium text-ink-600 mb-1">Para Birimi</label>
+                  <div className="flex items-center gap-2 px-3 py-1.5 border border-ink-200 rounded-lg bg-ink-50">
+                    <span className="text-sm font-semibold text-ink-700">{customer.currency || 'TRY'}</span>
+                    <span className="text-xs text-ink-400">(değiştirilemez)</span>
                   </div>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Adres</label>
+                  <label className="block text-xs font-medium text-ink-600 mb-1">Adres</label>
                   <textarea value={form.address ?? ''} onChange={e => setForm((p: any) => ({...p, address: e.target.value}))}
                     rows={2} className="w-full px-3 py-1.5 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none resize-none bg-white" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Notlar</label>
+                  <label className="block text-xs font-medium text-ink-600 mb-1">Notlar</label>
                   <textarea value={form.notes ?? ''} onChange={e => setForm((p: any) => ({...p, notes: e.target.value}))}
                     rows={2} className="w-full px-3 py-1.5 border border-amber-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none resize-none bg-white" />
                 </div>
                 <div className="sm:col-span-2 flex gap-2">
-                  <button onClick={() => setEditing(false)} className="px-4 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">{t('common', 'cancel')}</button>
-                  <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-60">
+                  <button onClick={() => setEditing(false)} className="px-4 py-1.5 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">{t('common', 'cancel')}</button>
+                  <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} {t('common', 'save')}
                   </button>
                 </div>
               </div>
             ) : (
               <>
-                <h1 className="text-xl font-bold text-slate-800 mb-1">{customer.name}</h1>
-                <div className="space-y-1 text-sm text-slate-600">
-                  {customer.currency && <div className="flex items-center gap-2"><span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">{customer.currency}</span></div>}
-                  {customer.email && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-slate-400" />{customer.email}</div>}
-                  {customer.address && <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />{customer.address}</div>}
+                <h1 className="page-title mb-1">{customer.name}</h1>
+                <div className="space-y-1 text-sm text-ink-600">
+                  {customer.currency && <div className="flex items-center gap-2"><span className="text-xs font-semibold bg-brand-100 text-brand-800 px-2 py-0.5 rounded">{customer.currency}</span></div>}
+                  {customer.email && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-ink-400" />{customer.email}</div>}
+                  {customer.address && <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-ink-400 flex-shrink-0" />{customer.address}</div>}
                   {(customer.taxId || customer.taxOffice) && (
                     <div className="flex items-center gap-2">
-                      <Hash className="w-4 h-4 text-slate-400" />
+                      <Hash className="w-4 h-4 text-ink-400" />
                       {customer.taxId && <span>VKN: {customer.taxId}</span>}
-                      {customer.taxOffice && <span className="flex items-center gap-1"><Building2 className="w-3.5 h-3.5 text-slate-400" />{customer.taxOffice}</span>}
+                      {customer.taxOffice && <span className="flex items-center gap-1"><Building2 className="w-3.5 h-3.5 text-ink-400" />{customer.taxOffice}</span>}
                     </div>
                   )}
-                  {customer.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-slate-400" />{customer.phone}</div>}
-                  {customer.notes && <p className="text-xs text-slate-400 italic mt-1">{customer.notes}</p>}
+                  {customer.phone && <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-ink-400" />{customer.phone}</div>}
+                  {customer.notes && <p className="text-xs text-ink-400 italic mt-1">{customer.notes}</p>}
                 </div>
               </>
             )}
           </div>
           {!editing && (
             <button onClick={() => setEditing(true)} className="p-2 hover:bg-amber-100 rounded-lg transition-colors flex-shrink-0">
-              <Pencil className="w-4 h-4 text-slate-500" />
+              <Pencil className="w-4 h-4 text-ink-500" />
             </button>
           )}
         </div>
@@ -965,24 +965,24 @@ export default function CustomerDetailPage() {
             .reduce((s, c) => s + c.tutar, 0);
           return (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="rounded-xl p-4 text-white bg-orange-500 shadow-sm">
+              <div className="rounded-xl p-4 text-white bg-brand-700 shadow-card">
                 <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'balance')}</p>
-                <FitText className="text-xl font-bold">{(customer.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
+                <FitText className="font-display text-2xl tabular-nums">{(customer.balance || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
                 <p className="text-xs opacity-70 mt-0.5">{customer.currency || 'TRY'}</p>
               </div>
-              <div className="rounded-xl p-4 text-white bg-blue-500 shadow-sm">
+              <div className="rounded-xl p-4 text-ink-900 bg-white border border-ink-200/80 shadow-card">
                 <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'totalInvoiced')}</p>
-                <FitText className="text-xl font-bold">{(customer.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
+                <FitText className="font-display text-2xl tabular-nums">{(customer.totalInvoiced || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
                 <p className="text-xs opacity-70 mt-0.5">{(customer.invoices || []).length} fatura</p>
               </div>
-              <div className="rounded-xl p-4 text-white bg-teal-500 shadow-sm">
+              <div className="rounded-xl p-4 text-ink-900 bg-white border border-ink-200/80 shadow-card">
                 <p className="text-xs font-medium opacity-80 mb-1">{t('customerDetail', 'totalPaid')}</p>
-                <FitText className="text-xl font-bold">{(customer.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
+                <FitText className="font-display text-2xl tabular-nums">{(customer.totalPaid || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
                 <p className="text-xs opacity-70 mt-0.5">{(customer.payments || []).length} ödeme</p>
               </div>
-              <div className="rounded-xl p-4 text-white bg-cyan-600 shadow-sm">
+              <div className="rounded-xl p-4 text-ink-900 bg-white border border-ink-200/80 shadow-card">
                 <p className="text-xs font-medium opacity-80 mb-1">Çek Bakiyesi</p>
-                <FitText className="text-xl font-bold">{cekBakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
+                <FitText className="font-display text-2xl tabular-nums">{cekBakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</FitText>
                 <p className="text-xs opacity-70 mt-0.5">{cekler.filter(c => c.durum === 'PORTFOY' || c.durum === 'BANKAYA_VERILDI').length} çek</p>
               </div>
             </div>
@@ -991,11 +991,11 @@ export default function CustomerDetailPage() {
 
         {/* Çek portföy toast */}
         {cekPortfoyToast && (
-          <div className="fixed bottom-6 right-6 z-50 bg-cyan-600 text-white rounded-xl shadow-xl px-5 py-3 flex items-center gap-3 animate-in slide-in-from-bottom duration-300">
+          <div className="fixed bottom-6 right-6 z-50 bg-brand-700 text-white rounded-xl shadow-xl px-5 py-3 flex items-center gap-3 animate-in slide-in-from-bottom duration-300">
             <span className="text-lg">✓</span>
             <div>
               <p className="font-semibold text-sm">Çek Portföye Döndürüldü</p>
-              <p className="text-xs text-cyan-100">Çek portföy ekranında görüntülenebilir</p>
+              <p className="text-xs text-brand-100">Çek portföy ekranında görüntülenebilir</p>
             </div>
           </div>
         )}
@@ -1007,8 +1007,8 @@ export default function CustomerDetailPage() {
               <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
                 <CheckCircle2 className="w-8 h-8 text-emerald-600" />
               </div>
-              <p className="text-lg font-bold text-slate-800">Ödeme Tamamlandı</p>
-              <p className="text-slate-600 text-sm">
+              <p className="text-lg font-bold text-ink-800">Ödeme Tamamlandı</p>
+              <p className="text-ink-600 text-sm">
                 <span className="font-semibold">{successAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {customer.currency || 'TRY'}</span> tahsil edildi
               </p>
 
@@ -1023,19 +1023,19 @@ export default function CustomerDetailPage() {
         <div className="flex gap-1.5 flex-wrap">
           <Link
             href={`/invoices/new?customerId=${customer.id}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-xs font-medium transition-colors shadow-sm"
           >
             <ShoppingCart className="w-3.5 h-3.5" /> {t('customerDetail', 'newSale')}
           </Link>
           <Link
             href={`/quotes/new?customerId=${customer.id}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-ink-200 hover:bg-ink-50 text-ink-700 rounded-lg text-xs font-medium transition-colors"
           >
-            <FileText className="w-3.5 h-3.5 text-slate-500" /> Teklif Hazırla
+            <FileText className="w-3.5 h-3.5 text-ink-500" /> Teklif Hazırla
           </Link>
           <Link
             href={`/invoices/return?customerId=${customer.id}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-ink-200 hover:bg-ink-50 text-ink-700 rounded-lg text-xs font-medium transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5 text-red-500" /> {t('customerDetail', 'returnInvoice')}
           </Link>
@@ -1049,36 +1049,36 @@ export default function CustomerDetailPage() {
             {tahsilatDropdown && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setTahsilatDropdown(false)} />
-                <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 z-20 min-w-[200px] overflow-hidden">
-                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-ink-100 z-20 min-w-[200px] overflow-hidden">
+                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
                     onClick={() => { setShowTahsilat(true); setTahsilatDropdown(false); }}>
                     <Banknote className="w-4 h-4 text-emerald-500" /> Nakit / KK / Banka
                   </button>
-                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
                     onClick={() => { setShowCek(true); setTahsilatDropdown(false); }}>
-                    <CreditCard className="w-4 h-4 text-teal-500" /> Çek
+                    <CreditCard className="w-4 h-4 text-brand-600" /> Çek
                   </button>
-                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-400 hover:bg-slate-50 cursor-not-allowed"
+                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-ink-400 hover:bg-ink-50 cursor-not-allowed"
                     onClick={() => setTahsilatDropdown(false)}>
                     <FileText className="w-4 h-4" /> Senet (yakında)
                   </button>
-                  <hr className="border-slate-100" />
-                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                  <hr className="border-ink-100" />
+                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
                     onClick={() => { setShowBorcFis(true); setTahsilatDropdown(false); }}>
-                    <FileText className="w-4 h-4 text-teal-500" /> Borç/Alacak Fişi
+                    <FileText className="w-4 h-4 text-brand-600" /> Borç/Alacak Fişi
                   </button>
-                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
+                  <button className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
                     onClick={() => { setShowBakiyeDuzelt(true); setTahsilatDropdown(false); }}>
-                    <PlusCircle className="w-4 h-4 text-slate-500" /> Bakiye Düzelt
+                    <PlusCircle className="w-4 h-4 text-ink-500" /> Bakiye Düzelt
                   </button>
                 </div>
               </>
             )}
           </div>
           <Link href={`/customers/${params.id}/ekstre`}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-ink-200 hover:bg-ink-50 text-ink-700 rounded-lg text-xs font-medium transition-colors"
           >
-            <Download className="w-3.5 h-3.5 text-slate-500" /> {t('customerDetail', 'accountStatement')}
+            <Download className="w-3.5 h-3.5 text-ink-500" /> {t('customerDetail', 'accountStatement')}
           </Link>
           <MoreMenu align="left" items={[{ label: deleting ? 'Siliniyor...' : 'Müşteriyi Sil', icon: Trash2, danger: true, disabled: deleting, onClick: handleDeleteCustomer }]} />
         </div>
@@ -1087,18 +1087,18 @@ export default function CustomerDetailPage() {
         {deleteWarning && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteWarning('')} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                   <Trash2 className="w-5 h-5 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-800 mb-1">Müşteri Silinemiyor</h3>
-                  <p className="text-sm text-slate-600">{deleteWarning}</p>
+                  <h3 className="font-semibold text-ink-800 mb-1">Müşteri Silinemiyor</h3>
+                  <p className="text-sm text-ink-600">{deleteWarning}</p>
                 </div>
               </div>
               <button onClick={() => setDeleteWarning('')}
-                className="w-full py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium">
+                className="w-full py-2 bg-ink-700 hover:bg-ink-800 text-white rounded-lg text-sm font-medium">
                 Tamam
               </button>
             </div>
@@ -1107,19 +1107,19 @@ export default function CustomerDetailPage() {
 
         {/* Previous Sales + Previous Payments (side by side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
-              <h2 className="font-semibold text-white text-sm uppercase tracking-wide">{t('customerDetail', 'previousSales')}</h2>
-              <Link href={`/invoices?customerId=${customer.id}`} className="text-slate-300 hover:text-white text-xs transition-colors">Tümünü gör →</Link>
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+            <div className="flex items-center justify-between px-5 py-3 bg-ink-50 border-b border-ink-200">
+              <h2 className="section-title">{t('customerDetail', 'previousSales')}</h2>
+              <Link href={`/invoices?customerId=${customer.id}`} className="text-brand-700 hover:text-brand-800 text-xs font-medium transition-colors">Tümünü gör →</Link>
             </div>
             {!customer.invoices?.length ? (
-              <div className="py-8 text-center text-slate-400 text-sm">{t('customerDetail', 'noSales')}</div>
+              <div className="py-8 text-center text-ink-400 text-sm">{t('customerDetail', 'noSales')}</div>
             ) : (
               <>
               <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+                  <tr className="text-xs text-ink-500 font-medium border-b bg-ink-50">
                     <th className="w-8 px-2 py-2"></th>
                     <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
                     <th className="px-4 py-2 text-left">No</th>
@@ -1131,50 +1131,50 @@ export default function CustomerDetailPage() {
                     const isOpen = expandedInvoiceId === inv.id;
                     const remaining = inv.total - inv.paidAmount;
                     const statusLabel = remaining <= 0 ? 'Faturalaşmış' : remaining < inv.total ? 'Kısmi' : 'Bekliyor';
-                    const statusColor = remaining <= 0 ? 'text-emerald-600' : remaining < inv.total ? 'text-blue-600' : 'text-orange-500';
+                    const statusColor = remaining <= 0 ? 'text-emerald-600' : remaining < inv.total ? 'text-brand-700' : 'text-amber-500';
                     return (
                       <>
                         <tr key={inv.id}
                           onClick={() => setExpandedInvoiceId(isOpen ? null : inv.id)}
-                          className={`border-b border-slate-100 cursor-pointer transition-colors ${isOpen ? 'bg-slate-50' : 'hover:bg-blue-50/30'}`}>
+                          className={`border-b border-ink-100 cursor-pointer transition-colors ${isOpen ? 'bg-ink-50' : 'hover:bg-brand-50/30'}`}>
                           <td className="px-2 py-2.5 text-center">
-                            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full border-2 text-xs font-bold ${isOpen ? 'border-slate-500 text-slate-600 bg-slate-100' : 'border-slate-400 text-slate-500'}`}>
+                            <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full border-2 text-xs font-bold ${isOpen ? 'border-ink-500 text-ink-600 bg-ink-100' : 'border-ink-400 text-ink-500'}`}>
                               {isOpen ? '−' : '+'}
                             </span>
                           </td>
-                          <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap">
+                          <td className="px-4 py-2.5 text-ink-500 whitespace-nowrap">
                             {new Date(inv.date).toLocaleDateString('tr-TR')}
                           </td>
-                          <td className="px-4 py-2.5 font-medium text-blue-600 whitespace-nowrap">{inv.invoiceNo}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold text-slate-800 whitespace-nowrap">
+                          <td className="px-4 py-2.5 font-medium text-brand-700 whitespace-nowrap">{inv.invoiceNo}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold text-ink-800 whitespace-nowrap">
                             {inv.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
+                            <span className="text-xs font-normal text-ink-400 ml-1">{inv.currency}</span>
                           </td>
                         </tr>
                         {isOpen && (
-                          <tr key={`${inv.id}-exp`} className="border-b border-slate-200">
-                            <td colSpan={4} className="px-4 py-3 bg-slate-50">
+                          <tr key={`${inv.id}-exp`} className="border-b border-ink-200">
+                            <td colSpan={4} className="px-4 py-3 bg-ink-50">
                               {inv.items && inv.items.length > 0 && (
-                                <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden mb-3">
+                                <table className="w-full text-xs border border-ink-200 rounded-lg overflow-hidden mb-3">
                                   <thead>
-                                    <tr className="bg-white border-b border-slate-200">
-                                      <th className="px-3 py-2 text-left font-semibold text-slate-600">Ürün/Hizmet</th>
-                                      <th className="px-3 py-2 text-right font-semibold text-slate-600">Fiyat</th>
-                                      <th className="px-3 py-2 text-right font-semibold text-slate-600">Tutar (KDV Dahil)</th>
+                                    <tr className="bg-white border-b border-ink-200">
+                                      <th className="px-3 py-2 text-left font-semibold text-ink-600">Ürün/Hizmet</th>
+                                      <th className="px-3 py-2 text-right font-semibold text-ink-600">Fiyat</th>
+                                      <th className="px-3 py-2 text-right font-semibold text-ink-600">Tutar (KDV Dahil)</th>
                                     </tr>
                                   </thead>
-                                  <tbody className="divide-y divide-slate-100 bg-white">
+                                  <tbody className="divide-y divide-ink-100 bg-white">
                                     {inv.items.map((item: any) => (
                                       <tr key={item.id}>
-                                        <td className="px-3 py-2 text-slate-700">
-                                          {item.quantity > 0 && <span className="text-slate-400 mr-1">{item.quantity} x</span>}
-                                          {item.product?.code && <span className="text-slate-400 font-mono mr-1 text-xs">[{item.product.code}]</span>}
+                                        <td className="px-3 py-2 text-ink-700">
+                                          {item.quantity > 0 && <span className="text-ink-400 mr-1">{item.quantity} x</span>}
+                                          {item.product?.code && <span className="text-ink-400 font-mono mr-1 text-xs">[{item.product.code}]</span>}
                                           {item.description}
                                         </td>
-                                        <td className="px-3 py-2 text-right text-slate-600">
+                                        <td className="px-3 py-2 text-right text-ink-600">
                                           {item.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </td>
-                                        <td className="px-3 py-2 text-right font-medium text-slate-800">
+                                        <td className="px-3 py-2 text-right font-medium text-ink-800">
                                           {item.total.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </td>
                                       </tr>
@@ -1183,7 +1183,7 @@ export default function CustomerDetailPage() {
                                 </table>
                               )}
                               {inv.createdBy?.name && (
-                                <p className="text-xs text-slate-500 bg-white border border-slate-100 rounded px-3 py-1.5 inline-block mb-3">
+                                <p className="text-xs text-ink-500 bg-white border border-ink-100 rounded px-3 py-1.5 inline-block mb-3">
                                   Kullanıcı : {inv.createdBy.name}
                                 </p>
                               )}
@@ -1193,7 +1193,7 @@ export default function CustomerDetailPage() {
                                   Satış ekranına git ↗
                                 </Link>
                                 <Link href={`/invoices/${inv.id}`} onClick={e => e.stopPropagation()}
-                                  className="flex items-center gap-1 px-3 py-1.5 bg-sky-400 hover:bg-sky-500 text-white rounded-lg text-xs font-medium transition-colors">
+                                  className="flex items-center gap-1 px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-medium transition-colors">
                                   Yazdır
                                 </Link>
                               </div>
@@ -1209,7 +1209,7 @@ export default function CustomerDetailPage() {
               {customer.invoices.length > invoicesShown && (
                 <div className="px-4 py-3 border-t text-center">
                   <button onClick={() => setInvoicesShown(p => p + 10)}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    className="text-sm text-brand-700 hover:text-brand-800 font-medium">
                     Daha Fazla Göster ({customer.invoices.length - invoicesShown} adet daha)
                   </button>
                 </div>
@@ -1235,44 +1235,44 @@ export default function CustomerDetailPage() {
             const shown = merged.slice(0, paymentsShown);
 
             const getPaymentRowBg = (row: any) => {
-              if (row.method === 'Borç Fişi' || row.method === 'Alacak Fişi') return 'bg-slate-100/60';
+              if (row.method === 'Borç Fişi' || row.method === 'Alacak Fişi') return 'bg-ink-100/60';
               if (row.method === 'Bakiye Düzeltme') return 'bg-yellow-50/60';
               return '';
             };
 
             const getPaymentTipBadge = (row: any) => {
-              if (row.method === 'Borç Fişi') return <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600">Borç Fişi</span>;
-              if (row.method === 'Alacak Fişi') return <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600">Alacak Fişi</span>;
+              if (row.method === 'Borç Fişi') return <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-ink-200 text-ink-600">Borç Fişi</span>;
+              if (row.method === 'Alacak Fişi') return <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-ink-200 text-ink-600">Alacak Fişi</span>;
               if (row.method === 'Bakiye Düzeltme') return <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Bakiye Düzeltme</span>;
               return <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Tahsilat</span>;
             };
 
             return (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-3 bg-slate-700">
-                  <h2 className="font-semibold text-white text-sm uppercase tracking-wide">{t('customerDetail', 'previousPayments')}</h2>
+              <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+                <div className="flex items-center justify-between px-5 py-3 bg-ink-50 border-b border-ink-200">
+                  <h2 className="section-title">{t('customerDetail', 'previousPayments')}</h2>
                 </div>
                 {!merged.length ? (
-                  <div className="py-8 text-center text-slate-400 text-sm">{t('customerDetail', 'noPayments')}</div>
+                  <div className="py-8 text-center text-ink-400 text-sm">{t('customerDetail', 'noPayments')}</div>
                 ) : (
                   <>
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+                        <tr className="text-xs text-ink-500 font-medium border-b bg-ink-50">
                           <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
                           <th className="px-4 py-2 text-left">Tip</th>
                           <th className="px-4 py-2 text-right">{t('customerDetail', 'amount')}</th>
                           <th className="px-4 py-2 w-8"></th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-ink-100">
                         {shown.map((row: any) => row._type === 'payment' ? (
                           <tr key={row.id} className={`group ${getPaymentRowBg(row)}`}>
-                            <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
+                            <td className="px-4 py-2.5 text-ink-500">{row._date.toLocaleDateString('tr-TR')}</td>
                             <td className="px-4 py-2.5">{getPaymentTipBadge(row)}</td>
                             <td className="px-4 py-2.5 text-right font-semibold text-emerald-600">
                               {row.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
+                              <span className="text-xs font-normal text-ink-400 ml-1">{row.currency}</span>
                             </td>
                             <td className="px-2 py-2.5 text-center">
                               <button onClick={() => handleDeletePayment(row.id, row.method)}
@@ -1282,24 +1282,24 @@ export default function CustomerDetailPage() {
                             </td>
                           </tr>
                         ) : (
-                          <tr key={row.id} className="bg-cyan-50/40 group">
-                            <td className="px-4 py-2.5 text-slate-500">{row._date.toLocaleDateString('tr-TR')}</td>
+                          <tr key={row.id} className="bg-brand-50/40 group">
+                            <td className="px-4 py-2.5 text-ink-500">{row._date.toLocaleDateString('tr-TR')}</td>
                             <td className="px-4 py-2.5">
-                              <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-cyan-100 text-cyan-700">Çek</span>
+                              <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-800">Çek</span>
                             </td>
-                            <td className="px-4 py-2.5 text-right font-semibold text-cyan-700">
+                            <td className="px-4 py-2.5 text-right font-semibold text-brand-800">
                               {row.customerAmount != null ? (
                                 <>
                                   {row.customerAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  <span className="text-xs font-normal text-slate-400 ml-1">{customer.currency}</span>
-                                  <span className="text-xs text-slate-400 ml-1">
+                                  <span className="text-xs font-normal text-ink-400 ml-1">{customer.currency}</span>
+                                  <span className="text-xs text-ink-400 ml-1">
                                     ({row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {row.currency})
                                   </span>
                                 </>
                               ) : (
                                 <>
                                   {row.tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  <span className="text-xs font-normal text-slate-400 ml-1">{row.currency}</span>
+                                  <span className="text-xs font-normal text-ink-400 ml-1">{row.currency}</span>
                                 </>
                               )}
                             </td>
@@ -1319,7 +1319,7 @@ export default function CustomerDetailPage() {
                     {merged.length > paymentsShown && (
                       <div className="px-4 py-3 border-t text-center">
                         <button onClick={() => setPaymentsShown(p => p + 10)}
-                          className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                          className="text-sm text-brand-700 hover:text-brand-800 font-medium">
                           Daha Fazla Göster ({merged.length - paymentsShown} adet daha)
                         </button>
                       </div>
@@ -1333,34 +1333,34 @@ export default function CustomerDetailPage() {
 
         {/* Return Invoices */}
         {customer.returns?.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
             <div className="flex items-center justify-between px-5 py-3 bg-red-700">
-              <h2 className="font-semibold text-white text-sm uppercase tracking-wide">{t('customerDetail', 'returns')}</h2>
+              <h2 className="section-title">{t('customerDetail', 'returns')}</h2>
               <span className="text-red-200 text-xs">{customer.returns.length} iade</span>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-slate-500 font-medium border-b bg-slate-50">
+                <tr className="text-xs text-ink-500 font-medium border-b bg-ink-50">
                   <th className="px-4 py-2 text-left">{t('customerDetail', 'date')}</th>
                   <th className="px-4 py-2 text-left">{t('customerDetail', 'invoiceNo')}</th>
                   <th className="px-4 py-2 text-right">{t('customerDetail', 'amount')}</th>
                   <th className="w-8"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-ink-100">
                 {customer.returns.map((inv: any) => (
                   <tr key={inv.id} className="bg-red-50/50 hover:bg-red-50 cursor-pointer transition-colors"
                     onClick={() => router.push(`/invoices/${inv.id}`)}>
-                    <td className="px-4 py-2.5 text-slate-500">
+                    <td className="px-4 py-2.5 text-ink-500">
                       <div>{new Date(inv.date).toLocaleDateString('tr-TR')}</div>
-                      <div className="text-xs text-slate-400">{new Date(inv.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
+                      <div className="text-xs text-ink-400">{new Date(inv.date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</div>
                     </td>
                     <td className="px-4 py-2.5 font-medium text-red-700 whitespace-nowrap">{inv.invoiceNo}</td>
                     <td className="px-4 py-2.5 text-right font-semibold text-red-600">
                       {Math.abs(inv.total).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      <span className="text-xs font-normal text-slate-400 ml-1">{inv.currency}</span>
+                      <span className="text-xs font-normal text-ink-400 ml-1">{inv.currency}</span>
                     </td>
-                    <td className="pr-3 text-slate-300">
+                    <td className="pr-3 text-ink-300">
                       <ChevronRight className="w-4 h-4" />
                     </td>
                   </tr>
@@ -1411,19 +1411,19 @@ export default function CustomerDetailPage() {
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 border border-ink-200/80">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Emin misiniz?</h3>
-                <p className="text-sm text-slate-600 whitespace-pre-line">{confirmModal.message}</p>
+                <h3 className="font-semibold text-ink-800 mb-1">Emin misiniz?</h3>
+                <p className="text-sm text-ink-600 whitespace-pre-line">{confirmModal.message}</p>
               </div>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setConfirmModal(null)}
-                className="flex-1 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">İptal</button>
+                className="flex-1 py-2 border border-ink-200 text-ink-600 rounded-lg text-sm hover:bg-ink-50">İptal</button>
               <button onClick={() => { const fn = confirmModal.onConfirm; setConfirmModal(null); fn(); }}
                 className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium">Tamam</button>
             </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MoreHorizontal, LucideIcon } from 'lucide-react';
+import { MoreHorizontal, LucideIcon } from '@/app/components/icons';
 
 export type MoreMenuItem = {
   label: string;
@@ -77,12 +77,12 @@ export default function MoreMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={e => { e.stopPropagation(); e.preventDefault(); toggle(); }}
-        className={`flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors ${size === 'sm' ? 'w-8 h-8' : 'h-full min-h-[30px] px-2 border border-slate-200 bg-white'}`}
+        className={`flex items-center justify-center rounded-lg text-ink-500 hover:bg-ink-100 hover:text-ink-700 transition-colors ${size === 'sm' ? 'w-8 h-8' : 'h-full min-h-[30px] px-2 border border-ink-200 bg-white'}`}
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
       {open && createPortal(
-        <div ref={menuRef} role="menu" style={pos} className={`bg-white rounded-xl shadow-lg border border-slate-100 z-50 min-w-[180px] py-1`}>
+        <div ref={menuRef} role="menu" style={pos} className={`bg-white rounded-xl shadow-lg border border-ink-100 z-50 min-w-[180px] py-1`}>
           {items.map(item => (
             <button
               key={item.label}
@@ -90,7 +90,7 @@ export default function MoreMenu({
               role="menuitem"
               disabled={item.disabled}
               onClick={e => { e.stopPropagation(); e.preventDefault(); setOpen(false); item.onClick(); }}
-              className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left disabled:opacity-50 ${item.danger ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-50'}`}
+              className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left disabled:opacity-50 ${item.danger ? 'text-red-600 hover:bg-red-50' : 'text-ink-700 hover:bg-ink-50'}`}
             >
               {item.icon && <item.icon className="w-4 h-4" />}
               {item.label}

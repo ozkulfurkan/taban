@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Package, Plus, ShoppingCart, Trash2, Send, ChevronUp } from 'lucide-react';
+import { Loader2, Package, Plus, ShoppingCart, Trash2, Send, ChevronUp } from '@/app/components/icons';
 import { usePortalText } from '@/lib/i18n/portal';
 import DecimalInput from '@/app/components/decimal-input';
 import { cleanQuantity, formatQty, isPairUnit, orderUnit, unitDecimals } from '@/lib/order-units';
@@ -170,14 +170,14 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
 
   return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-slate-800">{title ?? tp('Ürün Kataloğu')}</h1>
+        <h1 className="page-title">{title ?? tp('Ürün Kataloğu')}</h1>
 
         {/* Firma ağı: "Ürünler | Tabanlarım" (tabandan sepete ekleyince ilgili ürünün formu açılır) */}
         {solesUrl && mapUrl && (
-          <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5" role="tablist" data-testid="catalog-mode">
+          <div className="inline-flex rounded-lg border border-ink-200 bg-white p-0.5" role="tablist" data-testid="catalog-mode">
             {([['products', 'Ürünler'], ['soles', 'Tabanlarım']] as const).map(([k, label]) => (
               <button key={k} type="button" role="tab" aria-selected={mode === k} onClick={() => setMode(k)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium ${mode === k ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>{label}</button>
+                className={`px-4 py-1.5 rounded-md text-sm font-medium ${mode === k ? 'bg-ink-800 text-white' : 'text-ink-600 hover:bg-ink-100'}`}>{label}</button>
             ))}
           </div>
         )}
@@ -193,12 +193,12 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
             }} />
         ) : loading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-ink-400" />
           </div>
         ) : products.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-            <Package className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-            <p className="text-slate-400 text-sm">{tp('Katalog henüz yüklenmedi.')}</p>
+          <div className="bg-white rounded-xl p-12 text-center shadow-card border border-ink-200/80">
+            <Package className="w-12 h-12 text-ink-200 mx-auto mb-3" />
+            <p className="text-ink-400 text-sm">{tp('Katalog henüz yüklenmedi.')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -210,16 +210,16 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
               const pair = isPairUnit(unit);
 
               return (
-                <div key={product.id} id={`catalog-card-${product.id}`} className={`bg-white rounded-xl shadow-sm flex flex-col overflow-hidden transition-all ${isActive ? 'ring-2 ring-blue-500' : ''}`}>
+                <div key={product.id} id={`catalog-card-${product.id}`} className={`bg-white rounded-xl shadow-sm flex flex-col overflow-hidden transition-all ${isActive ? 'ring-2 ring-brand-600' : ''}`}>
                   {product.imageUpdatedAt && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={`${catalogUrl}/${product.id}/image?v=${encodeURIComponent(product.imageUpdatedAt)}`} alt={product.name}
-                      loading="lazy" className="w-full aspect-[4/3] object-cover bg-slate-100" data-testid={`catalog-image-${product.id}`} />
+                      loading="lazy" className="w-full aspect-[4/3] object-cover bg-ink-100" data-testid={`catalog-image-${product.id}`} />
                   )}
                   <div className="p-5 flex flex-col gap-3">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Package className="w-5 h-5 text-blue-600" />
+                      <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Package className="w-5 h-5 text-brand-700" />
                       </div>
                       <div className="flex-1 min-w-0">
                         {product.purchased && (
@@ -227,31 +227,31 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
                             {tp('Daha önce aldınız')} · {new Date(product.purchased.lastAt).toLocaleDateString('tr-TR')}{product.purchased.count > 1 ? ` · ${product.purchased.count}×` : ''}
                           </p>
                         )}
-                        {product.code && <p className="text-xs font-semibold text-blue-600 mb-0.5">{product.code}</p>}
-                        <p className="font-semibold text-slate-800 text-sm leading-tight">{product.name}</p>
-                        {product.description && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{product.description}</p>}
+                        {product.code && <p className="text-xs font-semibold text-brand-700 mb-0.5">{product.code}</p>}
+                        <p className="font-semibold text-ink-800 text-sm leading-tight">{product.name}</p>
+                        {product.description && <p className="text-xs text-ink-500 mt-1 line-clamp-2">{product.description}</p>}
                       </div>
                     </div>
 
                     {pair ? (
                       <div>
-                        <p className="text-xs text-slate-400 mb-1.5">{tp('Mevcut Numaralar')}</p>
+                        <p className="text-xs text-ink-400 mb-1.5">{tp('Mevcut Numaralar')}</p>
                         <div className="flex flex-wrap gap-1">
                           {sizes.map(sz => (
-                            <span key={sz} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-md">{sz}</span>
+                            <span key={sz} className="px-2 py-0.5 bg-ink-100 text-ink-600 text-xs font-medium rounded-md">{sz}</span>
                           ))}
                         </div>
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-500">{tp('Birim')}: <span className="font-semibold text-slate-700" data-testid={`catalog-unit-${product.id}`}>{unit}</span></p>
+                      <p className="text-xs text-ink-500">{tp('Birim')}: <span className="font-semibold text-ink-700" data-testid={`catalog-unit-${product.id}`}>{unit}</span></p>
                     )}
 
                     <button
                       onClick={() => isActive ? closeOrderForm() : openOrderForm(product)}
                       className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                         isActive
-                          ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          ? 'bg-ink-100 text-ink-600 hover:bg-ink-200'
+                          : 'bg-brand-700 hover:bg-brand-800 text-white'
                       }`}
                     >
                       {isActive
@@ -261,48 +261,48 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
                   </div>
 
                   {isActive && (
-                    <div className="px-5 pb-5 border-t border-slate-100 pt-4 space-y-4">
+                    <div className="px-5 pb-5 border-t border-ink-100 pt-4 space-y-4">
                       {pair ? (
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">{tp('Renk *')}</label>
+                        <label className="block text-xs font-medium text-ink-600 mb-1">{tp('Renk *')}</label>
                         <input
                           value={orderColor}
                           onChange={e => { setOrderColor(e.target.value); setFormError(''); }}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                           placeholder={tp('örn: Siyah')}
                           autoFocus
                         />
                       </div>
                       ) : (
                       <div className="space-y-2" data-testid={`catalog-shore-${product.id}`}>
-                        <label className="block text-xs font-medium text-slate-600">{tp('Shore')} *</label>
+                        <label className="block text-xs font-medium text-ink-600">{tp('Shore')} *</label>
                         <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label={tp('Shore')}>
                           {SHORE_LEVELS.map(l => (
                             <button key={l} type="button" role="radio" aria-checked={orderShoreLevel === l}
                               onClick={() => { setOrderShoreLevel(l); setFormError(''); }}
-                              className={`py-2 rounded-lg text-sm font-medium border ${orderShoreLevel === l ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                              className={`py-2 rounded-lg text-sm font-medium border ${orderShoreLevel === l ? 'bg-brand-700 border-brand-700 text-white' : 'bg-white border-ink-200 text-ink-600 hover:bg-ink-50'}`}>
                               {tp(l)}
                             </button>
                           ))}
                         </div>
                         <div className="flex items-center gap-2">
-                          <label className="text-xs text-slate-500" htmlFor={`shore-${product.id}`}>{tp('Shore değeri')}</label>
+                          <label className="text-xs text-ink-500" htmlFor={`shore-${product.id}`}>{tp('Shore değeri')}</label>
                           <input id={`shore-${product.id}`} inputMode="numeric" value={orderShoreValue}
                             onChange={e => { setOrderShoreValue(e.target.value.replace(/[^0-9]/g, '').slice(0, 3)); setFormError(''); }}
-                            className="w-20 px-2 py-1.5 border border-slate-200 rounded-lg text-sm text-center focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-20 px-2 py-1.5 border border-ink-200 rounded-lg text-sm text-center focus:ring-2 focus:ring-brand-600 outline-none"
                             data-testid={`catalog-shore-value-${product.id}`} />
                         </div>
-                        <p className="text-xs text-slate-400">{tp(SHORE_NOTE)}</p>
+                        <p className="text-xs text-ink-400">{tp(SHORE_NOTE)}</p>
                       </div>
                       )}
 
                       {pair ? (
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-2">{tp('Adet (Numaraya Göre)')}</label>
+                        <label className="block text-xs font-medium text-ink-600 mb-2">{tp('Adet (Numaraya Göre)')}</label>
                         <div className="grid grid-cols-4 gap-1.5">
                           {sizes.map(sz => (
                             <div key={sz} className="flex flex-col items-center gap-0.5">
-                              <span className="text-xs font-semibold text-slate-500">{sz}</span>
+                              <span className="text-xs font-semibold text-ink-500">{sz}</span>
                               <DecimalInput
                                
                                 min="0"
@@ -312,18 +312,18 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
                                   setFormError('');
                                 }}
                                 placeholder="0"
-                                className="w-full text-center px-1 py-1.5 border border-slate-200 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full text-center px-1 py-1.5 border border-ink-200 rounded text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                               />
                             </div>
                           ))}
                         </div>
                         {formTotal > 0 && (
-                          <p className="text-xs text-blue-600 font-medium mt-2 text-right">{tp('Toplam')}: {formTotal} {tp('çift')}</p>
+                          <p className="text-xs text-brand-700 font-medium mt-2 text-right">{tp('Toplam')}: {formTotal} {tp('çift')}</p>
                         )}
                       </div>
                       ) : (
                         <div>
-                          <label className="block text-xs font-medium text-slate-600 mb-1">{tp('Miktar')} ({unit}) *</label>
+                          <label className="block text-xs font-medium text-ink-600 mb-1">{tp('Miktar')} ({unit}) *</label>
                           <div className="flex items-center gap-2">
                             <DecimalInput
                               value={orderQty}
@@ -331,9 +331,9 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
                               integer={!unitDecimals(unit)}
                               placeholder={unitDecimals(unit) ? '0,000' : '0'}
                               data-testid={`catalog-qty-${product.id}`}
-                              className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                              className="flex-1 px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                             />
-                            <span className="text-sm font-semibold text-slate-600">{unit}</span>
+                            <span className="text-sm font-semibold text-ink-600">{unit}</span>
                           </div>
                         </div>
                       )}
@@ -357,55 +357,55 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
 
         {/* Cart */}
         {cart.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5 text-blue-600" />
-              <h2 className="font-semibold text-slate-800">{tp('Sepet')}</h2>
-              <span className="ml-auto text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full">{cart.length} {tp('ürün')}</span>
+          <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+            <div className="px-5 py-4 border-b border-ink-100 flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5 text-brand-700" />
+              <h2 className="font-semibold text-ink-800">{tp('Sepet')}</h2>
+              <span className="ml-auto text-xs bg-brand-100 text-brand-800 font-semibold px-2 py-0.5 rounded-full">{cart.length} {tp('ürün')}</span>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50">
+                <thead className="bg-ink-50">
                   <tr>
                     {['Model', tp('Renk / Shore'), tp('Beden Dağılımı'), tp('Toplam'), ''].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-ink-100">
                   {cart.map(item => (
-                    <tr key={item.cartId} className="hover:bg-slate-50">
+                    <tr key={item.cartId} className="hover:bg-ink-50">
                       <td className="px-4 py-3">
-                        {item.productCode && <span className="text-xs font-semibold text-blue-600 mr-1">{item.productCode}</span>}
-                        <span className="font-medium text-slate-800">{item.productName}</span>
+                        {item.productCode && <span className="text-xs font-semibold text-brand-700 mr-1">{item.productCode}</span>}
+                        <span className="font-medium text-ink-800">{item.productName}</span>
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{variantText(item) || '—'}</td>
+                      <td className="px-4 py-3 text-ink-600">{variantText(item) || '—'}</td>
                       <td className="px-4 py-3">
-                        {!isPairUnit(item.unit) ? <span className="text-xs text-slate-500">—</span> : null}
+                        {!isPairUnit(item.unit) ? <span className="text-xs text-ink-500">—</span> : null}
                         <div className="flex flex-wrap gap-1">
                           {item.availableSizes
                             .filter(sz => (item.sizeDistribution[sz] || 0) > 0)
                             .map(sz => (
-                              <span key={sz} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50 text-blue-700 text-xs rounded font-medium">
-                                <span className="text-blue-400">{sz}</span>
+                              <span key={sz} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-brand-50 text-brand-800 text-xs rounded font-medium">
+                                <span className="text-brand-500">{sz}</span>
                                 <span>×{item.sizeDistribution[sz]}</span>
                               </span>
                             ))}
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-bold text-slate-800 whitespace-nowrap">{formatQty(item.totalQuantity, item.unit)}</td>
+                      <td className="px-4 py-3 font-bold text-ink-800 whitespace-nowrap">{formatQty(item.totalQuantity, item.unit)}</td>
                       <td className="px-4 py-3 text-right">
                         <button onClick={() => removeFromCart(item.cartId)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors">
+                          className="p-1.5 text-ink-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
                   ))}
-                  <tr className="bg-slate-50">
-                    <td colSpan={3} className="px-4 py-3 text-right text-sm font-semibold text-slate-600">{tp('Genel Toplam')}</td>
-                    <td className="px-4 py-3 font-bold text-blue-700 whitespace-nowrap">
+                  <tr className="bg-ink-50">
+                    <td colSpan={3} className="px-4 py-3 text-right text-sm font-semibold text-ink-600">{tp('Genel Toplam')}</td>
+                    <td className="px-4 py-3 font-bold text-brand-800 whitespace-nowrap">
                       {formatQty(cart.reduce((s, i) => s + i.totalQuantity, 0), cart[0]?.unit)}
                     </td>
                     <td />
@@ -414,16 +414,16 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
               </table>
             </div>
 
-            <div className="p-5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-5 border-t border-ink-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">{tp('İstenen Termin Tarihi')}</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1.5">{tp('İstenen Termin Tarihi')}</label>
                 <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">{tp('Notlar')}</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1.5">{tp('Notlar')}</label>
                 <input value={notes} onChange={e => setNotes(e.target.value)} placeholder={tp('Ek notlar...')}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
               </div>
             </div>
 
@@ -435,7 +435,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
 
             <div className="px-5 pb-5">
               <button onClick={handleSubmit} disabled={submitting}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl font-semibold transition-colors">
+                className="w-full flex items-center justify-center gap-2 py-3 bg-brand-700 hover:bg-brand-800 disabled:opacity-60 text-white rounded-xl font-semibold transition-colors">
                 {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                 {tp('Siparişleri Gönder')} ({cart.length} {tp('ürün')})
               </button>
