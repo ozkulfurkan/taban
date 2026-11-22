@@ -9,8 +9,8 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
-  title: 'SoleCost - Taban Maliyet Hesaplama',
-  description: 'Ayakkabı taban maliyet hesaplama SaaS uygulaması',
+  title: 'SoleCost - Ayakkabı Sektörü için Maliyet, Cari, Stok ve Sipariş',
+  description: 'Ayakkabı, taban ve yan sanayi firmaları için maliyet, cari, stok ve sipariş yönetimi',
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',

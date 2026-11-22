@@ -58,7 +58,7 @@ export function Welcome() {
         </Animated.View>
         <Animated.View style={[{ alignItems: 'center', gap: 6 }, subtitleStyle]}>
           <Text style={styles.greeting}>{firstName ? `Hoş geldiniz, ${firstName}` : 'Hoş geldiniz'}</Text>
-          <Text style={styles.subtitle}>Taban üretiminde maliyet, cari ve sipariş</Text>
+          <Text style={styles.subtitle}>Ayakkabı sektöründe maliyet, cari ve sipariş</Text>
         </Animated.View>
         <View style={styles.bar} />
       </Pressable>
