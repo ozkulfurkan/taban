@@ -63,7 +63,7 @@ export default function Login() {
         <View style={styles.brand}>
           <BrandMark size={64} />
           <T variant="title">SoleCost</T>
-          <T variant="small">Taban üretiminde maliyet, cari ve stok</T>
+          <T variant="small">Ayakkabı sektöründe maliyet, cari ve stok</T>
         </View>
 
         <Segmented

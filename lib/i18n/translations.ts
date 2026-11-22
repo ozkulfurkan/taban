@@ -85,7 +85,7 @@ export const translations = {
       hasAccount: 'Zaten hesabınız var mı?',
       loginTitle: 'Hesabınıza Giriş Yapın',
       registerTitle: 'Yeni Hesap Oluşturun',
-      loginDesc: 'Taban maliyet hesaplama platformuna hoş geldiniz',
+      loginDesc: 'Ayakkabı sektörünün işletme platformuna hoş geldiniz',
       registerDesc: 'Ücretsiz hesap oluşturun ve hemen başlayın',
     },
     dashboard: {
@@ -551,7 +551,7 @@ export const translations = {
       hasAccount: 'Already have an account?',
       loginTitle: 'Sign In to Your Account',
       registerTitle: 'Create New Account',
-      loginDesc: 'Welcome to the sole cost calculation platform',
+      loginDesc: 'Welcome to the business platform for the footwear industry',
       registerDesc: 'Create a free account and get started',
     },
     dashboard: {

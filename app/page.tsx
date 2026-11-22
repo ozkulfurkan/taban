@@ -134,7 +134,7 @@ export default function LandingPage() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-300 text-xs font-medium mb-6">
               <span className="w-1.5 h-1.5 bg-blue-400 rounded-full inline-block" />
-              Taban üretimi için ERP
+              Ayakkabı sektörü için ERP
             </div>
             <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-5 tracking-tight">
               Üretimi yönet,<br />
@@ -182,7 +182,7 @@ export default function LandingPage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-slate-900 mb-3">Her şey tek platformda</h2>
             <p className="text-slate-500 max-w-lg mx-auto">
-              Taban üretiminin tüm süreçlerini kapsayan modüler yapı — ihtiyacınız olan her şey hazır.
+              Ayakkabı, taban ve yan sanayi üretiminin tüm süreçlerini kapsayan modüler yapı — ihtiyacınız olan her şey hazır.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

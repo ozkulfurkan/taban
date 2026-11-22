@@ -3,13 +3,13 @@
 Play Console → Büyüme → Mağazadaki varlık → Ana mağaza kaydı alanlarına kopyalayın.
 
 ## Uygulama adı (en fazla 30 karakter)
-SoleCost: Taban Üretim Takibi
+SoleCost: Ayakkabı İşletme
 
 ## Kısa açıklama (en fazla 80 karakter)
-Taban üreticileri için maliyet, cari, stok, çek ve sipariş takibi tek yerde.
+Ayakkabı sektörü için maliyet, cari, stok, çek ve sipariş takibi tek yerde.
 
 ## Tam açıklama (en fazla 4000 karakter)
-SoleCost, ayakkabı tabanı üreten firmalar için hazırlanmış bir işletme uygulamasıdır. Maliyet hesabından cari hesaplara, stoktan siparişe kadar günlük işlerinizi telefonunuzdan takip edin.
+SoleCost, ayakkabı sektöründeki firmalar için hazırlanmış bir işletme uygulamasıdır: ayakkabı ve taban üreticileri, hammadde ve yan sanayi tedarikçileri, toptancılar ve fason atölyeler. Maliyet hesabından cari hesaplara, stoktan siparişe kadar günlük işlerinizi telefonunuzdan takip edin.
 
 CARİ HESAPLAR
 • Müşteri ve tedarikçi listesi, bakiye ve döviz cinsinden alacak/borç
