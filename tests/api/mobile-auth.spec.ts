@@ -118,4 +118,11 @@ test('gizlilik ve destek sayfaları oturumsuz açılır', async () => {
   const d = await anon.get('/destek');
   expect(d.status()).toBe(200);
   expect(await d.text()).toContain('Hesabımı ve verilerimi nasıl silerim?');
+  // Mağazaların istediği herkese açık hesap silme sayfası
+  const h = await anon.get('/hesap-silme');
+  expect(h.status()).toBe(200);
+  const html = await h.text();
+  expect(html).toContain('Hesabı sil');
+  expect(html).toContain('15 gün');
+  expect(await p.text()).toContain('/hesap-silme');
 });
