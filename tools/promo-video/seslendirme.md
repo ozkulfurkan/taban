@@ -41,3 +41,12 @@ Her video için yaklaşık 20–28 saniyelik metinler. Sahne sırasına göre ya
 > Dört: Tahsilat alın. Kasayı ya da bankayı seçin, tutarı girin; kalan bakiye hemen güncellenir.
 > Beş: Ekstreyi görün. Tüm hareketler ve bakiye tek sayfada; PDF ya da link olarak müşterinize gönderin.
 > İlk satışınızı bugün girin. SoleCost dot com, bir yıl ücretsiz.
+
+## 6. Kataloğunuz WhatsApp'ta (31 sn)
+> Ürünleri hâlâ fotoğraf fotoğraf mı atıyorsunuz?
+> SoleCost'ta ürünü bir kez, fotoğrafıyla ekleyin: ad, kod, fiyat; hepsi telefondan.
+> Tüm ürünleriniz fotoğraflı ve düzenli.
+> Katalog ekranında müşteriye göndereceklerinizi işaretleyin; fiyatlı ya da fiyatsız.
+> Tek dokunuşla logonuzla, fotoğraflarla şık bir PDF katalog hazır.
+> WhatsApp'tan saniyeler içinde gönderin; sipariş de oradan gelsin.
+> Kataloğunuz müşterinizin cebinde. SoleCost dot com, bir yıl ücretsiz.
