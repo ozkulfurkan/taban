@@ -18,7 +18,9 @@
     "test:unit": "tsx --test tests/unit/*.test.ts",
     "test:api": "playwright test --project=api",
     "db:deploy": "prisma migrate deploy",
-    "db:seed:test": "tsx --require dotenv/config scripts/seed-test.ts && tsx --require dotenv/config scripts/seed-full.ts"
+    "db:seed:test": "tsx --require dotenv/config scripts/seed-test.ts && tsx --require dotenv/config scripts/seed-full.ts",
+    "video:capture": "node tools/promo-video/capture.mjs",
+    "video:render": "node tools/promo-video/render.mjs"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config scripts/safe-seed.ts"
