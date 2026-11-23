@@ -14,6 +14,7 @@ Gerçek uygulama ekran görüntülerinden, marka diliyle (bordo–krem, Fraunces
    - demo veritabanıyla web uygulaması: `npx next start -p 3001`;
    - mobil uygulamanın web çıktısı: `cd mobile && EXPO_PUBLIC_API_URL=http://localhost:8090 npx expo export -p web`. Bu çıktıyı 8090 portunda sunan, `/api` isteklerini 3001'e ileten basit bir sunucu kurun.
 3. **Ekran görüntüleri:** `npm run video:capture` (`shots/` klasörüne).
+   - Süreç videosu için gerçek ekran kaydı: `DATABASE_URL=…/taban_demo npm run video:record`. Ürün → müşteri → satış → tahsilat → ekstre akışını uygulamada gerçekten yapar ve `shots/flow-web.webm` dosyasına kaydeder. İmleç izi `flow-web.js` dosyasına yazılır. Önceki kaydın ürün, müşteri, fatura ve tahsilatını siler; tekrar çalıştırılabilir.
 4. **Videolar:** `npm run video:render`. Çıktı `out/` klasörüne gider: her konsept için `-story.mp4`, `-square.mp4` ve kapak PNG'si.
    - Tek video: `node tools/promo-video/render.mjs maliyet story`.
    - Hızlı kontrol (her saniyeden bir kare): `PREVIEW=1 node tools/promo-video/render.mjs maliyet story`.
@@ -40,3 +41,6 @@ Kullanılabilecek yardımcılar:
 | `cek.js` | Çek vadesi kaçmasın: vade takvimi, çek portföyü, toplu bankaya verme, mobil |
 | `portal.js` | Müşteriniz kendisi sipariş versin: katalog, bildirim, onay, sipariş takibi |
 | `mobil.js` | İşletmeniz cebinizde: ana sayfa, cari, ekstre PDF paylaşımı, tahsilat, bildirimler |
+| `surec.js` | 5 adımda ilk satışınız (nasıl kullanılır): gerçek ekran kaydı. Yatay 16:9 videoda tam tarayıcı görünür; story ve karede kamera imleci takip edip yakınlaşır. Formatlar: `landscape`, `story`, `square` |
+
+Bir konsept `formats: ['landscape', 'story', 'square']` ile hangi formatlarda üretileceğini belirleyebilir (varsayılan story + kare). Video kullanan sahnelerde `videoEl('dosya.webm')` ile oluşturulan öğenin `setTime(t)` sonucu `update` içinden döndürülür; motor karenin çözülmesini bekler.

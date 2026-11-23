@@ -75,11 +75,24 @@ const lerp = (a, b, p) => a + (b - a) * p;
 const fmtTL = (n, d = 2) => n.toLocaleString('tr-TR', { minimumFractionDigits: d, maximumFractionDigits: d });
 
 const params = new URLSearchParams(location.search);
-const FORMAT = params.get('format') === 'square' ? 'square' : 'story';
-const W = 1080, H = FORMAT === 'square' ? 1080 : 1920;
+const FORMAT = ['square', 'landscape'].includes(params.get('format')) ? params.get('format') : 'story';
+const W = FORMAT === 'landscape' ? 1920 : 1080, H = FORMAT === 'story' ? 1920 : 1080;
 document.documentElement.style.setProperty('--W', W + 'px');
 document.documentElement.style.setProperty('--H', H + 'px');
 const SQ = FORMAT === 'square';
+const LS = FORMAT === 'landscape';
+
+// Video karesi: __seek sırasında currentTime ayarlanır ve kare çözülene kadar beklenir (deterministik kayıt)
+function videoEl(src) {
+  const v = el('video'); v.src = SHOTS + src; v.muted = true; v.preload = 'auto'; v.playsInline = true;
+  v.setTime = t => new Promise(res => {
+    const tt = Math.max(0, Math.min(t, (v.duration || 1e9) - 0.04));
+    if (Math.abs(v.currentTime - tt) < 0.001 && v.readyState >= 2) return res();
+    const done = () => { v.removeEventListener('seeked', done); res(); };
+    v.addEventListener('seeked', done); v.currentTime = tt;
+  });
+  return v;
+}
 
 // ── DOM kısa yolları
 function el(tag, cls, html, style) {
@@ -184,7 +197,8 @@ function setup(concept) {
   });
   total = t0 + FADE;
 }
-window.__seek = function (t) {
+window.__seek = async function (t) {
+  const waits = [];
   for (const it of scenes) {
     const lt = t - it.start;
     if (t < it.start - .001 || t > it.end + .001) { it.root.style.display = 'none'; continue; }
@@ -192,17 +206,22 @@ window.__seek = function (t) {
     const fin = it.start === 0 ? 1 : easeInOut(seg(lt, 0, FADE));
     const fout = it.end >= total - .001 ? 1 : 1 - easeInOut(seg(t, it.end - FADE, it.end));
     it.root.style.opacity = Math.min(fin, fout);
-    it.s.update.call(it.s, lt);
+    const r = it.s.update.call(it.s, lt);
+    if (r && r.then) waits.push(r);
   }
+  await Promise.all(waits);
 };
 window.__ready = (async () => {
   const name = params.get('concept') || 'maliyet';
   await new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = `concepts/${name}.js`; sc.onload = res; sc.onerror = rej; document.head.append(sc); });
+  if (window.CONCEPT.prepare) await window.CONCEPT.prepare();
   setup(window.CONCEPT);
   await document.fonts.ready;
+  await Promise.all([...document.querySelectorAll('video')].map(v => v.readyState >= 1 ? 0 : new Promise(r => { v.onloadedmetadata = v.onerror = r; })));
   await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   window.__duration = total;
-  window.__seek(0);
+  window.__formats = window.CONCEPT.formats || ['story', 'square'];
+  await window.__seek(0);
   return total;
 })();
 </script>
