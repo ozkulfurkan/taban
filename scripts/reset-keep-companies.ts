@@ -2,8 +2,9 @@
 // portal hesaplarıyla) kalır, geri kalan her şey silinir. Platform yöneticileri (role = ADMIN) de kalır.
 //
 // Kullanım: npx tsx scripts/reset-keep-companies.ts a@firma.com,b@firma.com > temizlik.sql
-// Sonra Neon SQL Editor'da çalıştırın. Dosya tek transaction'dır: kalan firmaların verisi eksilirse ya da firma
-// sayısı tutmazsa kendiliğinden geri alınır (hiçbir şey silinmez); sorun yoksa sonda COMMIT eder.
+// Sonra Neon SQL Editor'da çalıştırın. Dosya tek transaction'dır: bir e-postaya bağlı firma (firma kullanıcısı ya da
+// portal hesabı olarak) bulunamazsa ya da kalan firmaların verisi eksilirse kendiliğinden geri alınır (hiçbir şey
+// silinmez); sorun yoksa sonda COMMIT eder ve 'TAMAMLANDI' özet satırını döndürür.
 // ÖNCE Neon'da yedek dal (branch) alın. Bu işlem geri alınamaz.
 //
 // Yöntem (şemadan otomatik): her tablo için "silinecek" kayıt kimlikleri, ebeveynden çocuğa doğru hesaplanır.
@@ -50,15 +51,25 @@ const out: string[] = [];
 out.push(`-- SoleCost canlı temizlik: yalnızca şu e-postaların firmaları kalır: ${emails.join(', ')}`);
 out.push(`-- Üretildi: ${new Date().toISOString()} · ${models.length} tablo`);
 out.push('BEGIN;', '');
+const emailList = emails.map(lit).join(', ');
 out.push(`CREATE TEMP TABLE keep_company ON COMMIT DROP AS
-  SELECT DISTINCT "companyId" AS id FROM "User" WHERE lower(email) IN (${emails.map(lit).join(', ')}) AND "companyId" IS NOT NULL;`);
+  SELECT "companyId" AS id FROM "User" WHERE lower(email) IN (${emailList}) AND "companyId" IS NOT NULL
+  UNION
+  SELECT "companyId" FROM "PortalCustomer" WHERE lower(email) IN (${emailList}) AND "companyId" IS NOT NULL;`);
 out.push(`CREATE TEMP TABLE keep_user ON COMMIT DROP AS
   SELECT id FROM "User" WHERE "companyId" IN (SELECT id FROM keep_company) OR role = 'ADMIN';`);
-out.push(`DO $$ BEGIN
-  IF (SELECT count(*) FROM keep_company) <> ${emails.length} THEN
-    RAISE EXCEPTION 'Kalacak firma sayısı beklenenden farklı (% bulundu, ${emails.length} bekleniyordu). E-postaları kontrol edin.', (SELECT count(*) FROM keep_company);
+// Güvenlik kilidi: her e-posta (firma kullanıcısı ya da portal hesabı olarak) bulunmalı ve en az bir firma kalmalı
+out.push(`DO $$ DECLARE eksik text; BEGIN
+  SELECT string_agg(e, ', ') INTO eksik FROM unnest(ARRAY[${emailList}]) AS e
+   WHERE NOT EXISTS (SELECT 1 FROM "User" WHERE lower(email) = e AND "companyId" IS NOT NULL)
+     AND NOT EXISTS (SELECT 1 FROM "PortalCustomer" WHERE lower(email) = e AND "companyId" IS NOT NULL);
+  IF eksik IS NOT NULL THEN
+    RAISE EXCEPTION 'DURDURULDU, HİÇBİR ŞEY SİLİNMEDİ: şu e-postaya bağlı firma bulunamadı: %', eksik;
   END IF;
-END $$;`, '');
+  IF (SELECT count(*) FROM keep_company) = 0 THEN
+    RAISE EXCEPTION 'DURDURULDU, HİÇBİR ŞEY SİLİNMEDİ: kalacak firma bulunamadı';
+  END IF;
+END $$;`);
 
 // Önce: kalan firmaların tablo bazlı kayıt sayıları
 const companyTables = models.filter(m => m.fields.some(f => f.name === 'companyId') && m.name !== 'Company');
@@ -119,8 +130,10 @@ out.push(`SELECT * FROM sayim_once UNION ALL ${countSql('sonra').replace(/;$/, '
 // Güvenlik kilidi: kalan firmaların verisi eksildiyse ya da firma sayısı yanlışsa her şey geri alınır
 const checks = companyTables.map(m => `(SELECT count(*) FROM ${q(m.name)} WHERE "companyId" IN (SELECT id FROM keep_company)) <> (SELECT ${q(m.name)} FROM sayim_once)`);
 out.push(`DO $$ BEGIN
-  IF (SELECT count(*) FROM "Company") <> ${emails.length} THEN RAISE EXCEPTION 'Temizlik sonrası firma sayısı ${emails.length} değil; işlem geri alındı'; END IF;
+  IF (SELECT count(*) FROM "Company") <> (SELECT count(*) FROM keep_company) THEN RAISE EXCEPTION 'Temizlik sonrası firma sayısı beklenenden farklı; işlem geri alındı'; END IF;
   IF ${checks.join('\n     OR ')} THEN RAISE EXCEPTION 'Kalan firmaların verisi değişti; işlem geri alındı'; END IF;
 END $$;`);
-out.push('', '-- Buraya kadar hata yoksa kalıcı yapılır. Hata çıkarsa hiçbir şey silinmez.', 'COMMIT;');
+out.push('', '-- Buraya kadar hata yoksa kalıcı yapılır. Hata çıkarsa hiçbir şey silinmez.', 'COMMIT;', '');
+// Editörde son sonuç olarak görünen tek özet satırı (COMMIT'ten sonra, kalıcı durumu gösterir)
+out.push(`SELECT 'TAMAMLANDI' AS durum, (SELECT count(*) FROM "Company") AS kalan_firma, (SELECT count(*) FROM "User") AS kalan_kullanici, (SELECT count(*) FROM "PortalCustomer") AS kalan_portal, (SELECT string_agg(name, ', ' ORDER BY name) FROM "Company") AS firmalar;`);
 console.log(out.join('\n'));
