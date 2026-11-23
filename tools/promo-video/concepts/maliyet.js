@@ -40,7 +40,7 @@ window.CONCEPT = {
       build(root) {
         this.hd = headline('Bir çift taban', 'Gerçek maliyet,<br><em>kuruşu kuruşuna.</em>', null, { y: SQ ? 80 : 210, size: SQ ? 68 : 84 });
         root.append(this.hd);
-        const card = el('div', 'x', null, { left: '90px', width: (W - 180) + 'px', top: (SQ ? 300 : 620) + 'px', background: '#fff', borderRadius: '28px',
+        const card = el('div', 'x', null, { left: '90px', width: (W - 180) + 'px', top: (SQ ? 328 : 620) + 'px', background: '#fff', borderRadius: '28px',
           padding: SQ ? '22px 40px' : '44px 52px', color: 'var(--ink)', boxShadow: '0 40px 80px -30px rgba(35,30,25,.35)', border: '1px solid #E7E1D9' });
         this.rows = LINES.map(l => {
           const r = el('div', '', `<div><div style="font:600 ${SQ ? 30 : 36}px/1.2 Geist">${l.ad}</div><div class="mono" style="font-size:${SQ ? 22 : 26}px;color:#776D62;margin-top:6px">${l.det}</div></div><div class="mono" style="font:500 ${SQ ? 32 : 38}px/1 'Geist Mono'">${l.v.toFixed(3).replace('.', ',')} $</div>`,
