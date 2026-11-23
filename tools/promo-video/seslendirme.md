@@ -32,3 +32,12 @@ Her video için yaklaşık 20–28 saniyelik metinler. Sahne sırasına göre ya
 > Ekstreyi PDF yapın, WhatsApp'tan gönderin.
 > Tahsilatı ödeme anında girin; yeni sipariş gelince zil haber versin.
 > SoleCost; iOS, Android ve web. Bir yıl ücretsiz deneyin.
+
+## 5. 5 adımda ilk satışınız (nasıl kullanılır, 78 sn)
+> SoleCost'ta ilk satışınızı beş adımda girin.
+> Bir: Ürün ekleyin. Adını, kodunu, fiyatını ve stoğunu yazıp kaydedin.
+> İki: Müşteri ekleyin. Unvan, vergi numarası ve telefon yeterli.
+> Üç: Satış girin. Müşteri sayfasından yeni satışa tıklayın, ürünü arayın, adedi yazın. Toplam kendiliğinden hesaplanır, stok düşer.
+> Dört: Tahsilat alın. Kasayı ya da bankayı seçin, tutarı girin; kalan bakiye hemen güncellenir.
+> Beş: Ekstreyi görün. Tüm hareketler ve bakiye tek sayfada; PDF ya da link olarak müşterinize gönderin.
+> İlk satışınızı bugün girin. SoleCost dot com, bir yıl ücretsiz.

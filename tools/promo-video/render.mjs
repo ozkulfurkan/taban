@@ -16,14 +16,20 @@ mkdirSync(OUT, { recursive: true });
 
 const all = readdirSync(join(HERE, 'concepts')).filter(f => f.endsWith('.js')).map(f => f.replace(/\.js$/, ''));
 const concepts = process.argv[2] ? [process.argv[2]] : all;
-const formats = process.argv[3] ? [process.argv[3]] : ['story', 'square'];
+const onlyFormat = process.argv[3];
 const preview = process.env.PREVIEW === '1';
 
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM_PATH || undefined });
 try {
   for (const concept of concepts) {
+    // Konseptin istediği formatlar (varsayılan: story + kare)
+    const probe = await browser.newPage();
+    await probe.goto(pathToFileURL(join(HERE, 'compose.html')).href + `?concept=${concept}&format=story`);
+    await probe.evaluate(() => window.__ready);
+    const formats = onlyFormat ? [onlyFormat] : await probe.evaluate(() => window.__formats);
+    await probe.close();
     for (const format of formats) {
-      const [w, h] = format === 'square' ? [1080, 1080] : [1080, 1920];
+      const [w, h] = format === 'square' ? [1080, 1080] : format === 'landscape' ? [1920, 1080] : [1080, 1920];
       const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
       const url = pathToFileURL(join(HERE, 'compose.html')).href + `?concept=${concept}&format=${format}`;
       await page.goto(url);
