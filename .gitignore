@@ -15,3 +15,7 @@ playwright-report/
 mobile/ios/
 mobile/android/
 mobile/.expo/
+
+# Tanıtım videosu üretici: ekran görüntüleri ve çıktılar repoya konmaz
+tools/promo-video/shots/
+tools/promo-video/out/

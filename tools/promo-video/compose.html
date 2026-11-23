@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>SoleCost tanıtım videosu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=block" rel="stylesheet">
+<style>
+  :root {
+    --bordo: #6B1A2C; --bordo-d: #43111D; --bordo-dd: #2A0A12; --bordo-l: #C66E7E; --pembe: #EBC8CE;
+    --krem: #F6EDE4; --kagit: #FAF6F0; --ink: #231E19; --ink-5: #776D62; --ink-2: #E7E1D9;
+    --ok: #0F9F6E; --uyari: #D97706; --hata: #C0362C;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: var(--W); height: var(--H); overflow: hidden; background: var(--bordo-dd); }
+  body { font-family: 'Geist', system-ui, sans-serif; color: var(--krem); -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .scene { position: absolute; inset: 0; overflow: hidden; will-change: opacity, transform; }
+
+  /* Zeminler */
+  .bg-bordo { background: radial-gradient(120% 80% at 50% 0%, #7A2236 0%, var(--bordo-d) 55%, var(--bordo-dd) 100%); }
+  .bg-bordo::after { content: ''; position: absolute; inset: 0; opacity: .07; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-krem { background: var(--kagit); color: var(--ink); }
+  .bg-krem::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: repeating-linear-gradient(0deg, transparent 0 63px, rgba(119,109,98,.10) 63px 64px); }
+  .stitch-frame { position: absolute; inset: 34px; border: 2.5px dashed rgba(246,237,228,.22); border-radius: 40px; pointer-events: none; }
+  .bg-krem .stitch-frame { border-color: rgba(107,26,44,.22); }
+
+  /* Tipografi */
+  .eyebrow { display: inline-block; font: 600 26px/1 'Geist', sans-serif; letter-spacing: .16em; text-transform: uppercase;
+    padding: 14px 22px; border-radius: 999px; background: rgba(246,237,228,.12); color: var(--pembe); }
+  .bg-krem .eyebrow { background: rgba(107,26,44,.08); color: var(--bordo); }
+  .h { font-family: 'Fraunces', serif; font-weight: 500; letter-spacing: -.015em; line-height: 1.04; font-variation-settings: 'opsz' 144; }
+  .h em { font-style: italic; font-weight: 400; color: var(--pembe); }
+  .bg-krem .h em { color: var(--bordo); }
+  .sub { font-size: 38px; line-height: 1.35; color: rgba(246,237,228,.82); }
+  .bg-krem .sub { color: var(--ink-5); }
+  .sub b { color: #fff; font-weight: 600; }
+  .bg-krem .sub b { color: var(--bordo); }
+  .mono { font-family: 'Geist Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  /* Cihazlar */
+  .phone { position: absolute; width: 520px; aspect-ratio: 390 / 844; border-radius: 74px; padding: 16px; background: #0d0b0a;
+    box-shadow: 0 60px 120px -30px rgba(0,0,0,.6), 0 0 0 3px #2a2420 inset, 0 0 0 2px rgba(255,255,255,.06); }
+  .phone .screen { position: relative; width: 100%; height: 100%; border-radius: 60px; overflow: hidden; background: #FAF8F5; }
+  .phone .screen img { position: absolute; left: 0; top: 0; width: 100%; display: block; }
+  .phone .island { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); width: 150px; height: 42px; border-radius: 30px; background: #0d0b0a; z-index: 3; }
+  .browser { position: absolute; border-radius: 22px; overflow: hidden; background: #fff; box-shadow: 0 50px 100px -30px rgba(0,0,0,.55); }
+  .browser .bar { height: 46px; background: #EFE9E1; display: flex; align-items: center; gap: 10px; padding: 0 18px; }
+  .browser .bar i { width: 13px; height: 13px; border-radius: 50%; background: #D4CBC0; display: block; }
+  .browser .bar span { margin-left: 18px; flex: 1; height: 26px; border-radius: 8px; background: #fff; font: 500 15px/26px 'Geist'; color: #776D62; padding-left: 14px; }
+  .browser .view { position: relative; overflow: hidden; }
+  .browser .view img { position: absolute; left: 0; top: 0; width: 100%; }
+
+  /* Kartlar */
+  .toast { position: absolute; display: flex; gap: 22px; align-items: center; padding: 26px 30px; border-radius: 30px;
+    background: rgba(255,255,255,.96); color: var(--ink); box-shadow: 0 30px 60px -20px rgba(0,0,0,.45); }
+  .toast .ic { width: 64px; height: 64px; border-radius: 18px; background: var(--bordo); display: grid; place-items: center; flex: none; }
+  .toast .t1 { font: 600 28px/1.2 'Geist'; } .toast .t2 { font: 400 25px/1.3 'Geist'; color: var(--ink-5); margin-top: 4px; }
+  .pill { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; border-radius: 999px; font: 600 24px/1 'Geist'; }
+  .x { position: absolute; }
+  .logo { width: 150px; height: 150px; border-radius: 34px; background: #fff; display: grid; place-items: center; box-shadow: 0 20px 50px -10px rgba(0,0,0,.4); }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+// ── Zaman yardımcıları (tüm animasyonlar t'den hesaplanır; kare kare kayıt için deterministik)
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const seg = (t, a, b) => clamp((t - a) / (b - a));                 // a..b aralığında 0→1
+const easeOut = p => 1 - Math.pow(1 - p, 3);
+const easeInOut = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const lerp = (a, b, p) => a + (b - a) * p;
+const fmtTL = (n, d = 2) => n.toLocaleString('tr-TR', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+const params = new URLSearchParams(location.search);
+const FORMAT = params.get('format') === 'square' ? 'square' : 'story';
+const W = 1080, H = FORMAT === 'square' ? 1080 : 1920;
+document.documentElement.style.setProperty('--W', W + 'px');
+document.documentElement.style.setProperty('--H', H + 'px');
+const SQ = FORMAT === 'square';
+
+// ── DOM kısa yolları
+function el(tag, cls, html, style) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html != null) e.innerHTML = html;
+  if (style) Object.assign(e.style, style);
+  return e;
+}
+const SHOTS = 'shots/';
+const STATUS_DARK = ['m-ana'];
+function phone(src, { w = 520, x, y } = {}) {
+  const p = el('div', 'phone', null, { width: w + 'px', left: x + 'px', top: y + 'px' });
+  p.style.borderRadius = (w * 74 / 520) + 'px'; p.style.padding = (w * 16 / 520) + 'px';
+  const s = el('div', 'screen'); s.style.borderRadius = (w * 60 / 520) + 'px';
+  // Durum çubuğu: ekran görüntüsü çentiğin altında başlar (saat, pil); rengi ekranın üst rengine uyar
+  const sbH = w * .118;
+  const bar = el('div', '', `<span>9:41</span><span style="letter-spacing:2px">▂▄▆ ▮</span>`, { position: 'absolute', left: 0, right: 0, top: 0, height: sbH + 'px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: `0 ${w * .1}px`, font: `600 ${w * .034}px/1 Geist`, zIndex: 2 });
+  const tint = n => { const dark = STATUS_DARK.includes(n); bar.style.background = dark ? '#6B1A2C' : '#FAF8F5'; bar.style.color = dark ? '#fff' : '#231E19'; };
+  const img = el('img', null, null, { top: sbH + 'px' }); img.src = SHOTS + src + '.png'; tint(src);
+  const isl = el('div', 'island', null, { width: w * .29 + 'px', height: w * .08 + 'px', top: w * .03 + 'px' });
+  s.append(bar, img, isl); p.append(s);
+  p.img = img;
+  p.swap = src2 => { if (!img.src.endsWith(src2 + '.png')) { img.src = SHOTS + src2 + '.png'; tint(src2); } };
+  return p;
+}
+function browser(src, { w, h, x, y, url = 'solecost.com' }) {
+  const b = el('div', 'browser', null, { width: w + 'px', left: x + 'px', top: y + 'px' });
+  const bar = el('div', 'bar', `<i></i><i></i><i></i><span>${url}</span>`);
+  const v = el('div', 'view', null, { height: h + 'px' });
+  const img = el('img'); img.src = SHOTS + src + '.png'; v.append(img); b.append(bar, v);
+  b.img = img; return b;
+}
+function headline(eyebrow, title, sub, { x = 80, y = 200, w = W - 160, size = SQ ? 76 : 92 } = {}) {
+  const box = el('div', 'x', null, { left: x + 'px', top: y + 'px', width: w + 'px' });
+  const e = eyebrow ? el('div', 'eyebrow', eyebrow) : null;
+  const h = el('div', 'h', title, { fontSize: size + 'px', marginTop: e ? '30px' : 0 });
+  const s = sub ? el('div', 'sub', sub, { marginTop: '26px', fontSize: (SQ ? 32 : 38) + 'px' }) : null;
+  [e, h, s].forEach(n => n && box.append(n));
+  box.parts = { e, h, s };
+  return box;
+}
+// Başlık giriş animasyonu: etiket, başlık, alt metin sırayla yukarı kayarak gelir
+function animHead(box, t, start = 0) {
+  const { e, h, s } = box.parts;
+  [[e, 0], [h, .15], [s, .45]].forEach(([n, d]) => {
+    if (!n) return;
+    const p = easeOut(seg(t, start + d, start + d + .55));
+    n.style.opacity = p; n.style.transform = `translateY(${(1 - p) * 40}px)`;
+  });
+}
+function show(n, t, a, b = a + .5, dy = 50) {
+  const p = easeOut(seg(t, a, b));
+  n.style.opacity = p; n.style.transform = `translateY(${(1 - p) * dy}px)`;
+  return p;
+}
+const ICON = {
+  bell: '<svg width="34" height="34" viewBox="0 0 256 256" fill="#fff"><path d="M221.8 175.94C216.25 166.38 208 139.33 208 104a80 80 0 1 0-160 0c0 35.34-8.26 62.38-13.81 71.94A16 16 0 0 0 48 200h40.81a40 40 0 0 0 78.38 0H208a16 16 0 0 0 13.8-24.06Z"/></svg>',
+  check: '<svg width="34" height="34" viewBox="0 0 256 256" fill="none" stroke="#fff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"><polyline points="40 136 96 192 224 64"/></svg>',
+  x: '<svg width="22" height="22" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="30" stroke-linecap="round"><line x1="56" y1="56" x2="200" y2="200"/><line x1="200" y1="56" x2="56" y2="200"/></svg>',
+};
+// SoleCost işareti (marka): bordo zemin, beyaz taban, "SC"
+const MARK = (s = 120) => `<svg viewBox="0 0 256 256" width="${s}" height="${s}"><rect width="256" height="256" rx="56" fill="#6B1A2C"/><g transform="translate(-15.36 -15.36) scale(1.12)"><path d="M60 92 Q82 76 112 76 L182 76 Q204 76 214 94 L226 138 Q228 162 214 174 L192 190 Q180 196 160 196 L92 196 Q68 196 52 184 L36 168 Q30 150 36 132 Z" fill="#fff"/><text x="131" y="138" fill="#6B1A2C" font-family="Geist, Arial" font-size="74" font-weight="800" letter-spacing="2" text-anchor="middle" dominant-baseline="central">SC</text></g></svg>`;
+
+// ── Ortak kapanış sahnesi
+function closingScene({ dur = 4.2, tagline = 'Siparişten maliyete,<br><em>işletmeniz tek yerde.</em>' } = {}) {
+  return {
+    dur, bg: 'bordo',
+    build(root) {
+      const c = el('div', 'x', null, { left: 0, top: 0, width: W + 'px', height: H + 'px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: (SQ ? 34 : 46) + 'px' });
+      const logo = el('div', '', MARK(SQ ? 150 : 180));
+      const tag = el('div', 'h', tagline, { fontSize: (SQ ? 64 : 76) + 'px', padding: '0 80px' });
+      const url = el('div', 'h', 'solecost.com', { fontSize: (SQ ? 58 : 70) + 'px', color: '#fff', fontStyle: 'normal' });
+      const cta = el('div', '', 'Kayıt ol, <b>1 yıl ücretsiz</b> kullan →', { font: `500 ${SQ ? 34 : 40}px/1 Geist`, color: 'var(--bordo)', background: 'var(--krem)', padding: SQ ? '24px 40px' : '30px 48px', borderRadius: '999px' });
+      const foot = el('div', '', 'Web + Mobil · Hemen başlayın', { font: `500 ${SQ ? 26 : 30}px/1 Geist`, color: 'rgba(246,237,228,.6)', letterSpacing: '.04em' });
+      c.append(logo, tag, url, cta, foot); root.append(c);
+      this.n = { logo, tag, url, cta, foot };
+    },
+    update(t) {
+      const { logo, tag, url, cta, foot } = this.n;
+      const p = easeOut(seg(t, 0, .7)); logo.style.opacity = p; logo.style.transform = `scale(${lerp(.7, 1, p)})`;
+      show(tag, t, .35, .95); show(url, t, .8, 1.3); show(cta, t, 1.2, 1.7); show(foot, t, 1.5, 2);
+      cta.style.transform += ` scale(${1 + Math.sin(Math.max(0, t - 2) * 3) * .015})`;
+    },
+  };
+}
+
+// ── Motor: sahneleri sırayla oynatır, aralarda 0,35 sn çapraz geçiş
+const FADE = 0.35;
+let scenes = [], total = 0;
+function setup(concept) {
+  const stage = document.getElementById('stage');
+  let t0 = 0;
+  scenes = concept.scenes.map(s => {
+    const root = el('div', 'scene bg-' + (s.bg || 'bordo'));
+    if (s.frame !== false) root.append(el('div', 'stitch-frame'));
+    stage.append(root);
+    s.build.call(s, root);
+    const item = { s, root, start: t0, end: t0 + s.dur };
+    t0 += s.dur - FADE;
+    return item;
+  });
+  total = t0 + FADE;
+}
+window.__seek = function (t) {
+  for (const it of scenes) {
+    const lt = t - it.start;
+    if (t < it.start - .001 || t > it.end + .001) { it.root.style.display = 'none'; continue; }
+    it.root.style.display = 'block';
+    const fin = it.start === 0 ? 1 : easeInOut(seg(lt, 0, FADE));
+    const fout = it.end >= total - .001 ? 1 : 1 - easeInOut(seg(t, it.end - FADE, it.end));
+    it.root.style.opacity = Math.min(fin, fout);
+    it.s.update.call(it.s, lt);
+  }
+};
+window.__ready = (async () => {
+  const name = params.get('concept') || 'maliyet';
+  await new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = `concepts/${name}.js`; sc.onload = res; sc.onerror = rej; document.head.append(sc); });
+  setup(window.CONCEPT);
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  window.__duration = total;
+  window.__seek(0);
+  return total;
+})();
+</script>
+</body>
+</html>
