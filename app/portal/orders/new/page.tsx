@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PortalShell from '../../components/portal-shell';
@@ -34,6 +34,7 @@ export default function NewOrderPage() {
   const [quantity, setQuantity] = useState('');
   const [freeCode, setFreeCode] = useState(() => !!searchParams.get('productCode') && !searchParams.get('productId'));
   const [loading, setLoading] = useState(false);
+  const sending = useRef(false); // aynı anda gelen ikinci tıklama (state güncellenmeden) da engellenir
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -77,11 +78,11 @@ export default function NewOrderPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading) return;
+    if (loading || sending.current) return;
     setError('');
     if (!form.productId && !form.productCode.trim()) { setError(tp('Katalogdan bir ürün seçin.')); return; }
     if (!qty) { setError(pair ? tp('En az 1 adet girmelisiniz.') : tp('Geçerli bir miktar girin.')); return; }
-    setLoading(true);
+    setLoading(true); sending.current = true;
     try {
       const filledPartials = colorPartials.filter(p => p.color.trim());
       const res = await fetch('/api/portal/me/orders', {
@@ -95,10 +96,10 @@ export default function NewOrderPage() {
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setError(data.error || tp('Hata oluştu')); setLoading(false); return; }
+      if (!res.ok) { setError(data.error || tp('Hata oluştu')); setLoading(false); sending.current = false; return; }
       // Başarılıysa düğme kilitli kalır (çift gönderimi önler); sayfa değişir
       router.replace(`/portal/orders/${data.id}`);
-    } catch { setError(tp('Hata oluştu')); setLoading(false); }
+    } catch { setError(tp('Hata oluştu')); setLoading(false); sending.current = false; }
   };
 
   return (

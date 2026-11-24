@@ -77,7 +77,7 @@ export default function PortalOrderDetailPage() {
 
   const isPackage = Array.isArray(order.orderItems) && order.orderItems.length > 0;
   const canCancel = order.status === 'ORDER_RECEIVED' && !order.confirmedAt;
-  const canRequest = !canCancel && !['SHIPPED', 'CANCELLED'].includes(order.status);
+  const canRequest = !canCancel && !order.openRequest && !['SHIPPED', 'CANCELLED'].includes(order.status);
   const price = (pid?: string | null) => (pid && order.prices ? order.prices[pid] : null);
   const money = (n: number, cur: string) => `${n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur}`;
   const lineTotal = (pid: string | null | undefined, qty: number) => { const p = price(pid); return p ? money(p.unitPrice * qty, p.currency) : null; };
@@ -107,6 +107,11 @@ export default function PortalOrderDetailPage() {
           {canCancel && (
             <button onClick={cancelOrder} disabled={actBusy} data-testid="portal-cancel"
               className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium">{tp('Siparişi iptal et')}</button>
+          )}
+          {order.openRequest && !['SHIPPED', 'CANCELLED'].includes(order.status) && (
+            <span className="px-3 py-2 rounded-lg bg-amber-50 text-amber-800 text-sm font-medium" data-testid="request-pending">
+              {tp(order.openRequest === 'CANCEL_REQUEST' ? 'İptal talebi' : 'Değişiklik talebi')} · {tp('yanıt bekliyor')}
+            </span>
           )}
           {canRequest && (
             <button onClick={() => setReqOpen(o => !o)} data-testid="portal-request"

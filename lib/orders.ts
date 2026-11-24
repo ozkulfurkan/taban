@@ -87,46 +87,53 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
 
   const now = new Date();
 
-  // Mükerrer gönderim: aynı müşteriden 60 sn içinde aynı içerikli sipariş
-  const recent = await prisma.soleOrder.findMany({
-    where: {
-      companyId: opts.companyId, customerId: opts.customerId, createdAt: { gte: new Date(Date.now() - 60_000) },
-      ...(opts.portalCustomerId ? { portalCustomerId: opts.portalCustomerId } : {}), ...(opts.linkId ? { linkId: opts.linkId } : {}),
-    },
-    select: { productId: true, sizeDistribution: true, orderItems: true, totalQuantity: true },
-  });
+  // Mükerrer gönderim: aynı müşteriden 60 sn içinde aynı içerikli sipariş. Denetim, numara ve kayıt tek işlemde ve
+  // müşteri başına kilitle yapılır: aynı anda gelen iki istek (çift dokunma, iki sekme, ağ tekrarı) ikinci kaydı açamaz.
   const sig = (o: any) => JSON.stringify([o.productId ?? null, o.sizeDistribution ?? {}, o.orderItems ?? null, o.totalQuantity]);
   const mine = sig({ productId: finalProductId, sizeDistribution: finalSizeDist, orderItems: isPackage ? finalItems : null, totalQuantity: finalTotalQty });
-  if (recent.some(o => sig(o) === mine)) return { error: 'Bu sipariş az önce gönderildi. Siparişlerim listesini kontrol edin.', status: 409 };
-
-  // Sipariş numarası firmanın sıralı numarasından (çakışmaz)
-  const orderNo = await nextDocumentNumber('order', opts.companyId, `SIP-${documentYear()}-`);
-
-  const order = await prisma.soleOrder.create({
-    data: {
-      companyId: opts.companyId,
-      customerId: opts.customerId,
-      portalCustomerId: opts.portalCustomerId ?? null,
-      linkId: opts.linkId ?? null,
-      buyerUserId: opts.buyerUserId ?? null,
-      orderNo,
-      productId: finalProductId,
-      productCode: finalProductCode,
-      color: isPackage ? null : color,
-      material: isPackage ? null : material,
-      sizeDistribution: finalSizeDist,
-      totalQuantity: finalTotalQty,
-      unit: finalUnit,
-      requestedDeliveryDate: termin.date,
-      notes,
-      colorPartials: isPackage ? null : (partials.value as any),
-      orderItems: isPackage ? finalItems : undefined,
-      status: 'ORDER_RECEIVED',
-      statusHistory: {
-        create: { status: 'ORDER_RECEIVED', note: 'Sipariş oluşturuldu' },
+  const created = await prisma.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`order:${opts.companyId}:${opts.customerId}`}))`;
+    const recent = await tx.soleOrder.findMany({
+      where: {
+        companyId: opts.companyId, customerId: opts.customerId, createdAt: { gte: new Date(Date.now() - 60_000) },
+        ...(opts.portalCustomerId ? { portalCustomerId: opts.portalCustomerId } : {}), ...(opts.linkId ? { linkId: opts.linkId } : {}),
       },
-    },
+      select: { productId: true, sizeDistribution: true, orderItems: true, totalQuantity: true },
+    });
+    if (recent.some(o => sig(o) === mine)) return null;
+
+    // Sipariş numarası firmanın sıralı numarasından (çakışmaz)
+    const orderNo = await nextDocumentNumber('order', opts.companyId, `SIP-${documentYear()}-`, { db: tx });
+
+    return tx.soleOrder.create({
+      data: {
+        companyId: opts.companyId,
+        customerId: opts.customerId,
+        portalCustomerId: opts.portalCustomerId ?? null,
+        linkId: opts.linkId ?? null,
+        buyerUserId: opts.buyerUserId ?? null,
+        orderNo,
+        productId: finalProductId,
+        productCode: finalProductCode,
+        color: isPackage ? null : color,
+        material: isPackage ? null : material,
+        sizeDistribution: finalSizeDist,
+        totalQuantity: finalTotalQty,
+        unit: finalUnit,
+        requestedDeliveryDate: termin.date,
+        notes,
+        colorPartials: isPackage ? null : (partials.value as any),
+        orderItems: isPackage ? finalItems : undefined,
+        status: 'ORDER_RECEIVED',
+        statusHistory: {
+          create: { status: 'ORDER_RECEIVED', note: 'Sipariş oluşturuldu' },
+        },
+      },
+    });
   });
+  if (!created) return { error: 'Bu sipariş az önce gönderildi. Siparişlerim listesini kontrol edin.', status: 409 };
+  const order = created;
+  const orderNo = order.orderNo;
 
   // Bildirim: firma yöneticilerine üretim emri, siparişi verene bilgi (portal müşterisi ya da bağlı firma kullanıcısı)
   const [portalCustomer, customer, product, adminUsers] = await Promise.all([

@@ -18,6 +18,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   });
 
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  const prices = await portalPrices(user.companyId, user.customerId, orderProductIds(order));
-  return NextResponse.json({ ...toPortalOrder(order), ...(prices ? { prices } : {}) });
+  const [prices, open] = await Promise.all([
+    portalPrices(user.companyId, user.customerId, orderProductIds(order)),
+    // Yanıt bekleyen talep varken yenisi açılamaz; ekran talep düğmesi yerine bekleme notu gösterir
+    prisma.orderMessage.findFirst({ where: { orderId: order.id, kind: { in: ['CANCEL_REQUEST', 'CHANGE_REQUEST'] }, resolvedAt: null }, select: { kind: true } }),
+  ]);
+  return NextResponse.json({ ...toPortalOrder(order), openRequest: open?.kind ?? null, ...(prices ? { prices } : {}) });
 }

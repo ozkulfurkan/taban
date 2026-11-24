@@ -45,8 +45,9 @@ export function ShippedTable({ items, testId, partial = false, t = s => s }: { i
 }
 
 /** Sevkiyat formunda kalem başına sevk edilen miktar girişi; boş bırakılırsa sipariş miktarı */
-export function ShipQtyInputs({ lines, value, onChange }: {
-  lines: ShipLine[]; value: Record<number, string>; onChange: (v: Record<number, string>) => void;
+// remaining: kısmi sevkiyat formu — satırlardaki miktar siparişin kalanıdır; boş kalem kalanın tamamı, fark gösterilmez
+export function ShipQtyInputs({ lines, value, onChange, remaining = false }: {
+  lines: ShipLine[]; value: Record<number, string>; onChange: (v: Record<number, string>) => void; remaining?: boolean;
 }) {
   return (
     <div className="space-y-2" data-testid="ship-qty">
@@ -58,7 +59,7 @@ export function ShipQtyInputs({ lines, value, onChange }: {
         return (
           <div key={l.index} className="flex items-center gap-2 flex-wrap">
             <span className="flex-1 min-w-[140px] text-sm text-ink-700 truncate">{[l.productCode, l.productName].filter(Boolean).join(' · ') || 'Ürün'}</span>
-            <span className="text-xs text-ink-400 whitespace-nowrap">Sipariş {formatQty(l.ordered, l.unit)}</span>
+            <span className="text-xs text-ink-400 whitespace-nowrap">{remaining ? 'Kalan' : 'Sipariş'} {formatQty(l.ordered, l.unit)}</span>
             <DecimalInput
               value={raw ?? ''}
               onChange={e => onChange({ ...value, [l.index]: e.target.value })}
@@ -68,11 +69,13 @@ export function ShipQtyInputs({ lines, value, onChange }: {
               className="w-28 px-2 py-1.5 border border-ink-200 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 outline-none"
             />
             <span className="text-xs text-ink-500 w-8">{l.unit}</span>
-            <span className={`text-xs font-medium w-28 text-right ${diffClass(l.ordered, Number.isFinite(shipped) ? shipped : l.ordered)}`}>{diff || ' '}</span>
+            {!remaining && <span className={`text-xs font-medium w-28 text-right ${diffClass(l.ordered, Number.isFinite(shipped) ? shipped : l.ordered)}`}>{diff || ' '}</span>}
           </div>
         );
       })}
-      <p className="text-xs text-ink-400">Boş bırakılan kalem sipariş miktarı kadar sevk edilmiş sayılır. Fatura sevk edilen miktarla oluşur.</p>
+      <p className="text-xs text-ink-400">{remaining
+        ? 'Boş bırakılan kalemin kalanının tamamı sevk edilir. Fatura sevk edilen miktarla oluşur.'
+        : 'Boş bırakılan kalem sipariş miktarı kadar sevk edilmiş sayılır. Fatura sevk edilen miktarla oluşur.'}</p>
     </div>
   );
 }
