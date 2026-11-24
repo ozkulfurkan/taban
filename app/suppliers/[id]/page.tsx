@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { postJson, showSaveError } from '@/app/components/post-json';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { Loader2, Pencil, Save, X, Phone, Mail, MapPin, Hash, Download, RotateCcw, Banknote, CheckCircle2, ShoppingBag, Plus, Trash2, Search, ChevronDown, FileText, PlusCircle, AlertTriangle } from '@/app/components/icons';
@@ -114,10 +115,7 @@ function OdemeModal({ supplier, onClose, onSaved }: {
         const rateNote = `${amt} ${form.paymentCurrency} | Kur: 1 ${supplier.currency} = ${form.exchangeRate} ${form.paymentCurrency}`;
         notes = notes ? `${notes} | ${rateNote}` : rateNote;
       }
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await postJson('/api/payments', {
           supplierId: supplier.id,
           accountId: form.accountId,
           amount: savedAmt,
@@ -127,10 +125,9 @@ function OdemeModal({ supplier, onClose, onSaved }: {
           exchangeRate: isSameCurrency ? null : (parseFloat(form.exchangeRate) ? Math.round(parseFloat(form.exchangeRate) * 10000) / 10000 : null),
           date: form.date || nowIstanbulISO(),
           notes,
-        }),
-      });
+        });
       onSaved(savedAmt);
-    } catch (err) { console.error(err); }
+    } catch (err) { showSaveError(err); }
     finally { setSaving(false); }
   };
 
@@ -228,21 +225,17 @@ function BorcAlacakFisModal({ supplier, onClose, onSaved }: { supplier: any; onC
     setSaving(true);
     try {
       const notesArr = [form.dueDate ? `Vade:${form.dueDate}` : '', form.notes].filter(Boolean);
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await postJson('/api/payments', {
           supplierId: supplier.id,
           amount: parseFloat(form.amount),
           currency: 'TRY',
           date: nowIstanbulISO(),
           method: form.tip,
           notes: notesArr.join(' | ') || null,
-        }),
-      });
+        });
       onSaved();
       onClose();
-    } catch (err) { console.error(err); }
+    } catch (err) { showSaveError(err); }
     finally { setSaving(false); }
   };
 
@@ -317,21 +310,17 @@ function BakiyeDuzeltModal({ supplier, currentBalance, onClose, onSaved }: {
     setSaving(true);
     try {
       const direction = delta > 0 ? '+' : '-';
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await postJson('/api/payments', {
           supplierId: supplier.id,
           amount: Math.abs(delta),
           currency: 'TRY',
           date: nowIstanbulISO(),
           method: 'Bakiye Düzeltme',
           notes: direction + (notes ? ' | ' + notes : ''),
-        }),
       });
       onSaved();
       onClose();
-    } catch (err) { console.error(err); }
+    } catch (err) { showSaveError(err); }
     finally { setSaving(false); }
   };
 
@@ -630,11 +619,10 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
     try {
       await Promise.all([
         // Kendi çekleri → çek kaydı oluştur + ödeme kaydı
-        ...kendiCekler.map(c =>
-          fetch('/api/cek', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        // lineNo: aynı içerikli iki çek/ödeme satırı mükerrer sayılmasın (lib/request-dedup.ts)
+        ...kendiCekler.map((c, i) =>
+          postJson('/api/cek', {
+              lineNo: `k${i}`,
               supplierId: supplier.id,
               borclu: c.borclu,
               islem: 'Tedarikçiye Verilen Çek Kaydı',
@@ -645,17 +633,14 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
               currency: c.currency,
               seriNo: c.seriNo || null,
               bankasi: c.bankasi || null,
-            }),
-          })
+            })
         ),
         // Kendi çekleri → ödeme kaydı (bakiye düşsün)
-        ...kendiCekler.map(c => {
+        ...kendiCekler.map((c, i) => {
           const fxAmt = fxAmounts[c.id] ? parseFloat(fxAmounts[c.id]) : 0;
           const hasFx = supplier.currency !== 'TRY' && fxAmt > 0;
-          return fetch('/api/payments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          return postJson('/api/payments', {
+              lineNo: `KP${i}`,
               supplierId: supplier.id,
               amount: hasFx ? fxAmt : parseFloat(c.tutar),
               currency: hasFx ? supplier.currency : (c.currency || 'TRY'),
@@ -671,29 +656,22 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
                 `Vade: ${fmtDateC(c.vadesi)}`,
                 aciklama,
               ].filter(Boolean).join(' | '),
-            }),
           });
         }),
         // Portföy çekleri → durumu güncelle + ödeme kaydı
         ...portfoyCekler.map(c =>
-          fetch(`/api/cek/${c.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          postJson(`/api/cek/${c.id}`, {
               durum: 'TEDARIKCI_VERILDI',
               supplierId: supplier.id,
               islemTarihi: new Date(c._verilisTarihi || Date.now()),
               aciklama: aciklama || null,
-            }),
-          })
+            }, 'PATCH')
         ),
-        ...portfoyCekler.map(c => {
+        ...portfoyCekler.map((c, i) => {
           const fxAmt = fxAmounts[c.id] ? parseFloat(fxAmounts[c.id]) : 0;
           const hasFx = supplier.currency !== 'TRY' && fxAmt > 0;
-          return fetch('/api/payments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          return postJson('/api/payments', {
+              lineNo: `PP${i}`,
               supplierId: supplier.id,
               amount: hasFx ? fxAmt : parseFloat(c.tutar),
               currency: hasFx ? supplier.currency : (c.currency || 'TRY'),
@@ -710,13 +688,12 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
                 c.borclu ? `Sahibi: ${c.borclu}` : '',
                 aciklama,
               ].filter(Boolean).join(' | '),
-            }),
           });
         }),
       ]);
       onSaved();
       onClose();
-    } catch (err) { console.error(err); }
+    } catch (err) { showSaveError(err); }
     finally { setSaving(false); }
   };
 
@@ -838,7 +815,7 @@ function TedarikciCekModal({ supplier, onClose, onSaved }: {
           <div className="flex gap-3 p-5 border-t flex-shrink-0">
             <button onClick={onClose}
               className="flex-1 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
-            <button onClick={handleSave} disabled={saving || allChecks.length === 0}
+            <button data-submit onClick={handleSave} disabled={saving || allChecks.length === 0}
               className="flex-1 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Kaydet
             </button>
@@ -1069,7 +1046,7 @@ export default function SupplierDetailPage() {
                 <div className="sm:col-span-2 flex gap-2">
                   <button onClick={() => setEditing(false)}
                     className="px-4 py-1.5 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">{t('common', 'cancel')}</button>
-                  <button onClick={handleSave} disabled={saving}
+                  <button data-submit onClick={handleSave} disabled={saving}
                     className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} {t('common', 'save')}
                   </button>

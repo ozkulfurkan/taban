@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { duplicateGuarded } from '@/lib/request-dedup';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(invoices);
 }
 
-export async function POST(req: NextRequest) {
+async function create(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
@@ -232,3 +233,6 @@ const uniqueProductIds = ids;
     return NextResponse.json({ error: 'Fatura oluşturulamadı' }, { status: 500 });
   }
 }
+
+// Mükerrer kayıt koruması: aynı içerikli istek kısa süre içinde ikinci kez işlenmez (çift tıklama, iki sekme)
+export const POST = duplicateGuarded('invoices', create);

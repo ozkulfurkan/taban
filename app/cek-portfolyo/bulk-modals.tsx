@@ -91,7 +91,7 @@ export function BankModal({ cekler, onClose, onDone }: { cekler: Cek[]; onClose:
     <Shell title="Bankaya Ver" icon={Landmark} color="bg-brand-700" onClose={onClose}
       footer={<>
         <button onClick={onClose} className={btnCancel}>Vazgeç</button>
-        <button onClick={save} disabled={saving || !accountId}
+        <button data-submit onClick={save} disabled={saving || !accountId}
           className="flex-1 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
           {saving && <Loader2 className="w-4 h-4 animate-spin" />} Bankaya Ver
         </button>
@@ -145,7 +145,7 @@ export function CollectModal({ cekler, onClose, onDone }: { cekler: Cek[]; onClo
     <Shell title="Tahsil Et" icon={Wallet} color="bg-brand-700" onClose={onClose}
       footer={<>
         <button onClick={onClose} className={btnCancel}>Vazgeç</button>
-        <button onClick={save} disabled={saving || !accountId || currencies.length !== 1}
+        <button data-submit onClick={save} disabled={saving || !accountId || currencies.length !== 1}
           className="flex-1 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
           {saving && <Loader2 className="w-4 h-4 animate-spin" />} Tahsil Et
         </button>
@@ -233,7 +233,7 @@ export function SupplierPayModal({ cekler, onClose, onDone }: { cekler: Cek[]; o
     <Shell title="Tedarikçiye Ödeme Yap" icon={Truck} color="bg-brand-600" onClose={onClose}
       footer={<>
         <button onClick={onClose} className={btnCancel}>Vazgeç</button>
-        <button onClick={save} disabled={saving || !supplier || missing.length > 0}
+        <button data-submit onClick={save} disabled={saving || !supplier || missing.length > 0}
           className="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}
           {supplier ? `${fmt(total)} ${target} Öde` : 'Ödemeyi Kaydet'}

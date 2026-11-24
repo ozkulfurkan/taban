@@ -4,6 +4,7 @@ import { SessionProvider } from 'next-auth/react';
 import { LanguageProvider } from '@/lib/i18n/language-context';
 import { useState, useEffect, ReactNode } from 'react';
 import { AccessDeniedNotice } from '@/app/components/access-denied-notice';
+import { SubmitGuard } from '@/app/components/submit-guard';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -19,6 +20,7 @@ export function Providers({ children }: { children: ReactNode }) {
           {children}
         </div>
         <AccessDeniedNotice />
+        <SubmitGuard />
       </LanguageProvider>
     </SessionProvider>
   );

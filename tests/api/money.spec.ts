@@ -109,14 +109,15 @@ test.describe('Belge numaraları', () => {
     const first = await (await invoice(c, [line(1, 1)])).json();
     await prisma.invoice.update({ where: { id: first.id }, data: { invoiceNo: `FTR-${year}-9999` } });
     await prisma.documentCounter.deleteMany({ where: { companyId: A.companyId } });
-    const n1 = await (await invoice(c, [line(1, 1)])).json();
-    const n2 = await (await invoice(c, [line(1, 1)])).json();
+    // İçerikler farklı: aynı içerikli istek mükerrer kayıt korumasına takılır (lib/request-dedup.ts)
+    const n1 = await (await invoice(c, [line(1, 2)])).json();
+    const n2 = await (await invoice(c, [line(1, 3)])).json();
     expect([n1.invoiceNo, n2.invoiceNo]).toEqual([`FTR-${year}-10000`, `FTR-${year}-10001`]);
   });
 
   test('aynı anda kesilen 10 fatura hatasız ve farklı numaralı oluşur', async () => {
     const c = await newCustomer();
-    const results = await Promise.all(Array.from({ length: 10 }, () => invoice(c, [line(1, 1)])));
+    const results = await Promise.all(Array.from({ length: 10 }, (_, i) => invoice(c, [line(1, i + 1)])));
     expect(results.map(r => r.status())).toEqual(Array(10).fill(200));
     const numbers = await Promise.all(results.map(async r => (await r.json()).invoiceNo));
     expect(new Set(numbers).size).toBe(10);
@@ -138,7 +139,7 @@ test.describe('Belge numaraları', () => {
     const c = await newCustomer();
     const no = `ELLE-${RUN}`;
     expect((await invoice(c, [line(1, 1)], { invoiceNo: no })).status()).toBe(200);
-    const dup = await invoice(c, [line(1, 1)], { invoiceNo: no });
+    const dup = await invoice(c, [line(1, 2)], { invoiceNo: no });
     expect(dup.status()).toBe(409);
     expect((await dup.json()).error).toContain(no);
   });
