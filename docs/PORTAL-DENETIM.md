@@ -1,5 +1,7 @@
 # Müşteri portalı sipariş süreci denetimi (25.11.2026)
 
+> **Durum:** tüm bulgular (P-G1, P-H1–H11, P-K1–K7) ve geliştirmeler (P-Ö1–Ö6) web'de uygulandı (`feat/portal-gelistirme`). Mobil karşılıkları `docs/GELISTIRMELER.md` G-8'de.
+
 Kapsam:
 - **Müşteri portalı:** giriş, ana sayfa, katalog, yeni sipariş, siparişlerim, sipariş detayı, bildirimler, hesabım.
 - **Firma tarafı:** Gelen Siparişler, sipariş detayı (onay, termin, durum, sevkiyat, satışa çevirme), Müşteri Portalı Yönetimi.

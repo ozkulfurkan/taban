@@ -4,7 +4,7 @@ import { sendMail } from '@/lib/mail';
 import { orderRecipients, pushToPortalCustomer, pushToUsers } from '@/lib/push';
 import { statusLabel } from '@/lib/order-status';
 import { formatQty } from '@/lib/order-units';
-import { buildShipped, formatDiff, shipLines, type ShippedLine } from '@/lib/shipment';
+import { OVER_SHIP_FACTOR, buildShipped, formatDiff, remainingLines, shipLines, shippedSoFar, type ShippedLine } from '@/lib/shipment';
 
 // Sipariş durumu değişince siparişi verene e-posta: portal müşterisi ya da bağlı SoleCost
 // firmasında siparişi veren kullanıcı. Tüm durum değiştiren uçlar bunu kullanır.
@@ -142,11 +142,12 @@ export async function notifyOrderTermin(orderId: string, date: Date | null) {
   }
 }
 
-export async function notifyOrderShipped(orderId: string, s: { shipmentDate: Date | string; deliveryNoteNo?: string | null; carrier?: string | null; trackingNo?: string | null }, items?: ShippedLine[]) {
+export async function notifyOrderShipped(orderId: string, s: { shipmentDate: Date | string; deliveryNoteNo?: string | null; carrier?: string | null; trackingNo?: string | null }, items?: ShippedLine[], partial = false) {
+  const what = partial ? 'Siparişinizin bir kısmı sevk edildi' : 'Siparişiniz sevk edildi';
   await pushToBuyer(
     orderId,
     (company, no) => `${company} · ${no}`,
-    `Siparişiniz sevk edildi${s.carrier ? ` (${s.carrier}${s.trackingNo ? ` ${s.trackingNo}` : ''})` : ''}`,
+    `${what}${s.carrier ? ` (${s.carrier}${s.trackingNo ? ` ${s.trackingNo}` : ''})` : ''}`,
   );
   try {
     const r = await recipientOf(orderId);
@@ -155,12 +156,12 @@ export async function notifyOrderShipped(orderId: string, s: { shipmentDate: Dat
     const row = (k: string, v?: string | null) => (v ? `<tr><td style="padding:4px 12px 4px 0;color:#666;">${k}:</td><td><strong>${esc(v)}</strong></td></tr>` : '');
     await sendMail({
       to: r.to,
-      subject: `${order.company.name} · Siparişiniz sevk edildi (${order.orderNo})`,
+      subject: `${order.company.name} · ${what} (${order.orderNo})`,
       html: `
         <p>Merhaba ${esc(r.name ?? r.to)},</p>
-        <p>${esc(order.company.name)} firmasına verdiğiniz <strong>${esc(order.orderNo)}</strong> numaralı sipariş sevk edildi.</p>
+        <p>${esc(order.company.name)} firmasına verdiğiniz <strong>${esc(order.orderNo)}</strong> numaralı sipariş${partial ? 'in bir kısmı' : ''} sevk edildi.</p>
         ${items?.length ? `<table style="border-collapse:collapse;margin-top:8px;font-size:13px;">
-          <tr><th style="text-align:left;padding:4px 12px 4px 0;color:#666;">Ürün</th><th style="text-align:right;padding:4px 12px;color:#666;">Sipariş</th><th style="text-align:right;padding:4px 12px;color:#666;">Sevk edilen</th><th style="text-align:right;padding:4px 0;color:#666;">Fark</th></tr>
+          <tr><th style="text-align:left;padding:4px 12px 4px 0;color:#666;">Ürün</th><th style="text-align:right;padding:4px 12px;color:#666;">${partial ? 'Kalan' : 'Sipariş'}</th><th style="text-align:right;padding:4px 12px;color:#666;">Sevk edilen</th><th style="text-align:right;padding:4px 0;color:#666;">Fark</th></tr>
           ${items.map(i => `<tr><td style="padding:4px 12px 4px 0;">${esc([i.productCode, i.productName].filter(Boolean).join(' '))}</td><td style="text-align:right;padding:4px 12px;">${esc(formatQty(i.ordered, i.unit))}</td><td style="text-align:right;padding:4px 12px;"><strong>${esc(formatQty(i.shipped, i.unit))}</strong></td><td style="text-align:right;padding:4px 0;">${esc(formatDiff(i.ordered, i.shipped, i.unit) || '—')}</td></tr>`).join('')}
         </table>` : ''}
         <table style="border-collapse:collapse;margin-top:12px;">
@@ -181,8 +182,12 @@ const VALID: OrderStatus[] = ['ORDER_RECEIVED', 'IN_PRODUCTION', 'MOLDING', 'PAI
 export const isOrderStatus = (s: unknown): s is OrderStatus => typeof s === 'string' && (VALID as string[]).includes(s);
 
 /**
- * Sevkiyatı kaydeder: her kalem için sevk edilen gerçek miktar (boşsa sipariş miktarı).
- * Sipariş henüz sevk edilmediyse durumu SHIPPED yapar, geçmişe yazar ve bildirir.
+ * Sevkiyatı kaydeder (kısmi sevkiyat destekli).
+ * - shipmentId verilirse o sevkiyat düzenlenir; mode: 'new' ise yeni sevkiyat açılır;
+ *   ikisi de yoksa (eski istemciler, mobil) son sevkiyat düzenlenir, hiç yoksa oluşturulur.
+ * - Boş bırakılan kalem kalan miktar kadar sayılır (ilk sevkiyatta kalan = sipariş miktarı).
+ * - final: son sevkiyat mı (verilmezse: eski istemcide evet, yeni sevkiyatta kalan 0 ise evet).
+ *   Son sevkiyatta sipariş "Sevk Edildi" olur; kısmi sevkte durum değişmez, geçmişe ve müşteriye bildirilir.
  */
 export async function saveShipment(order: {
   id: string; status: string; orderItems?: unknown; unit?: string | null; totalQuantity: number;
@@ -190,34 +195,66 @@ export async function saveShipment(order: {
 }, s: {
   shipmentDate: string; deliveryNoteNo?: string | null; carrier?: string | null; trackingNo?: string | null; notes?: string | null;
   items?: Record<number, unknown> | Array<{ index: number; shipped: unknown }>;
+  shipmentId?: string | null; mode?: 'new' | 'edit'; final?: boolean;
 }) {
+  if (order.status === 'CANCELLED') return { error: 'İptal edilmiş sipariş sevk edilemez' };
   const shipmentDate = new Date(s.shipmentDate);
   if (!s.shipmentDate || isNaN(shipmentDate.getTime())) return { error: 'Geçerli bir sevk tarihi girin' };
   const input: Record<number, unknown> = Array.isArray(s.items)
     ? Object.fromEntries(s.items.map(i => [Number(i?.index), i?.shipped]))
     : (s.items ?? {});
-  const built = buildShipped(shipLines(order), input);
+
+  const existing = await prisma.orderShipment.findMany({ where: { orderId: order.id }, orderBy: [{ shipmentDate: 'asc' }, { createdAt: 'asc' }] });
+  const legacy = !s.shipmentId && s.mode !== 'new';
+  const target = s.shipmentId
+    ? existing.find(x => x.id === s.shipmentId)
+    : legacy ? existing[existing.length - 1] : undefined;
+  if (s.shipmentId && !target) return { error: 'Sevkiyat bulunamadı' };
+
+  const lines = shipLines(order);
+  const prior = shippedSoFar(existing.filter(x => x.id !== target?.id));
+  const rem = remainingLines(lines, prior);
+  if (rem.every(l => l.remaining <= 0) && !target) return { error: 'Siparişin tamamı sevk edildi' };
+  // Boş kalem = kalan miktar; sevk satırı "sipariş" sütununda kalan miktarı taşır
+  const built = buildShipped(rem.map(l => ({ ...l, ordered: l.remaining })), input);
   if ('error' in built) return { error: built.error };
+  for (const it of built.items) {
+    const r = rem.find(l => l.index === it.index)!;
+    if (it.shipped > r.remaining * OVER_SHIP_FACTOR + 1e-9 && it.shipped > 0) {
+      return { error: `${r.productCode || r.productName || 'Kalem'}: sevk miktarı kalan miktarın (${formatQty(r.remaining, r.unit)}) çok üzerinde` };
+    }
+  }
+  const after = remainingLines(lines, { ...prior, ...Object.fromEntries(built.items.map(i => [i.index, (prior[i.index] ?? 0) + i.shipped])) });
+  const final = typeof s.final === 'boolean' ? s.final : legacy ? true : after.every(l => l.remaining <= 0);
 
   const data = {
     shipmentDate,
-    deliveryNoteNo: s.deliveryNoteNo?.trim() || null,
-    trackingNo: s.trackingNo?.trim() || null,
-    carrier: s.carrier?.trim() || null,
-    notes: s.notes?.trim() || null,
+    deliveryNoteNo: s.deliveryNoteNo?.trim().slice(0, 50) || null,
+    trackingNo: s.trackingNo?.trim().slice(0, 100) || null,
+    carrier: s.carrier?.trim().slice(0, 100) || null,
+    notes: s.notes?.trim().slice(0, 500) || null,
     items: built.items as any,
     totalQuantity: built.total,
   };
   const orderId = order.id;
-  const shipment = await prisma.orderShipment.upsert({ where: { orderId }, create: { orderId, ...data }, update: data });
-  if (order.status !== 'SHIPPED') {
-    const diff = formatDiff(order.totalQuantity, built.total, order.unit);
-    const note = [data.deliveryNoteNo ? `İrsaliye: ${data.deliveryNoteNo}` : 'Sevk edildi', `${formatQty(built.total, order.unit)}${diff ? ` (${diff})` : ''}`].join(' · ');
+  const shipment = target
+    ? await prisma.orderShipment.update({ where: { id: target.id }, data })
+    : await prisma.orderShipment.create({ data: { orderId, ...data } });
+
+  const allShipped = Math.round((Object.values(prior).reduce((a, b) => a + b, 0) + built.total) * 1000) / 1000;
+  if (final && order.status !== 'SHIPPED') {
+    const diff = formatDiff(order.totalQuantity, allShipped, order.unit);
+    const note = [data.deliveryNoteNo ? `İrsaliye: ${data.deliveryNoteNo}` : 'Sevk edildi', `${formatQty(allShipped, order.unit)}${diff ? ` (${diff})` : ''}`].join(' · ');
     await prisma.soleOrder.update({
       where: { id: orderId },
       data: { status: 'SHIPPED', statusHistory: { create: { status: 'SHIPPED', note } } },
     });
     await notifyOrderShipped(orderId, data, built.items);
+  } else if (!final && !target) {
+    // Kısmi sevk: durum değişmez, geçmişe yazılır ve müşteriye bildirilir
+    const note = `Kısmi sevk${data.deliveryNoteNo ? ` (İrsaliye: ${data.deliveryNoteNo})` : ''}: ${formatQty(built.total, order.unit)} · toplam ${formatQty(allShipped, order.unit)} / ${formatQty(order.totalQuantity, order.unit)}`;
+    await prisma.orderStatusHistory.create({ data: { orderId, status: order.status as OrderStatus, note } });
+    await notifyOrderShipped(orderId, data, built.items, true);
   }
   return { shipment };
 }

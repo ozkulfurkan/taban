@@ -36,6 +36,17 @@ export default function PortalDashboardPage() {
   const user = session?.user as any;
   const active = orders.filter(o => !['SHIPPED', 'CANCELLED'].includes(o.status)).length;
   const shipped = orders.filter(o => o.status === 'SHIPPED').length;
+  // Ö6: dikkat isteyen siparişler
+  const now = Date.now();
+  const dueSoon = orders.filter(o => o.requestedDeliveryDate && !['SHIPPED', 'CANCELLED'].includes(o.status)
+    && new Date(o.requestedDeliveryDate).getTime() - now <= 7 * 864e5);
+  const ready = orders.filter(o => o.status === 'READY_FOR_SHIPMENT');
+  const unread = orders.filter(o => o.unreadMessages > 0);
+  const focus: Array<{ key: string; title: string; list: any[]; extra: (o: any) => string }> = [
+    { key: 'due', title: tp('Termini yaklaşan (7 gün)'), list: dueSoon, extra: o => new Date(o.requestedDeliveryDate).toLocaleDateString('tr-TR') },
+    { key: 'ready', title: tp('Sevke hazır'), list: ready, extra: o => formatQty(o.totalQuantity, o.unit) },
+    { key: 'messages', title: tp('Yanıt bekleyen mesajlar'), list: unread, extra: o => `${o.unreadMessages} ${tp('yeni mesaj')}` },
+  ];
 
   if (status === 'loading') return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>;
 
@@ -86,6 +97,29 @@ export default function PortalDashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* Dikkat isteyenler */}
+        {!loading && focus.some(f => f.list.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="dashboard-focus">
+            {focus.filter(f => f.list.length > 0).map(f => (
+              <div key={f.key} className="bg-white rounded-xl shadow-card border border-ink-200/80" data-testid={`focus-${f.key}`}>
+                <p className="px-4 pt-3 pb-2 text-sm font-semibold text-ink-700 flex items-center justify-between">
+                  {f.title} <span className="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">{f.list.length}</span>
+                </p>
+                <ul className="divide-y divide-ink-50 pb-1">
+                  {f.list.slice(0, 4).map(o => (
+                    <li key={o.id}>
+                      <Link href={`/portal/orders/${o.id}`} className="flex justify-between gap-2 px-4 py-2 text-sm hover:bg-ink-50">
+                        <span className="font-medium text-ink-800">{o.orderNo}</span>
+                        <span className="text-xs text-ink-500">{f.extra(o)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Recent orders */}
         <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">

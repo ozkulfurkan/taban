@@ -1,3 +1,4 @@
+import { SHIPMENT_ORDER, SHIPMENT_PUBLIC_SELECT, withLastShipment } from '@/lib/order-shipments';
 // Portal hesabının personele dönen alanları: şifre hash'i ve e-posta doğrulama token'ı asla dönmez.
 export const PORTAL_CUSTOMER_PUBLIC = {
   id: true, customerId: true, portalType: true, email: true, name: true,
@@ -25,5 +26,17 @@ export const PORTAL_ORDER_SELECT = {
   productId: true,
   product: { select: { id: true, name: true, code: true } },
   statusHistory: { select: { id: true, status: true, note: true, createdAt: true }, orderBy: { createdAt: 'asc' as const } },
-  shipment: { select: { shipmentDate: true, deliveryNoteNo: true, trackingNo: true, carrier: true, notes: true, items: true, totalQuantity: true } },
+  shipments: { select: SHIPMENT_PUBLIC_SELECT, orderBy: SHIPMENT_ORDER },
+  // Yalnızca kaynağı ("Portaldan" / "Firma tarafından") ve okunmamış mesajı hesaplamak için; yanıtta dönmez
+  portalCustomerId: true, linkId: true,
+  _count: { select: { messages: { where: { authorType: 'staff', readByCustomerAt: null } } } },
 } as const;
+
+/** Müşteriye dönen sipariş: son sevkiyat, kaynak ve okunmamış mesaj sayısı; iç kimlikler çıkarılır */
+export function toPortalOrder(o: any) {
+  const { portalCustomerId, linkId, _count, ...rest } = o;
+  return { ...withLastShipment(rest), source: portalCustomerId ? 'portal' : linkId ? 'network' : 'firm', unreadMessages: _count?.messages ?? 0 };
+}
+
+/** Portal müşterisinin siparişleri: müşterinin tüm siparişleri (firmanın onun adına açtıkları dahil) */
+export const portalOrdersWhere = (user: { companyId: string; customerId: string }) => ({ companyId: user.companyId, customerId: user.customerId });

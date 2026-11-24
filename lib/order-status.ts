@@ -64,3 +64,32 @@ export function stageLabel(o: { status: string; unit?: string | null; confirmedA
   if (o.status === 'ORDER_RECEIVED') return o.confirmedAt ? 'Onaylandı' : 'Onay bekliyor';
   return statusLabel(o.status, o.unit);
 }
+
+/**
+ * Firma tarafında durum değişikliği kuralı (null = geçerli):
+ * - ileri adımlar serbest; geri yalnızca bir önceki adıma (düzeltme);
+ * - sevk edilen sipariş son adımdır; iptal edilen yalnızca "Sipariş Alındı"ya geri alınır.
+ */
+export function statusTransitionError(from: string, to: string, unit?: string | null): string | null {
+  if (to === from) return null;
+  if (!ORDER_STATUS_LABEL[to]) return 'Geçersiz durum';
+  if (from === 'SHIPPED') return 'Sevk edilmiş siparişin durumu değiştirilemez';
+  if (from === 'CANCELLED') return to === 'ORDER_RECEIVED' ? null : 'İptal edilen sipariş önce geri alınmalı';
+  if (to === 'CANCELLED') return null;
+  const a = stepIndexOf(from, unit), b = stepIndexOf(to, unit);
+  if (a < 0 || b < 0) return 'Geçersiz durum';
+  if (b < a - 1) return 'Sipariş yalnızca bir önceki adıma geri alınabilir';
+  return null;
+}
+
+/** Durum değişikliği müşteriye bildirilsin mi (ileri adım, iptal ya da iptalin geri alınması) */
+export function isForwardStatus(from: string, to: string, unit?: string | null) {
+  if (to === from) return false;
+  if (to === 'CANCELLED' || from === 'CANCELLED') return true;
+  return stepIndexOf(to, unit) > stepIndexOf(from, unit);
+}
+
+/** Durum listesinde gösterilecek geçerli adımlar (mevcut dahil, iptal hariç) */
+export function nextStatuses(from: string, unit?: string | null): OrderStep[] {
+  return orderSteps(unit).filter(s => s.key === from || statusTransitionError(from, s.key, unit) === null);
+}

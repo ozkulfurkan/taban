@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { createSoleOrder } from '@/lib/orders';
-import { PORTAL_ORDER_SELECT, portalCatalogWhere } from '@/lib/portal-public';
+import { PORTAL_ORDER_SELECT, portalCatalogWhere, portalOrdersWhere, toPortalOrder } from '@/lib/portal-public';
 
 async function getPortalSession() {
   const session = await getServerSession(authOptions);
@@ -19,12 +19,12 @@ export async function GET() {
   if (!user?.customerId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const orders = await prisma.soleOrder.findMany({
-    where: { portalCustomerId: user.id },
+    where: portalOrdersWhere(user),
     select: PORTAL_ORDER_SELECT,
     orderBy: { createdAt: 'desc' },
   });
 
-  return NextResponse.json(orders);
+  return NextResponse.json(orders.map(toPortalOrder));
 }
 
 export async function POST(req: NextRequest) {

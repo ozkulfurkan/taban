@@ -46,7 +46,7 @@ export default function SizeTable({ value, onChange, readOnly = false, sizes: si
                   </div>
                 ) : (
                   <DecimalInput
-                   
+                    integer
                     min="0"
                     value={value[sz] || ''}
                     onChange={e => handleChange(sz, e.target.value)}

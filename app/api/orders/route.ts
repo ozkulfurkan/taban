@@ -1,6 +1,9 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { cleanSizeDistribution } from '@/lib/fason';
+import { STAFF_MESSAGE_INCLUDE, withMessageInfo } from '@/lib/order-messages';
+import { SHIPMENT_ORDER, withLastShipment } from '@/lib/order-shipments';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -55,14 +58,15 @@ export async function GET(req: NextRequest) {
       // Bağlı SoleCost firmasından gelen sipariş (firma ağı)
       link: { select: { id: true, buyerCompany: { select: { name: true } } } },
       product: { select: { id: true, name: true, code: true } },
-      shipment: true,
+      shipments: { orderBy: SHIPMENT_ORDER },
+      ...STAFF_MESSAGE_INCLUDE,
     },
     orderBy: { createdAt: 'desc' },
     take: MAX_ORDERS,
   });
 
   const total = orders.length < MAX_ORDERS ? orders.length : await prisma.soleOrder.count({ where });
-  return NextResponse.json(orders, { headers: { 'X-Total-Count': String(total) } });
+  return NextResponse.json(orders.map(o => withMessageInfo(withLastShipment(o))), { headers: { 'X-Total-Count': String(total) } });
 }
 
 export async function POST(req: NextRequest) {
@@ -116,8 +120,10 @@ export async function POST(req: NextRequest) {
     if (!sizeDistribution || typeof sizeDistribution !== 'object') {
       return NextResponse.json({ error: 'sizeDistribution gerekli' }, { status: 400 });
     }
-    finalSizeDist = sizeDistribution as Record<string, number>;
-    finalTotalQty = Object.values(finalSizeDist).reduce((s, v) => s + (Number(v) || 0), 0);
+    const dist = cleanSizeDistribution(sizeDistribution);
+    if ('error' in dist) return NextResponse.json({ error: dist.error }, { status: 400 });
+    finalSizeDist = dist.sizes;
+    finalTotalQty = dist.total;
     finalProductId = productId || null;
     finalProductCode = productCode || null;
   }

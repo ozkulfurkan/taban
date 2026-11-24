@@ -19,7 +19,11 @@ interface Product {
   purchased?: { count: number; lastAt: string } | null;
   /** Fotoğraf sürümü (yoksa fotoğraf yok): {catalogUrl}/{id}/image */
   imageUpdatedAt?: string | null;
+  /** Firma portalda fiyat gösterimini açtıysa: müşteriye özel ya da liste fiyatı */
+  price?: { unitPrice: number; currency: string; special?: boolean } | null;
 }
+
+const money = (n: number, cur: string) => `${n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur}`;
 
 interface CartItem {
   cartId: string;
@@ -62,6 +66,17 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
   const [deliveryDate, setDeliveryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // Tahmini tutar: yalnızca fiyatı görünen ürünler, para birimi başına toplanır
+  const cartEstimate = (() => {
+    const sums: Record<string, number> = {};
+    for (const i of cart) {
+      const pr = products.find(p => p.id === i.productId)?.price;
+      if (!pr) return null;
+      sums[pr.currency] = (sums[pr.currency] ?? 0) + pr.unitPrice * i.totalQuantity;
+    }
+    const parts = Object.entries(sums).map(([c, n]) => money(n, c));
+    return parts.length ? parts.join(' + ') : null;
+  })();
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
@@ -245,6 +260,11 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
                     ) : (
                       <p className="text-xs text-ink-500">{tp('Birim')}: <span className="font-semibold text-ink-700" data-testid={`catalog-unit-${product.id}`}>{unit}</span></p>
                     )}
+                    {product.price && (
+                      <p className="text-sm text-ink-700" data-testid={`catalog-price-${product.id}`}>
+                        <b>{money(product.price.unitPrice, product.price.currency)}</b> <span className="text-xs text-ink-400">/ {unit}{product.price.special ? ` · ${tp('size özel')}` : ''}</span>
+                      </p>
+                    )}
 
                     <button
                       onClick={() => isActive ? closeOrderForm() : openOrderForm(product)}
@@ -407,6 +427,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
                     <td colSpan={3} className="px-4 py-3 text-right text-sm font-semibold text-ink-600">{tp('Genel Toplam')}</td>
                     <td className="px-4 py-3 font-bold text-brand-800 whitespace-nowrap">
                       {formatQty(cart.reduce((s, i) => s + i.totalQuantity, 0), cart[0]?.unit)}
+                      {cartEstimate && <span className="block text-xs font-medium text-ink-600" data-testid="cart-estimate">≈ {cartEstimate}</span>}
                     </td>
                     <td />
                   </tr>

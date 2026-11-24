@@ -37,6 +37,10 @@ const API_PAGE_KEYS: Array<[string, string]> = [
   ['/api/subcontractor-orders', 'fason'],
   ['/api/subcontractors/', 'fason'],
   ['/api/dashboard', 'dashboard'],
+  // Gelen siparişler ve portal sipariş yönetimi
+  ['/api/orders', 'orders'],
+  ['/api/portal/orders', 'orders'],
+  ['/api/portal/catalog', 'orders'],
 ];
 
 // Portal kullanıcılarının (müşteri / fasoncu) erişebileceği API'ler.

@@ -5,6 +5,8 @@ import { rejectForeignRefs } from '@/lib/tenant';
 import { cleanQuantity, formatQty, isPairUnit, orderUnit } from '@/lib/order-units';
 import { esc, itemsTableHtml } from '@/lib/order-email';
 import { cleanShore, variantText } from '@/lib/shore';
+import { cleanSizeDistribution } from '@/lib/fason';
+import { documentYear, nextDocumentNumber } from '@/lib/doc-number';
 
 // Satıcı firmada müşteri siparişi (SoleOrder) oluşturur ve üretim emri e-postasını gönderir.
 // Portal müşterisi (/api/portal/me/orders) ve bağlı firma (/api/network/links/:id/orders) aynı mantığı kullanır.
@@ -22,11 +24,29 @@ type SoleOrderRow = Awaited<ReturnType<typeof prisma.soleOrder.create>>;
 export type CreateOrderResult = { order: SoleOrderRow; error?: undefined; status?: undefined } | { error: string; status: number; order?: undefined };
 
 export async function createSoleOrder(opts: CreateOrderOptions, body: any): Promise<CreateOrderResult> {
-  const { productId, productCode, color, material, sizeDistribution, requestedDeliveryDate, notes, colorPartials, orderItems } = body;
+  const { productId, productCode, sizeDistribution, requestedDeliveryDate, colorPartials } = body;
+  let { orderItems } = body;
+  // Metin alanları sınırlı (e-posta, çıktı ve kayıtlar şişmesin)
+  const color = cleanText(body.color, 100);
+  const material = cleanText(body.material, 100);
+  const notes = cleanText(body.notes, 1000);
+  const partials = cleanColorPartials(colorPartials);
+  if ('error' in partials) return { error: partials.error, status: 400 };
+  const termin = cleanRequestedDate(requestedDeliveryDate);
+  if ('error' in termin) return { error: termin.error, status: 400 };
   const foreign = await rejectForeignRefs(opts.companyId, {
     product: [productId, ...(Array.isArray(orderItems) ? orderItems.map((i: any) => i?.productId) : [])],
   });
   if (foreign) return { error: ((await foreign.json().catch(() => ({}))) as any).error ?? 'Geçersiz kayıt', status: foreign.status };
+
+  // Numarasız ürün (kg, metre…) tek ürün olarak gelirse birimine göre miktarla doğrulansın (paket yolu)
+  if (!(Array.isArray(orderItems) && orderItems.length) && typeof productId === 'string' && productId) {
+    const p = await prisma.product.findFirst({ where: { id: productId, companyId: opts.companyId }, select: { unit: true } });
+    if (p && !isPairUnit(p.unit)) {
+      if (body.quantity === undefined || body.quantity === null || body.quantity === '') return { error: `Bu ürün ${orderUnit(p.unit)} ile sipariş edilir; miktar girin`, status: 400 };
+      orderItems = [{ productId, quantity: body.quantity, shoreLevel: body.shoreLevel, shoreValue: body.shoreValue }];
+    }
+  }
 
   // --- Package order (multi-item) ---
   const isPackage = Array.isArray(orderItems) && orderItems.length > 0;
@@ -56,44 +76,64 @@ export async function createSoleOrder(opts: CreateOrderOptions, body: any): Prom
     finalProductId = finalItems[0]?.productId || null;
     finalProductCode = finalItems[0]?.productCode || null;
   } else {
-    if (!sizeDistribution || typeof sizeDistribution !== 'object') {
-      return { error: 'sizeDistribution required', status: 400 };
-    }
-    finalSizeDist = sizeDistribution as Record<string, number>;
-    finalTotalQty = Object.values(finalSizeDist).reduce((s, v) => s + (Number(v) || 0), 0);
-    if (finalTotalQty === 0) return { error: 'En az 1 adet girmelisiniz', status: 400 };
+    // Beden adetleri pozitif tam sayı; boş/0 olanlar atlanır
+    const dist = cleanSizeDistribution(sizeDistribution);
+    if ('error' in dist) return { error: dist.error === 'Numara dağılımı gerekli' ? 'Beden dağılımı gerekli' : dist.error, status: 400 };
+    finalSizeDist = dist.sizes;
+    finalTotalQty = dist.total;
     finalProductId = productId || null;
     finalProductCode = productCode || null;
   }
 
   const now = new Date();
-  const orderNo = `ORD-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 9000) + 1000}`;
 
-  const order = await prisma.soleOrder.create({
-    data: {
-      companyId: opts.companyId,
-      customerId: opts.customerId,
-      portalCustomerId: opts.portalCustomerId ?? null,
-      linkId: opts.linkId ?? null,
-      buyerUserId: opts.buyerUserId ?? null,
-      orderNo,
-      productId: finalProductId,
-      productCode: finalProductCode,
-      color: isPackage ? null : (color || null),
-      material: isPackage ? null : (material || null),
-      sizeDistribution: finalSizeDist,
-      totalQuantity: finalTotalQty,
-      unit: finalUnit,
-      requestedDeliveryDate: requestedDeliveryDate ? new Date(requestedDeliveryDate) : null,
-      notes: notes || null,
-      colorPartials: isPackage ? null : (colorPartials || null),
-      orderItems: isPackage ? finalItems : undefined,
-      status: 'ORDER_RECEIVED',
-      statusHistory: {
-        create: { status: 'ORDER_RECEIVED', note: 'Sipariş oluşturuldu' },
+  // Mükerrer gönderim: aynı müşteriden 60 sn içinde aynı içerikli sipariş. Denetim, numara ve kayıt tek işlemde ve
+  // müşteri başına kilitle yapılır: aynı anda gelen iki istek (çift dokunma, iki sekme, ağ tekrarı) ikinci kaydı açamaz.
+  const sig = (o: any) => JSON.stringify([o.productId ?? null, o.sizeDistribution ?? {}, o.orderItems ?? null, o.totalQuantity]);
+  const mine = sig({ productId: finalProductId, sizeDistribution: finalSizeDist, orderItems: isPackage ? finalItems : null, totalQuantity: finalTotalQty });
+  const created = await prisma.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`order:${opts.companyId}:${opts.customerId}`}))`;
+    const recent = await tx.soleOrder.findMany({
+      where: {
+        companyId: opts.companyId, customerId: opts.customerId, createdAt: { gte: new Date(Date.now() - 60_000) },
+        ...(opts.portalCustomerId ? { portalCustomerId: opts.portalCustomerId } : {}), ...(opts.linkId ? { linkId: opts.linkId } : {}),
       },
-    },
+      select: { productId: true, sizeDistribution: true, orderItems: true, totalQuantity: true },
+    });
+    if (recent.some(o => sig(o) === mine)) return null;
+
+    // Sipariş numarası firmanın sıralı numarasından (çakışmaz)
+    const orderNo = await nextDocumentNumber('order', opts.companyId, `SIP-${documentYear()}-`, { db: tx });
+
+    return tx.soleOrder.create({
+      data: {
+        companyId: opts.companyId,
+        customerId: opts.customerId,
+        portalCustomerId: opts.portalCustomerId ?? null,
+        linkId: opts.linkId ?? null,
+        buyerUserId: opts.buyerUserId ?? null,
+        orderNo,
+        productId: finalProductId,
+        productCode: finalProductCode,
+        color: isPackage ? null : color,
+        material: isPackage ? null : material,
+        sizeDistribution: finalSizeDist,
+        totalQuantity: finalTotalQty,
+        unit: finalUnit,
+        requestedDeliveryDate: termin.date,
+        notes,
+        colorPartials: isPackage ? null : (partials.value as any),
+        orderItems: isPackage ? finalItems : undefined,
+        status: 'ORDER_RECEIVED',
+        statusHistory: {
+          create: { status: 'ORDER_RECEIVED', note: 'Sipariş oluşturuldu' },
+        },
+      },
+    });
   });
+  if (!created) return { error: 'Bu sipariş az önce gönderildi. Siparişlerim listesini kontrol edin.', status: 409 };
+  const order = created;
+  const orderNo = order.orderNo;
 
   // Bildirim: firma yöneticilerine üretim emri, siparişi verene bilgi (portal müşterisi ya da bağlı firma kullanıcısı)
   const [portalCustomer, customer, product, adminUsers] = await Promise.all([
@@ -272,3 +312,28 @@ export async function normalizeOrderItems(companyId: string, raw: any[]):
   return { items, unit: units[0] === 'çift' ? null : units[0] };
 }
 
+
+const cleanText = (v: unknown, max: number) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
+
+/** Parça renkleri: en fazla 20 satır [{ name, color }] */
+export function cleanColorPartials(v: unknown): { value: Array<{ name: string; color: string }> | null } | { error: string } {
+  if (v === undefined || v === null || v === '') return { value: null };
+  if (!Array.isArray(v) || v.length > 20) return { error: 'Parça renkleri geçersiz' };
+  const out: Array<{ name: string; color: string }> = [];
+  for (const p of v) {
+    if (!p || typeof p !== 'object') return { error: 'Parça renkleri geçersiz' };
+    const name = cleanText((p as any).name, 100); const color = cleanText((p as any).color, 100);
+    if (name || color) out.push({ name: name ?? '', color: color ?? '' });
+  }
+  return { value: out.length ? out : null };
+}
+
+/** İstenen termin: geçerli tarih ve bugünden önce değil (Türkiye günü) */
+export function cleanRequestedDate(v: unknown): { date: Date | null } | { error: string } {
+  if (v === undefined || v === null || v === '') return { date: null };
+  const d = new Date(String(v));
+  if (Number.isNaN(d.getTime())) return { error: 'Geçersiz termin tarihi' };
+  const trDay = (x: Date) => x.toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
+  if (trDay(d) < trDay(new Date())) return { error: 'İstenen termin bugünden önce olamaz' };
+  return { date: d };
+}

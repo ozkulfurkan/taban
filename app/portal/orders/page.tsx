@@ -1,6 +1,6 @@
 'use client';
 
-import { ORDER_STATUS_COLOR, ORDER_STATUS_LABEL, stageLabel } from '@/lib/order-status';
+import { ORDER_STATUS_COLOR, ORDER_STATUS_LABEL, PRODUCTION_STATUSES, stageLabel } from '@/lib/order-status';
 import { formatQty } from '@/lib/order-units';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
@@ -12,6 +12,14 @@ import { usePortalText } from '@/lib/i18n/portal';
 
 const STATUS_LABELS = ORDER_STATUS_LABEL;
 const STATUS_COLOR = ORDER_STATUS_COLOR;
+// Filtre 4 ana gruba iner
+const GROUPS: Array<[string, string, (s: string) => boolean]> = [
+  ['', 'Tümü', () => true],
+  ['pending', 'Bekleyen', s => s === 'ORDER_RECEIVED'],
+  ['production', 'Üretimde', s => PRODUCTION_STATUSES.includes(s) || s === 'READY_FOR_SHIPMENT'],
+  ['shipped', 'Sevk edilen', s => s === 'SHIPPED'],
+  ['cancelled', 'İptal', s => s === 'CANCELLED'],
+];
 
 export default function PortalOrdersPage() {
   const { tp } = usePortalText();
@@ -29,7 +37,10 @@ export default function PortalOrdersPage() {
       .finally(() => setLoading(false));
   }, [status, router]);
 
-  const filtered = filterStatus ? orders.filter(o => o.status === filterStatus) : orders;
+  const group = GROUPS.find(g => g[0] === filterStatus) ?? GROUPS[0];
+  const filtered = orders.filter(o => group[2](o.status));
+  const statusText = (order: any) => tp(order.status === 'ORDER_RECEIVED' ? stageLabel(order) : STATUS_LABELS[order.status] ?? order.status);
+  const sourceText = (order: any) => (order.source === 'portal' ? tp('Portaldan') : order.source === 'network' ? tp('Firma ağından') : tp('Firma tarafından'));
 
   const handleRepeat = (order: any) => {
     const params = new URLSearchParams({
@@ -54,12 +65,12 @@ export default function PortalOrdersPage() {
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          {['', ...Object.keys(STATUS_LABELS)].map(s => (
-            <button key={s} onClick={() => setFilterStatus(s)}
+          {GROUPS.map(([key, label]) => (
+            <button key={key} onClick={() => setFilterStatus(key)} data-testid={`orders-filter-${key || 'all'}`}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                filterStatus === s ? 'bg-brand-700 text-white' : 'bg-white text-ink-600 hover:bg-ink-100 border border-ink-200'
+                filterStatus === key ? 'bg-brand-700 text-white' : 'bg-white text-ink-600 hover:bg-ink-100 border border-ink-200'
               }`}>
-              {s ? tp(STATUS_LABELS[s]) : tp('Tümü')}
+              {tp(label)}
             </button>
           ))}
         </div>
@@ -70,7 +81,32 @@ export default function PortalOrdersPage() {
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center text-ink-400 text-sm">{tp('Sipariş bulunamadı')}</div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* Telefonda kart listesi */}
+            <ul className="sm:hidden divide-y divide-ink-100" data-testid="orders-cards">
+              {filtered.map(order => (
+                <li key={order.id}>
+                  <Link href={`/portal/orders/${order.id}`} className="block px-4 py-3 active:bg-ink-50">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-ink-800">{order.orderNo}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_COLOR[order.status] ?? 'bg-ink-100 text-ink-600'}`}>{statusText(order)}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-2 text-xs text-ink-500">
+                      <span className="truncate">
+                        {Array.isArray(order.orderItems) && order.orderItems.length > 0 ? `${order.orderItems.length} ${tp('ürün')}` : order.productCode || order.product?.name || '—'}
+                        {order.color ? ` · ${order.color}` : ''} · {formatQty(order.totalQuantity, order.unit)}
+                      </span>
+                      <span className="whitespace-nowrap">{new Date(order.createdAt).toLocaleDateString('tr-TR')}</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-ink-400">
+                      <span>{sourceText(order)}</span>
+                      {order.unreadMessages > 0 && <span className="px-1.5 py-0.5 rounded-full bg-brand-700 text-white font-semibold">{order.unreadMessages} {tp('yeni mesaj')}</span>}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-ink-50 border-b border-ink-200">
                   <tr>
@@ -84,6 +120,8 @@ export default function PortalOrdersPage() {
                     <tr key={order.id} className="hover:bg-ink-50 transition-colors">
                       <td className="px-4 py-3 font-medium text-ink-800">
                         <Link href={`/portal/orders/${order.id}`} className="hover:text-brand-700">{order.orderNo}</Link>
+                        <span className="block text-[11px] font-normal text-ink-400">{sourceText(order)}</span>
+                        {order.unreadMessages > 0 && <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded-full bg-brand-700 text-white text-[10px] font-semibold">{order.unreadMessages} {tp('yeni mesaj')}</span>}
                       </td>
                       <td className="px-4 py-3 text-ink-600">
                         {Array.isArray(order.orderItems) && order.orderItems.length > 0
@@ -99,7 +137,7 @@ export default function PortalOrdersPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLOR[order.status] ?? 'bg-ink-100 text-ink-600'}`}>
-                          {tp(order.status === 'ORDER_RECEIVED' ? stageLabel(order) : STATUS_LABELS[order.status] ?? order.status)}
+                          {statusText(order)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -115,6 +153,7 @@ export default function PortalOrdersPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       </div>

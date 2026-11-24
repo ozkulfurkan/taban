@@ -1,9 +1,11 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { SHIPMENT_ORDER, withLastShipment } from '@/lib/order-shipments';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { STAFF_MESSAGE_INCLUDE, withMessageInfo } from '@/lib/order-messages';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -24,10 +26,11 @@ export async function GET(req: NextRequest) {
       customer: { select: { id: true, name: true } },
       portalCustomer: { select: { id: true, name: true, email: true } },
       product: { select: { id: true, name: true, code: true } },
-      shipment: true,
+      shipments: { orderBy: SHIPMENT_ORDER },
+      ...STAFF_MESSAGE_INCLUDE,
     },
     orderBy: { createdAt: 'desc' },
   });
 
-  return NextResponse.json(orders);
+  return NextResponse.json(orders.map(o => withMessageInfo(withLastShipment(o))));
 }

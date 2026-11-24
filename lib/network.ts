@@ -1,3 +1,4 @@
+import { SHIPMENT_ORDER, SHIPMENT_PUBLIC_SELECT } from '@/lib/order-shipments';
 import { randomInt } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { historyFromRecords, sortByHistory, type PurchaseRecord, type PurchaseStat } from '@/lib/catalog-history';
@@ -125,7 +126,7 @@ export const BUYER_ORDER_SELECT = {
   linkId: true,
   link: { select: { sellerCompany: { select: { name: true } } } },
   statusHistory: { select: { id: true, status: true, note: true, createdAt: true }, orderBy: { createdAt: 'asc' as const } },
-  shipment: { select: { shipmentDate: true, deliveryNoteNo: true, trackingNo: true, carrier: true, notes: true, items: true, totalQuantity: true } },
+  shipments: { select: SHIPMENT_PUBLIC_SELECT, orderBy: SHIPMENT_ORDER },
 } as const;
 
 /** Sepet kalemlerindeki ürünler satıcının alıcıya açık kataloğunda mı */

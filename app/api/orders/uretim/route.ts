@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { PRODUCTION_STATUSES } from '@/lib/order-status';
 import { NextRequest, NextResponse } from 'next/server';
+import { SHIPMENT_ORDER, withLastShipment } from '@/lib/order-shipments';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-      shipment: true,
+      shipments: { orderBy: SHIPMENT_ORDER },
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -101,5 +102,5 @@ export async function GET(req: NextRequest) {
     requiredKg: Math.round(m.requiredKg * 1000) / 1000,
   }));
 
-  return NextResponse.json({ orders, materialRequirements });
+  return NextResponse.json({ orders: orders.map(withLastShipment), materialRequirements });
 }
