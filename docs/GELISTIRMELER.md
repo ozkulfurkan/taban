@@ -150,7 +150,7 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 ## G-8 · Müşteri portalı geliştirmeleri (mobil karşılıkları)
 - **Tarih:** 24.11.2026
 - **İstek:** "Geliştirmeye başla. Webte yap ve mobilde yapılacakları not et. Sonra yapacağız onu." Kapsam: "Hepsi" (`docs/PORTAL-DENETIM.md`).
-- **Web:** tümü yapıldı, PR [#59](https://github.com/ozkulfurkan/taban/pull/59); migration Neon onayı bekliyor.
+- **Web:** tümü yapıldı, PR [#59](https://github.com/ozkulfurkan/taban/pull/59) birleşti (25.11); migration Neon'da çalıştırıldı.
 - **Mobil uyumluluk:** mağazadaki sürüm bozulmaz. API'ler `shipment` (son sevkiyat) alanını dönmeye devam eder; eski biçimli sevkiyat kaydı "son sevkiyat" olarak işlenir.
 - **Mobil portal (müşteri):**
   - onaydan önce sipariş iptali (`POST /api/portal/me/orders/:id/cancel`);
