@@ -27,7 +27,7 @@ export default function CatalogPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/products').then(r => r.json()).then(d => setProducts(Array.isArray(d) ? d : [])).catch(() => setProducts([]));
+    fetch('/api/products?list=1').then(r => r.json()).then(d => setProducts(Array.isArray(d) ? d : [])).catch(() => setProducts([]));
     fetch('/api/customers?minimal=true').then(r => r.json()).then(d => setCustomers(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
 

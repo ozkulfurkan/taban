@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { BoxIcon, Plus, Trash2, Loader2, Search, Globe, X, Check, Upload, Download, Tag, Pencil, AlertTriangle, BookOpen } from '@/app/components/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { matchesText } from '@/lib/search';
+import { foldTr } from '@/lib/search';
 import { stockTextClass, fmtQty } from '@/lib/stock-display';
 import MoreMenu from '@/app/components/more-menu';
 import { ProductThumb } from '@/app/components/product-image';
@@ -26,6 +25,10 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  // Arama yazarken liste takılmasın: filtre ertelenmiş değerle çalışır; uzun listede ilk PAGE satır çizilir
+  const deferredSearch = useDeferredValue(search);
+  const PAGE = 200;
+  const [limit, setLimit] = useState(PAGE);
 
   // Categories
   const [categories, setCategories] = useState<any[]>([]);
@@ -48,7 +51,7 @@ export default function ProductsPage() {
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   const loadProducts = () => {
-    fetch('/api/products')
+    fetch('/api/products?list=1')
       .then(r => r.json())
       .then(d => setProducts(Array.isArray(d) ? d : []))
       .catch(console.error)
@@ -184,11 +187,16 @@ export default function ProductsPage() {
     return { label: `${count} Müşteri`, cls: 'bg-brand-100 text-brand-800' };
   };
 
-  const filtered = products.filter(p => {
-    const matchSearch = !search || matchesText(p.name, search.toLowerCase()) || matchesText(p.code, search.toLowerCase()) || matchesText(p.description, search.toLowerCase());
-    const matchCat = !selectedCategory || p.categoryId === selectedCategory;
-    return matchSearch && matchCat;
-  });
+  // Her ürün için aranabilir metin bir kez hesaplanır (Türkçe karakterden bağımsız)
+  const index = useMemo(() => products.map(p => ({ p, code: foldTr(p.code), text: foldTr(`${p.name} ${p.code ?? ''} ${p.description ?? ''} ${p.category?.name ?? ''}`) })), [products]);
+  const filtered = useMemo(() => {
+    const q = foldTr(deferredSearch);
+    const rows = index.filter(r => (!q || r.text.includes(q)) && (!selectedCategory || r.p.categoryId === selectedCategory));
+    // Kod tam eşleşmesi (ör. 1017) en üstte, sonra kodu aramayla başlayanlar
+    if (q) rows.sort((a, b) => (a.code === q ? 0 : a.code.startsWith(q) ? 1 : 2) - (b.code === q ? 0 : b.code.startsWith(q) ? 1 : 2));
+    return rows.map(r => r.p);
+  }, [index, deferredSearch, selectedCategory]);
+  useEffect(() => { setLimit(PAGE); }, [deferredSearch, selectedCategory]);
 
   return (
     <AppShell>
@@ -294,14 +302,11 @@ export default function ProductsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
-                {filtered.map((p, i) => {
+                {filtered.slice(0, limit).map(p => {
                   const badge = getPortalBadge(p);
                   return (
-                    <motion.tr
+                    <tr
                       key={p.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: i * 0.03 }}
                       className="hover:bg-brand-50/50 cursor-pointer"
                       onClick={() => router.push(`/products/${p.id}?edit=true`)}
                     >
@@ -341,11 +346,17 @@ export default function ProductsPage() {
                           { label: 'Sil', icon: Trash2, danger: true, onClick: () => handleDelete(p.id, p.name) },
                         ]} />
                       </td>
-                    </motion.tr>
+                    </tr>
                   );
                 })}
               </tbody>
             </table>
+            {filtered.length > limit && (
+              <div className="flex items-center justify-center gap-3 py-3 border-t border-ink-100 text-sm">
+                <span className="text-ink-500">{limit.toLocaleString('tr-TR')} / {filtered.length.toLocaleString('tr-TR')} ürün gösteriliyor</span>
+                <button onClick={() => setLimit(l => l + PAGE * 5)} className="font-semibold text-brand-700 hover:text-brand-800" data-testid="products-more">Daha fazla göster</button>
+              </div>
+            )}
           </div>
         )}
       </div>

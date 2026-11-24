@@ -44,7 +44,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     ? await prisma.product.findMany({
         where: { id: { in: itemIds }, companyId: user.companyId },
         select: {
-          id: true, name: true, code: true, unit: true, unitPrice: true,
+          id: true, name: true, code: true, unit: true, unitPrice: true, sizes: true,
           parts: { include: { material: { select: { id: true, name: true, stock: true } } }, orderBy: { sortOrder: 'asc' } },
         },
       })

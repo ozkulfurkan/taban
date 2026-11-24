@@ -7,6 +7,7 @@ import AppShell from '@/app/components/app-shell';
 import { Loader2, Save, Plus, Trash2, Pencil, X, Package, Calculator, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Warehouse, FileText, Users, AlertTriangle, QrCode } from '@/app/components/icons';
 import { toPriceInput, fromPriceInput, blockDot, normalizePriceInput } from '@/lib/price-input';
 import { buildPrintHtml, type BarcodeTemplateSettings } from '@/lib/barcode-print';
+import { KoliLabelModal } from '@/app/components/koli-label-modal';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
 import { ProductImageEditor } from '@/app/components/product-image';
@@ -85,6 +86,9 @@ export default function ProductDetailPage() {
   const [allCustomers, setAllCustomers] = useState<any[]>([]);
   const [ppForm, setPpForm] = useState({ customerId: '', unitPrice: '', currency: 'TRY' });
   const [ppSaving, setPpSaving] = useState(false);
+
+  // Koli etiketi (tabancı/ayakkabıcı); hammaddeci firmalar aşağıdaki barkod etiketini kullanır
+  const [showKoli, setShowKoli] = useState(false);
 
   // Barkod
   const [showBarcode, setShowBarcode] = useState(false);
@@ -415,10 +419,17 @@ export default function ProductDetailPage() {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
+          {isMaterial ? (
           <button onClick={handleBarcodeOpen}
             className="flex items-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold shadow-md">
             <QrCode className="w-4 h-4" /> Barkod Yazdır
           </button>
+          ) : (
+          <button onClick={() => setShowKoli(true)} data-testid="koli-open"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold shadow-md">
+            <QrCode className="w-4 h-4" /> Koli Etiketi
+          </button>
+          )}
           {!isMaterial && (
           <button onClick={() => {
             setShowCost(true);
@@ -1233,6 +1244,15 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showKoli && !isMaterial && product && (
+        <KoliLabelModal
+          items={[{ key: product.id, label: product.name, productId: product.id, productCode: product.code, productName: product.name, unit: product.unit, color: product.renk, sizes: product.sizes ?? [] }]}
+          defaultAddToStock
+          onClose={() => setShowKoli(false)}
+          onPrinted={() => load()}
+        />
       )}
 
       {/* Price Warning Modal */}

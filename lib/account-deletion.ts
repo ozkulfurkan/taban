@@ -87,6 +87,7 @@ export async function purgeCompany(companyId: string) {
     await tx.ticketMessage.updateMany({ where: { userId: { in: userIds } }, data: { userId: null } });
     await tx.auditLog.updateMany({ where: { userId: { in: userIds }, NOT: c }, data: { userId: null } });
 
+    await tx.koli.deleteMany({ where: c });
     await tx.payment.deleteMany({ where: c });
     await tx.cek.deleteMany({ where: c });
     await tx.materialTransfer.deleteMany({ where: c });
