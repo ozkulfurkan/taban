@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma, PASSWORD, RUN, createCompany, createUser, loggedIn, newClient, cleanup } from './helpers';
 
 // Fasoncu ve fason portalı: firma ayrımı, fasoncular arası ayrım, portal türleri ve yanıt alanları.
-// test.fixme olanlar docs/FASON-DENETIM.md'deki açık bulgulardır; düzeltilince fixme kaldırılır.
+// Bulgu kodları (G1, H3 …) docs/FASON-DENETIM.md'dedir.
 
 type Co = { companyId: string; owner: APIRequestContext };
 let A: Co; let B: Co;
@@ -72,7 +72,7 @@ test('firma: başka firmanın fasoncusu, fason siparişi ve zimmeti okunamaz/de�
   expect((await A.owner.post(`/api/subcontractor-orders/${orderB}/send-email`)).status()).toBe(404);
   expect((await A.owner.post(`/api/subcontractors/${subB}/portal-register`, { data: { email: 'x@y.z', password: 'Abc12345!' } })).status()).toBe(404);
   expect((await A.owner.post('/api/subcontractor-orders', { data: { subcontractorId: subB, sizeDistribution: { '40': 1 } } })).status()).toBe(404);
-  await A.owner.delete(`/api/subcontractors/${subB}`); // silmez (H12: yine de ok:true döner)
+  expect((await A.owner.delete(`/api/subcontractors/${subB}`)).status()).toBe(404);
   const listA = await (await A.owner.get(`/api/subcontractor-orders?subcontractorId=${subB}`)).json();
   expect(listA).toEqual([]);
   expect((await prisma.subcontractor.findUniqueOrThrow({ where: { id: subB } })).name).toContain('Atölye B');
@@ -97,8 +97,7 @@ test('fasoncu portalı: yalnızca kendi siparişleri ve zimmeti; başka fasoncu/
   expect((await prisma.subcontractorOrder.findUniqueOrThrow({ where: { id: orderA2 } })).status).toBe('MATERIAL_SENT');
 });
 
-// G4
-test.fixme('fasoncu portalı firma API\'lerine ve müşteri portalına; müşteri portalı fason API\'lerine erişemez', async () => {
+test('fasoncu portalı firma API\'lerine ve müşteri portalına; müşteri portalı fason API\'lerine erişemez', async () => {
   for (const url of ['/api/products', '/api/customers', '/api/subcontractor-orders', `/api/subcontractors/${subA1}`, '/api/materials', '/api/company', '/api/portal/me/orders', '/api/portal/me/catalog']) {
     const s = (await fasonA1.get(url)).status();
     expect([401, 403, 404], `fasoncu → ${url} = ${s}`).toContain(s);
@@ -112,8 +111,7 @@ test.fixme('fasoncu portalı firma API\'lerine ve müşteri portalına; müşter
   await anon.dispose();
 });
 
-// G1
-test.fixme('fasoncu portalı yanıtı firmanın fiyat/maliyet bilgisini içermez', async () => {
+test('fasoncu portalı yanıtı firmanın fiyat/maliyet bilgisini içermez', async () => {
   const r = await fasonA1.get(`/api/portal/fason/orders/${orderA1}`);
   expect(r.status()).toBe(200);
   const body = JSON.stringify(await r.json());
@@ -122,8 +120,7 @@ test.fixme('fasoncu portalı yanıtı firmanın fiyat/maliyet bilgisini içermez
   }
 });
 
-// H8, H9
-test.fixme('fasoncu portalı girdi doğrulama: üretilen adet ve fire sınırları', async () => {
+test('fasoncu portalı girdi doğrulama: üretilen adet ve fire sınırları', async () => {
   const neg = await fasonA1.put(`/api/portal/fason/orders/${orderA1}/status`, { data: { status: 'IN_PRODUCTION', completedPairs: -50 } });
   expect(neg.status(), 'negatif üretilen adet reddedilmeli').toBe(400);
   const over = await fasonA1.post(`/api/portal/fason/orders/${orderA1}/scrap`, { data: { materialId: matA, quantity: 9999 } });
@@ -132,8 +129,7 @@ test.fixme('fasoncu portalı girdi doğrulama: üretilen adet ve fire sınırlar
   expect(s.quantity, 'zimmet eksiye düşmemeli').toBeGreaterThanOrEqual(0);
 });
 
-// G2
-test.fixme('pasif fasoncunun portal hesabı giriş yapamaz', async () => {
+test('pasif fasoncunun portal hesabı giriş yapamaz', async () => {
   await prisma.subcontractor.update({ where: { id: subA2 }, data: { isActive: false } });
   const api = await newClient();
   const { login } = await import('./helpers');
@@ -142,21 +138,58 @@ test.fixme('pasif fasoncunun portal hesabı giriş yapamaz', async () => {
   await api.dispose();
 });
 
-// H3
-test.fixme('firma: teslim alma iki kez stok eklemez; zimmetten tüketim düşer', async () => {
+test('firma: teslim alma iki kez stok eklemez; zimmetten tüketim düşer', async () => {
   const before = (await prisma.product.findUniqueOrThrow({ where: { id: prodA } })).stock;
   expect((await A.owner.post(`/api/subcontractor-orders/${orderA1}/receive-products`, { data: { receivedPairs: 100 } })).status()).toBe(200);
   const second = await A.owner.post(`/api/subcontractor-orders/${orderA1}/receive-products`, { data: { receivedPairs: 100 } });
   const after = (await prisma.product.findUniqueOrThrow({ where: { id: prodA } })).stock;
-  expect(after - before, `ikinci teslim alma (${second.status()}) stoğu tekrar artırmamalı`).toBe(100);
+  expect(second.status()).toBe(400);
+  expect(after - before, 'ikinci teslim alma stoğu tekrar artırmamalı').toBe(100);
+  // Reçete: 200 g × %5 fire × 100 çift = 21 kg; zimmet 10 kg → 0'a iner (eksiye düşmez)
+  const z = await prisma.subcontractorStock.findFirstOrThrow({ where: { subcontractorId: subA1, materialId: matA } });
+  expect(z.quantity).toBe(0);
 });
 
-// G3
-test.fixme('firma: VIEWER fason işlemi yapamaz; fason izni olmayan EDITOR fason API\'lerini göremez', async () => {
+test('firma: VIEWER fason işlemi yapamaz; fason izni olmayan EDITOR fason API\'lerini göremez', async () => {
   const viewer = await loggedIn(await createUser(A.companyId, `fason-viewer`, 'VIEWER'));
   expect((await viewer.post(`/api/subcontractor-orders/${orderA2}/material-transfer`, { data: { materialId: matA, quantity: 1 } })).status()).toBe(403);
   const editor = await loggedIn(await createUser(A.companyId, `fason-editor`, 'EDITOR', ['products']));
   const s = (await editor.get('/api/subcontractor-orders')).status();
   expect([401, 403], `fason izni olmayan EDITOR → /api/subcontractor-orders = ${s}`).toContain(s);
   await viewer.dispose(); await editor.dispose();
+});
+
+test('firma: durum kuralları, numara dağılımı, kapalı siparişe hammadde ve depo uyarısı', async () => {
+  const bad = await A.owner.put(`/api/subcontractor-orders/${orderA2}`, { data: { status: 'FOO' } });
+  expect(bad.status()).toBe(400);
+  const direct = await A.owner.put(`/api/subcontractor-orders/${orderA2}`, { data: { status: 'RECEIVED' } });
+  expect(direct.status(), 'Teslim Alındı yalnızca teslim alma işlemiyle').toBe(400);
+  const neg = await A.owner.post('/api/subcontractor-orders', { data: { subcontractorId: subA2, productId: prodA, sizeDistribution: { '40': -5 } } });
+  expect(neg.status()).toBe(400);
+  const ok = await A.owner.post('/api/subcontractor-orders', { data: { subcontractorId: subA2, productId: prodA, sizeDistribution: { '40': '12', '41': 0 } } });
+  expect(ok.status()).toBe(201);
+  expect((await ok.json()).totalPairs).toBe(12);
+  // Depodan fazla gönderim: yapılır, uyarı döner
+  const over = await A.owner.post(`/api/subcontractor-orders/${orderA2}/material-transfer`, { data: { materialId: matA, quantity: 600 } });
+  expect(over.status()).toBe(200);
+  expect((await over.json()).warning).toMatch(/eksiye/);
+  // Teslim alınmış siparişe hammadde gönderilemez
+  const closed = await A.owner.post(`/api/subcontractor-orders/${orderA1}/material-transfer`, { data: { materialId: matA, quantity: 1 } });
+  expect(closed.status()).toBe(400);
+});
+
+test('fasoncu: sevk bir kez; üretim ilerlemesi aynı durumda bildirilebilir; teslim alınana fire girilemez', async () => {
+  const o = await prisma.subcontractorOrder.create({
+    data: { companyId: A.companyId, subcontractorId: subA1, productId: prodA, orderNo: `FA3-${RUN}`, sizeDistribution: { '40': 50 }, totalPairs: 50, status: 'IN_PRODUCTION' },
+  });
+  const prog = await fasonA1.put(`/api/portal/fason/orders/${o.id}/status`, { data: { status: 'IN_PRODUCTION', completedPairs: 20 } });
+  expect(prog.status(), await prog.text()).toBe(200);
+  expect((await fasonA1.put(`/api/portal/fason/orders/${o.id}/status`, { data: { status: 'COMPLETED', completedPairs: 51 } })).status()).toBe(400);
+  expect((await fasonA1.put(`/api/portal/fason/orders/${o.id}/status`, { data: { status: 'COMPLETED', completedPairs: 50 } })).status()).toBe(200);
+  expect((await fasonA1.post(`/api/portal/fason/orders/${o.id}/ship`)).status()).toBe(200);
+  expect((await fasonA1.post(`/api/portal/fason/orders/${o.id}/ship`)).status()).toBe(400);
+  const list = await (await A.owner.get('/api/subcontractor-orders')).json();
+  const row = list.find((x: any) => x.id === o.id);
+  expect(row).toMatchObject({ completedPairs: 50, shipped: true });
+  expect((await fasonA1.post(`/api/portal/fason/orders/${orderA1}/scrap`, { data: { materialId: matA, quantity: 0.1 } })).status()).toBe(400);
 });

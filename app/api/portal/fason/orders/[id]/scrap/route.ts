@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isClosed } from '@/lib/fason';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -13,41 +14,34 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const order = await prisma.subcontractorOrder.findFirst({
     where: { id: params.id, subcontractorId: user.subcontractorId, companyId: user.companyId },
+    include: { product: { select: { parts: { select: { materialId: true } } } }, materialTransfers: { select: { materialId: true } } },
   });
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (isClosed(order.status)) return NextResponse.json({ error: 'Kapanmış siparişe fire bildirilemez' }, { status: 400 });
 
   const { materialId, quantity, reason } = await req.json();
   const foreign = await rejectForeignRefs(user.companyId, { material: materialId });
   if (foreign) return foreign;
-  const qty = parseFloat(quantity) || 0;
-  if (!materialId || qty <= 0) {
-    return NextResponse.json({ error: 'materialId ve quantity gerekli' }, { status: 400 });
+  const qty = Number(String(quantity ?? '').replace(',', '.'));
+  if (!materialId || !Number.isFinite(qty) || qty <= 0) {
+    return NextResponse.json({ error: 'Hammadde ve miktar gerekli' }, { status: 400 });
   }
+  // Fire yalnızca bu siparişin hammaddelerinden (reçetede ya da siparişe gönderilmiş)
+  const orderMaterials = new Set([...(order.product?.parts ?? []).map(p => p.materialId), ...order.materialTransfers.map(t => t.materialId)]);
+  if (!orderMaterials.has(materialId)) return NextResponse.json({ error: 'Bu hammadde bu siparişte kullanılmıyor' }, { status: 400 });
 
-  await prisma.$transaction(async (tx) => {
-    // Fasoncu stoğundan düş
-    const stock = await tx.subcontractorStock.findFirst({
-      where: { subcontractorId: user.subcontractorId, materialId },
-    });
-    if (stock) {
-      await tx.subcontractorStock.update({
-        where: { id: stock.id },
-        data: { quantity: { decrement: qty } },
-      });
-    }
-
-    // Fire kaydı oluştur
+  const result = await prisma.$transaction(async (tx) => {
+    // Fire zimmetten fazla olamaz
+    const stock = await tx.subcontractorStock.findFirst({ where: { subcontractorId: user.subcontractorId, materialId } });
+    const available = stock?.quantity ?? 0;
+    if (qty > available + 1e-9) return { error: `Zimmetinizde ${available.toLocaleString('tr-TR', { maximumFractionDigits: 3 })} kg var; fire bundan fazla olamaz` };
+    await tx.subcontractorStock.update({ where: { id: stock!.id }, data: { quantity: { decrement: qty } } });
     await tx.subcontractorScrap.create({
-      data: {
-        companyId: user.companyId,
-        orderId: params.id,
-        materialId,
-        quantity: qty,
-        reason: reason || null,
-        reportedBy: user.email,
-      },
+      data: { companyId: user.companyId, orderId: params.id, materialId, quantity: qty, reason: reason ? String(reason).slice(0, 300) : null, reportedBy: user.email },
     });
+    return { ok: true };
   });
+  if ('error' in result) return NextResponse.json({ error: result.error }, { status: 400 });
 
   return NextResponse.json({ ok: true });
 }

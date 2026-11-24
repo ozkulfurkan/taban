@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { sendMailSafe } from '@/lib/mail';
 import { esc } from '@/lib/order-email';
+import { passwordError } from '@/lib/password';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -26,6 +27,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!email?.trim() || !password) {
     return NextResponse.json({ error: 'Email ve şifre zorunlu' }, { status: 400 });
   }
+  const rule = passwordError(password);
+  if (rule) return NextResponse.json({ error: rule }, { status: 400 });
 
   // Aynı e-posta başka firmaların portalında da kullanılabilir; yalnızca bu firmada tekil
   const existing = await prisma.portalCustomer.findFirst({ where: { companyId: subcontractor.companyId, email: { equals: email.trim(), mode: 'insensitive' } } });
@@ -47,7 +50,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
 
   const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
-  const verifyUrl = `${baseUrl}/portal/fason/verify-email?token=${emailVerifyToken}`;
+  // Doğrulama sayfası müşteri ve fason portalında ortak; fason=1 ile fason girişine yönlendirir
+  const verifyUrl = `${baseUrl}/portal/verify-email?token=${emailVerifyToken}&fason=1`;
 
   const emailSent = await sendMailSafe({
     to: email.trim(),
@@ -55,10 +59,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     html: `
       <p>Merhaba ${esc(portalCustomer.name)},</p>
       <p>Fasoncu portal hesabınız oluşturuldu.</p>
-      <p><strong>E-posta:</strong> ${esc(email.trim())}</p>
-      <p><strong>Şifre:</strong> ${esc(password)}</p>
+      <p><strong>Kullanıcı adı (e-posta):</strong> ${esc(email.trim())}</p>
+      <p>Şifreniz güvenlik nedeniyle e-postayla gönderilmez; firmanızdan öğrenebilirsiniz.</p>
       <p>Giriş yapmadan önce e-posta adresinizi doğrulayın:</p>
-      <p><a href="${verifyUrl}" style="background:#d97706;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
+      <p><a href="${verifyUrl}" style="background:#6B1A2C;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
       <p>Giriş adresi: ${baseUrl}/portal/fason/login</p>
     `,
     text: `Doğrulama linki: ${verifyUrl}`,

@@ -33,6 +33,9 @@ export const PAGE_KEYS: Array<[string, string]> = [
 // ortak kullanmadığı API'ler sayfa iznine bağlanır (örn. personel maaşları).
 const API_PAGE_KEYS: Array<[string, string]> = [
   ['/api/personnel', 'personnel'],
+  // Fason: sipariş, zimmet ve fasoncu ayrıntısı (liste ucu alış/hammadde ekranlarında da kullanılır)
+  ['/api/subcontractor-orders', 'fason'],
+  ['/api/subcontractors/', 'fason'],
   ['/api/dashboard', 'dashboard'],
 ];
 
@@ -93,6 +96,9 @@ export function checkApiAccess(user: AccessUser | null | undefined, method: stri
   if (!user) return { ok: true };
 
   if (user.type === 'portal') {
+    // Fasoncu portalı müşteri portalı uçlarını, müşteri portalı fason uçlarını kullanamaz
+    if (user.portalType === 'SUBCONTRACTOR' && pathname.startsWith('/api/portal/me/')) return { ok: false, status: 403, error: 'Bu işlem için yetkiniz yok' };
+    if (user.portalType !== 'SUBCONTRACTOR' && pathname.startsWith('/api/portal/fason/')) return { ok: false, status: 403, error: 'Bu işlem için yetkiniz yok' };
     if (PORTAL_API_PREFIXES.some(p => pathname.startsWith(p))) return { ok: true };
     return { ok: false, status: 403, error: 'Bu işlem için yetkiniz yok' };
   }

@@ -31,7 +31,7 @@ export default function FasonDashboardPage() {
     }).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-amber-500" /></div>;
+  if (loading) return <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>;
 
   const activeOrders = orders.filter(o => !['COMPLETED', 'RECEIVED', 'CANCELLED'].includes(o.status));
   const overdue = activeOrders.filter(o => o.dueDate && new Date(o.dueDate) < new Date());
@@ -40,7 +40,6 @@ export default function FasonDashboardPage() {
     const diff = (new Date(o.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
     return diff >= 0 && diff <= 7;
   });
-  const totalStock = stocks.reduce((s, st) => s + (st.quantity || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -63,8 +62,8 @@ export default function FasonDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl shadow-card p-5 border border-ink-200/80">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-              <Factory className="w-4 h-4 text-amber-600" />
+            <div className="w-8 h-8 bg-brand-50 rounded-lg flex items-center justify-center">
+              <Factory className="w-4 h-4 text-brand-700" />
             </div>
             <span className="text-sm font-medium text-ink-600">Aktif Sipariş</span>
           </div>
@@ -72,8 +71,8 @@ export default function FasonDashboardPage() {
         </div>
         <div className="bg-white rounded-xl shadow-card p-5 border border-ink-200/80">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-              <Clock className="w-4 h-4 text-amber-600" />
+            <div className="w-8 h-8 bg-brand-50 rounded-lg flex items-center justify-center">
+              <Clock className="w-4 h-4 text-brand-700" />
             </div>
             <span className="text-sm font-medium text-ink-600">7 Günde Bitenler</span>
           </div>
@@ -84,9 +83,24 @@ export default function FasonDashboardPage() {
             <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center">
               <Package className="w-4 h-4 text-brand-700" />
             </div>
-            <span className="text-sm font-medium text-ink-600">Toplam Hammadde</span>
+            <span className="text-sm font-medium text-ink-600">Zimmetimdeki hammadde</span>
           </div>
-          <p className="text-3xl font-bold text-ink-800">{totalStock.toFixed(1)} <span className="text-base font-normal text-ink-400">kg</span></p>
+          {/* Farklı hammaddeler toplanmaz; her biri ayrı gösterilir */}
+          {stocks.filter(st => st.quantity > 0).length === 0 ? (
+            <p className="text-sm text-ink-400">Zimmetinizde hammadde yok</p>
+          ) : (
+            <ul className="space-y-1">
+              {stocks.filter(st => st.quantity > 0).slice(0, 3).map(st => (
+                <li key={st.id} className="flex justify-between gap-2 text-sm">
+                  <span className="text-ink-600 truncate">{st.material?.name}</span>
+                  <span className="font-semibold text-ink-900 tabular-nums">{st.quantity.toLocaleString('tr-TR', { maximumFractionDigits: 3 })} kg</span>
+                </li>
+              ))}
+              {stocks.filter(st => st.quantity > 0).length > 3 && (
+                <li><Link href="/portal/fason/stock" className="text-xs text-brand-700 hover:underline">Tümü ({stocks.filter(st => st.quantity > 0).length})</Link></li>
+              )}
+            </ul>
+          )}
         </div>
       </div>
 
@@ -94,7 +108,7 @@ export default function FasonDashboardPage() {
       <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
         <div className="px-4 py-3 border-b flex items-center justify-between">
           <p className="font-semibold text-ink-700 text-sm">Son Siparişler</p>
-          <Link href="/portal/fason/orders" className="text-amber-600 hover:underline text-xs font-medium">Tümünü gör</Link>
+          <Link href="/portal/fason/orders" className="text-brand-700 hover:underline text-xs font-medium">Tümünü gör</Link>
         </div>
         {orders.length === 0 ? (
           <p className="text-center py-8 text-ink-400 text-sm">Henüz sipariş yok</p>
@@ -109,7 +123,7 @@ export default function FasonDashboardPage() {
               <Link key={o.id} href={`/portal/fason/orders/${o.id}`} className="flex items-center justify-between px-4 py-3 hover:bg-ink-50">
                 <div>
                   <p className="font-medium text-ink-700 text-sm">{o.orderNo}</p>
-                  <p className="text-xs text-ink-400">{o.product?.name || '—'} · {o.totalPairs} çift</p>
+                  <p className="text-xs text-ink-400">{o.product?.name || '—'} · {o.totalPairs.toLocaleString('tr-TR')} çift</p>
                 </div>
                 <div className="text-right">
                   <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[o.status]}`}>{STATUS_LABELS[o.status]}</span>

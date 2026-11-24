@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { completedPairsError } from '@/lib/fason';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -24,8 +25,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   });
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
+  const pairsErr = completedPairsError(completedPairs, order.totalPairs);
+  if (pairsErr) return NextResponse.json({ error: pairsErr }, { status: 400 });
+  // Üretim sürerken aynı durumda kalıp yalnızca üretilen adet bildirilebilir
+  const progressOnly = status === order.status && ['IN_PRODUCTION', 'IN_PROGRESS'].includes(status) && completedPairs !== undefined && completedPairs !== '';
   const allowed = ALLOWED_TRANSITIONS[order.status] ?? [];
-  if (!allowed.includes(status)) {
+  if (!progressOnly && !allowed.includes(status)) {
     return NextResponse.json({ error: `${order.status} durumundan ${status} durumuna geçiş yapılamaz` }, { status: 400 });
   }
 
@@ -38,8 +43,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       data: {
         orderId: params.id,
         status,
-        completedPairs: completedPairs ? parseInt(completedPairs) : null,
-        notes: notes || null,
+        completedPairs: completedPairs === undefined || completedPairs === '' || completedPairs === null ? null : Number(completedPairs),
+        notes: notes ? String(notes).slice(0, 300) : null,
         updatedBy: user.email,
       },
     }),

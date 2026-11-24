@@ -13,6 +13,13 @@ Yöntem:
 
 Kalıcı test dosyası `tests/security/fason.spec.ts`. Açık bulgular orada `test.fixme` olarak duruyor; düzeltilince açılacak.
 
+## Durum (25.11.2026)
+Güvenlik (G1–G6), hata (H1–H15) ve kullanım kolaylığı (K1–K7) maddeleri düzeltildi. Kullanıcı kararıyla iki madde farklı uygulandı:
+- **H6:** depoda olandan fazla hammadde gönderimi **engellenmiyor**; ekranda önceden ve gönderimden sonra uyarı çıkıyor.
+- **H8:** fasoncu zimmetinden fazla fire **giremiyor**.
+
+Geliştirme önerileri (Ö1–Ö8) ayrıca planlanacak. Testler: `tests/security/fason.spec.ts` (10 test, hepsi açık).
+
 ## Özet
 
 **Başka firmanın verisi görünüyor mu? Hayır.** Aşağıdaki denemelerin hepsi engellendi:

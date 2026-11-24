@@ -27,9 +27,11 @@ async function assertTokenStillValid(token: any) {
   if (token.type === 'portal') {
     const pc = await prisma.portalCustomer.findUnique({
       where: { id: token.sub },
-      select: { isActive: true, customerId: true, passwordChangedAt: true, subcontractor: { select: { id: true } } },
+      select: { isActive: true, customerId: true, portalType: true, passwordChangedAt: true, subcontractor: { select: { id: true, isActive: true } } },
     });
     if (!pc || !pc.isActive) throw new Error('SESSION_REVOKED');
+    // Fasoncu pasife alındıysa ya da silindiyse portal oturumu kapanır
+    if (pc.portalType === 'SUBCONTRACTOR' && !pc.subcontractor?.isActive) throw new Error('SESSION_REVOKED');
     if (issuedBeforePasswordChange(token, pc.passwordChangedAt)) throw new Error('SESSION_REVOKED');
     if ((pc.customerId ?? null) !== (token.customerId ?? null)) throw new Error('SESSION_CHANGED');
     if ((pc.subcontractor?.id ?? null) !== (token.subcontractorId ?? null)) throw new Error('SESSION_CHANGED');
@@ -62,6 +64,7 @@ export async function authorizePortalCustomer(credentials: Record<string, string
   const portalCustomer = pickPortalAccount(matches, credentials.accountId || null);
 
   if (!portalCustomer.isActive) throw new Error('ACCOUNT_INACTIVE');
+  if (portalCustomer.portalType === 'SUBCONTRACTOR' && !portalCustomer.subcontractor?.isActive) throw new Error('ACCOUNT_INACTIVE');
 
   if (!portalCustomer.emailVerified) {
     const token = portalCustomer.emailVerifyToken ?? crypto.randomBytes(32).toString('hex');
@@ -69,7 +72,7 @@ export async function authorizePortalCustomer(credentials: Record<string, string
       await prisma.portalCustomer.update({ where: { id: portalCustomer.id }, data: { emailVerifyToken: token } });
     }
     const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
-    const verifyUrl = `${baseUrl}/portal/verify-email?token=${token}`;
+    const verifyUrl = `${baseUrl}/portal/verify-email?token=${token}${portalCustomer.portalType === 'SUBCONTRACTOR' ? '&fason=1' : ''}`;
     await sendMailSafe({
       to: portalCustomer.email,
       subject: 'Portal - E-posta adresinizi doğrulayın',

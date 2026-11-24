@@ -3,15 +3,17 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(_: NextRequest) {
+// Varsayılan: aktif fasoncular (seçim listeleri). ?all=1: pasifler dahil (Fasoncular sayfası)
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
+  const all = req.nextUrl.searchParams.get('all') === '1';
 
   const subcontractors = await prisma.subcontractor.findMany({
-    where: { companyId: user.companyId, isActive: true },
-    select: { id: true, name: true, contactPerson: true, phone: true, email: true },
-    orderBy: { name: 'asc' },
+    where: { companyId: user.companyId, ...(all ? {} : { isActive: true }) },
+    select: { id: true, name: true, contactPerson: true, phone: true, email: true, isActive: true },
+    orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
   });
 
   return NextResponse.json(subcontractors);

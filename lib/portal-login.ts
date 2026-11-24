@@ -8,7 +8,7 @@ import { LIMITS, clientIp, normEmail, isLimited, recordAttempt, clearAttempts } 
 
 export const portalAccountInclude = {
   customer: { select: { id: true, companyId: true, name: true, company: { select: { name: true } } } },
-  subcontractor: { select: { id: true, companyId: true, company: { select: { name: true } } } },
+  subcontractor: { select: { id: true, companyId: true, isActive: true, company: { select: { name: true } } } },
 } as const;
 
 export type PortalAccountChoice = { id: string; companyName: string; portalType: string };

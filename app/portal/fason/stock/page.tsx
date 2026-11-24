@@ -75,7 +75,7 @@ export default function FasonStockPage() {
 
       {/* Anlık Stok Özeti */}
       {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="w-7 h-7 animate-spin text-amber-500" /></div>
+        <div className="flex justify-center py-12"><Loader2 className="w-7 h-7 animate-spin text-brand-700" /></div>
       ) : stocks.length === 0 ? (
         <div className="bg-white rounded-xl shadow-card p-10 text-center border border-ink-200/80">
           <Package className="w-10 h-10 text-ink-200 mx-auto mb-3" />
@@ -83,9 +83,9 @@ export default function FasonStockPage() {
         </div>
       ) : (
         <>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between">
-            <p className="text-sm font-medium text-amber-700">Toplam Zimmet</p>
-            <p className="text-lg font-bold text-amber-800">{totalKg.toFixed(2)} kg</p>
+          <div className="bg-brand-50 border border-brand-200 rounded-xl px-4 py-3 flex items-center justify-between">
+            <p className="text-sm font-medium text-brand-800">Toplam zimmet (tüm hammaddeler)</p>
+            <p className="text-lg font-bold text-brand-900">{totalKg.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
@@ -104,7 +104,7 @@ export default function FasonStockPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span className={`font-semibold ${s.quantity <= 0 ? 'text-ink-400' : 'text-ink-800'}`}>
-                        {s.quantity.toFixed(2)}
+                        {s.quantity.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                       <span className="text-ink-400 ml-1 text-xs">kg</span>
                     </td>
@@ -120,7 +120,7 @@ export default function FasonStockPage() {
       <div>
         <h2 className="text-base font-semibold text-ink-700 mb-3">Stok Hareketleri</h2>
         {ekstreLoading ? (
-          <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-amber-500" /></div>
+          <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-brand-700" /></div>
         ) : entries.length === 0 ? (
           <div className="bg-white rounded-xl shadow-card p-8 text-center border border-ink-200/80">
             <p className="text-ink-400 text-sm">Henüz kayıtlı hareket bulunmuyor.</p>

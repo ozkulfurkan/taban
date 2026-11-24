@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { SHIP_NOTE, cleanSizeDistribution } from '@/lib/fason';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -23,11 +24,18 @@ export async function GET(req: NextRequest) {
     include: {
       subcontractor: { select: { id: true, name: true } },
       product: { select: { id: true, name: true, code: true } },
+      // Son bildirilen üretilen adet (liste ilerleme çubuğu)
+      productionUpdates: { where: { completedPairs: { not: null } }, orderBy: { createdAt: 'desc' }, take: 1, select: { completedPairs: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
+  const shipped = new Set((await prisma.productionUpdate.findMany({
+    where: { orderId: { in: orders.map(o => o.id) }, notes: SHIP_NOTE }, select: { orderId: true },
+  })).map(u => u.orderId));
 
-  return NextResponse.json(orders);
+  return NextResponse.json(orders.map(({ productionUpdates, ...o }) => ({
+    ...o, completedPairs: productionUpdates[0]?.completedPairs ?? null, shipped: shipped.has(o.id),
+  })));
 }
 
 export async function POST(req: NextRequest) {
@@ -41,19 +49,15 @@ export async function POST(req: NextRequest) {
   if (foreign) return foreign;
 
   if (!subcontractorId) return NextResponse.json({ error: 'Fasoncu seçilmedi' }, { status: 400 });
-  if (!sizeDistribution || typeof sizeDistribution !== 'object') {
-    return NextResponse.json({ error: 'Numara dağılımı gerekli' }, { status: 400 });
-  }
+  const dist = cleanSizeDistribution(sizeDistribution);
+  if ('error' in dist) return NextResponse.json({ error: dist.error }, { status: 400 });
 
   const subcontractor = await prisma.subcontractor.findFirst({
     where: { id: subcontractorId, companyId: user.companyId },
   });
   if (!subcontractor) return NextResponse.json({ error: 'Fasoncu bulunamadı' }, { status: 404 });
 
-  const totalPairs = Object.values(sizeDistribution as Record<string, number>).reduce(
-    (sum: number, v) => sum + (Number(v) || 0),
-    0
-  );
+  const totalPairs = dist.total;
 
   // Auto-generate orderNo: FAS-YYYY-NNN
   const orderNo = await nextDocumentNumber('subcontractorOrder', user.companyId, `FAS-${documentYear()}-`, { pad: 3 });
@@ -65,7 +69,7 @@ export async function POST(req: NextRequest) {
       subcontractorId,
       productId: productId || null,
       soleOrderId: soleOrderId || null,
-      sizeDistribution,
+      sizeDistribution: dist.sizes,
       totalPairs,
       dueDate: dueDate ? new Date(dueDate) : null,
       notes: notes || null,

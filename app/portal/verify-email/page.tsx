@@ -31,7 +31,7 @@ export default function PortalVerifyEmailPage() {
             </div>
             <h2 className="text-xl font-bold text-ink-800 mb-2">E-posta Doğrulandı</h2>
             <p className="text-ink-500 mb-6">Hesabınız aktif edildi. Giriş yapabilirsiniz.</p>
-            <Link href="/portal/login" className="bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-brand-800 transition-colors">
+            <Link href={searchParams.get('fason') ? '/portal/fason/login' : '/portal/login'} className="bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-brand-800 transition-colors">
               Giriş Yap
             </Link>
           </>
