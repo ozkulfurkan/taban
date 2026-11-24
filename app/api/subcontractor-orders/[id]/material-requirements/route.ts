@@ -34,6 +34,10 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   const stockMap = new Map(
     subcontractorStocks.map(s => [s.materialId, s.quantity])
   );
+  // Bu siparişe gönderilen hammadde (gönderilen − iade)
+  const transfers = await prisma.materialTransfer.findMany({ where: { orderId: order.id }, select: { materialId: true, quantity: true, direction: true } });
+  const sentMap = new Map<string, number>();
+  for (const t of transfers) sentMap.set(t.materialId, (sentMap.get(t.materialId) ?? 0) + (t.direction === 'OUTGOING' ? t.quantity : -t.quantity));
 
   const requirements = order.product.parts.map(part => {
     // BOM kg hesabı: totalPairs × gramsPerPiece × (1 + wasteRate/100) / 1000
@@ -47,6 +51,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       gramsPerPiece: part.gramsPerPiece,
       wasteRate: part.wasteRate,
       kgRequired: Math.round(kgRequired * 1000) / 1000,
+      sentToOrder: Math.round((sentMap.get(part.materialId ?? '') ?? 0) * 1000) / 1000,
+      remainingToSend: Math.max(0, Math.round((kgRequired - (sentMap.get(part.materialId ?? '') ?? 0)) * 1000) / 1000),
       currentSubcontractorStock: currentStock,
       deficit: Math.max(0, Math.round((kgRequired - currentStock) * 1000) / 1000),
     };

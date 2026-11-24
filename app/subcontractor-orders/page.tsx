@@ -56,7 +56,7 @@ export default function SubcontractorOrdersPage() {
       <div className="space-y-4 max-w-6xl">
         <div className="flex flex-wrap gap-2 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Factory className="w-5 h-5 text-amber-600" />
+            <Factory className="w-5 h-5 text-brand-700" />
             <h1 className="page-title">Fason Siparişler</h1>
           </div>
           <Link href="/subcontractor-orders/new" className="flex items-center gap-2 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium">
@@ -74,7 +74,7 @@ export default function SubcontractorOrdersPage() {
               { key: 'all', label: 'Tümü' },
             ] as const).map(({ key, label }) => (
               <button key={key} onClick={() => setFilterTab(key)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterTab === key ? 'bg-amber-100 text-amber-700' : 'text-ink-600 hover:text-ink-900'}`}>
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterTab === key ? 'bg-brand-100 text-brand-800' : 'text-ink-600 hover:text-ink-900'}`}>
                 {label}
               </button>
             ))}
@@ -96,7 +96,7 @@ export default function SubcontractorOrdersPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-amber-500" /></div>
+          <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-ink-400">Bu kategoride sipariş bulunamadı</div>
         ) : (
@@ -106,7 +106,7 @@ export default function SubcontractorOrdersPage() {
                 <th className="px-4 py-3 text-left">Sipariş No</th>
                 <th className="px-4 py-3 text-left">Fasoncu</th>
                 <th className="px-4 py-3 text-left">Ürün</th>
-                <th className="px-4 py-3 text-right">Adet</th>
+                <th className="px-4 py-3 text-right">Üretim / Adet</th>
                 <th className="px-4 py-3 text-center">Durum</th>
                 <th className="px-4 py-3 text-right">Termin</th>
               </tr></thead>
@@ -129,9 +129,14 @@ export default function SubcontractorOrdersPage() {
                     </td>
                     <td className="px-4 py-3 text-ink-600">{o.subcontractor?.name}</td>
                     <td className="px-4 py-3 text-ink-600">{o.product?.name || <span className="text-ink-300">—</span>}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-ink-700">{o.totalPairs}</td>
+                    <td className="px-4 py-3 text-right">
+                      <ProgressCell done={o.status === 'RECEIVED' ? o.totalPairs : o.completedPairs} total={o.totalPairs} />
+                    </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[o.status]}`}>{STATUS_LABELS[o.status]}</span>
+                      {o.shipped && o.status === 'COMPLETED' && (
+                        <span className="block mt-1 text-[11px] font-medium text-emerald-700">Sevk edildi · teslim bekleniyor</span>
+                      )}
                     </td>
                     <td className={`px-4 py-3 text-right text-xs font-medium ${isOverdue(o) ? 'text-red-600' : 'text-ink-500'}`}>
                       {o.dueDate ? new Date(o.dueDate).toLocaleDateString('tr-TR') : '—'}
@@ -144,5 +149,20 @@ export default function SubcontractorOrdersPage() {
         )}
       </div>
     </AppShell>
+  );
+}
+
+// Fasoncunun bildirdiği üretilen çift / sipariş adedi
+function ProgressCell({ done, total }: { done: number | null | undefined; total: number }) {
+  const pct = total > 0 && done != null ? Math.min(100, Math.round((done / total) * 100)) : 0;
+  return (
+    <div className="inline-flex flex-col items-end gap-1 min-w-[96px]">
+      <span className="text-xs tabular-nums text-ink-700">
+        {done != null ? <><b className="text-ink-900">{done.toLocaleString('tr-TR')}</b> / </> : null}{total.toLocaleString('tr-TR')} çift
+      </span>
+      {done != null && (
+        <span className="h-1.5 w-24 rounded-full bg-ink-100 overflow-hidden"><span className="block h-full bg-brand-600" style={{ width: `${pct}%` }} /></span>
+      )}
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { SHIP_NOTE } from '@/lib/fason';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -11,19 +12,22 @@ export async function POST(_: NextRequest, { params }: { params: { id: string } 
   }
 
   const order = await prisma.subcontractorOrder.findFirst({
-    where: { id: params.id, subcontractorId: user.subcontractorId },
+    where: { id: params.id, subcontractorId: user.subcontractorId, companyId: user.companyId },
   });
 
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   if (order.status !== 'COMPLETED') {
     return NextResponse.json({ error: 'Sipariş tamamlanmış durumda değil' }, { status: 400 });
   }
+  // Sevk bir kez bildirilir
+  const already = await prisma.productionUpdate.count({ where: { orderId: params.id, notes: SHIP_NOTE } });
+  if (already) return NextResponse.json({ error: 'Bu sipariş zaten sevk edildi olarak bildirildi' }, { status: 400 });
 
   await prisma.productionUpdate.create({
     data: {
       orderId: params.id,
       status: 'COMPLETED',
-      notes: 'Ürünler sevk edildi.',
+      notes: SHIP_NOTE,
       updatedBy: user.email,
     },
   });

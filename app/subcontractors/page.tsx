@@ -14,7 +14,7 @@ export default function SubcontractorsPage() {
 
   const load = () => {
     setLoading(true);
-    fetch('/api/subcontractors')
+    fetch('/api/subcontractors?all=1')
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) setList(d); })
       .finally(() => setLoading(false));

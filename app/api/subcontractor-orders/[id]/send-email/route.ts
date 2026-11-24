@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { esc } from '@/lib/order-email';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -34,14 +35,14 @@ export async function POST(_: NextRequest, { params }: { params: { id: string } 
 
   const sizeRows = Object.entries(order.sizeDistribution as Record<string, number>)
     .filter(([, qty]) => qty > 0)
-    .map(([size, qty]) => `<tr><td style="padding:4px 12px;border:1px solid #E7E1D9;">${size}</td><td style="padding:4px 12px;border:1px solid #E7E1D9;text-align:right;">${qty} çift</td></tr>`)
+    .map(([size, qty]) => `<tr><td style="padding:4px 12px;border:1px solid #E7E1D9;">${esc(size)}</td><td style="padding:4px 12px;border:1px solid #E7E1D9;text-align:right;">${esc(qty)} çift</td></tr>`)
     .join('');
 
   const bomRows = order.product?.parts.map(part => {
     const kgRequired = (part.gramsPerPiece * (1 + part.wasteRate / 100) * order.totalPairs) / 1000;
     return `<tr>
-      <td style="padding:4px 12px;border:1px solid #E7E1D9;">${part.name}</td>
-      <td style="padding:4px 12px;border:1px solid #E7E1D9;">${part.material?.name ?? '—'}</td>
+      <td style="padding:4px 12px;border:1px solid #E7E1D9;">${esc(part.name)}</td>
+      <td style="padding:4px 12px;border:1px solid #E7E1D9;">${esc(part.material?.name ?? '—')}</td>
       <td style="padding:4px 12px;border:1px solid #E7E1D9;text-align:right;">${kgRequired.toFixed(3)} kg</td>
     </tr>`;
   }).join('') ?? '';
@@ -54,16 +55,16 @@ export async function POST(_: NextRequest, { params }: { params: { id: string } 
 
   const html = `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
-      <div style="background:#d97706;padding:20px 24px;">
+      <div style="background:#6B1A2C;padding:20px 24px;">
         <h2 style="color:#fff;margin:0;">Fason Sipariş Bildirimi</h2>
-        <p style="color:#fef3c7;margin:4px 0 0;">Sipariş No: <strong>${order.orderNo}</strong></p>
+        <p style="color:#F6EDE4;margin:4px 0 0;">Sipariş No: <strong>${esc(order.orderNo)}</strong></p>
       </div>
       <div style="padding:24px;background:#fff;">
-        <p>Sayın <strong>${order.subcontractor.name}</strong>,</p>
+        <p>Sayın <strong>${esc(order.subcontractor.name)}</strong>,</p>
         <p>Aşağıdaki fason siparişi sisteminize tanımlanmıştır.</p>
         <table style="border-collapse:collapse;width:100%;margin-bottom:16px;">
-          <tr><td style="padding:6px 12px;background:#FAF8F5;font-weight:600;">Sipariş No</td><td style="padding:6px 12px;">${order.orderNo}</td></tr>
-          <tr><td style="padding:6px 12px;background:#FAF8F5;font-weight:600;">Ürün</td><td style="padding:6px 12px;">${order.product?.name ?? '—'} ${order.product?.code ? `(${order.product.code})` : ''}</td></tr>
+          <tr><td style="padding:6px 12px;background:#FAF8F5;font-weight:600;">Sipariş No</td><td style="padding:6px 12px;">${esc(order.orderNo)}</td></tr>
+          <tr><td style="padding:6px 12px;background:#FAF8F5;font-weight:600;">Ürün</td><td style="padding:6px 12px;">${esc(order.product?.name ?? '—')} ${order.product?.code ? `(${esc(order.product.code)})` : ''}</td></tr>
           <tr><td style="padding:6px 12px;background:#FAF8F5;font-weight:600;">Toplam Adet</td><td style="padding:6px 12px;">${order.totalPairs} çift</td></tr>
           <tr><td style="padding:6px 12px;background:#FAF8F5;font-weight:600;">Termin</td><td style="padding:6px 12px;">${dueDateStr}</td></tr>
         </table>
@@ -83,19 +84,24 @@ export async function POST(_: NextRequest, { params }: { params: { id: string } 
           <tbody>${bomRows}</tbody>
         </table>
         ` : ''}
-        ${order.notes ? `<p style="background:#fef9c3;padding:12px;border-radius:6px;"><strong>Not:</strong> ${order.notes}</p>` : ''}
+        ${order.notes ? `<p style="background:#fef9c3;padding:12px;border-radius:6px;"><strong>Not:</strong> ${esc(order.notes)}</p>` : ''}
         <p style="margin-top:24px;">
-          <a href="${baseUrl}/portal/fason/orders/${order.id}" style="background:#d97706;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">Siparişi Portal'da Görüntüle</a>
+          <a href="${baseUrl}/portal/fason/orders/${encodeURIComponent(order.id)}" style="background:#6B1A2C;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">Siparişi Portal'da Görüntüle</a>
         </p>
       </div>
     </div>
   `;
 
-  await sendMail({
-    to: order.subcontractor.email,
-    subject: `Fason Sipariş — ${order.orderNo} | ${order.product?.name ?? ''} | Termin: ${dueDateStr}`,
-    html,
-  });
+  try {
+    await sendMail({
+      to: order.subcontractor.email,
+      subject: `Fason Sipariş — ${order.orderNo} | ${order.product?.name ?? ''} | Termin: ${dueDateStr}`,
+      html,
+    });
+  } catch (e) {
+    console.error('fason e-posta gönderilemedi:', e);
+    return NextResponse.json({ error: 'E-posta gönderilemedi. E-posta ayarlarını kontrol edip tekrar deneyin.' }, { status: 502 });
+  }
 
   await prisma.subcontractorOrder.update({
     where: { id: params.id },

@@ -68,7 +68,7 @@ export default function SubcontractorDetailPage() {
       if (res.ok) {
         const d = await res.json().catch(() => ({}));
         setShowPortalModal(false); load();
-        if (d.emailSent === false) alert('Hesap açıldı ama doğrulama e-postası gönderilemedi. Giriş bilgilerini fasoncuya ayrıca iletin.');
+        if (d.emailSent === false) alert('Hesap açıldı ama doğrulama e-postası gönderilemedi. Fasoncu giriş yapmayı denediğinde doğrulama e-postası yeniden gönderilir; şifreyi fasoncuya siz iletin.');
       }
       else { const d = await res.json(); setErrorMsg(d.error); }
     } finally { setPortalSaving(false); }
@@ -280,10 +280,10 @@ export default function SubcontractorDetailPage() {
               <button onClick={() => setShowPortalModal(false)} className="text-white/80 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-3">
-              <p className="text-xs text-ink-500">Fasoncuya giriş yapabileceği bir portal hesabı oluşturulacak ve aktivasyon maili gönderilecek.</p>
+              <p className="text-xs text-ink-500">Fasoncuya giriş yapabileceği bir portal hesabı oluşturulur ve e-posta doğrulama bağlantısı gönderilir. Güvenlik için şifre e-postada gönderilmez; şifreyi fasoncuya siz iletin.</p>
               {[
                 { key: 'email', label: 'E-posta *', type: 'email', placeholder: 'fasoncu@firma.com' },
-                { key: 'password', label: 'Şifre *', type: 'password', placeholder: '••••••••' },
+                { key: 'password', label: 'Şifre * (en az 6 karakter, harf ve rakam)', type: 'password', placeholder: '••••••••' },
                 { key: 'name', label: 'Kullanıcı Adı', type: 'text', placeholder: data.contactPerson || data.name },
               ].map(({ key, label, type, placeholder }) => (
                 <div key={key}>

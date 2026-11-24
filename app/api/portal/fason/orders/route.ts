@@ -22,5 +22,5 @@ export async function GET(_: NextRequest) {
     orderBy: { createdAt: 'desc' },
   });
 
-  return NextResponse.json(orders);
+  return NextResponse.json(orders.map(({ companyId: _c, ...o }) => o));
 }

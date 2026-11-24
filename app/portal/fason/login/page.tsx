@@ -101,13 +101,13 @@ export default function FasonLoginPage() {
           ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-amber-200 mb-1.5">E-posta</label>
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">E-posta</label>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
                   className="input py-2.5 text-[15px]"
                   placeholder="email@firma.com" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-amber-200 mb-1.5">Şifre</label>
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">Şifre</label>
                 <div className="relative">
                   <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required
                     className="input py-2.5 text-[15px] pr-10" />

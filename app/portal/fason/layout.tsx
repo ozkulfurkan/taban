@@ -28,7 +28,7 @@ export default function FasonPortalLayout({ children }: { children: React.ReactN
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-ink-50">
-        <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand-700" />
       </div>
     );
   }

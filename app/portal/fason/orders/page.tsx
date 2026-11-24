@@ -63,7 +63,7 @@ export default function FasonOrdersPage() {
             { key: 'all', label: 'Tümü' },
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setFilter(key)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === key ? 'bg-amber-100 text-amber-700' : 'text-ink-600 hover:text-ink-900'}`}>
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === key ? 'bg-brand-100 text-brand-800' : 'text-ink-600 hover:text-ink-900'}`}>
               {label}
             </button>
           ))}
@@ -81,7 +81,7 @@ export default function FasonOrdersPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="w-7 h-7 animate-spin text-amber-500" /></div>
+        <div className="flex justify-center py-12"><Loader2 className="w-7 h-7 animate-spin text-brand-700" /></div>
       ) : displayed.length === 0 ? (
         <div className="bg-white rounded-xl shadow-card p-8 text-center text-ink-400 text-sm border border-ink-200/80">
           Bu kategoride sipariş bulunamadı.

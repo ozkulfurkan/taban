@@ -30,7 +30,7 @@ export default function FasonPortalShell({ children }: { children: React.ReactNo
             <nav className="hidden sm:flex items-center gap-1">
               {NAV.map(({ href, label, icon: Icon }) => (
                 <Link key={href} href={href}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${pathname === href || pathname.startsWith(href + '/') ? 'bg-amber-100 text-amber-700' : 'text-ink-600 hover:text-ink-900 hover:bg-ink-100'}`}>
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${pathname === href || pathname.startsWith(href + '/') ? 'bg-brand-100 text-brand-800' : 'text-ink-600 hover:text-ink-900 hover:bg-ink-100'}`}>
                   <Icon className="w-4 h-4" />
                   {label}
                 </Link>
@@ -53,7 +53,7 @@ export default function FasonPortalShell({ children }: { children: React.ReactNo
           <div className="sm:hidden border-t border-ink-100 bg-white px-4 py-2 space-y-1">
             {NAV.map(({ href, label, icon: Icon }) => (
               <Link key={href} href={href} onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${pathname === href ? 'bg-amber-100 text-amber-700' : 'text-ink-600'}`}>
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${pathname === href ? 'bg-brand-100 text-brand-800' : 'text-ink-600'}`}>
                 <Icon className="w-4 h-4" /> {label}
               </Link>
             ))}

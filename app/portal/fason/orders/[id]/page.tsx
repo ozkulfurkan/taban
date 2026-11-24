@@ -18,6 +18,13 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: 'bg-ink-100 text-ink-500',
 };
 const STEPS = ['PENDING', 'MATERIAL_SENT', 'IN_PRODUCTION', 'IN_PROGRESS', 'COMPLETED', 'RECEIVED'];
+// Durum düğmelerinin altında görünen kısa açıklamalar
+const STATUS_HINTS: Record<string, string> = {
+  IN_PRODUCTION: 'Hammaddeyi aldınız, üretime başladınız',
+  IN_PROGRESS: 'Üretim sürüyor (ara güncelleme)',
+  COMPLETED: 'Tüm çiftler bitti, sevke hazır',
+};
+const kg = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 3 });
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
   MATERIAL_SENT: ['IN_PRODUCTION'],
   IN_PRODUCTION: ['IN_PROGRESS', 'COMPLETED'],
@@ -40,6 +47,8 @@ export default function FasonOrderDetailPage() {
   // Status update
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [donePairs, setDonePairs] = useState('');
+  const [shipMsg, setShipMsg] = useState('');
 
   // Scrap form
   const [scrapOpen, setScrapOpen] = useState(false);
@@ -67,19 +76,23 @@ export default function FasonOrderDetailPage() {
     const res = await fetch(`/api/portal/fason/orders/${id}/ship`, { method: 'POST' });
     setShipLoading(false);
     if (res.ok) { setShipDone(true); loadOrder(); }
+    else { const d = await res.json().catch(() => ({})); setShipMsg(d.error || 'Sevk bildirilemedi'); }
   };
 
+  // newStatus mevcut durumla aynıysa yalnızca üretilen adet bildirilir
   const handleStatusUpdate = async (newStatus: string) => {
     setStatusLoading(true);
     setStatusMsg('');
+    const pairs = donePairs.trim() === '' ? (newStatus === 'COMPLETED' ? order.totalPairs : undefined) : Number(donePairs);
     const res = await fetch(`/api/portal/fason/orders/${id}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
+      body: JSON.stringify({ status: newStatus, completedPairs: pairs }),
     });
     setStatusLoading(false);
     if (res.ok) {
-      setStatusMsg('Durum güncellendi.');
+      setStatusMsg(newStatus === order.status ? 'Üretilen adet kaydedildi.' : 'Durum güncellendi.');
+      setDonePairs('');
       loadOrder();
     } else {
       const d = await res.json();
@@ -96,7 +109,7 @@ export default function FasonOrderDetailPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         materialId: scrapMaterialId,
-        quantity: parseFloat(scrapQty),
+        quantity: parseFloat(String(scrapQty).replace(',', '.')),
         reason: scrapReason || undefined,
       }),
     });
@@ -111,7 +124,7 @@ export default function FasonOrderDetailPage() {
     }
   };
 
-  if (loading) return <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-amber-500" /></div>;
+  if (loading) return <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div>;
   if (!order) return <div className="text-center py-16 text-ink-400">Sipariş bulunamadı.</div>;
 
   const currentStepIdx = STEPS.indexOf(order.status);
@@ -123,7 +136,14 @@ export default function FasonOrderDetailPage() {
   for (const s of stocks) {
     stockByMaterial[s.materialId] = s;
   }
-  const uniqueMaterials = stocks;
+  // Fire yalnızca bu siparişin hammaddelerinden (reçete + bu siparişe gönderilenler), zimmet miktarıyla
+  const orderMatIds = new Set<string>([
+    ...(order.product?.parts ?? []).map((p: any) => p.materialId).filter(Boolean),
+    ...(order.materialTransfers ?? []).map((t: any) => t.materialId),
+  ]);
+  const uniqueMaterials = stocks.filter((s: any) => orderMatIds.has(s.materialId));
+  const lastDone = [...(order.productionUpdates ?? [])].reverse().find((u: any) => u.completedPairs != null)?.completedPairs ?? null;
+  const producing = ['IN_PRODUCTION', 'IN_PROGRESS'].includes(order.status);
 
   return (
     <div className="space-y-5">
@@ -133,7 +153,7 @@ export default function FasonOrderDetailPage() {
         </Link>
         <div>
           <h1 className="page-title">{order.orderNo}</h1>
-          <p className="text-ink-500 text-sm">{order.product?.name || '—'} · {order.totalPairs} çift</p>
+          <p className="text-ink-500 text-sm">{order.product?.name || '—'} · {lastDone != null ? `${lastDone.toLocaleString('tr-TR')} / ` : ''}{order.totalPairs.toLocaleString('tr-TR')} çift</p>
         </div>
       </div>
 
@@ -154,7 +174,7 @@ export default function FasonOrderDetailPage() {
               )}
             </div>
           </div>
-          {shipDone ? (
+          {shipDone || order.shipped ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium flex-shrink-0">
               <CheckCircle2 className="w-4 h-4" /> Sevk Bildirildi
             </span>
@@ -165,6 +185,7 @@ export default function FasonOrderDetailPage() {
               Sevk Edildi Olarak İşaretle
             </button>
           )}
+          {shipMsg && <p className="text-xs text-red-600 sm:basis-full">{shipMsg}</p>}
         </div>
       )}
 
@@ -177,7 +198,7 @@ export default function FasonOrderDetailPage() {
             const active = order.status === step;
             return (
               <div key={step} className="flex items-center gap-1">
-                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${active ? 'bg-amber-100 text-amber-700 ring-1 ring-amber-300' : done ? 'bg-emerald-100 text-emerald-700' : 'bg-ink-100 text-ink-400'}`}>
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${active ? 'bg-brand-100 text-brand-800 ring-1 ring-brand-300' : done ? 'bg-emerald-100 text-emerald-700' : 'bg-ink-100 text-ink-400'}`}>
                   {done && !active ? <CheckCircle2 className="w-3 h-3" /> : null}
                   {STATUS_LABELS[step]}
                 </div>
@@ -189,15 +210,32 @@ export default function FasonOrderDetailPage() {
           })}
         </div>
 
+        {producing && (
+          <div className="mt-4 flex items-end gap-2 flex-wrap" data-testid="fason-progress">
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Şu ana kadar üretilen (toplam çift)</label>
+              <input inputMode="numeric" value={donePairs} onChange={e => setDonePairs(e.target.value.replace(/[^\d]/g, ''))}
+                placeholder={lastDone != null ? String(lastDone) : `0 – ${order.totalPairs}`}
+                className="w-40 px-3 py-1.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
+            </div>
+            <button onClick={() => handleStatusUpdate(order.status)} disabled={statusLoading || donePairs.trim() === ''}
+              className="px-3 py-1.5 bg-white border border-ink-200 hover:bg-ink-50 disabled:opacity-60 text-ink-800 rounded-lg text-xs font-semibold">
+              Üretileni kaydet
+            </button>
+          </div>
+        )}
         {nextStatuses.length > 0 && (
-          <div className="mt-4 flex items-center gap-3 flex-wrap">
-            <span className="text-xs text-ink-500">Durumu güncelle:</span>
+          <div className="mt-4 flex items-start gap-3 flex-wrap">
+            <span className="text-xs text-ink-500 pt-2">Durumu güncelle:</span>
             {nextStatuses.map(ns => (
-              <button key={ns} onClick={() => handleStatusUpdate(ns)} disabled={statusLoading}
-                className="px-3 py-1.5 bg-brand-700 hover:bg-brand-800 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5">
-                {statusLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                {STATUS_LABELS[ns]}
-              </button>
+              <div key={ns} className="flex flex-col gap-1 max-w-[180px]">
+                <button onClick={() => handleStatusUpdate(ns)} disabled={statusLoading}
+                  className="px-3 py-1.5 bg-brand-700 hover:bg-brand-800 disabled:opacity-60 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5">
+                  {statusLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                  {STATUS_LABELS[ns]}
+                </button>
+                {STATUS_HINTS[ns] && <span className="text-[11px] leading-tight text-ink-500">{STATUS_HINTS[ns]}</span>}
+              </div>
             ))}
           </div>
         )}
@@ -221,7 +259,7 @@ export default function FasonOrderDetailPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-ink-500">Toplam Çift</span>
-              <span className="font-medium text-ink-800">{order.totalPairs}</span>
+              <span className="font-medium text-ink-800">{order.totalPairs.toLocaleString('tr-TR')}</span>
             </div>
             {order.dueDate && (
               <div className="flex justify-between">
@@ -256,7 +294,7 @@ export default function FasonOrderDetailPage() {
               {sizeRows.map(([size, qty]) => (
                 <div key={size} className="bg-ink-50 rounded-lg p-2 text-center">
                   <p className="text-xs text-ink-500">{size}</p>
-                  <p className="font-bold text-ink-800">{qty}</p>
+                  <p className="font-bold text-ink-800">{Number(qty).toLocaleString('tr-TR')}</p>
                 </div>
               ))}
             </div>
@@ -287,12 +325,12 @@ export default function FasonOrderDetailPage() {
                     <p className="text-xs text-ink-500">{part.material?.name}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-semibold text-amber-600">{kgRequired.toFixed(3)} kg gerekli</p>
+                    <p className="text-sm font-semibold text-ink-800">{kg(kgRequired)} kg gerekli</p>
                     <p className={`text-xs font-medium ${stockOk ? 'text-emerald-600' : stockLow ? 'text-yellow-600' : 'text-red-500'}`}>
-                      {available.toFixed(3)} kg mevcut
+                      Zimmetinizde {kg(available)} kg
                     </p>
                     {deficit > 0 && (
-                      <p className="text-xs text-red-400">−{deficit.toFixed(3)} eksik</p>
+                      <p className="text-xs text-red-400">{kg(deficit)} kg eksik</p>
                     )}
                   </div>
                 </div>
@@ -315,7 +353,7 @@ export default function FasonOrderDetailPage() {
                   <p className="text-sm text-ink-700">{t.material?.name}</p>
                   <p className="text-xs text-ink-400">{new Date(t.transferDate).toLocaleDateString('tr-TR')}</p>
                 </div>
-                <p className="text-sm font-medium text-brand-800">{t.quantity} kg</p>
+                <p className="text-sm font-medium text-brand-800">{t.direction === 'INCOMING' ? '−' : ''}{kg(t.quantity)} kg</p>
               </div>
             ))}
           </div>
@@ -330,7 +368,7 @@ export default function FasonOrderDetailPage() {
               <Flame className="w-4 h-4 text-red-500" /> Fire Bildir
             </h2>
             <button onClick={() => setScrapOpen(p => !p)}
-              className="text-xs text-amber-600 hover:underline font-medium">
+              className="text-xs text-brand-700 hover:underline font-medium">
               {scrapOpen ? 'Kapat' : 'Bildir'}
             </button>
           </div>
@@ -342,12 +380,14 @@ export default function FasonOrderDetailPage() {
                   className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none">
                   <option value="">Seçin...</option>
                   {uniqueMaterials.map(s => (
-                    <option key={s.materialId} value={s.materialId}>{s.material?.name}</option>
+                    <option key={s.materialId} value={s.materialId}>{s.material?.name} (zimmet {kg(s.quantity)} kg)</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink-600 mb-1">Miktar (kg)</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">
+                  Miktar (kg){scrapMaterialId && stockByMaterial[scrapMaterialId] ? ` · en fazla ${kg(stockByMaterial[scrapMaterialId].quantity)}` : ''}
+                </label>
                 <DecimalInput step="0.01" min="0.01" value={scrapQty} onChange={e => setScrapQty(e.target.value)} required
                   className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                   placeholder="0.00" />
@@ -380,7 +420,7 @@ export default function FasonOrderDetailPage() {
                       <span className="text-ink-700">{sc.material?.name}</span>
                       {sc.reason && <span className="text-xs text-ink-400 ml-2">· {sc.reason}</span>}
                     </div>
-                    <span className="font-medium text-red-600">{sc.quantity} kg</span>
+                    <span className="font-medium text-red-600">{kg(sc.quantity)} kg</span>
                   </div>
                 ))}
               </div>
@@ -402,10 +442,10 @@ export default function FasonOrderDetailPage() {
                 <div>
                   <p className="text-sm font-medium text-ink-700">{STATUS_LABELS[u.status]}</p>
                   {u.completedPairs != null && (
-                    <p className="text-xs text-ink-500">{u.completedPairs} çift tamamlandı</p>
+                    <p className="text-xs text-ink-500">{u.completedPairs.toLocaleString('tr-TR')} / {order.totalPairs.toLocaleString('tr-TR')} çift üretildi</p>
                   )}
                   {u.notes && <p className="text-xs text-ink-400">{u.notes}</p>}
-                  <p className="text-xs text-ink-400 mt-0.5">{new Date(u.createdAt).toLocaleString('tr-TR')}</p>
+                  <p className="text-xs text-ink-400 mt-0.5">{new Date(u.createdAt).toLocaleString('tr-TR')}{u.updatedBy ? ` · ${u.updatedBy}` : ''}</p>
                 </div>
               </div>
             ))}

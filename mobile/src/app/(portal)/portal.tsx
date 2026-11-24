@@ -9,6 +9,7 @@ import { OrderRow } from '@/components/portal-order-row';
 import { Button, Card, T } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/core/auth';
+import { WEB_URL } from '@/core/config';
 import type { PortalOrder } from '@/core/portal';
 import { useApi } from '@/core/query';
 import { useUnreadCount } from '@/core/notifications-inbox';
@@ -48,7 +49,9 @@ export default function PortalHome() {
         {fason ? (
           <Card>
             <T style={{ fontWeight: '600' }}>Fason portalı</T>
-            <T variant="small">Fason siparişleri ve stoklar şimdilik web portalından (solecost.com/portal) takip ediliyor.</T>
+            <T variant="small">Fason siparişleri, üretim bildirimi ve zimmet şimdilik web&apos;deki fason portalından takip ediliyor.</T>
+            <Button title="Fason portalını aç" icon="link" variant="secondary" testID="portal-fason-web"
+              onPress={() => { void WebBrowser.openBrowserAsync(`${WEB_URL}/portal/fason/login`); }} />
           </Card>
         ) : (
           <>

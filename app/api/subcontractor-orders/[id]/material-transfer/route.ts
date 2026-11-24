@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isClosed } from '@/lib/fason';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -13,6 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     where: { id: params.id, companyId: user.companyId },
   });
   if (!order) return NextResponse.json({ error: 'Sipariş bulunamadı' }, { status: 404 });
+  if (isClosed(order.status)) return NextResponse.json({ error: 'Teslim alınmış ya da iptal edilmiş siparişe hammadde gönderilemez' }, { status: 400 });
 
   const { materialId, quantity, notes } = await req.json();
   const qty = parseFloat(quantity) || 0;
@@ -69,5 +71,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
   });
 
-  return NextResponse.json({ ok: true });
+  // Depoda yeterli stok yoksa gönderim yine yapılır, kullanıcı uyarılır (depo stoğu eksiye düşebilir)
+  const warning = material.stock < qty
+    ? `Depoda ${material.stock.toLocaleString('tr-TR', { maximumFractionDigits: 3 })} kg ${material.name} vardı; gönderimden sonra depo stoğu eksiye düştü.`
+    : null;
+  return NextResponse.json({ ok: true, warning });
 }

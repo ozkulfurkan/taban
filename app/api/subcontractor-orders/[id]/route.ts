@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { firmStatusError } from '@/lib/fason';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -75,21 +76,19 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const { status, dueDate, notes, shippingAddress } = await req.json();
 
   // Mevcut sipariş durumunu ve BOM'u al
-  const existing = await prisma.subcontractorOrder.findFirst({
-    where: { id: params.id, companyId: user.companyId },
-    include: {
-      product: {
-        include: { parts: true },
-      },
-    },
-  });
+  const existing = await prisma.subcontractorOrder.findFirst({ where: { id: params.id, companyId: user.companyId } });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (status !== undefined && status !== null && status !== '') {
+    const err = firmStatusError(existing.status, status);
+    if (err) return NextResponse.json({ error: err }, { status: 400 });
+  }
+  const changed = !!status && status !== existing.status;
 
   const order = await prisma.$transaction(async (tx) => {
     const updated = await tx.subcontractorOrder.update({
       where: { id: params.id },
       data: {
-        ...(status ? { status } : {}),
+        ...(changed ? { status } : {}),
         ...(dueDate !== undefined ? { dueDate: dueDate ? new Date(dueDate) : null } : {}),
         ...(notes !== undefined ? { notes } : {}),
         ...(shippingAddress !== undefined ? { shippingAddress: shippingAddress || null } : {}),
@@ -99,28 +98,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         product: { select: { id: true, name: true, code: true } },
       },
     });
-
-    // Sipariş tamamlandığında fasoncu zimmetinden hammadde düş
-    if (status === 'RECEIVED' && existing.status !== 'RECEIVED' && existing.product) {
-      const sizeMap = (existing.sizeDistribution as Record<string, number>) ?? {};
-      const totalPairs = Object.values(sizeMap).reduce((s, v) => s + (Number(v) || 0), 0);
-
-      for (const part of existing.product.parts) {
-        if (!part.materialId || totalPairs === 0) continue;
-        const kgUsed = (part.gramsPerPiece * (1 + part.wasteRate / 100) * totalPairs) / 1000;
-
-        const ss = await tx.subcontractorStock.findFirst({
-          where: { subcontractorId: existing.subcontractorId, materialId: part.materialId },
-        });
-        if (ss) {
-          await tx.subcontractorStock.update({
-            where: { id: ss.id },
-            data: { quantity: { decrement: kgUsed } },
-          });
-        }
-      }
+    // Firma tarafındaki durum değişikliği üretim geçmişinde görünsün
+    if (changed) {
+      await tx.productionUpdate.create({
+        data: { orderId: params.id, status, notes: status === 'CANCELLED' ? 'Firma siparişi iptal etti' : status === 'PENDING' && existing.status === 'CANCELLED' ? 'İptal geri alındı' : 'Firma durumu güncelledi', updatedBy: user.name ?? user.email ?? 'Firma' },
+      });
     }
-
     return updated;
   });
 
