@@ -20,6 +20,16 @@ const STATUS_COLOR: Record<string, string> = {
   SHIPPED: 'bg-emerald-100 text-emerald-700', CANCELLED: 'bg-ink-100 text-ink-500',
 };
 
+function MsgBadges({ order }: { order: any }) {
+  if (!order.openRequest && !(order.unreadMessages > 0)) return null;
+  return (
+    <span className="flex flex-wrap gap-1 mt-1">
+      {order.openRequest && <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-semibold">{order.openRequest === 'CANCEL_REQUEST' ? 'İptal talebi' : 'Değişiklik talebi'}</span>}
+      {order.unreadMessages > 0 && <span className="px-1.5 py-0.5 rounded bg-brand-700 text-white text-[10px] font-semibold">{order.unreadMessages} yeni mesaj</span>}
+    </span>
+  );
+}
+
 export default function PortalAdminPage() {
   const { data: session, status } = useSession() || {};
   const router = useRouter();
@@ -31,6 +41,8 @@ export default function PortalAdminPage() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('');
   const [orderTab, setOrderTab] = useState<'active' | 'cancelled'>('active');
+  const [showPrices, setShowPrices] = useState<boolean | null>(null);
+  const [pageError, setPageError] = useState('');
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   // New portal customer form
@@ -52,7 +64,9 @@ export default function PortalAdminPage() {
     Promise.all([
       fetch('/api/portal/customers').then(r => r.json()),
       fetch('/api/portal/orders').then(r => r.json()),
-    ]).then(([pc, ord]) => {
+      fetch('/api/company').then(r => r.json()).catch(() => null),
+    ]).then(([pc, ord, co]) => {
+      if (typeof co?.portalShowPrices === 'boolean') setShowPrices(co.portalShowPrices);
       setPortalCustomers(Array.isArray(pc) ? pc : []);
       setOrders(Array.isArray(ord) ? ord : []);
     }).finally(() => setLoading(false));
@@ -116,24 +130,29 @@ export default function PortalAdminPage() {
     }});
   };
 
-  const cancelOrder = async (id: string) => {
-    setConfirmModal({ message: 'Bu siparişi iptal etmek istediğinize emin misiniz?', onConfirm: async () => {
-      await fetch(`/api/portal/orders/${id}/status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'CANCELLED' }),
-      });
-      setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'CANCELLED' } : o));
-    }});
-  };
-
-  const restoreOrder = async (id: string) => {
-    await fetch(`/api/portal/orders/${id}/status`, {
+  const setOrderStatus = async (id: string, next: string) => {
+    setPageError('');
+    const res = await fetch(`/api/portal/orders/${id}/status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'ORDER_RECEIVED' }),
+      body: JSON.stringify({ status: next }),
     });
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'ORDER_RECEIVED' } : o));
+    if (!res.ok) { setPageError((await res.json().catch(() => ({}))).error || 'Durum değiştirilemedi'); return; }
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: next } : o));
+  };
+  const cancelOrder = (id: string) => {
+    setConfirmModal({ message: 'Bu siparişi iptal etmek istediğinize emin misiniz?', onConfirm: () => setOrderStatus(id, 'CANCELLED') });
+  };
+  const restoreOrder = (id: string) => setOrderStatus(id, 'ORDER_RECEIVED');
+
+  // Ö3: portalda fiyat gösterimi (yalnızca firma sahibi/yönetici değiştirebilir)
+  const canEditCompany = ['ADMIN', 'COMPANY_OWNER'].includes(user?.role);
+  const togglePrices = async () => {
+    if (showPrices === null) return;
+    const next = !showPrices;
+    setShowPrices(next); setPageError('');
+    const res = await fetch('/api/company', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ portalShowPrices: next }) });
+    if (!res.ok) { setShowPrices(!next); setPageError('Ayar kaydedilemedi'); }
   };
 
   const deleteOrder = async (id: string) => {
@@ -143,6 +162,10 @@ export default function PortalAdminPage() {
     }});
   };
 
+  const visibleOrders = orders
+    .filter(o => orderTab === 'cancelled' ? o.status === 'CANCELLED' : o.status !== 'CANCELLED')
+    .filter(o => !filterStatus || o.status === filterStatus);
+
   return (
     <AppShell>
       <div className="space-y-5">
@@ -150,6 +173,17 @@ export default function PortalAdminPage() {
           <Globe className="w-6 h-6 text-brand-700" />
           <h1 className="page-title">Müşteri Portalı Yönetimi</h1>
         </div>
+
+        {canEditCompany && showPrices !== null && (
+          <label className="flex items-start gap-3 bg-white rounded-xl border border-ink-200/80 shadow-card px-4 py-3 cursor-pointer w-fit max-w-full">
+            <input type="checkbox" checked={showPrices} onChange={togglePrices} className="mt-1 accent-brand-700" data-testid="portal-show-prices" />
+            <span className="text-sm text-ink-700">
+              <b>Portalda fiyatları göster</b>
+              <span className="block text-xs text-ink-500">Müşteri katalogda birim fiyatı (müşteriye özel fiyat varsa onu) ve siparişte tahmini tutarı görür.</span>
+            </span>
+          </label>
+        )}
+        {pageError && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{pageError}</div>}
 
         {/* Tabs */}
         <div className="flex gap-2 border-b border-ink-200">
@@ -196,7 +230,36 @@ export default function PortalAdminPage() {
               </div>
             )}
 
-            <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+            {/* Telefonda kart listesi */}
+            <ul className="sm:hidden space-y-2" data-testid="portal-admin-cards">
+              {visibleOrders.map(order => (
+                <li key={order.id} className="bg-white rounded-xl shadow-card border border-ink-200/80 p-3">
+                  <Link href={`/orders/${order.id}`} className="block">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-ink-800">{order.orderNo}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_COLOR[order.status] ?? 'bg-ink-100 text-ink-600'}`}>{STATUS_LABELS[order.status] ?? order.status}</span>
+                    </div>
+                    <p className="text-sm text-ink-600 mt-0.5 truncate">{order.customer?.name}</p>
+                    <p className="text-xs text-ink-500 mt-0.5">
+                      {order.productCode || order.product?.name || '—'} · {formatQty(order.totalQuantity, order.unit)}
+                      {order.requestedDeliveryDate ? ` · ${new Date(order.requestedDeliveryDate).toLocaleDateString('tr-TR')}` : ''}
+                    </p>
+                    <MsgBadges order={order} />
+                  </Link>
+                  <div className="flex gap-2 mt-2">
+                    {orderTab === 'active' ? (
+                      <button onClick={() => cancelOrder(order.id)} className="px-2.5 py-1 rounded-lg border border-ink-200 text-xs text-ink-600">İptal Et</button>
+                    ) : (
+                      <>
+                        <button onClick={() => restoreOrder(order.id)} className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium">Geri Al</button>
+                        <button onClick={() => deleteOrder(order.id)} className="px-2.5 py-1 rounded-lg border border-ink-200 text-xs text-red-600">Kalıcı Sil</button>
+                      </>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden sm:block bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-ink-50 border-b border-ink-200">
@@ -207,12 +270,9 @@ export default function PortalAdminPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-ink-50">
-                    {orders
-                      .filter(o => orderTab === 'cancelled' ? o.status === 'CANCELLED' : o.status !== 'CANCELLED')
-                      .filter(o => !filterStatus || o.status === filterStatus)
-                      .map(order => (
+                    {visibleOrders.map(order => (
                       <tr key={order.id} className="hover:bg-ink-50">
-                        <td className="px-4 py-3 font-medium text-ink-800 whitespace-nowrap">{order.orderNo}</td>
+                        <td className="px-4 py-3 font-medium text-ink-800 whitespace-nowrap">{order.orderNo}<MsgBadges order={order} /></td>
                         <td className="px-4 py-3 text-ink-600">{order.customer?.name}</td>
                         <td className="px-4 py-3 text-ink-600">{order.productCode || order.product?.name || '—'}</td>
                         <td className="px-4 py-3 text-ink-600">{formatQty(order.totalQuantity, order.unit)}</td>
@@ -228,7 +288,7 @@ export default function PortalAdminPage() {
                           <div className="flex items-center gap-2">
                             {orderTab === 'active' ? (
                               <>
-                                <Link href={`/portal-admin/orders/${order.id}`}
+                                <Link href={`/orders/${order.id}`}
                                   className="px-2.5 py-1 bg-brand-50 hover:bg-brand-100 text-brand-800 rounded-lg text-xs font-medium transition-colors">
                                   Yönet
                                 </Link>
@@ -336,7 +396,7 @@ export default function PortalAdminPage() {
               </div>
             )}
 
-            <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
+            <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-ink-50 border-b border-ink-200">
                   <tr>

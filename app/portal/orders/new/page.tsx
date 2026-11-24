@@ -8,6 +8,9 @@ import SizeTable from '../../components/size-table';
 import { Loader2, Send } from '@/app/components/icons';
 import { usePortalText } from '@/lib/i18n/portal';
 import BackLink from '@/app/components/back-link';
+import { cleanQuantity, isPairUnit, orderUnit, unitDecimals } from '@/lib/order-units';
+
+const money = (n: number, cur: string) => `${n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur}`;
 
 type ColorPartial = { name: string; color: string };
 
@@ -21,7 +24,6 @@ export default function NewOrderPage() {
   const [form, setForm] = useState({
     productId: searchParams.get('productId') || '',
     productCode: searchParams.get('productCode') || '',
-    material: searchParams.get('material') || '',
     requestedDeliveryDate: '',
     notes: '',
   });
@@ -29,6 +31,8 @@ export default function NewOrderPage() {
   const [sizes, setSizes] = useState<Record<string, number>>(() => {
     try { return JSON.parse(searchParams.get('sizeDistribution') || '{}'); } catch { return {}; }
   });
+  const [quantity, setQuantity] = useState('');
+  const [freeCode, setFreeCode] = useState(() => !!searchParams.get('productCode') && !searchParams.get('productId'));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -63,11 +67,20 @@ export default function NewOrderPage() {
     setColorPartials(prev => prev.map((p, i) => i === idx ? { ...p, color: value } : p));
   };
 
+  const selected = catalog.find(c => c.id === form.productId);
+  const unit = orderUnit(selected?.unit);
+  const pair = isPairUnit(unit);
+  const pairTotal = Object.values(sizes).reduce((s, v) => s + (Number(v) || 0), 0);
+  const qty = pair ? pairTotal : cleanQuantity(Number(String(quantity).replace(',', '.')), unit) ?? 0;
+  const price = selected?.price as { unitPrice: number; currency: string } | null | undefined;
+  const estimate = price && qty > 0 ? price.unitPrice * qty : null;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError('');
-    const total = Object.values(sizes).reduce((s, v) => s + (Number(v) || 0), 0);
-    if (total === 0) { setError('En az 1 adet girmelisiniz.'); return; }
+    if (!form.productId && !form.productCode.trim()) { setError(tp('Katalogdan bir ürün seçin.')); return; }
+    if (!qty) { setError(pair ? tp('En az 1 adet girmelisiniz.') : tp('Geçerli bir miktar girin.')); return; }
     setLoading(true);
     try {
       const filledPartials = colorPartials.filter(p => p.color.trim());
@@ -77,21 +90,22 @@ export default function NewOrderPage() {
         body: JSON.stringify({
           ...form,
           color: filledPartials[0]?.color || '',
-          sizeDistribution: sizes,
+          ...(pair ? { sizeDistribution: sizes } : { quantity: qty, sizeDistribution: {} }),
           colorPartials: filledPartials.length > 0 ? filledPartials : null,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || tp('Hata oluştu')); return; }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error || tp('Hata oluştu')); setLoading(false); return; }
+      // Başarılıysa düğme kilitli kalır (çift gönderimi önler); sayfa değişir
       router.replace(`/portal/orders/${data.id}`);
-    } finally { setLoading(false); }
+    } catch { setError(tp('Hata oluştu')); setLoading(false); }
   };
 
   return (
     <PortalShell>
       <div className="max-w-2xl mx-auto space-y-5">
         <div className="flex items-center gap-3">
-          <BackLink variant="icon" href="/portal/orders" label="Siparişlerim" />
+          <BackLink variant="icon" href="/portal/orders" label={tp('Siparişlerim')} />
           <h1 className="page-title">{tp('Yeni Sipariş')}</h1>
         </div>
 
@@ -113,22 +127,28 @@ export default function NewOrderPage() {
                 </select>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-4">
+            {price && (
+              <p className="text-sm text-ink-600" data-testid="new-order-price">
+                {tp('Birim fiyat')}: <b>{money(price.unitPrice, price.currency)}</b> / {unit}
+              </p>
+            )}
+            {freeCode || catalog.length === 0 ? (
               <div>
                 <label className="block text-sm font-medium text-ink-600 mb-1.5">{tp('Model Kodu')}</label>
-                <input value={form.productCode} onChange={e => setForm(f => ({ ...f, productCode: e.target.value }))}
+                <input value={form.productCode} onChange={e => setForm(f => ({ ...f, productId: '', productCode: e.target.value }))} data-testid="free-code"
                   className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" placeholder={tp('örn: SC-100')} />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-ink-600 mb-1.5">{tp('Malzeme')}</label>
-                <input value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" placeholder={tp('örn: Termo')} />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-ink-600 mb-1.5">{tp('İstenen Termin')}</label>
-                <input type="date" value={form.requestedDeliveryDate} onChange={e => setForm(f => ({ ...f, requestedDeliveryDate: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
-              </div>
+            ) : (
+              <button type="button" onClick={() => { setFreeCode(true); setForm(f => ({ ...f, productId: '', productCode: '' })); }}
+                className="text-xs text-brand-700 hover:underline" data-testid="free-code-link">
+                {tp('Katalogda olmayan bir model mi?')}
+              </button>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-ink-600 mb-1.5">{tp('İstenen Termin')}</label>
+              <input type="date" value={form.requestedDeliveryDate} min={new Date().toISOString().slice(0, 10)}
+                onChange={e => setForm(f => ({ ...f, requestedDeliveryDate: e.target.value }))}
+                className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
             </div>
 
             {/* Renk Bilgileri */}
@@ -137,14 +157,14 @@ export default function NewOrderPage() {
               <div className="space-y-2">
                 {colorPartials.map((partial, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <span className="w-32 flex-shrink-0 px-2.5 py-2 bg-ink-100 border border-ink-200 rounded-lg text-sm font-medium text-ink-700 truncate">
+                    <span className="w-28 sm:w-32 flex-shrink-0 px-2.5 py-2 bg-ink-100 border border-ink-200 rounded-lg text-sm font-medium text-ink-700 truncate">
                       {partial.name}
                     </span>
                     <input
                       value={partial.color}
                       onChange={e => updatePartial(idx, e.target.value)}
                       placeholder={tp('örn: Siyah, Kahve...')}
-                      className="flex-1 px-2.5 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
+                      className="flex-1 min-w-0 px-2.5 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none"
                     />
                   </div>
                 ))}
@@ -154,8 +174,25 @@ export default function NewOrderPage() {
 
           {/* Size distribution */}
           <div className="bg-white rounded-xl p-5 shadow-card space-y-3 border border-ink-200/80">
-            <h2 className="font-semibold text-ink-700">{tp('Beden Dağılımı')}</h2>
-            <SizeTable value={sizes} onChange={setSizes} />
+            {pair ? (
+              <>
+                <h2 className="font-semibold text-ink-700">{tp('Beden Dağılımı')}</h2>
+                <SizeTable value={sizes} onChange={setSizes} />
+              </>
+            ) : (
+              <>
+                <h2 className="font-semibold text-ink-700">{tp('Miktar')} ({unit})</h2>
+                <input value={quantity} onChange={e => setQuantity(e.target.value)} inputMode="decimal" data-testid="new-order-quantity"
+                  placeholder={unitDecimals(unit) ? '0,000' : '0'}
+                  className="w-full px-3 py-2.5 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
+              </>
+            )}
+            {estimate != null && (
+              <p className="text-sm text-ink-700 pt-2 border-t border-ink-100" data-testid="new-order-estimate">
+                {tp('Tahmini tutar')}: <b>{money(estimate, price!.currency)}</b>
+                <span className="block text-xs text-ink-400">{tp('Bilgi amaçlıdır; kesin tutar faturada yer alır.')}</span>
+              </p>
+            )}
           </div>
 
           {/* Notes */}

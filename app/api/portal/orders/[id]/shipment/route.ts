@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { SHIPMENT_ORDER, withLastShipment } from '@/lib/order-shipments';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const order = await prisma.soleOrder.findFirst({
     where: { id: params.id, companyId: user.companyId },
-    include: { portalCustomer: true, shipment: true },
+    include: { portalCustomer: true },
   });
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 

@@ -1,9 +1,11 @@
 'use client';
 
 import { formatQty, isPairUnit } from '@/lib/order-units';
-import { orderSteps, statusLabel } from '@/lib/order-status';
-import { shipLines } from '@/lib/shipment';
-import { ShipQtyInputs, ShippedTable } from '@/app/components/shipment-qty';
+import { nextStatuses, statusLabel } from '@/lib/order-status';
+import { remainingLines, shipLines, shippedSoFar } from '@/lib/shipment';
+import { ShipmentList } from '@/app/components/shipment-list';
+import { OrderMessages } from '@/app/components/order-messages';
+import { ShipQtyInputs } from '@/app/components/shipment-qty';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
@@ -61,6 +63,10 @@ export default function OrderDetailPage() {
   const [shipForm, setShipForm] = useState({ shipmentDate: '', deliveryNoteNo: '', carrier: '', trackingNo: '', notes: '' });
   const [actionError, setActionError] = useState('');
   const [shipQty, setShipQty] = useState<Record<number, string>>({});
+  // Kısmi sevkiyat: null = yeni sevkiyat, id = mevcut sevkiyatı düzenle
+  const [shipTarget, setShipTarget] = useState<string | null>(null);
+  const [shipFinal, setShipFinal] = useState(true);
+  const [msgKey, setMsgKey] = useState(0);
   const [saving, setSaving] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [shipping, setShipping] = useState(false);
@@ -161,6 +167,8 @@ export default function OrderDetailPage() {
       body: JSON.stringify({
         shipment: {
           ...shipForm,
+          ...(shipTarget ? { shipmentId: shipTarget } : { mode: 'new' }),
+          final: shipFinal,
           // DecimalInput noktalı ondalık tutar ("490.5"); boş = sipariş miktarı
           items: shipLines(order).map(l => ({ index: l.index, shipped: shipQty[l.index] ? Number(shipQty[l.index]) : undefined })),
         },
@@ -207,7 +215,23 @@ export default function OrderDetailPage() {
         productName: order.product?.name || order.productCode || 'Ürün', unit: order.unit ?? 'çift', color: order.color ?? null,
         sizes: order.product?.sizes ?? [], qty: qtyOf(order.sizeDistribution),
       }];
-  const steps = orderSteps(order.unit);
+  const steps = nextStatuses(order.status, order.unit);
+  const shipments: any[] = Array.isArray(order.shipments) ? order.shipments : order.shipment ? [order.shipment] : [];
+  // Formdaki kalem satırları: "sipariş" sütunu kalan miktarı gösterir (düzenlenen sevkiyat hariç)
+  const formLines = remainingLines(shipLines(order), shippedSoFar(shipments.filter(x => x.id !== shipTarget)))
+    .map(l => ({ ...l, ordered: l.remaining }));
+  const totalRemaining = remainingLines(shipLines(order), shippedSoFar(shipments)).reduce((a, l) => a + l.remaining, 0);
+  const openShipForm = (sh: any | null) => {
+    setShipTarget(sh?.id ?? null);
+    setShipForm({
+      shipmentDate: sh?.shipmentDate ? new Date(sh.shipmentDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      deliveryNoteNo: sh?.deliveryNoteNo ?? '', carrier: sh?.carrier ?? '', trackingNo: sh?.trackingNo ?? '', notes: sh?.notes ?? '',
+    });
+    setShipQty(Array.isArray(sh?.items) ? Object.fromEntries(sh.items.map((i: any) => [i.index, String(i.shipped)])) : {});
+    // Yeni sevkiyat varsayılan olarak kalanın tamamı: son sevkiyat işaretli gelir
+    setShipFinal(sh ? order.status === 'SHIPPED' && sh.id === shipments[shipments.length - 1]?.id : true);
+    setShowShipForm(true);
+  };
   const source = order.link
     ? `SoleCost · ${order.link.buyerCompany?.name ?? 'bağlı firma'}`
     : order.portalCustomer ? `Portal · ${order.portalCustomer.email}` : 'Firma içi kayıt';
@@ -446,38 +470,17 @@ export default function OrderDetailPage() {
             <div className="bg-white rounded-xl p-5 shadow-card border border-ink-200/80">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-ink-700">Sevkiyat</h2>
-                {!showShipForm && (
-                  <button data-testid="ship-open" onClick={() => {
-                    // Mevcut sevkiyat varsa formu onunla doldur
-                    const sh = order.shipment;
-                    setShipForm({
-                      shipmentDate: sh?.shipmentDate ? new Date(sh.shipmentDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-                      deliveryNoteNo: sh?.deliveryNoteNo ?? '', carrier: sh?.carrier ?? '', trackingNo: sh?.trackingNo ?? '', notes: sh?.notes ?? '',
-                    });
-                    setShipQty(Array.isArray(sh?.items) ? Object.fromEntries(sh.items.map((i: any) => [i.index, String(i.shipped)])) : {});
-                    setShowShipForm(true);
-                  }}
+                {!showShipForm && order.status !== 'CANCELLED' && (totalRemaining > 0 || shipments.length === 0) && (
+                  <button data-testid="ship-open" onClick={() => openShipForm(null)}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium">
-                    <Truck className="w-4 h-4" /> {order.shipment ? 'Güncelle' : 'Sevkiyat Ekle'}
+                    <Truck className="w-4 h-4" /> {shipments.length ? 'Yeni Sevkiyat' : 'Sevkiyat Ekle'}
                   </button>
                 )}
               </div>
-              {order.shipment && !showShipForm && (
-                <dl className="grid grid-cols-2 gap-3 text-sm">
-                  {[['Sevk Tarihi', fmt(order.shipment.shipmentDate)],
-                    ['İrsaliye No', order.shipment.deliveryNoteNo || '—'],
-                    ['Taşıyıcı', order.shipment.carrier || '—'],
-                    ['Takip No', order.shipment.trackingNo || '—'],
-                    ...(order.shipment.notes ? [['Not', order.shipment.notes]] : [])].map(([k, v]) => (
-                    <div key={String(k)}>
-                      <dt className="text-xs text-ink-400">{k}</dt>
-                      <dd className="font-medium text-ink-700">{v}</dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-              {order.shipment && !showShipForm && Array.isArray(order.shipment.items) && (
-                <div className="mt-4 pt-3 border-t border-ink-100"><ShippedTable items={order.shipment.items} testId="shipped-table" /></div>
+              {!showShipForm && (
+                shipments.length ? (
+                  <ShipmentList shipments={shipments} noteEndpoint={`/api/orders/${order.id}/delivery-note`} onEdit={sh => openShipForm(sh)} complete={order.status === 'SHIPPED'} />
+                ) : <p className="text-sm text-ink-400">Henüz sevkiyat yok.</p>
               )}
               {showShipForm && (
                 <form onSubmit={handleShipment} className="grid grid-cols-2 gap-4">
@@ -493,8 +496,14 @@ export default function OrderDetailPage() {
                         className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
                     </div>
                   ))}
-                  <div className="col-span-2"><ShipQtyInputs lines={shipLines(order)} value={shipQty} onChange={setShipQty} /></div>
-                  <p className="col-span-2 text-xs text-ink-500">Kaydedince sipariş &quot;Sevk Edildi&quot; olur ve müşteriye bildirim gider.</p>
+                  <div className="col-span-2"><ShipQtyInputs lines={formLines} value={shipQty} onChange={setShipQty} /></div>
+                  {!shipTarget && <p className="col-span-2 text-xs text-ink-400">Miktar sütunu kalan miktarı gösterir; boş bırakılan kalemin kalanı sevk edilir.</p>}
+                  <label className="col-span-2 flex items-start gap-2 text-sm text-ink-700">
+                    <input type="checkbox" checked={shipFinal} onChange={e => setShipFinal(e.target.checked)} className="mt-0.5" data-testid="ship-final" />
+                    <span>Son sevkiyat (sipariş tamamlandı)
+                      <span className="block text-xs text-ink-500">{shipFinal ? 'Kaydedince sipariş "Sevk Edildi" olur ve müşteriye bildirim gider.' : 'Kısmi sevk: durum değişmez, müşteriye kısmi sevk bildirimi gider.'}</span>
+                    </span>
+                  </label>
                   <div className="col-span-2 flex gap-2">
                     <button type="button" onClick={() => setShowShipForm(false)}
                       className="px-4 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">İptal</button>
@@ -507,6 +516,10 @@ export default function OrderDetailPage() {
                 </form>
               )}
             </div>
+
+            {/* Müşteri mesajları ve talepleri */}
+            <OrderMessages endpoint={`/api/orders/${order.id}/messages`} viewer="staff" resolveBase={`/api/orders/${order.id}/messages`}
+              refreshKey={msgKey} onChanged={() => { loadOrder(); setMsgKey(k => k + 1); }} />
 
             {/* Hammadde Gereksinimleri (IN_PRODUCTION) */}
             {order.status === 'IN_PRODUCTION' && materialReqs.length > 0 && (

@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { withLastShipment } from '@/lib/order-shipments';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -15,5 +16,5 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     select: BUYER_ORDER_SELECT,
   });
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json(order);
+  return NextResponse.json(withLastShipment(order));
 }

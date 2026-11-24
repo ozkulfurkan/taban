@@ -75,3 +75,23 @@ export function formatDiff(ordered: number, shipped: number, unit?: string | nul
   // Yüzde %0,1'in altındaysa gösterilmez ("%0" yanıltıcı)
   return pct === null || Math.abs(pct) < 0.1 ? `${sign}${qty}` : `${sign}${qty} (%${Math.abs(pct).toLocaleString('tr-TR')})`;
 }
+
+/** Önceki sevkiyatlarda her kalemden sevk edilen toplam (kalem index'ine göre) */
+export function shippedSoFar(shipments: Array<{ items?: unknown }>): Record<number, number> {
+  const out: Record<number, number> = {};
+  for (const s of shipments) {
+    for (const i of (Array.isArray(s.items) ? s.items : []) as any[]) {
+      const idx = Number(i?.index); const q = Number(i?.shipped);
+      if (Number.isInteger(idx) && Number.isFinite(q)) out[idx] = Math.round(((out[idx] ?? 0) + q) * 1000) / 1000;
+    }
+  }
+  return out;
+}
+
+/** Kalem başına kalan miktar (eksiye inmez) */
+export function remainingLines(lines: ShipLine[], prior: Record<number, number>): Array<ShipLine & { remaining: number }> {
+  return lines.map(l => ({ ...l, remaining: Math.max(0, Math.round((l.ordered - (prior[l.index] ?? 0)) * 1000) / 1000) }));
+}
+
+/** Sevk edilen miktar kalanın bu katını aşamaz (fazla sevk payı) */
+export const OVER_SHIP_FACTOR = 1.5;

@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
+import { portalPrices } from '@/lib/portal-prices';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -26,5 +27,8 @@ export async function GET() {
 
   // Daha önce aldıkları üstte (satıcıdaki siparişler + faturalar)
   const history = await purchaseHistory(user.companyId, user.customerId ?? null);
-  return NextResponse.json(sortByHistory(products, history));
+  // Firma ayarı açıksa birim fiyat (müşteriye özel fiyat öncelikli)
+  const prices = await portalPrices(user.companyId, user.customerId ?? null, products.map(p => p.id));
+  const sorted = sortByHistory(products, history);
+  return NextResponse.json(prices ? sorted.map(p => ({ ...p, price: prices[p.id] ?? null })) : sorted);
 }

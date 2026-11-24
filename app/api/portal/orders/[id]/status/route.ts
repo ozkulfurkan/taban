@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { isForwardStatus, statusTransitionError } from '@/lib/order-status';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -20,6 +21,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     include: { portalCustomer: true },
   });
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const trErr = statusTransitionError(order.status, status, order.unit);
+  if (trErr) return NextResponse.json({ error: trErr }, { status: 400 });
 
   await prisma.$transaction([
     prisma.soleOrder.update({
@@ -36,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   ]);
 
   // Siparişi verene bildirim (portal müşterisi ya da bağlı firma)
-  if (status !== order.status) await notifyOrderStatus(params.id, status, note);
+  if (isForwardStatus(order.status, status, order.unit)) await notifyOrderStatus(params.id, status, note);
 
   return NextResponse.json({ ok: true });
 }

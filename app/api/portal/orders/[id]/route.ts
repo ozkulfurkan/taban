@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { SHIPMENT_ORDER, withLastShipment } from '@/lib/order-shipments';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       portalCustomer: { select: { id: true, name: true, email: true } },
       product: { select: { id: true, name: true, code: true } },
       statusHistory: { orderBy: { createdAt: 'asc' } },
-      shipment: true,
+      shipments: { orderBy: SHIPMENT_ORDER },
       subcontractorOrders: {
         select: { id: true, orderNo: true, subcontractor: { select: { id: true, name: true } } },
       },
@@ -48,5 +49,5 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   });
 
   if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json(order);
+  return NextResponse.json(withLastShipment(order));
 }

@@ -87,6 +87,8 @@ model Company {
   updatedAt               DateTime                 @updatedAt
   /// Her sabah TR 10:00'da firma sahibi/yöneticilere özet e-postası (bekleyen siparişler, kasa/banka)
   dailySummaryEmail       Boolean                  @default(true)
+  /// Müşteri portalında birim fiyat ve tahmini tutar gösterilsin mi (müşteriye özel fiyat önceliklidir)
+  portalShowPrices        Boolean                  @default(false)
   users                   User[]
   buyerLinks              CompanyLink[]            @relation("LinkBuyer")
   sellerLinks             CompanyLink[]            @relation("LinkSeller")
@@ -723,7 +725,8 @@ model SoleOrder {
   convertedAt           DateTime?
   status                OrderStatus          @default(ORDER_RECEIVED)
   statusHistory         OrderStatusHistory[]
-  shipment              OrderShipment?
+  shipments             OrderShipment[]
+  messages              OrderMessage[]
   subcontractorOrders   SubcontractorOrder[]
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
@@ -746,9 +749,10 @@ model OrderStatusHistory {
   @@index([orderId])
 }
 
+// Sevkiyat: bir siparişin birden fazla (kısmi) sevkiyatı olabilir; son sevkiyat siparişi "Sevk Edildi" yapar
 model OrderShipment {
   id             String    @id @default(cuid())
-  orderId        String    @unique
+  orderId        String
   order          SoleOrder @relation(fields: [orderId], references: [id])
   shipmentDate   DateTime
   deliveryNoteNo String?
@@ -761,6 +765,8 @@ model OrderShipment {
   totalQuantity  Float?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
+  @@index([orderId, shipmentDate])
 }
 
 // ─── Fason Modülleri ───────────────────────────────────────────────────────────
@@ -1197,6 +1203,28 @@ model Koli {
   @@unique([companyId, barcode])
   @@index([companyId, createdAt])
   @@index([orderId])
+}
+
+// Sipariş içi mesajlar ve müşterinin iptal/değişiklik talepleri (portal müşterisi ↔ firma)
+model OrderMessage {
+  id               String    @id @default(cuid())
+  orderId          String
+  order            SoleOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  companyId        String
+  kind             String    @default("MESSAGE") // MESSAGE | CANCEL_REQUEST | CHANGE_REQUEST
+  authorType       String // staff | customer
+  userId           String?
+  portalCustomerId String?
+  authorName       String
+  body             String
+  resolvedAt       DateTime?
+  resolution       String? // approved | rejected
+  readByStaffAt    DateTime?
+  readByCustomerAt DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([orderId, createdAt])
+  @@index([companyId, createdAt])
 }
 
 model BarcodeSequence {

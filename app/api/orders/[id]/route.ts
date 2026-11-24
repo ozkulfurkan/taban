@@ -1,6 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { isForwardStatus, statusTransitionError } from '@/lib/order-status';
+import { SHIPMENT_ORDER, withLastShipment } from '@/lib/order-shipments';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -26,7 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         },
       },
       link: { select: { id: true, buyerCompany: { select: { name: true } } } },
-      shipment: true,
+      shipments: { orderBy: SHIPMENT_ORDER },
       statusHistory: { orderBy: { createdAt: 'asc' } },
       subcontractorOrders: {
         include: { subcontractor: { select: { id: true, name: true } } },
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         },
       })
     : [];
-  return NextResponse.json({ ...order, itemProducts });
+  return NextResponse.json(withLastShipment({ ...order, itemProducts }));
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -68,6 +70,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (foreign) return foreign;
   }
   if (status !== undefined && !isOrderStatus(status)) return NextResponse.json({ error: 'Geçersiz durum' }, { status: 400 });
+  if (status) {
+    const trErr = statusTransitionError(existing.status, status, existing.unit);
+    if (trErr) return NextResponse.json({ error: trErr }, { status: 400 });
+  }
+  if (shipment && existing.status === 'CANCELLED') return NextResponse.json({ error: 'İptal edilmiş sipariş sevk edilemez' }, { status: 400 });
   if (shipment && !shipment.shipmentDate) return NextResponse.json({ error: 'Sevk tarihi gerekli' }, { status: 400 });
 
   const updateData: any = {};
@@ -97,12 +104,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       customer: { select: { id: true, name: true } },
       portalCustomer: { select: { id: true, name: true, email: true } },
       product: { select: { id: true, name: true, code: true } },
-      shipment: true,
+      shipments: { orderBy: SHIPMENT_ORDER },
       statusHistory: { orderBy: { createdAt: 'asc' } },
     },
   });
 
-  if (statusChanged) await notifyOrderStatus(params.id, status, body.statusNote || null);
+  if (statusChanged && isForwardStatus(existing.status, status, existing.unit)) await notifyOrderStatus(params.id, status, body.statusNote || null);
   // Yalnızca termin değiştiyse (durum aynı) sipariş verene ayrıca bildirilir
   else if (terminChanged && existing.status !== 'CANCELLED' && existing.status !== 'SHIPPED') await notifyOrderTermin(params.id, updateData.confirmedDeliveryDate);
 
@@ -110,9 +117,20 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (shipment) {
     const r = await saveShipment(order, shipment);
     if (r.error) return NextResponse.json({ error: r.error }, { status: 400 });
+    const fresh = await prisma.soleOrder.findUnique({
+      where: { id: params.id },
+      include: {
+        customer: { select: { id: true, name: true } },
+        portalCustomer: { select: { id: true, name: true, email: true } },
+        product: { select: { id: true, name: true, code: true } },
+        shipments: { orderBy: SHIPMENT_ORDER },
+        statusHistory: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+    return NextResponse.json(withLastShipment(fresh!));
   }
 
-  return NextResponse.json(order);
+  return NextResponse.json(withLastShipment(order));
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
@@ -122,6 +140,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
   const existing = await prisma.soleOrder.findFirst({ where: { id: params.id, companyId: user.companyId } });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (existing.status === 'SHIPPED') return NextResponse.json({ error: 'Sevk edilmiş sipariş iptal edilemez' }, { status: 400 });
 
   // Soft delete: mark as CANCELLED
   await prisma.soleOrder.update({

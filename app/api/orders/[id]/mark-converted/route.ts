@@ -15,21 +15,19 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const existing = await prisma.soleOrder.findFirst({ where: { id: params.id, companyId: user.companyId } });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (existing.status === 'CANCELLED') return NextResponse.json({ error: 'İptal edilmiş sipariş satışa çevrilemez' }, { status: 400 });
+  if (existing.invoiceId) return NextResponse.json({ error: 'Sipariş zaten satışa çevrildi' }, { status: 409 });
 
-  // Verify invoice belongs to same company
+  // Fatura aynı firmaya ve siparişin müşterisine ait olmalı; başka siparişe bağlı olmamalı
   const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, companyId: user.companyId } });
   if (!invoice) return NextResponse.json({ error: 'Fatura bulunamadı' }, { status: 404 });
+  if (invoice.customerId !== existing.customerId) return NextResponse.json({ error: 'Fatura bu siparişin müşterisine ait değil' }, { status: 400 });
 
-  const order = await prisma.soleOrder.update({
-    where: { id: params.id },
-    data: {
-      invoiceId,
-      convertedAt: new Date(),
-      statusHistory: {
-        create: { status: existing.status, note: `Satışa çevrildi — Fatura: ${invoice.invoiceNo}` },
-      },
-    },
-  });
+  // Aynı anda iki çevirme gelirse yalnızca biri geçer
+  const claimed = await prisma.soleOrder.updateMany({ where: { id: params.id, invoiceId: null }, data: { invoiceId, convertedAt: new Date() } });
+  if (!claimed.count) return NextResponse.json({ error: 'Sipariş zaten satışa çevrildi' }, { status: 409 });
+  await prisma.orderStatusHistory.create({ data: { orderId: params.id, status: existing.status, note: `Satışa çevrildi — Fatura: ${invoice.invoiceNo}` } });
+  const order = await prisma.soleOrder.findUnique({ where: { id: params.id } });
 
   return NextResponse.json({ ok: true, order });
 }

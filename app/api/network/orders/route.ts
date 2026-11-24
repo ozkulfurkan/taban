@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { withLastShipment } from '@/lib/order-shipments';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -18,5 +19,5 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' },
     take: 500,
   });
-  return NextResponse.json(orders);
+  return NextResponse.json(orders.map(withLastShipment));
 }

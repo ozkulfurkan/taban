@@ -1,6 +1,7 @@
 'use client';
 
-import { ShippedTable } from '@/app/components/shipment-qty';
+import { ShipmentList } from '@/app/components/shipment-list';
+import { OrderMessages } from '@/app/components/order-messages';
 import { formatQty } from '@/lib/order-units';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
@@ -11,7 +12,7 @@ import SizeTable from '../../components/size-table';
 import { Loader2, RefreshCw, Truck } from '@/app/components/icons';
 import { usePortalText } from '@/lib/i18n/portal';
 import BackLink from '@/app/components/back-link';
-import { stageLabel } from '@/lib/order-status';
+import { stageLabel, statusLabel } from '@/lib/order-status';
 import { variantLabel, variantText } from '@/lib/shore';
 
 export default function PortalOrderDetailPage() {
@@ -21,6 +22,13 @@ export default function PortalOrderDetailPage() {
   const params = useParams();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [reload, setReload] = useState(0);
+  // İptal / talep
+  const [reqOpen, setReqOpen] = useState(false);
+  const [reqKind, setReqKind] = useState<'CHANGE_REQUEST' | 'CANCEL_REQUEST'>('CHANGE_REQUEST');
+  const [reqText, setReqText] = useState('');
+  const [actBusy, setActBusy] = useState(false);
+  const [actMsg, setActMsg] = useState('');
 
   useEffect(() => {
     if (status === 'unauthenticated') { router.replace('/portal/login'); return; }
@@ -28,7 +36,29 @@ export default function PortalOrderDetailPage() {
     fetch(`/api/portal/me/orders/${params.id}`)
       .then(r => r.json()).then(d => setOrder(d.error ? null : d))
       .finally(() => setLoading(false));
-  }, [status, router, params?.id]);
+  }, [status, router, params?.id, reload]);
+
+  // Onaydan önce doğrudan iptal; sonrasında iptal/değişiklik talebi
+  const cancelOrder = async () => {
+    if (!confirm(tp('Siparişi iptal etmek istediğinize emin misiniz?'))) return;
+    setActBusy(true); setActMsg('');
+    const r = await fetch(`/api/portal/me/orders/${params!.id}/cancel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const d = await r.json().catch(() => ({}));
+    setActBusy(false);
+    if (!r.ok) { setActMsg(d.error || tp('Hata oluştu')); return; }
+    setReload(x => x + 1);
+  };
+  const sendRequest = async () => {
+    if (!reqText.trim()) return;
+    setActBusy(true); setActMsg('');
+    const r = await fetch(`/api/portal/me/orders/${params!.id}/messages`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: reqKind, body: reqText.trim() }),
+    });
+    const d = await r.json().catch(() => ({}));
+    setActBusy(false);
+    if (!r.ok) { setActMsg(d.error || tp('Hata oluştu')); return; }
+    setReqOpen(false); setReqText(''); setActMsg(tp('Talebiniz firmaya iletildi.')); setReload(x => x + 1);
+  };
 
   const handleRepeat = () => {
     if (!order) return;
@@ -46,25 +76,70 @@ export default function PortalOrderDetailPage() {
   if (!order) return <PortalShell><p className="text-ink-500">{tp('Sipariş bulunamadı.')}</p></PortalShell>;
 
   const isPackage = Array.isArray(order.orderItems) && order.orderItems.length > 0;
+  const canCancel = order.status === 'ORDER_RECEIVED' && !order.confirmedAt;
+  const canRequest = !canCancel && !['SHIPPED', 'CANCELLED'].includes(order.status);
+  const price = (pid?: string | null) => (pid && order.prices ? order.prices[pid] : null);
+  const money = (n: number, cur: string) => `${n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${cur}`;
+  const lineTotal = (pid: string | null | undefined, qty: number) => { const p = price(pid); return p ? money(p.unitPrice * qty, p.currency) : null; };
+  const estimate = (() => {
+    if (!order.prices) return null;
+    const rows = isPackage ? (order.orderItems as any[]).map(i => [i.productId, i.totalQuantity]) : [[order.productId, order.totalQuantity]];
+    const byCur: Record<string, number> = {};
+    for (const [pid, q] of rows) { const p = price(pid); if (p) byCur[p.currency] = (byCur[p.currency] ?? 0) + p.unitPrice * Number(q || 0); }
+    const parts = Object.entries(byCur).map(([c, v]) => money(v, c));
+    return parts.length ? parts.join(' + ') : null;
+  })();
 
   return (
     <PortalShell>
       <div className="max-w-2xl mx-auto space-y-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <BackLink variant="icon" href="/portal/orders" label="Siparişlerim" />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <BackLink variant="icon" href="/portal/orders" label={tp('Siparişlerim')} />
             <div>
               <h1 className="page-title">{order.orderNo}</h1>
-              <p className="text-xs text-ink-400">{new Date(order.createdAt).toLocaleDateString('tr-TR')}</p>
+              <p className="text-xs text-ink-400">
+                {new Date(order.createdAt).toLocaleDateString('tr-TR')} · {order.source === 'portal' ? tp('Portaldan') : order.source === 'network' ? tp('Firma ağından') : tp('Firma tarafından')}
+              </p>
             </div>
           </div>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+          {canCancel && (
+            <button onClick={cancelOrder} disabled={actBusy} data-testid="portal-cancel"
+              className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium">{tp('Siparişi iptal et')}</button>
+          )}
+          {canRequest && (
+            <button onClick={() => setReqOpen(o => !o)} data-testid="portal-request"
+              className="px-3 py-2 bg-white border border-ink-200 hover:bg-ink-50 text-ink-700 rounded-lg text-sm font-medium">{tp('İptal / değişiklik talebi')}</button>
+          )}
           {!isPackage && (
             <button onClick={handleRepeat}
               className="flex items-center gap-1.5 px-3 py-2 bg-ink-100 hover:bg-ink-200 text-ink-600 rounded-lg text-sm font-medium transition-colors">
               <RefreshCw className="w-4 h-4" /> {tp('Tekrarla')}
             </button>
           )}
+          </div>
         </div>
+
+        {reqOpen && (
+          <div className="bg-white rounded-xl p-4 shadow-card border border-ink-200/80 space-y-3" data-testid="request-form">
+            <p className="text-sm text-ink-600">{tp('Sipariş onaylandığı için değişiklik ya da iptal firmanın onayıyla yapılır.')}</p>
+            <div className="flex gap-2">
+              {(['CHANGE_REQUEST', 'CANCEL_REQUEST'] as const).map(k => (
+                <button key={k} onClick={() => setReqKind(k)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${reqKind === k ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-ink-700 border-ink-200'}`}>
+                  {k === 'CHANGE_REQUEST' ? tp('Değişiklik talebi') : tp('İptal talebi')}
+                </button>
+              ))}
+            </div>
+            <textarea value={reqText} onChange={e => setReqText(e.target.value)} rows={3} maxLength={2000} data-testid="request-text"
+              placeholder={reqKind === 'CHANGE_REQUEST' ? tp('Ne değişsin? (ör. 40 numara 20 çift daha)') : tp('İptal nedeni')}
+              className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm" />
+            <button onClick={sendRequest} disabled={actBusy || !reqText.trim()} data-testid="request-send"
+              className="px-4 py-2 bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white rounded-lg text-sm font-medium">{tp('Talebi gönder')}</button>
+          </div>
+        )}
+        {actMsg && <p className="text-sm text-ink-700 bg-ink-50 rounded-lg px-3 py-2" role="status">{actMsg}</p>}
 
         {/* Stepper */}
         <div className="bg-white rounded-xl p-5 shadow-card overflow-x-auto border border-ink-200/80">
@@ -85,7 +160,7 @@ export default function PortalOrderDetailPage() {
               <table className="w-full text-sm border border-ink-200 rounded-lg overflow-hidden">
                 <thead className="bg-ink-50">
                   <tr>
-                    {['Model', tp(variantLabel(order.unit)), tp('Beden Dağılımı'), tp('Adet')].map(h => (
+                    {['Model', tp(variantLabel(order.unit)), tp('Beden Dağılımı'), tp('Adet'), ...(order.prices ? [tp('Tahmini tutar')] : [])].map(h => (
                       <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-ink-500 border-b border-ink-200">{h}</th>
                     ))}
                   </tr>
@@ -110,6 +185,7 @@ export default function PortalOrderDetailPage() {
                         </div>
                       </td>
                       <td className="px-3 py-2.5 text-xs font-bold text-ink-800">{formatQty(item.totalQuantity, item.unit ?? order.unit)}</td>
+                      {order.prices && <td className="px-3 py-2.5 text-xs text-ink-700">{lineTotal(item.productId, item.totalQuantity) ?? '—'}</td>}
                     </tr>
                   ))}
                 </tbody>
@@ -120,9 +196,10 @@ export default function PortalOrderDetailPage() {
               {[
                 [tp('Model Kodu'), order.productCode || order.product?.name || '—'],
                 [tp('Renk'), order.color || '—'],
-                [tp('Malzeme'), order.material || '—'],
-                ['Toplam Miktar', formatQty(order.totalQuantity, order.unit)],
-                ['Termin Tarihi', order.confirmedDeliveryDate
+                ...(order.material ? [[tp('Malzeme'), order.material]] : []),
+                [tp('Toplam Miktar'), formatQty(order.totalQuantity, order.unit)],
+                ...(price(order.productId) ? [[tp('Birim fiyat'), money(price(order.productId).unitPrice, price(order.productId).currency)]] : []),
+                [tp('Termin Tarihi'), order.confirmedDeliveryDate
                   ? new Date(order.confirmedDeliveryDate).toLocaleDateString('tr-TR')
                   : '—'],
               ].map(([k, v]) => (
@@ -133,6 +210,11 @@ export default function PortalOrderDetailPage() {
               ))}
             </dl>
           )}
+          {estimate && (
+            <p className="mt-4 text-sm text-ink-700" data-testid="order-estimate">
+              <b>{tp('Tahmini tutar')}:</b> {estimate} <span className="text-xs text-ink-400">({tp('KDV hariç; kesin tutar faturada')})</span>
+            </p>
+          )}
           {order.notes && <p className="mt-4 text-sm text-ink-600 bg-ink-50 rounded-lg p-3">{order.notes}</p>}
         </div>
 
@@ -142,31 +224,15 @@ export default function PortalOrderDetailPage() {
           <SizeTable value={order.sizeDistribution || {}} readOnly />
         </div>
 
-        {/* Shipment */}
-        {order.shipment && (
+        {/* Sevkiyatlar (kısmi sevkiyat ve irsaliye) */}
+        {order.shipments?.length > 0 && (
           <div className="bg-white rounded-xl p-5 shadow-card border border-ink-200/80">
-            <div className="flex items-center gap-2 mb-4">
-              <Truck className="w-5 h-5 text-emerald-600" />
-              <h2 className="font-semibold text-ink-700">{tp('Sevkiyat Bilgileri')}</h2>
-            </div>
-            <dl className="grid grid-cols-2 gap-3 text-sm">
-              {[
-                [tp('Sevk Tarihi'), new Date(order.shipment.shipmentDate).toLocaleDateString('tr-TR')],
-                [tp('İrsaliye No'), order.shipment.deliveryNoteNo || '—'],
-                [tp('Taşıyıcı'), order.shipment.carrier || '—'],
-                ['Takip No', order.shipment.trackingNo || '—'],
-              ].map(([k, v]) => (
-                <div key={String(k)}>
-                  <dt className="text-xs text-ink-400 mb-0.5">{k}</dt>
-                  <dd className="font-medium text-ink-700">{v}</dd>
-                </div>
-              ))}
-            </dl>
-            {Array.isArray(order.shipment.items) && (
-              <div className="mt-4 pt-3 border-t border-ink-100"><ShippedTable items={order.shipment.items} /></div>
-            )}
+            <h2 className="font-semibold text-ink-700 mb-3">{tp('Sevkiyat Bilgileri')}</h2>
+            <ShipmentList shipments={order.shipments} noteEndpoint={`/api/portal/me/orders/${order.id}/delivery-note`} t={tp} complete={order.status === 'SHIPPED'} />
           </div>
         )}
+
+        <OrderMessages endpoint={`/api/portal/me/orders/${order.id}/messages`} viewer="customer" t={tp} refreshKey={reload} />
 
         {/* Status history */}
         {order.statusHistory?.length > 0 && (
@@ -177,7 +243,7 @@ export default function PortalOrderDetailPage() {
                 <div key={h.id} className="flex items-start gap-3 text-sm">
                   <div className="w-1.5 h-1.5 rounded-full bg-brand-600 mt-1.5 flex-shrink-0" />
                   <div>
-                    <span className="font-medium text-ink-700">{h.status.replace(/_/g, ' ')}</span>
+                    <span className="font-medium text-ink-700">{tp(statusLabel(h.status, order.unit))}</span>
                     {h.note && <span className="text-ink-500 ml-2">— {h.note}</span>}
                     <p className="text-xs text-ink-400">{new Date(h.createdAt).toLocaleString('tr-TR')}</p>
                   </div>

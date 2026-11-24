@@ -53,9 +53,9 @@ test('sevkiyat kaydı siparişi "Sevk Edildi" yapar ve alıcı görür', async (
   expect((await seller.owner.put(`/api/orders/${id}`, { data: { shipment: { deliveryNoteNo: 'X' } } })).status()).toBe(400);
   const r = await seller.owner.put(`/api/orders/${id}`, { data: { shipment: { shipmentDate: '2026-11-25', deliveryNoteNo: 'IRS-1', carrier: 'Aras', notes: 'Paletli' } } });
   expect(r.status(), await r.text()).toBe(200);
-  const row = await prisma.soleOrder.findUnique({ where: { id }, include: { shipment: true, statusHistory: true } });
+  const row = await prisma.soleOrder.findUnique({ where: { id }, include: { shipments: true, statusHistory: true } });
   expect(row?.status).toBe('SHIPPED');
-  expect(row?.shipment?.notes).toBe('Paletli');
+  expect(row?.shipments[0]?.notes).toBe('Paletli');
   expect(row?.statusHistory.map(h => h.note)).toContain('İrsaliye: IRS-1 · 1.250,5 kg');
   const mine = await (await buyer.owner.get(`/api/network/orders/${id}`)).json();
   expect(mine.status).toBe('SHIPPED');
@@ -84,9 +84,9 @@ test('sevk edilen gerçek miktar: 1000 kg → 990, 250,5 kg → 260; fark geçmi
     data: { shipment: { shipmentDate: '2026-11-25', deliveryNoteNo: 'IRS-9', items: [{ index: 0, shipped: 990 }, { index: 1, shipped: 260 }] } },
   });
   expect(r.status(), await r.text()).toBe(200);
-  const row = await prisma.soleOrder.findUnique({ where: { id }, include: { shipment: true, statusHistory: true } });
-  expect(row?.shipment?.totalQuantity).toBe(1250);
-  expect((row?.shipment?.items as any[]).map(i => [i.ordered, i.shipped])).toEqual([[1000, 990], [250.5, 260]]);
+  const row = await prisma.soleOrder.findUnique({ where: { id }, include: { shipments: true, statusHistory: true } });
+  expect(row?.shipments[0]?.totalQuantity).toBe(1250);
+  expect((row?.shipments[0]?.items as any[]).map(i => [i.ordered, i.shipped])).toEqual([[1000, 990], [250.5, 260]]);
   // Toplam 1250,5 sipariş → 1250 sevk: fark −0,5 kg
   expect(row?.statusHistory.find(h => h.status === 'SHIPPED')?.note).toBe('İrsaliye: IRS-9 · 1.250 kg (−0,5 kg)');
 
@@ -98,6 +98,6 @@ test('sevk edilen gerçek miktar: 1000 kg → 990, 250,5 kg → 260; fark geçmi
   const id2 = await placeOrder();
   const p = await seller.owner.post(`/api/portal/orders/${id2}/shipment`, { data: { shipmentDate: '2026-11-26', items: [{ index: 0, shipped: 1020 }] } });
   expect(p.status(), await p.text()).toBe(200);
-  const s2 = await prisma.orderShipment.findUnique({ where: { orderId: id2 } });
+  const s2 = await prisma.orderShipment.findFirst({ where: { orderId: id2 } });
   expect((s2?.items as any[]).map(i => i.shipped)).toEqual([1020, 250.5]);
 });

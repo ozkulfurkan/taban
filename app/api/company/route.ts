@@ -35,7 +35,7 @@ export async function PUT(req: NextRequest) {
     if (!companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
 
     const body = await req.json();
-    const { name, address, taxId, phone, bankInfo, logoUrl, usdToTry, eurToTry, vatRate, companyType, dailySummaryEmail } = body ?? {};
+    const { name, address, taxId, phone, bankInfo, logoUrl, usdToTry, eurToTry, vatRate, companyType, dailySummaryEmail, portalShowPrices } = body ?? {};
 
     // Logo: yalnızca gerçek JPEG/PNG/WebP (tür içerikten okunur); SVG ve dış adres kabul edilmez
     let logo: string | null | undefined = undefined;
@@ -64,6 +64,7 @@ export async function PUT(req: NextRequest) {
         ...(eurToTry !== undefined ? { eurToTry: parseFloat(eurToTry) || 1 } : {}),
         ...(vatRate !== undefined ? { vatRate: parseFloat(vatRate) || 0 } : {}),
         ...(typeof dailySummaryEmail === 'boolean' ? { dailySummaryEmail } : {}),
+        ...(typeof portalShowPrices === 'boolean' ? { portalShowPrices } : {}),
         ...(companyType !== undefined && VALID_COMPANY_TYPES.includes(companyType) ? { companyType } : {}),
       },
     });

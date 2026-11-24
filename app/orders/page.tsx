@@ -378,7 +378,7 @@ export default function OrdersPage() {
           <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
             <div className="overflow-x-auto">
               {/* Header */}
-              <div className="grid grid-cols-[32px_140px_1fr_110px_80px_44px] sm:grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-2.5 bg-ink-50 text-ink-500 text-[11px] font-semibold uppercase tracking-[0.08em] border-b border-ink-200">
+              <div className="grid grid-cols-[24px_minmax(0,1.1fr)_minmax(0,1fr)_auto_auto] gap-x-2 sm:gap-x-0 sm:grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-2.5 bg-ink-50 text-ink-500 text-[11px] font-semibold uppercase tracking-[0.08em] border-b border-ink-200">
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -392,7 +392,7 @@ export default function OrdersPage() {
                 <span className="hidden sm:block">Sipariş Tarihi</span>
                 <span>Termin</span>
                 <span className="text-right">Miktar</span>
-                <span></span>
+                <span className="hidden sm:block"></span>
               </div>
 
               {/* Rows */}
@@ -410,7 +410,7 @@ export default function OrdersPage() {
                     <div
                       key={order.id}
                       onClick={() => router.push(`/orders/${order.id}`)}
-                      className={`grid grid-cols-[32px_140px_1fr_110px_80px_44px] sm:grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-3 border-l-4 ${STATUS_BORDER[order.status] ?? 'border-ink-300'} ${isSelected ? 'bg-brand-50/60' : 'hover:bg-ink-50/80'} cursor-pointer transition-colors`}
+                      className={`grid grid-cols-[24px_minmax(0,1.1fr)_minmax(0,1fr)_auto_auto] gap-x-2 sm:gap-x-0 sm:grid-cols-[32px_160px_1fr_1fr_110px_110px_80px_52px] items-center px-4 py-3 border-l-4 ${STATUS_BORDER[order.status] ?? 'border-ink-300'} ${isSelected ? 'bg-brand-50/60' : 'hover:bg-ink-50/80'} cursor-pointer transition-colors`}
                     >
                       {/* Checkbox */}
                       <input
@@ -425,7 +425,17 @@ export default function OrdersPage() {
                       <div className="flex flex-col gap-0.5">
                         <span className="font-bold text-ink-800 text-sm">{order.orderNo}</span>
                         {order.status === 'ORDER_RECEIVED' && !order.confirmedAt && (
-                          <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-semibold align-middle" data-testid={`order-unconfirmed-${order.id}`}>Onay bekliyor</span>
+                          <span className="w-fit px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-semibold align-middle" data-testid={`order-unconfirmed-${order.id}`}>Onay bekliyor</span>
+                        )}
+                        {order.openRequest && (
+                          <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-semibold w-fit" data-testid={`order-request-${order.id}`}>
+                            {order.openRequest === 'CANCEL_REQUEST' ? 'İptal talebi' : 'Değişiklik talebi'}
+                          </span>
+                        )}
+                        {order.unreadMessages > 0 && (
+                          <span className="px-1.5 py-0.5 rounded bg-brand-700 text-white text-[10px] font-semibold w-fit" data-testid={`order-unread-${order.id}`}>
+                            {order.unreadMessages} yeni mesaj
+                          </span>
                         )}
                         {order.invoiceId && (
                           <span className="inline-flex items-center gap-0.5 text-emerald-600 text-[10px] font-medium">
@@ -465,7 +475,7 @@ export default function OrdersPage() {
                       </div>
 
                       {/* Düzenle */}
-                      <div className="flex items-center justify-center" onClick={e => e.stopPropagation()}>
+                      <div className="hidden sm:flex items-center justify-center" onClick={e => e.stopPropagation()}>
                         <Link href={`/orders/${order.id}`}
                           className="p-1.5 rounded-lg hover:bg-ink-200 text-ink-500 hover:text-ink-700 transition-colors"
                           title="Düzenle">
