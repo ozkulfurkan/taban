@@ -1,4 +1,4 @@
-// Ürün kataloğu PDF'i (HTML → expo-print). Saf modül: test edilebilir, React Native'e bağlı değil.
+// Ürün kataloğu PDF'i (HTML → web'de yazdır / PDF olarak kaydet, mobilde expo-print). Saf modül: web ve mobil (@shared/catalog-html).
 
 export type CatalogProduct = {
   id: string; code: string | null; name: string; description: string | null; unit: string | null;

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AppShell from '@/app/components/app-shell';
 import { useLanguage } from '@/lib/i18n/language-context';
-import { BoxIcon, Plus, Trash2, Loader2, Search, Globe, X, Check, Upload, Download, Tag, Pencil, AlertTriangle } from '@/app/components/icons';
+import { BoxIcon, Plus, Trash2, Loader2, Search, Globe, X, Check, Upload, Download, Tag, Pencil, AlertTriangle, BookOpen } from '@/app/components/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -210,6 +210,9 @@ export default function ProductsPage() {
               {importing ? 'İçe Aktarılıyor...' : 'Excel\'den İçe Aktar'}
             </button>
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
+            <Link href="/products/katalog" className="flex items-center gap-1.5 px-3 py-2 border border-brand-200 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg text-sm font-medium transition-colors" data-testid="open-catalog">
+              <BookOpen className="w-4 h-4" /> Katalog PDF
+            </Link>
             <Link href="/products/new" className="flex items-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium transition-colors shadow-sm text-sm">
               <Plus className="w-4 h-4" /> {t('products', 'newProduct')}
             </Link>

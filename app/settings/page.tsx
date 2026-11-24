@@ -44,6 +44,7 @@ export default function SettingsPage() {
   const [banks, setBanks] = useState<BankEntry[]>([]);
   const [companyType, setCompanyType] = useState('SOLE_MANUFACTURER');
   const [companyLoading, setCompanyLoading] = useState(true);
+  const [membership, setMembership] = useState<{ status: string; trialEndsAt: string | null } | null>(null);
 
   const canEditCompany = user?.role === 'ADMIN' || user?.role === 'COMPANY_OWNER';
 
@@ -61,6 +62,7 @@ export default function SettingsPage() {
           setVatRate(String(d.vatRate ?? 20));
           setLogoUrl(d.logoUrl ?? '');
           setCompanyType(d.companyType ?? 'SOLE_MANUFACTURER');
+          setMembership({ status: d.subscriptionStatus ?? 'TRIAL', trialEndsAt: d.trialEndsAt ?? null });
           try {
             setBanks(d.bankInfo ? JSON.parse(d.bankInfo) : []);
           } catch {
@@ -233,6 +235,7 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-ink-700 mb-1">{t('auth', 'email')}</label>
             <input value={user?.email ?? ''} disabled className="w-full px-3 py-2.5 border border-ink-200 rounded-lg bg-ink-50 text-ink-500" />
           </div>
+          {membership ? <MembershipInfo status={membership.status} trialEndsAt={membership.trialEndsAt} /> : null}
 
           <div className="flex items-center gap-3 pb-2 pt-2 border-b">
             <Globe className="w-5 h-5 text-brand-700" />
@@ -563,5 +566,29 @@ export default function SettingsPage() {
         )}
       </div>
     </AppShell>
+  );
+}
+
+// Üyelik: ücretsiz kullanımın bitiş tarihi ve kalan gün (Pro üyelikte yalnızca durum)
+function MembershipInfo({ status, trialEndsAt }: { status: string; trialEndsAt: string | null }) {
+  if (status === 'PRO') {
+    return (
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" data-testid="membership">
+        <span className="font-semibold">Üyelik:</span> Pro
+      </div>
+    );
+  }
+  if (!trialEndsAt) return null;
+  const end = new Date(trialEndsAt);
+  const days = Math.ceil((end.getTime() - Date.now()) / 86_400_000);
+  const date = end.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const ended = days <= 0;
+  return (
+    <div className={`rounded-lg border px-4 py-3 text-sm ${ended ? 'border-red-200 bg-red-50 text-red-800' : 'border-brand-200 bg-brand-50 text-brand-800'}`} data-testid="membership">
+      <div className="font-semibold">Ücretsiz kullanım bitiş tarihi: {date}</div>
+      <div className="mt-0.5 text-ink-600">
+        {ended ? 'Ücretsiz kullanım süreniz doldu.' : `${days.toLocaleString('tr-TR')} gün kaldı. Sonrasında aylık 500 ₺.`}
+      </div>
+    </div>
   );
 }

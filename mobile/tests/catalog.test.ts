@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { catalogHtml, type CatalogProduct } from '../src/core/catalog-html';
+import { catalogHtml, type CatalogProduct } from '../../lib/catalog-html';
 
 const company = { name: 'Demo <Taban>', logoUrl: null, phone: '0212 555', address: null };
 const p = (over: Partial<CatalogProduct> = {}): CatalogProduct => ({

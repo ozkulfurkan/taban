@@ -5,7 +5,7 @@
 import { chromium, type Page } from 'playwright';
 import { mkdirSync } from 'fs';
 import { join } from 'path';
-import { catalogHtml } from '../../mobile/src/core/catalog-html';
+import { catalogHtml } from '../../lib/catalog-html';
 
 const OUT = join(__dirname, 'shots');
 const WEB = process.env.WEB ?? 'http://localhost:3001';
