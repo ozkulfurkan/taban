@@ -49,7 +49,7 @@ export default function PortalHome() {
         {fason ? (
           <Card>
             <T style={{ fontWeight: '600' }}>Fason portalı</T>
-            <T variant="small">Fason siparişleri, üretim bildirimi ve zimmet şimdilik webdeki fason portalından takip ediliyor.</T>
+            <T variant="small">Fason siparişleri, üretim bildirimi ve zimmet şimdilik web&apos;deki fason portalından takip ediliyor.</T>
             <Button title="Fason portalını aç" icon="link" variant="secondary" testID="portal-fason-web"
               onPress={() => { void WebBrowser.openBrowserAsync(`${WEB_URL}/portal/fason/login`); }} />
           </Card>
