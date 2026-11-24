@@ -130,6 +130,23 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 - **Büyüklük:** M
 - **Durum:** Tamamlandı [#41](https://github.com/ozkulfurkan/taban/pull/41)
 
+## G-7 · Koli etiketi (tabancı ve ayakkabıcı)
+- **Tarih:** 24.11.2026
+- **İstek:** "Tabancılara ve ayakkabıcılara uygun bir formata getirelim. Onlar genelde koli için barkod yazdırıyor. Kolinin içinde ne var onu yazarlar. Hangi numaradan kaç tane şeklinde. Ve müşteri adı da yazabilirler."
+- **Karar (24.11):** Barkod koli kaydına bağlanır. Hammaddeci firmalarda mevcut barkod ekranı aynen kalır. Önce web, mobil sonra.
+- **1. aşama (web):**
+  - Ürün ve gelen sipariş detayından Koli Etiketi.
+  - İki kip: tek numara koli ("37 No × 40 çift") ve asorti koli ("36×1 37×2 …").
+  - Etikette müşteri, renk, sipariş no, "Koli 1/3" ve tekrar etmeyen barkod.
+  - Durum: PR açıldı [#54](https://github.com/ozkulfurkan/taban/pull/54); migration Neon onayı bekliyor.
+- **2. aşama (mobil, sonraki derlemeye):**
+  - Ürün ve sipariş ekranından koli etiketi (PDF / AirPrint).
+  - Kamerayla koli barkodunu okutup içeriği görme.
+  - İleride sevkiyatta ve stok sayımında okutma.
+- **Etkilenen alanlar:** web, mobil, API, veritabanı
+- **Büyüklük:** M (web) + M (mobil)
+- **Durum:** 1. aşama incelemede, 2. aşama bekliyor
+
 <!--
 Kayıt şablonu:
 
