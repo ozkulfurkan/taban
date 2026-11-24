@@ -180,6 +180,97 @@ function closingScene({ dur = 4.2, tagline = 'Siparişten maliyete,<br><em>işle
   };
 }
 
+// ── Hazır sahne kalıpları (yeni konseptler için)
+// Ekran üstü etiket: ekran görüntüsündeki bir noktayı (0–1 kesir) gösteren hap
+function callout(root, text, { color = 'var(--krem)', ink = 'var(--bordo)' } = {}) {
+  const c = el('div', 'pill', `<span style="width:14px;height:14px;border-radius:50%;background:${ink};display:inline-block"></span>${text}`,
+    { position: 'absolute', background: color, color: ink, fontSize: (SQ ? 24 : 28) + 'px', padding: SQ ? '14px 22px' : '16px 26px', boxShadow: '0 20px 40px -12px rgba(0,0,0,.45)', zIndex: 6, opacity: 0, whiteSpace: 'nowrap' });
+  root.append(c); return c;
+}
+// Giriş sahnesi: büyük soru + düşen hap/kartlar
+function hookScene({ dur = 3.6, bg = 'krem', eyebrow, title, items = [], size }) {
+  return {
+    dur, bg,
+    build(root) {
+      this.hd = headline(eyebrow, title, null, { y: SQ ? 110 : 300, size: size ?? (SQ ? 84 : 100) });
+      root.append(this.hd);
+      this.items = items.map((txt, i) => {
+        const b = el('div', '', txt, {
+          position: 'absolute', font: `500 ${SQ ? 30 : 36}px/1.2 Geist`, padding: SQ ? '20px 28px' : '24px 34px', borderRadius: '26px',
+          background: bg === 'krem' ? '#fff' : 'rgba(255,255,255,.95)', color: 'var(--ink)', boxShadow: '0 16px 34px -14px rgba(60,30,20,.35)',
+          left: (i % 2 ? (SQ ? 430 : 300) : 90) + 'px', top: (SQ ? 560 : 1060) + i * (SQ ? 92 : 128) + 'px', maxWidth: (W - 200) + 'px',
+        });
+        root.append(b); return b;
+      });
+    },
+    update(t) {
+      animHead(this.hd, t, 0);
+      this.items.forEach((b, i) => { const p = show(b, t, 1 + i * .3, 1.4 + i * .3, 24); b.style.transform += ` rotate(${[-1.5, 1.2, -1, 1.5, -.8][i % 5]}deg)`; b.style.opacity = p * (1 - seg(t, dur - .4, dur)); });
+    },
+  };
+}
+// Web ekranı sahnesi: tarayıcı çerçevesi, yakınlaşma, ekran değişimi ve etiketler
+// zoom: [başlangıç, bitiş] ölçek, origin: [x, y] (0–1, yakınlaşma merkezi), swaps: [[t, ekran]], callouts: [{ t, text, at: [x, y] }]
+function webScene({ dur = 4.6, bg = 'bordo', eyebrow, title, sub, src, zoom = [1, 1.3], zoomAt = [1.2, dur - .3], origin = [.5, .3], swaps = [], callouts = [], ratio = 900 / 1440, headSize }) {
+  return {
+    dur, bg,
+    build(root) {
+      this.hd = headline(eyebrow, title, sub, { y: SQ ? 70 : 200, size: headSize ?? (SQ ? 62 : 80) });
+      root.append(this.hd);
+      // Story'de ekran görüntüsü büyütülerek gösterilir (dikey alan dolsun); kare formatta tam görünür
+      const bw = SQ ? 940 : 1000, bh = SQ ? Math.round(bw * ratio * .82) : 1000;
+      this.z = SQ ? zoom : [1.55, 1.55 * Math.pow(zoom[1] / zoom[0], .6)];
+      this.g = { bw, bh, x: (W - bw) / 2, y: SQ ? 1080 - bh - 70 : 700 };
+      this.br = browser(src, { w: bw, h: bh, x: this.g.x, y: this.g.y });
+      this.br.img.style.transformOrigin = `${origin[0] * 100}% ${origin[1] * 100}%`;
+      root.append(this.br);
+      this.cs = callouts.map(c => ({ ...c, n: callout(root, c.text) }));
+    },
+    update(t) {
+      animHead(this.hd, t, 0);
+      show(this.br, t, .35, 1.05, 80);
+      let cur = src; for (const [at, s] of swaps) if (t >= at) cur = s;
+      if (!this.br.img.src.endsWith(cur + '.png')) this.br.img.src = SHOTS + cur + '.png';
+      const s = lerp(this.z[0], this.z[1], easeInOut(seg(t, zoomAt[0], zoomAt[1])));
+      this.br.img.style.transform = `scale(${s})`;
+      const { bw, x, y } = this.g, ih = bw * ratio, ox = origin[0] * bw, oy = origin[1] * ih;
+      for (const c of this.cs) {
+        const px = x + ox + (c.at[0] * bw - ox) * s, py = y + 46 + oy + (c.at[1] * ih - oy) * s;
+        const p = easeOut(seg(t, c.t, c.t + .45)) * (c.until ? 1 - seg(t, c.until, c.until + .3) : 1);
+        c.n.style.left = px + 'px'; c.n.style.top = py + 'px'; c.n.style.opacity = p;
+        c.n.style.transform = `translate(-10%, -50%) scale(${lerp(.8, 1, p)})`;
+      }
+    },
+  };
+}
+// Telefon sahnesi: tek telefon; swaps ile ekran değişir, scroll ile ekran görüntüsü kayar (px, telefon ölçeğinde)
+function phoneScene({ dur = 4, bg = 'bordo', eyebrow, title, sub, src, swaps = [], scroll = 0, callouts = [], headSize }) {
+  return {
+    dur, bg,
+    build(root) {
+      this.hd = headline(eyebrow, title, sub, SQ ? { x: 70, y: 250, w: 480, size: 58 } : { y: 170, size: headSize ?? 76 });
+      root.append(this.hd);
+      this.L = SQ ? { w: 430, x: 590, y: 100 } : { w: 640, x: 220, y: 600 };
+      this.ph = phone(src, this.L); root.append(this.ph);
+      this.cs = callouts.map(c => ({ ...c, n: callout(root, c.text) }));
+    },
+    update(t) {
+      animHead(this.hd, t, 0);
+      const p = easeOut(seg(t, .15, .8));
+      this.ph.style.opacity = p; this.ph.style.transform = `translateY(${(1 - p) * 90}px) rotate(${(1 - p) * 3}deg)`;
+      let cur = src; for (const [at, s] of swaps) if (t >= at) cur = s;
+      this.ph.swap(cur);
+      this.ph.img.style.transform = `translateY(${-easeInOut(seg(t, 1.6, dur - .2)) * scroll}px)`;
+      const { w, x, y } = this.L, pad = w * 16 / 520, sw = w - 2 * pad, sbH = w * .118;
+      for (const c of this.cs) {
+        const q = easeOut(seg(t, c.t, c.t + .45));
+        c.n.style.left = (x + pad + c.at[0] * sw) + 'px'; c.n.style.top = (y + pad + sbH + c.at[1] * sw * 844 / 390) + 'px'; c.n.style.opacity = q;
+        c.n.style.transform = `translate(${c.left ? '-100%' : '0'}, -50%) scale(${lerp(.8, 1, q)})`;
+      }
+    },
+  };
+}
+
 // ── Motor: sahneleri sırayla oynatır, aralarda 0,35 sn çapraz geçiş
 const FADE = 0.35;
 let scenes = [], total = 0;

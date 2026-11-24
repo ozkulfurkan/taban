@@ -15,6 +15,7 @@ Gerçek uygulama ekran görüntülerinden, marka diliyle (bordo–krem, Fraunces
    - mobil uygulamanın web çıktısı: `cd mobile && EXPO_PUBLIC_API_URL=http://localhost:8090 npx expo export -p web`. Bu çıktıyı 8090 portunda sunan, `/api` isteklerini 3001'e ileten basit bir sunucu kurun.
 3. **Ekran görüntüleri:** `npm run video:capture` (`shots/` klasörüne).
    - Katalog videosu için: `npx tsx tools/promo-video/capture-katalog.ts <ürün-fotoğrafı.jpg>`. Mobilde fotoğraflı ürün ekler, Katalog ekranında ürün seçer ve uygulamanın ürettiği gerçek katalog PDF'ini görüntüler (`k-*.png`). Önceki çalıştırmanın ürününü siler; tekrar çalıştırılabilir.
+   - Ek konseptler (fason, personel, firma ağı, ekstre linki, stok, raporlar, kasa) için önce `DATABASE_URL=…/taban_demo npx tsx tools/promo-video/demo-data-ek.ts`, sonra `DATABASE_URL=…/taban_demo npx tsx tools/promo-video/capture-ek.ts` (`e-*.png`, `em-*.png`).
    - Süreç videosu için gerçek ekran kaydı: `DATABASE_URL=…/taban_demo npm run video:record`. Ürün → müşteri → satış → tahsilat → ekstre akışını uygulamada gerçekten yapar ve `shots/flow-web.webm` dosyasına kaydeder. İmleç izi `flow-web.js` dosyasına yazılır. Önceki kaydın ürün, müşteri, fatura ve tahsilatını siler; tekrar çalıştırılabilir.
 4. **Videolar:** `npm run video:render`. Çıktı `out/` klasörüne gider: her konsept için `-story.mp4`, `-square.mp4` ve kapak PNG'si.
    - Tek video: `node tools/promo-video/render.mjs maliyet story`.
@@ -31,7 +32,8 @@ Kullanılabilecek yardımcılar:
 - `browser(ekranAdı, {w,h,x,y})`;
 - `show(öğe, t, başla, bitir)`;
 - `seg`, `easeOut`, `easeInOut`, `lerp`, `fmtTL`;
-- `closingScene({ tagline })`.
+- `closingScene({ tagline })`;
+- hazır sahne kalıpları: `hookScene({ eyebrow, title, items })`, `webScene({ eyebrow, title, sub, src, zoom, origin, swaps })`, `phoneScene({ eyebrow, title, sub, src, swaps, scroll })`.
 
 `SQ` değişkeni kare formatta `true` olur; yerleşimi buna göre ayarlayın. Story'de üst ve alt 250 px'i boş bırakın, çünkü Instagram arayüzü bu alanları örter.
 
@@ -43,6 +45,13 @@ Kullanılabilecek yardımcılar:
 | `portal.js` | Müşteriniz kendisi sipariş versin: katalog, bildirim, onay, sipariş takibi |
 | `mobil.js` | İşletmeniz cebinizde: ana sayfa, cari, ekstre PDF paylaşımı, tahsilat, bildirimler |
 | `katalog.js` | Kataloğunuz WhatsApp'ta: fotoğraflı ürün ekleme, Katalog ekranında seçim, PDF katalog, WhatsApp'tan gönderme ve gelen sipariş |
+| `fason.js` | Fasonunuz kontrol altında: fason sipariş, gönderilen hammadde, üretim ve fire takibi |
+| `personel.js` | Personel: maaş, avans, prim, mesai ve izin; personel cari |
+| `ag.js` | Firma ağı: firma koduyla bağlanma, müşterinin kendi panelinden sipariş, anlık durum takibi |
+| `ekstre.js` | Ekstre linki: müşteri güncel ekstresini giriş yapmadan linkten görür |
+| `stok.js` | Stok: ürün ve hammadde stoğu, giriş/çıkış, barkod |
+| `rapor.js` | Raporlar: ana sayfa, mobil raporlar, web paneli, her sabah gelen günlük özet e-postası |
+| `kasa.js` | Kasa ve banka: TL/USD/EUR hesaplar, hareketler, mobilde para girişi/çıkışı/transfer |
 | `surec.js` | 5 adımda ilk satışınız (nasıl kullanılır): gerçek ekran kaydı. Yatay 16:9 videoda tam tarayıcı görünür; story ve karede kamera imleci takip edip yakınlaşır. Formatlar: `landscape`, `story`, `square` |
 
 Bir konsept `formats: ['landscape', 'story', 'square']` ile hangi formatlarda üretileceğini belirleyebilir (varsayılan story + kare). Video kullanan sahnelerde `videoEl('dosya.webm')` ile oluşturulan öğenin `setTime(t)` sonucu `update` içinden döndürülür; motor karenin çözülmesini bekler.
