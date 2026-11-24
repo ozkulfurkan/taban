@@ -4,7 +4,8 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { rejectForeignRefs } from '@/lib/tenant';
 
-export async function GET() {
+// ?list=1: liste ekranları için hafif yanıt (reçete parçaları olmadan)
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
@@ -12,7 +13,10 @@ export async function GET() {
 
   const products = await prisma.product.findMany({
     where: { companyId: user.companyId },
-    include: {
+    include: req.nextUrl.searchParams.get('list') === '1' ? {
+      _count: { select: { portalCustomers: true } },
+      category: { select: { id: true, name: true } },
+    } : {
       parts: {
         include: {
           material: {

@@ -13,6 +13,8 @@ import Link from 'next/link';
 import BackLink from '@/app/components/back-link';
 import { Loader2, Save, Truck, ShoppingCart, Printer, X, Factory, CheckCircle, AlertTriangle, Package, Check } from '@/app/components/icons';
 import { variantLabel, variantText } from '@/lib/shore';
+import { useSession } from 'next-auth/react';
+import { KoliLabelModal, type KoliSource } from '@/app/components/koli-label-modal';
 
 
 const fmt = (d: string | null | undefined) =>
@@ -64,6 +66,9 @@ export default function OrderDetailPage() {
   const [shipping, setShipping] = useState(false);
   const [showShipForm, setShowShipForm] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [showKoli, setShowKoli] = useState(false);
+  const { data: session } = useSession() || {};
+  const isMaterial = (session?.user as any)?.companyType === 'MATERIAL_SUPPLIER';
   const [showSubModal, setShowSubModal] = useState(false);
   const [subcontractors, setSubcontractors] = useState<any[]>([]);
   const [materialsList, setMaterialsList] = useState<any[]>([]);
@@ -185,6 +190,23 @@ export default function OrderDetailPage() {
 
   const isPackage = Array.isArray(order.orderItems) && order.orderItems.length > 0;
   const pair = isPairUnit(order.unit);
+  // Koli etiketi kaynakları: tek ürünlü siparişte ürün, paket siparişte her kalem
+  const qtyOf = (sd: any) => Object.fromEntries(Object.entries(sd ?? {}).map(([k, v]) => [k, Number(v) || 0]).filter(([, v]) => (v as number) > 0)) as Record<string, number>;
+  const koliItems: KoliSource[] = isPackage
+    ? (order.orderItems as any[]).map((it: any, i: number) => {
+        const p = (order.itemProducts ?? []).find((x: any) => x.id === it.productId);
+        return {
+          key: String(i), label: [it.productCode, it.productName, it.color].filter(Boolean).join(' · ') || `Kalem ${i + 1}`,
+          productId: it.productId ?? null, productCode: it.productCode ?? p?.code ?? null, productName: it.productName || p?.name || it.productCode || 'Ürün',
+          unit: it.unit ?? order.unit ?? 'çift', color: it.color ?? null, sizes: p?.sizes ?? [], qty: qtyOf(it.sizeDistribution),
+        };
+      })
+    : [{
+        key: 'order', label: order.productCode || order.product?.name || 'Ürün',
+        productId: order.productId ?? null, productCode: order.productCode ?? order.product?.code ?? null,
+        productName: order.product?.name || order.productCode || 'Ürün', unit: order.unit ?? 'çift', color: order.color ?? null,
+        sizes: order.product?.sizes ?? [], qty: qtyOf(order.sizeDistribution),
+      }];
   const steps = orderSteps(order.unit);
   const source = order.link
     ? `SoleCost · ${order.link.buyerCompany?.name ?? 'bağlı firma'}`
@@ -210,6 +232,12 @@ export default function OrderDetailPage() {
               <button onClick={handleCancel}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium transition-colors">
                 <X className="w-4 h-4" /> İptal Et
+              </button>
+            )}
+            {!isMaterial && pair && (
+              <button onClick={() => setShowKoli(true)} data-testid="koli-open"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-ink-100 hover:bg-ink-200 text-ink-700 rounded-lg text-sm font-medium transition-colors">
+                <Package className="w-4 h-4" /> Koli Etiketi
               </button>
             )}
             <button onClick={() => setShowPrintModal(true)}
@@ -546,6 +574,15 @@ export default function OrderDetailPage() {
 
         </div>
       </div>
+      {showKoli && (
+        <KoliLabelModal
+          items={koliItems}
+          customer={order.customer ? { id: order.customerId, name: order.customer.name } : null}
+          order={{ id: order.id, orderNo: order.orderNo }}
+          defaultMode={Object.keys(koliItems[0]?.qty ?? {}).length > 1 ? 'mixed' : 'single'}
+          onClose={() => setShowKoli(false)}
+        />
+      )}
     </AppShell>
 
     {/* Fasoncuya Gönder Modal */}

@@ -97,6 +97,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   for (const adj of stockAdjs) {
     const typeLabel: Record<string, string> = {
       barkod_yazdir: 'Barkod Yazdırma',
+      koli_etiketi: 'Koli Etiketi',
       manuel_ekle: 'Manuel Ekleme',
       manuel_cikar: 'Manuel Çıkarma',
     };

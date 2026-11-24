@@ -118,6 +118,7 @@ model Company {
   barcodeSettings         BarcodeSettings?
   productStockAdjustments ProductStockAdjustment[]
   statementShareLinks     StatementShareLink[]
+  kolis                   Koli[]
 }
 
 model User {
@@ -282,6 +283,7 @@ model Product {
   image                 ProductImage?
   createdAt             DateTime                  @default(now())
   updatedAt             DateTime                  @updatedAt
+  kolis                 Koli[]
 
   @@index([companyId])
 }
@@ -367,6 +369,7 @@ model Customer {
   customerProductPrices CustomerProductPrice[]
   statementShareLinks   StatementShareLink[]
   companyLinks          CompanyLink[]
+  kolis                 Koli[]
 
   @@index([companyId])
 }
@@ -724,6 +727,7 @@ model SoleOrder {
   subcontractorOrders   SubcontractorOrder[]
   createdAt             DateTime             @default(now())
   updatedAt             DateTime             @updatedAt
+  kolis                 Koli[]
 
   @@unique([companyId, orderNo])
   @@index([companyId, createdAt])
@@ -1164,6 +1168,37 @@ model BarcodeSettings {
   @@index([companyId])
 }
 
+// Koli etiketi: basılan her koli bir kayıttır; barkod (örn. K261124-0001) okutulunca içerik görünür.
+// sizes: numara → adet ({"37": 40}); ürün/müşteri adları basıldığı anki haliyle saklanır.
+model Koli {
+  id            String     @id @default(cuid())
+  companyId     String
+  company       Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  barcode       String
+  productId     String?
+  product       Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productCode   String?
+  productName   String
+  color         String?
+  customerId    String?
+  customer      Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerName  String?
+  orderId       String?
+  order         SoleOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderNo       String?
+  unit          String     @default("çift")
+  sizes         Json
+  totalQuantity Int        @default(0)
+  boxIndex      Int        @default(1)
+  boxCount      Int        @default(1)
+  createdById   String?
+  createdAt     DateTime   @default(now())
+
+  @@unique([companyId, barcode])
+  @@index([companyId, createdAt])
+  @@index([orderId])
+}
+
 model BarcodeSequence {
   id         String @id @default(cuid())
   companyId  String
@@ -1181,7 +1216,7 @@ model ProductStockAdjustment {
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   delta     Float
-  type      String // 'manuel_ekle' | 'manuel_cikar' | 'barkod_yazdir'
+  type      String // 'manuel_ekle' | 'manuel_cikar' | 'barkod_yazdir' | 'koli_etiketi'
   notes     String?
   createdAt DateTime @default(now())
 
