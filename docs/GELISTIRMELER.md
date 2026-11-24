@@ -147,6 +147,28 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 - **Büyüklük:** M (web) + M (mobil)
 - **Durum:** 1. aşama incelemede, 2. aşama bekliyor
 
+## G-8 · Müşteri portalı geliştirmeleri (mobil karşılıkları)
+- **Tarih:** 24.11.2026
+- **İstek:** "Geliştirmeye başla. Webte yap ve mobilde yapılacakları not et. Sonra yapacağız onu." Kapsam: "Hepsi" (`docs/PORTAL-DENETIM.md`).
+- **Web:** tümü yapıldı, PR [#59](https://github.com/ozkulfurkan/taban/pull/59); migration Neon onayı bekliyor.
+- **Mobil uyumluluk:** mağazadaki sürüm bozulmaz. API'ler `shipment` (son sevkiyat) alanını dönmeye devam eder; eski biçimli sevkiyat kaydı "son sevkiyat" olarak işlenir.
+- **Mobil portal (müşteri):**
+  - onaydan önce sipariş iptali (`POST /api/portal/me/orders/:id/cancel`);
+  - iptal ve değişiklik talebi; sipariş içi mesajlaşma (`/api/portal/me/orders/:id/messages`), okunmamış rozeti;
+  - fiyat ve tahmini tutar: katalogda `price`, sipariş detayında `prices`;
+  - sevkiyat listesi (`shipments[]`); her sevkiyatın irsaliyesi: `@shared/delivery-note-html` + `/delivery-note?shipment=` → expo-print ile PDF / paylaş;
+  - ana sayfa kartları: termini yaklaşan, sevke hazır, yanıt bekleyen mesajlar;
+  - liste filtresi 4 grup (Bekleyen / Üretimde / Sevk edilen / İptal); kaynak etiketi (Portaldan / Firma tarafından);
+  - kg ürünlerde miktar girişi; mükerrer gönderimde 409 mesajı.
+- **Mobil firma:**
+  - gelen siparişte mesajlaşma ve talepleri Onayla/Reddet (`/api/orders/:id/messages`, `…/messages/:mid/resolve`);
+  - kısmi sevk girişi: kalan miktarlar ve "Son sevkiyat" anahtarı (`shipment: { mode: 'new' | shipmentId, final }`);
+  - yalnızca geçerli durumların listelenmesi (`nextStatuses`, `@shared/order-status`);
+  - listede okunmamış mesaj ve talep rozetleri (`unreadMessages`, `openRequest`); irsaliye çıktısı.
+- **Etkilenen alanlar:** mobil
+- **Büyüklük:** L
+- **Durum:** Web tamam, mobil bekliyor
+
 <!--
 Kayıt şablonu:
 
