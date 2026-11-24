@@ -29,7 +29,7 @@ const STATS = [
   { value: 'Anlık', label: 'Stok güncelleme' },
   { value: '3', label: 'Ayrı portal: firma, müşteri, fasoncu' },
   { value: '%100', label: 'Web tabanlı, kurulum yok' },
-  { value: '500 ₺', label: 'Aylık (ilk 6 ay ücretsiz)' },
+  { value: '1 yıl', label: 'Ücretsiz, sonra aylık 500 ₺' },
 ];
 
 const display = { fontVariationSettings: "'opsz' 96, 'SOFT' 40" } as const;
@@ -58,7 +58,7 @@ export default function LandingPage() {
 
       {/* Kampanya şeridi */}
       <div className="bg-brand-700 text-[#F6EDE4] text-center py-2 px-4 text-[13px]">
-        Mayıs ayına özel: yeni üyeliklerde <strong className="font-semibold">6 ay ücretsiz</strong>, sonrasında aylık yalnızca 500 ₺
+        Lansmana özel: yeni üyeliklerde <strong className="font-semibold">1 yıl ücretsiz</strong>, sonrasında aylık yalnızca 500 ₺
       </div>
 
       {/* Kahraman alanı */}
@@ -259,8 +259,8 @@ export default function LandingPage() {
         <div className="relative max-w-6xl mx-auto bg-brand-700 text-[#F6EDE4] rounded-3xl overflow-hidden">
           <div aria-hidden className="absolute inset-4 rounded-[18px] border border-dashed border-[#F6EDE4]/25" />
           <div className="relative px-8 py-16 md:py-20 text-center">
-            <p className="text-xs tracking-[0.18em] uppercase text-[#F6EDE4]/70">Mayıs ayına özel kampanya</p>
-            <h2 className="mt-4 font-display text-4xl md:text-5xl font-medium" style={display}>İlk 6 ay tamamen ücretsiz</h2>
+            <p className="text-xs tracking-[0.18em] uppercase text-[#F6EDE4]/70">Lansmana özel kampanya</p>
+            <h2 className="mt-4 font-display text-4xl md:text-5xl font-medium" style={display}>İlk 1 yıl tamamen ücretsiz</h2>
             <p className="mt-4 text-lg text-[#F6EDE4]/85">Sonrasında aylık yalnızca <strong className="font-semibold text-white">500 ₺</strong>. Kurulum yok; tarayıcıdan girin, dakikalar içinde başlayın.</p>
             <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/register" className="btn bg-[#F6EDE4] text-brand-800 hover:bg-white px-7 py-3 text-[15px] font-semibold">

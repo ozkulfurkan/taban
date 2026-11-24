@@ -86,7 +86,7 @@ export const translations = {
       loginTitle: 'Hesabınıza Giriş Yapın',
       registerTitle: 'Yeni Hesap Oluşturun',
       loginDesc: 'Ayakkabı sektörünün işletme platformuna hoş geldiniz',
-      registerDesc: 'Ücretsiz hesap oluşturun ve hemen başlayın',
+      registerDesc: 'Hesabınızı oluşturun, 1 yıl ücretsiz kullanın',
     },
     dashboard: {
       welcome: 'Hoş Geldiniz',
@@ -552,7 +552,7 @@ export const translations = {
       loginTitle: 'Sign In to Your Account',
       registerTitle: 'Create New Account',
       loginDesc: 'Welcome to the business platform for the footwear industry',
-      registerDesc: 'Create a free account and get started',
+      registerDesc: 'Create your account and use it free for 1 year',
     },
     dashboard: {
       welcome: 'Welcome',

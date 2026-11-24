@@ -3,7 +3,7 @@ import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 
 import { api } from './api';
-import { catalogHtml, type CatalogCompany, type CatalogOptions, type CatalogProduct } from './catalog-html';
+import { catalogHtml, type CatalogCompany, type CatalogOptions, type CatalogProduct } from '@shared/catalog-html';
 
 /** Seçilen ürünlerden katalog PDF'i: fotoğraflar sunucudan gömülü gelir, PDF cihazda üretilip paylaşılır */
 export async function shareCatalogPdf(productIds: string[], opts: Omit<CatalogOptions, 'date'>) {
