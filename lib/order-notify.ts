@@ -33,7 +33,7 @@ async function recipientOf(orderId: string) {
 }
 
 /** Siparişi verene anlık bildirim: portal müşterisi ya da bağlı firmada siparişi veren + siparişleri görenler */
-async function pushToBuyer(orderId: string, title: (company: string, orderNo: string) => string, body: string) {
+export async function pushToBuyer(orderId: string, title: (company: string, orderNo: string) => string, body: string) {
   try {
     const o = await prisma.soleOrder.findUnique({
       where: { id: orderId },

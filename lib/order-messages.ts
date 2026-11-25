@@ -2,6 +2,7 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { orderRecipients, pushToPortalCustomer, pushToUsers } from '@/lib/push';
+import { pushToBuyer } from '@/lib/order-notify';
 
 export const MESSAGE_KINDS = ['MESSAGE', 'CANCEL_REQUEST', 'CHANGE_REQUEST'] as const;
 export type MessageKind = (typeof MESSAGE_KINDS)[number];
@@ -44,14 +45,21 @@ export async function notifyStaffOfMessage(orderId: string, kind: string, body: 
   }
 }
 
-/** Firma mesajı ya da talep yanıtı siparişi veren portal müşterisine (ve aynı müşterinin portal hesaplarına) bildirilir */
+/**
+ * Firma mesajı ya da talep yanıtı karşı tarafa bildirilir: firma ağı siparişinde alıcı firmanın sipariş görenlerine
+ * (pushToBuyer), portal siparişinde siparişi veren portal müşterisine (yoksa aynı müşterinin portal hesaplarına).
+ */
 export async function notifyCustomerOfMessage(orderId: string, text: string) {
   try {
     const o = await prisma.soleOrder.findUnique({
       where: { id: orderId },
-      select: { orderNo: true, companyId: true, customerId: true, portalCustomerId: true, company: { select: { name: true } } },
+      select: { orderNo: true, companyId: true, customerId: true, portalCustomerId: true, linkId: true, company: { select: { name: true } } },
     });
     if (!o) return;
+    if (o.linkId && !o.portalCustomerId) {
+      await pushToBuyer(orderId, (company, no) => `${company} · ${no}`, preview(text));
+      return;
+    }
     const targets = o.portalCustomerId
       ? [o.portalCustomerId]
       : (await prisma.portalCustomer.findMany({ where: { companyId: o.companyId, customerId: o.customerId, isActive: true }, select: { id: true } })).map(p => p.id);
@@ -69,4 +77,18 @@ export const STAFF_MESSAGE_INCLUDE = {
 export function withMessageInfo(o: any) {
   const { _count, messages, ...rest } = o as any;
   return { ...rest, unreadMessages: _count?.messages ?? 0, openRequest: messages?.[0]?.kind ?? null };
+}
+
+/**
+ * Siparişin mesajlaşabileceği karşı taraf: firma ağı (alıcı firma), portal (siparişi veren ya da müşterinin aktif portal
+ * hesabı) ya da yok. Karşı taraf yoksa mesaj kutusu gösterilmez ve firma mesajı kabul edilmez.
+ */
+export async function messageCounterparty(o: { linkId?: string | null; portalCustomerId?: string | null; companyId: string; customerId: string }): Promise<'network' | 'portal' | null> {
+  if (o.linkId) {
+    const link = await prisma.companyLink.findUnique({ where: { id: o.linkId }, select: { status: true } }).catch(() => null);
+    if (link?.status === 'ACTIVE') return 'network';
+  }
+  if (o.portalCustomerId) return 'portal';
+  const n = await prisma.portalCustomer.count({ where: { companyId: o.companyId, customerId: o.customerId, isActive: true } });
+  return n > 0 ? 'portal' : null;
 }

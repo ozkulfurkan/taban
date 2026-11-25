@@ -12,9 +12,10 @@ const REQUEST_LABEL: Record<string, string> = { CANCEL_REQUEST: 'İptal talebi',
 
 // Sipariş içi mesajlaşma (portal müşterisi ↔ firma). viewer: kimin ekranı; firma tarafında açık talepler
 // Onayla/Reddet ile yanıtlanır (resolveBase/{mesajId}/resolve). t: portal çevirisi.
-export function OrderMessages({ endpoint, viewer, resolveBase, t = s => s, onChanged, refreshKey = 0 }: {
+// subtitle: kiminle yazışıldığı (ör. "Firma ağı · Ayakkabı Dünyası")
+export function OrderMessages({ endpoint, viewer, resolveBase, t = s => s, onChanged, refreshKey = 0, subtitle }: {
   endpoint: string; viewer: 'staff' | 'customer'; resolveBase?: string; t?: (s: string) => string;
-  onChanged?: () => void; refreshKey?: number;
+  onChanged?: () => void; refreshKey?: number; subtitle?: string;
 }) {
   const [list, setList] = useState<Msg[] | null>(null);
   const [text, setText] = useState('');
@@ -54,7 +55,8 @@ export function OrderMessages({ endpoint, viewer, resolveBase, t = s => s, onCha
 
   return (
     <div className="bg-white rounded-xl p-5 shadow-card border border-ink-200/80 space-y-4" data-testid="order-messages">
-      <h2 className="font-semibold text-ink-700 flex items-center gap-2"><MessageSquare className="w-5 h-5 text-brand-700" /> {t('Mesajlar')}</h2>
+      <h2 className="font-semibold text-ink-700 flex items-center gap-2"><MessageSquare className="w-5 h-5 text-brand-700" /> {t('Mesajlar')}
+        {subtitle && <span className="text-xs font-normal text-ink-400" data-testid="order-messages-with">{subtitle}</span>}</h2>
 
       {viewer === 'staff' && open.map(m => (
         <div key={m.id} className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2" data-testid="open-request">

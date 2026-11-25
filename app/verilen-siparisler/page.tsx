@@ -65,6 +65,9 @@ export default function NetworkOrdersPage() {
                     <tr key={o.id} className="hover:bg-ink-50" data-testid={`network-order-${o.id}`}>
                       <td className="px-4 py-3">
                         <Link href={`/verilen-siparisler/${o.id}`} className="font-semibold text-brand-700 hover:underline">{o.orderNo}</Link>
+                        {(o as any).unreadMessages > 0 && (
+                          <span className="ml-1.5 px-1.5 py-0.5 rounded bg-brand-700 text-white text-[10px] font-semibold" data-testid={`network-unread-${o.id}`}>{(o as any).unreadMessages} yeni mesaj</span>
+                        )}
                         <p className="text-xs text-ink-400">{fmt(o.createdAt)}</p>
                       </td>
                       <td className="px-4 py-3 text-ink-700">{o.link?.sellerCompany.name ?? '—'}</td>
