@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { Bell, CheckCheck, Loader2 } from '@/app/components/icons';
 import { timeAgo, webUrlOf } from '@/lib/notification-link';
 
+export const POLL_MS = 120_000;
+
 export type NotificationItem = { id: string; title: string; body: string; url: string | null; readAt: string | null; createdAt: string };
 
 type Texts = { title: string; empty: string; markAll: string; seeAll: string };
@@ -36,7 +38,8 @@ export default function NotificationBell({ portal = false, texts = TR }: { porta
 
   useEffect(() => {
     void load(false);
-    const t = setInterval(() => { if (document.visibilityState === 'visible') void load(false); }, 60_000);
+    // 2 dakikada bir (yalnızca görünür sekmede); sekmeye dönünce hemen yenilenir. Sunucu ve veritabanı yükünü azaltır
+    const t = setInterval(() => { if (document.visibilityState === 'visible') void load(false); }, POLL_MS);
     const onFocus = () => void load(false);
     window.addEventListener('focus', onFocus);
     return () => { clearInterval(t); window.removeEventListener('focus', onFocus); };

@@ -5,7 +5,7 @@ import { Camera, ImageIcon, Loader2, Package, Trash2 } from '@/app/components/ic
 
 // Ürün fotoğrafı (web): seçilen dosya tarayıcıda 1200 px JPEG'e küçültülüp yüklenir (mobil ile aynı uç ve ayar).
 
-const MAX_SIDE = 1200;
+const MAX_SIDE = 1000; // katalog ve etiket için yeterli; depolama ve aktarım azalır
 
 export function productImageSrc(productId: string, imageUpdatedAt?: string | null, base = '/api/products') {
   return imageUpdatedAt ? `${base}/${productId}/image?v=${encodeURIComponent(imageUpdatedAt)}` : null;
