@@ -10,7 +10,8 @@ export default function AccountDeletionPage() {
     <main className="min-h-screen bg-ink-50">
       <article className="max-w-3xl mx-auto px-4 py-10 sm:py-14 text-ink-700 leading-relaxed space-y-6 text-[15px]">
         <header className="space-y-2">
-          <Link href="/" className="text-sm text-brand-700">SoleCost</Link>
+          {/* Uygulama içinden açılır: ana sayfaya (ücret/kayıt) bağlantı verilmez (App Store 3.1.1) */}
+          <span className="text-sm text-brand-700">SoleCost</span>
           <h1 className="page-title">Hesap ve veri silme</h1>
           <p className="text-sm text-ink-500">{LEGAL.product} hesabınızı ve verilerinizi nasıl sileceğiniz</p>
         </header>
