@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { postJson, showSaveError } from '@/app/components/post-json';
 import { useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
@@ -44,10 +45,7 @@ function HesapIslemModal({
     if (!form.amount || parseFloat(form.amount) <= 0) return;
     setSaving(true);
     try {
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await postJson('/api/payments', {
           accountId,
           amount: form.amount,
           date: form.date,
@@ -59,11 +57,10 @@ function HesapIslemModal({
           // Para Girişi için customerId='__giris__' gibi sahte bir şey kullanamayız
           // Bu yüzden type'ı direkt gönderelim (API'yi genişleteceğiz)
           _type: isGiris ? 'RECEIVED' : 'PAID',
-        }),
-      });
+        });
       onSaved();
       onClose();
-    } finally { setSaving(false); }
+    } catch (e) { showSaveError(e); } finally { setSaving(false); }
   };
 
   return (
@@ -152,33 +149,25 @@ function TransferModal({
       const sourceAmountVal = parseFloat(form.amount);
       const destAmountVal = isCrossCurrency ? parseFloat(form.targetAmount) : sourceAmountVal;
 
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await postJson('/api/payments', {
           accountId: sourceAccount.id,
           amount: sourceAmountVal,
           date: form.date,
           method: 'Transfer',
           notes: `${notesBase} → ${targetAccount?.name || ''}`,
           _type: 'PAID',
-        }),
-      });
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        });
+      await postJson('/api/payments', {
           accountId: form.targetId,
           amount: destAmountVal,
           date: form.date,
           method: 'Transfer',
           notes: `${notesBase} ← ${sourceAccount.name || ''}`,
           _type: 'RECEIVED',
-        }),
-      });
+        });
       onSaved();
       onClose();
-    } finally { setSaving(false); }
+    } catch (e) { showSaveError(e); } finally { setSaving(false); }
   };
 
   return (

@@ -455,7 +455,7 @@ export default function OrderCatalog({ catalogUrl, orderUrl, onSubmitted, title,
             )}
 
             <div className="px-5 pb-5">
-              <button onClick={handleSubmit} disabled={submitting}
+              <button data-submit onClick={handleSubmit} disabled={submitting}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-brand-700 hover:bg-brand-800 disabled:opacity-60 text-white rounded-xl font-semibold transition-colors">
                 {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                 {tp('Siparişleri Gönder')} ({cart.length} {tp('ürün')})

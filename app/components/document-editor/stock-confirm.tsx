@@ -90,7 +90,7 @@ export default function StockConfirm({ deductions, shortages, saving, onConfirm,
         </div>
         <div className="p-5 pt-0 flex gap-3">
           <button onClick={onCancel} className="flex-1 py-2.5 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">{tx('goBack')}</button>
-          <button onClick={onConfirm} disabled={saving}
+          <button onClick={onConfirm} disabled={saving} data-submit
             className="flex-1 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} {tx('confirmSave')}
           </button>

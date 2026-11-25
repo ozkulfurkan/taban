@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { postJson, showSaveError } from '@/app/components/post-json';
 import { useParams, useRouter } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { Loader2, Pencil, FileText, ShoppingCart, Download, RotateCcw, Phone, Mail, MapPin, Hash, Save, X, User, ChevronRight, Building2, CheckCircle2, Banknote, ChevronDown, PlusCircle, Trash2, CreditCard, AlertTriangle } from '@/app/components/icons';
@@ -112,10 +113,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
         const rateNote = `${amt} ${form.paymentCurrency} | Kur: 1 ${customer.currency} = ${form.exchangeRate} ${form.paymentCurrency}`;
         notes = notes ? `${notes} | ${rateNote}` : rateNote;
       }
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await postJson('/api/payments', {
           customerId: customer.id,
           accountId: form.accountId,
           amount: savedAmt,
@@ -125,10 +123,9 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
           exchangeRate: isSameCurrency ? null : (parseFloat(form.exchangeRate) ? Math.round(parseFloat(form.exchangeRate) * 10000) / 10000 : null),
           date: form.date || nowIstanbulISO(),
           notes,
-        }),
-      });
+        });
       onSaved(savedAmt);
-    } catch (e) { console.error(e); }
+    } catch (e) { showSaveError(e); }
     finally { setSaving(false); }
   };
 
@@ -217,21 +214,17 @@ function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () 
     if (!form.amount || parseFloat(form.amount) <= 0) return;
     setSaving(true);
     try {
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await postJson('/api/payments', {
           customerId: customer.id,
           amount: form.amount,
           currency: 'TRY',
           date: nowIstanbulISO(),
           method: form.method,
           notes: form.notes,
-        }),
-      });
+        });
       onSaved();
       onClose();
-    } catch (e) { console.error(e); }
+    } catch (e) { showSaveError(e); }
     finally { setSaving(false); }
   };
 
@@ -289,21 +282,17 @@ function BorcAlacakFisModal({ customer, onClose, onSaved }: { customer: any; onC
     setSaving(true);
     try {
       const notesArr = [form.dueDate ? `Vade:${form.dueDate}` : '', form.notes].filter(Boolean);
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await postJson('/api/payments', {
           customerId: customer.id,
           amount: parseFloat(form.amount),
           currency: customer.currency || 'TRY',
           date: nowIstanbulISO(),
           method: form.tip,
           notes: notesArr.join(' | ') || null,
-        }),
-      });
+        });
       onSaved();
       onClose();
-    } catch (err) { console.error(err); }
+    } catch (err) { showSaveError(err); }
     finally { setSaving(false); }
   };
 
@@ -377,21 +366,17 @@ function BakiyeDuzeltModal({ customer, currentBalance, onClose, onSaved }: {
     setSaving(true);
     try {
       const direction = delta > 0 ? '+' : '-';
-      await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await postJson('/api/payments', {
           customerId: customer.id,
           amount: Math.abs(delta),
           currency: customer.currency || 'TRY',
           date: nowIstanbulISO(),
           method: 'Bakiye Düzeltme',
           notes: direction + (notes ? ' | ' + notes : ''),
-        }),
       });
       onSaved();
       onClose();
-    } catch (err) { console.error(err); }
+    } catch (err) { showSaveError(err); }
     finally { setSaving(false); }
   };
 
@@ -588,11 +573,10 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
     if (!checks.length) return;
     setSaving(true);
     try {
-      await Promise.all(checks.map(c =>
-        fetch('/api/cek', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+      // lineNo: aynı içerikli iki çek (aynı borçlu/vade/tutar) mükerrer sayılmasın (lib/request-dedup.ts)
+      await Promise.all(checks.map((c, lineNo) =>
+        postJson('/api/cek', {
+            lineNo,
             customerId: customer.id,
             borclu: c.borclu,
             islem,
@@ -605,11 +589,10 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
             customerCurrency: c.customerCurrency ?? null,
             seriNo: c.seriNo || null,
             bankasi: c.bankasi || null,
-          }),
-        })
+          })
       ));
       onSaved();
-    } finally { setSaving(false); }
+    } catch (e) { showSaveError(e); } finally { setSaving(false); }
   };
 
   return (
@@ -698,7 +681,7 @@ function CekKayitModal({ customer, onClose, onSaved }: { customer: any; onClose:
 
           <div className="flex justify-end gap-2 px-6 py-4 border-t border-ink-100 flex-shrink-0">
             <button onClick={onClose} className="px-4 py-2 text-sm text-ink-600 border border-ink-200 rounded-lg hover:bg-ink-50">{t('common', 'cancel')}</button>
-            <button onClick={handleSave} disabled={saving || checks.length === 0}
+            <button data-submit onClick={handleSave} disabled={saving || checks.length === 0}
               className="px-5 py-2 text-sm bg-brand-700 hover:bg-brand-800 text-white rounded-lg font-medium disabled:opacity-50 flex items-center gap-2">
               {saving && <Loader2 className="w-4 h-4 animate-spin" />} {t('common', 'save')}
             </button>
@@ -924,7 +907,7 @@ export default function CustomerDetailPage() {
                 </div>
                 <div className="sm:col-span-2 flex gap-2">
                   <button onClick={() => setEditing(false)} className="px-4 py-1.5 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">{t('common', 'cancel')}</button>
-                  <button onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
+                  <button data-submit onClick={handleSave} disabled={saving} className="flex items-center gap-1.5 px-4 py-1.5 bg-brand-700 text-white rounded-lg text-sm font-medium disabled:opacity-60">
                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} {t('common', 'save')}
                   </button>
                 </div>

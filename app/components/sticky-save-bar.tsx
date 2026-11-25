@@ -38,6 +38,7 @@ export default function StickySaveBar({
           {children}
           <button
             type="button"
+            data-submit
             onClick={onSave}
             disabled={saving || disabled}
             className={`flex items-center gap-1.5 px-5 py-2.5 ${tone === 'danger' ? 'bg-red-600 hover:bg-red-700' : tone === 'indigo' ? 'bg-brand-700 hover:bg-brand-800' : tone === 'amber' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-brand-700 hover:bg-brand-800'} text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50`}

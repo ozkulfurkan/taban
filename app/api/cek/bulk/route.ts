@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { duplicateGuarded } from '@/lib/request-dedup';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -21,7 +22,7 @@ const ALLOWED_FROM: Record<Action, string[]> = {
 
 const err = (error: string, status = 400) => NextResponse.json({ error }, { status });
 
-export async function POST(req: NextRequest) {
+async function create(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return err('Unauthorized', 401);
   const user = session.user as any;
@@ -141,3 +142,6 @@ export async function POST(req: NextRequest) {
 async function log(req: NextRequest, user: any, detail: string, meta: Record<string, unknown>) {
   await logAction({ companyId: user.companyId, userId: user.id, userName: user.name, action: 'UPDATE', entity: 'Cek', detail, meta, ip: getIp(req) });
 }
+
+// Mükerrer kayıt koruması: aynı içerikli istek kısa süre içinde ikinci kez işlenmez (çift tıklama, iki sekme)
+export const POST = duplicateGuarded('cek-bulk', create);

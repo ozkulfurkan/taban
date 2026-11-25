@@ -1341,3 +1341,13 @@ model MaterialSupplierProduct {
   @@unique([materialId, linkId])
   @@index([linkId])
 }
+
+/// Mükerrer kayıt koruması (lib/request-dedup.ts): aynı içerikli kayıt isteğinin özeti, kısa süre tutulur
+model RequestFingerprint {
+  companyId String
+  hash      String
+  createdAt DateTime @default(now())
+
+  @@id([companyId, hash])
+  @@index([createdAt])
+}
