@@ -516,9 +516,12 @@ export default function OrderDetailPage() {
               )}
             </div>
 
-            {/* Müşteri mesajları ve talepleri */}
-            <OrderMessages endpoint={`/api/orders/${order.id}/messages`} viewer="staff" resolveBase={`/api/orders/${order.id}/messages`}
-              refreshKey={msgKey} onChanged={() => { loadOrder(); setMsgKey(k => k + 1); }} />
+            {/* Mesajlar ve talepler: yalnızca karşı taraf varsa (firma ağı ya da müşteri portalı) */}
+            {order.messaging && (
+              <OrderMessages endpoint={`/api/orders/${order.id}/messages`} viewer="staff" resolveBase={`/api/orders/${order.id}/messages`}
+                subtitle={`${order.counterparty === 'network' ? 'Firma ağı' : 'Müşteri portalı'} · ${order.customer?.name ?? ''}`}
+                refreshKey={msgKey} onChanged={() => { loadOrder(); setMsgKey(k => k + 1); }} />
+            )}
 
             {/* Hammadde Gereksinimleri (IN_PRODUCTION) */}
             {order.status === 'IN_PRODUCTION' && materialReqs.length > 0 && (

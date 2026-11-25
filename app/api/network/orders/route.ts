@@ -15,9 +15,10 @@ export async function GET(req: NextRequest) {
   const linkId = req.nextUrl.searchParams.get('linkId');
   const orders = await prisma.soleOrder.findMany({
     where: { link: { buyerCompanyId: user.companyId }, ...(linkId ? { linkId } : {}) },
-    select: BUYER_ORDER_SELECT,
+    select: { ...BUYER_ORDER_SELECT, _count: { select: { messages: { where: { authorType: 'staff', readByCustomerAt: null } } } } },
     orderBy: { createdAt: 'desc' },
     take: 500,
   });
-  return NextResponse.json(orders.map(withLastShipment));
+  // unreadMessages: satıcının okunmamış mesajları
+  return NextResponse.json(orders.map(({ _count, ...o }) => ({ ...withLastShipment(o), unreadMessages: _count.messages })));
 }

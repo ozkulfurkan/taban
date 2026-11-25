@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { messageCounterparty } from '@/lib/order-messages';
 import { isForwardStatus, statusTransitionError } from '@/lib/order-status';
 import { SHIPMENT_ORDER, withLastShipment } from '@/lib/order-shipments';
 import { getServerSession } from 'next-auth';
@@ -51,7 +52,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         },
       })
     : [];
-  return NextResponse.json(withLastShipment({ ...order, itemProducts }));
+  // Mesaj kutusu yalnızca karşı taraf varsa (firma ağı ya da portal) gösterilir
+  const counterparty = await messageCounterparty(order);
+  return NextResponse.json(withLastShipment({ ...order, itemProducts, messaging: !!counterparty, counterparty }));
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {

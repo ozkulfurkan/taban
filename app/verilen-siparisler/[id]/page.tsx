@@ -11,6 +11,7 @@ import { stageLabel, statusLabel } from '@/lib/order-status';
 import { isPairUnit } from '@/lib/order-units';
 import { ShippedTable } from '@/app/components/shipment-qty';
 import { variantLabel, variantText } from '@/lib/shore';
+import { OrderMessages } from '@/app/components/order-messages';
 
 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleDateString('tr-TR') : '—');
 const sizes = (d: Record<string, number> = {}) => Object.entries(d)
@@ -97,6 +98,10 @@ export default function NetworkOrderDetailPage() {
             )}
           </div>
         )}
+
+        {/* Tedarikçiyle mesajlaşma (firma ağı) */}
+        <OrderMessages endpoint={`/api/network/orders/${order.id}/messages`} viewer="customer"
+          subtitle={order.link?.sellerCompany?.name ? `Tedarikçi · ${order.link.sellerCompany.name}` : undefined} />
 
         {order.statusHistory?.length > 0 && (
           <div className="bg-white rounded-xl p-5 shadow-card border border-ink-200/80">
