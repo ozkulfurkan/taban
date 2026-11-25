@@ -165,6 +165,7 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
   - kısmi sevk girişi: kalan miktarlar ve "Son sevkiyat" anahtarı (`shipment: { mode: 'new' | shipmentId, final }`);
   - yalnızca geçerli durumların listelenmesi (`nextStatuses`, `@shared/order-status`);
   - listede okunmamış mesaj ve talep rozetleri (`unreadMessages`, `openRequest`); irsaliye çıktısı.
+- **Mobil firma ağı (alıcı, PR [#61](https://github.com/ozkulfurkan/taban/pull/61)):** verilen sipariş detayında mesajlaşma (`/api/network/orders/:id/messages`), listede `unreadMessages` rozeti; gelen siparişte kutu yalnızca `messaging: true` ise.
 - **Etkilenen alanlar:** mobil
 - **Büyüklük:** L
 - **Durum:** Web tamam, mobil bekliyor
