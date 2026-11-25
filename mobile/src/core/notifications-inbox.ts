@@ -23,7 +23,7 @@ export function useUnreadCount() {
     queryKey: [...INBOX_KEY, 'unread'],
     queryFn: ({ signal }) => api<Page>('/api/notifications', { query: { limit: 1 }, signal }),
     select: d => d.unreadCount,
-    refetchInterval: 60_000,
+    refetchInterval: 120_000, // web zil ile aynı: 2 dakikada bir, yalnızca uygulama öndeyken
   });
 }
 

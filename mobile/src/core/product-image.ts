@@ -8,7 +8,7 @@ import { notify } from './dialog';
 // Ürün fotoğrafı: kamera ya da galeriden seçilir, 1200 px'e küçültülüp JPEG olarak yüklenir
 // (sunucu sınırı 1,5 MB; bu ayarlarla tipik fotoğraf 150-300 KB olur).
 
-const MAX_SIDE = 1200;
+const MAX_SIDE = 1000; // katalog ve etiket için yeterli; depolama ve aktarım azalır
 
 export type PickedImage = { uri: string; base64: string; mime?: 'image/png' | 'image/jpeg' };
 
