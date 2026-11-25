@@ -48,7 +48,7 @@ Notlar:
 - Gizlilik politikası: https://www.solecost.com/gizlilik · Destek: https://www.solecost.com/destek
 
 ## 5. İnceleme riskleri (kontrol edildi)
-- Uygulama içinde kayıt / satın alma yok; giriş ekranında web kayıt bağlantısı kaldırıldı (Kural 3.1.1).
+- Uygulama içinde kayıt / satın alma yok (Kural 3.1.1). 1.0.0 (18) uygulama içi kayıt ekranı yüzünden reddedildi; kayıt ekranı ve "Kayıt olun" bağlantısı kaldırıldı. Uygulamaya kayıt, fiyat, deneme süresi ya da web kayıt/ücret sayfasına bağlantı **eklemeyin**; uygulamanın açtığı web sayfalarında (destek, gizlilik, hesap silme) da ana sayfaya bağlantı verilmez.
 - Hesap uygulamada açılmadığı için hesap silme zorunluluğu (5.1.1(v)) doğrudan uygulanmaz; Ayarlar'da "Hesap ve veri silme talebi" bağlantısı vardır.
 - Şifreleme beyanı: `usesNonExemptEncryption: false` (yalnızca HTTPS).
 - İzin metinleri: Face ID (`app.json`). Kamera kullanılmıyor, izin istenmiyor.

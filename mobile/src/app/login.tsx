@@ -88,9 +88,10 @@ export default function Login() {
                 accessibilityRole="link" testID="login-forgot">
                 <T color={c.primary}>Şifremi unuttum</T>
               </Pressable>
-              <Pressable onPress={() => router.push('/kayit')} accessibilityRole="link" testID="login-register">
-                <T>Hesabınız yok mu? <T color={c.primary} style={{ fontWeight: '700' }}>Kayıt olun</T></T>
-              </Pressable>
+              {/* App Store 3.1.1: uygulamada hesap kaydı ve kayıt/ücret sayfasına bağlantı yoktur; hesabı firma açar */}
+              <T variant="small" style={{ textAlign: 'center' }} testID="login-account-info">
+                Hesabınız firmanız tarafından açılır. Giriş bilgileriniz için firma yöneticinize başvurun.
+              </T>
             </>
           ) : (
             // Portal hesabını ve şifresini satıcı firma yönetir

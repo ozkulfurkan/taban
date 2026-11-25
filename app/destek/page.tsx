@@ -16,7 +16,8 @@ export default function SupportPage() {
     <main className="min-h-screen bg-ink-50">
       <div className="max-w-3xl mx-auto px-4 py-10 sm:py-14 space-y-8 text-ink-700">
         <header className="space-y-2">
-          <Link href="/" className="text-sm text-brand-700">SoleCost</Link>
+          {/* Uygulama içinden açılır: ana sayfaya (ücret/kayıt) bağlantı verilmez (App Store 3.1.1) */}
+          <span className="text-sm text-brand-700">SoleCost</span>
           <h1 className="page-title">Destek</h1>
           <p>SoleCost web ve mobil uygulamaları hakkında yardım.</p>
         </header>
@@ -28,7 +29,7 @@ export default function SupportPage() {
           )}
           <p>
             Giriş yapmış kullanıcılar uygulamadaki{' '}
-            <Link href="/destek-merkezi" className="text-brand-700 underline">Destek Merkezi</Link>
+            <b>Destek Merkezi</b>
             {' '}üzerinden talep açabilir.
           </p>
         </section>
