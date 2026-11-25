@@ -3,8 +3,8 @@ const APP = process.env.MOBILE ?? 'http://localhost:8090';
 export default {
   slug: 'mobil',
   kicker: 'Mobil uygulama',
-  title: 'SoleCost Mobil Uygulama',
-  summary: ['App Store ve Google Play’den indirin', 'Aynı hesapla giriş', 'Cari, tahsilat ve ekstre cepte', 'Sipariş ve bildirimler'],
+  title: 'Mobil Uygulama',
+  summary: ['iPhone ve Android için', 'Web hesabınızla giriş', 'Cari, tahsilat ve ekstre cepte', 'Sipariş ve bildirimler'],
   async run(h) {
     const { p } = h;
     const f = await h.phone(`${APP}/login`);
@@ -39,5 +39,5 @@ export default {
     await h.point(f.getByTestId('home-stock'), 800);
     await h.say('Stok ekranında barkod okutarak ürün bulabilir, stok girişi yapabilirsiniz.', 3000);
   },
-  recap: ['Mağazadan “SoleCost” uygulamasını indirin', 'Web hesabınızla giriş yapın', 'Cari, tahsilat, sipariş ve bildirimler cebinizde'],
+  recap: ['SoleCost uygulamasını telefonunuza kurun', 'Web hesabınızla giriş yapın', 'Cari, tahsilat, sipariş ve bildirimler cebinizde'],
 };
