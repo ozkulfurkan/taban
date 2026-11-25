@@ -10,7 +10,7 @@ for (const f of files) {
   const m = (await import(pathToFileURL(join(HERE, 'modules', f)).href)).default;
   const title = `SoleCost Kullanım Rehberi · ${m.title}`.slice(0, 100);
   const description = [
-    `SoleCost ile ${m.title.toLocaleLowerCase('tr')} nasıl kullanılır? Ekrandaki adımları takip ederek kısa sürede öğrenin.`,
+    `SoleCost kullanım rehberi: ${m.title}. Ekrandaki adım adım açıklamalarla kısa sürede öğrenin.`,
     '',
     'Bu videoda:',
     ...m.summary.map(s => `• ${s}`),
