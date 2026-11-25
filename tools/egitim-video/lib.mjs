@@ -29,7 +29,7 @@ const OVERLAY = () => {
         background:rgba(35,30,25,.92);color:#fff;border-radius:14px;padding:14px 22px 14px 18px;display:flex;gap:14px;align-items:center;
         font:600 21px/1.35 Inter,'Helvetica Neue',Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:opacity .25s}
       #__cap b{flex:none;background:#8A2438;color:#fff;border-radius:10px;min-width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:20px}
-      #__mod{position:fixed;right:18px;top:14px;z-index:2147483645;pointer-events:none;background:${'#6B1A2C'};color:#fff;border-radius:999px;
+      #__mod{position:fixed;left:50%;transform:translateX(-50%);top:16px;z-index:2147483645;pointer-events:none;background:${'#6B1A2C'};color:#fff;border-radius:999px;
         padding:5px 12px;font:700 13px Inter,Arial,sans-serif;letter-spacing:.02em;opacity:.95}
       .__hl{outline:4px solid #E0A526 !important;outline-offset:3px !important;border-radius:8px;transition:outline-color .2s}`;
     document.documentElement.appendChild(css);
@@ -53,7 +53,7 @@ const OVERLAY = () => {
         cap.innerHTML = (n ? `<b>${n}</b>` : '') + `<span></span>`; cap.querySelector('span').textContent = text;
       }
       let m = document.getElementById('__mod');
-      if (mod) { if (!m) { m = document.createElement('div'); m.id = '__mod'; document.documentElement.appendChild(m); } m.textContent = mod; } else m?.remove();
+      if (mod && window.__showMod) { if (!m) { m = document.createElement('div'); m.id = '__mod'; document.documentElement.appendChild(m); } m.textContent = mod; } else m?.remove();
     };
     try { const s = JSON.parse(sessionStorage.getItem('__cap') || 'null'); if (s) window.__setCap(s.n, s.text, s.mod); } catch {}
   };
@@ -113,7 +113,7 @@ export async function record(mod, outDir) {
   const h = {
     p, wait, pos,
     /** Ekrandaki açıklama (numaralı adım). ms: okuma süresi */
-    say: async (text, ms = 2600) => { n += 1; await p.evaluate(([a, b, c]) => window.__setCap?.(a, b, c), [n, text, mod.title]); await wait(ms); },
+    say: async (text, ms = 2600) => { n += 1; if (process.env.STEPS) console.log('  ·', n, text.slice(0, 60)); await p.evaluate(([a, b, c]) => window.__setCap?.(a, b, c), [n, text, mod.title]); await wait(ms); },
     /** Numarasız not */
     note: async (text, ms = 2400) => { await p.evaluate(([b, c]) => window.__setCap?.(0, b, c), [text, mod.title]); await wait(ms); },
     hide: async () => p.evaluate(c => window.__setCap?.(0, '', c), mod.title),
@@ -138,6 +138,21 @@ export async function record(mod, outDir) {
     field: label => p.locator(`xpath=//label[contains(normalize-space(.), "${label}")]/following-sibling::*[1]`).first(),
     scroll: async (dy, ms = 900) => { await p.mouse.wheel(0, dy); await wait(ms); },
     card: async (kicker, title, lines, foot, ms = 4500) => { await h.hide(); await p.setContent(card(kicker, title, lines, foot)); await wait(ms); },
+    /** Mobil uygulamayı telefon çerçevesinde açar (sol), açıklamalar sağda; iç çerçeveyi döndürür */
+    phone: async url => {
+      await p.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>
+        html,body{margin:0;height:100%;background:${BRAND};font-family:Inter,Arial,sans-serif;overflow:hidden}
+        .ph{position:absolute;left:150px;top:14px;width:332px;height:692px;border-radius:44px;background:#111;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+        iframe{width:332px;height:692px;border:0;border-radius:34px;background:#fff}
+        .t{position:absolute;left:560px;top:70px;color:#fff;font-weight:800;font-size:40px;line-height:1.1;max-width:620px}
+        .t small{display:block;font-size:20px;font-weight:600;opacity:.75;margin-bottom:10px;letter-spacing:.12em}
+      </style></head><body><div class="t"><small>SOLECOST MOBİL</small>${mod.title}</div>
+      <div class="ph"><iframe id="app" src="${url}"></iframe></div></body></html>`);
+      await p.evaluate(OVERLAY);
+      await p.addStyleTag({ content: `#__cap{left:auto!important;right:60px!important;bottom:auto!important;top:240px!important;transform:none!important;max-width:600px!important;font-size:26px!important;padding:20px 26px!important}#__cur{display:none!important}` });
+      await wait(3000);
+      return p.frameLocator('#app');
+    },
     /** Başka bir oturumla (portal, alıcı firma) devam etmek için: çerezleri değiştirir */
     loginAs: async who => {
       const s = await state(who);
@@ -145,10 +160,17 @@ export async function record(mod, outDir) {
     },
   };
 
-  await h.card(mod.kicker ?? 'Kullanım rehberi', mod.title, mod.summary, 'solecost.com');
-  await mod.run(h);
-  await h.card('Özet', mod.title, mod.recap ?? mod.summary, 'Sorularınız için: solecost.com/destek', 4000);
-  await p.close(); await ctx.close(); await browser.close();
+  try {
+    await h.card(mod.kicker ?? 'Kullanım rehberi', mod.title, mod.summary, 'solecost.com');
+    await mod.run(h);
+    await h.card('Özet', mod.title, mod.recap ?? mod.summary, 'Sorularınız için: solecost.com/destek', 4000);
+    await p.close(); await ctx.close();
+  } catch (e) {
+    await p.screenshot({ path: join(outDir, `_hata_${mod.slug}.png`) }).catch(() => {});
+    throw e;
+  } finally {
+    await browser.close();
+  }
 
   const webm = readdirSync(tmp).find(f => f.endsWith('.webm'));
   const raw = join(tmp, webm);
