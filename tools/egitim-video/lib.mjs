@@ -99,11 +99,11 @@ export async function record(mod, outDir) {
   const states = {};
   const state = async who => (states[who] ??= await loginState(browser, who));
 
-  const ctx = await browser.newContext({
+  const ctx = await browser.newContext({ timezoneId: 'Europe/Istanbul',
     baseURL: WEB, viewport: VIEW, locale: 'tr-TR', storageState: await state(mod.as ?? 'staff'),
     recordVideo: { dir: tmp, size: VIEW },
   });
-  await ctx.addInitScript(() => { try { localStorage.setItem('whats_new_v20260510', '1'); localStorage.setItem('lang', 'tr'); } catch {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem('whats_new_v20260510', '1'); localStorage.setItem('lang', 'tr'); } catch {} window.print = () => {}; });
   await ctx.addInitScript(OVERLAY);
   const p = await ctx.newPage();
   p.setDefaultTimeout(15000);
