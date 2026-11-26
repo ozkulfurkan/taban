@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
-import { applyPaymentEffects } from '@/lib/payment-effects';
+import { applyPaymentEffects, releaseCheque } from '@/lib/payment-effects';
 import { parseAmount, round2 } from '@/lib/money';
 import { parseDateInput } from '@/lib/time';
 import { rejectForeignRefs } from '@/lib/tenant';
@@ -25,34 +25,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     if (!payment) return;
 
     // Çek ödemesi silindiyse ilgili çeki portföye geri al
-    if (payment.method === 'Çek') {
-      if (payment.type === 'RECEIVED') {
-        // Tahsil edilmiş çek: paymentId ile direkt bul ve portföye al
-        await (tx.cek as any).updateMany({
-          where: { paymentId: payment.id, companyId: user.companyId },
-          data: { durum: 'PORTFOY', paymentId: null },
-        });
-      } else {
-        // Tedarikçiye/bankaya verilen çek: tutar+supplierId+seriNo ile bul
-        const checkTutar = payment.originalAmount ?? payment.amount;
-        const whereClause: any = {
-          companyId: user.companyId,
-          tutar: checkTutar,
-          durum: { not: 'PORTFOY' },
-        };
-        if (payment.customerId) whereClause.customerId = payment.customerId;
-        if (payment.supplierId) whereClause.supplierId = payment.supplierId;
-        if (payment.notes) {
-          const seriNoPart = payment.notes.split(' | ').find((s: string) => s.startsWith('Çek No: '));
-          const seriNo = seriNoPart ? seriNoPart.slice('Çek No: '.length) : null;
-          if (seriNo) whereClause.seriNo = seriNo;
-        }
-        await (tx.cek as any).updateMany({
-          where: whereClause,
-          data: { durum: 'PORTFOY', customerId: null, supplierId: null },
-        });
-      }
-    }
+    await releaseCheque(tx, user.companyId, payment);
 
     // Kasa bakiyesi, fatura ve alış ödeme tutarı geri alınır
     await applyPaymentEffects(tx, user.companyId, payment, -1);

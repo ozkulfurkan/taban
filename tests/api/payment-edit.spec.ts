@@ -49,3 +49,15 @@ test('çek ve transfer kaydında yalnızca tarih ve açıklama değişir; yetki 
   expect((await viewer.put(`/api/payments/${p.id}`, { data: { notes: 'x' } })).status()).toBe(403);
   expect((await A.owner.put(`/api/payments/${p.id}`, { data: { amount: -5 } })).status()).toBe(400);
 });
+
+test('satış silinince bağlı tahsilat kasadan da geri alınır', async () => {
+  const before = await bal(kasa1);
+  const inv = await (await A.owner.post('/api/invoices', { data: { customerId: cust, date: new Date().toISOString(), vatRate: 0, currency: 'TRY', items: [{ description: `Silinecek ${RUN}`, quantity: 1, unitPrice: 300 }] } })).json();
+  expect(inv.id).toBeTruthy();
+  const p = await A.owner.post('/api/payments', { data: { customerId: cust, invoiceId: inv.id, accountId: kasa1, amount: 120, currency: 'TRY', method: 'Nakit' } });
+  expect(p.status(), await p.text()).toBe(200);
+  expect(await bal(kasa1)).toBe(before + 120);
+  expect((await A.owner.delete(`/api/invoices/${inv.id}`)).status()).toBe(200);
+  expect(await bal(kasa1)).toBe(before);
+  expect(await prisma.payment.count({ where: { invoiceId: inv.id } })).toBe(0);
+});
