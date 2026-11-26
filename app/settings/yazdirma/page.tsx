@@ -116,7 +116,7 @@ export default function PrintSettingsPage() {
             <section className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 space-y-1.5">
               <h2 className="font-semibold">Nokta vuruşlu yazıcı için ipuçları</h2>
               <p>1. Windows: Denetim Masası → Yazıcılar → yazıcınızı seçin → <b>Yazıcı sunucusu özellikleri → Formlar</b> ile kâğıdınızın ölçüsünü (ör. 240 × 140 mm) yeni form olarak ekleyin ve yazıcı tercihlerinde seçin.</p>
-              <p>2. Yazdırma penceresinde: <b>Kenar boşlukları: Yok</b>, <b>Ölçek: %100</b>, <b>Üst bilgi ve alt bilgi: kapalı</b>.</p>
+              <p>2. Yazdırma penceresinde: <b>Kâğıt boyutu: eklediğiniz form</b> (ör. 240 × 140), <b>Yön: Dikey</b>, <b>Kenar boşlukları: Yok</b>, <b>Ölçek: %100</b>, <b>Üst bilgi ve alt bilgi: kapalı</b>. Fiş yan basılıyorsa yön ayarı veya kâğıt boyutu yanlıştır.</p>
               <p>3. Matbu formda önce <b>Kalibrasyon sayfası</b>nı yazdırın; ızgaradaki mm değerlerine bakıp alan konumlarını düzeltin.</p>
             </section>
           </div>

@@ -91,8 +91,14 @@ export function paginate<T>(items: T[], perPage: number): T[][] {
   return pages.length ? pages : [[]];
 }
 
+// Eni boyundan büyük kâğıtta (sürekli form 240×140) ölçü verilirse Chrome işi "yatay" gönderir, yazdırma
+// penceresinde kâğıt/yön seçimini gizler; nokta vuruşlu sürücü formu dikey sayıp fişi 90° döndürür.
+// Bu kâğıtlarda ölçü yazıcı sürücüsündeki formdan alınır (Kâğıt: 240×140 form, Yön: Dikey).
+export const pageRule = (c: Pick<PrintConfig, 'widthMm' | 'heightMm'>) =>
+  c.widthMm > c.heightMm ? '@page { margin: 0; }' : `@page { size: ${c.widthMm}mm ${c.heightMm}mm; margin: 0; }`;
+
 const baseCss = (c: PrintConfig) => `
-@page { size: ${c.widthMm}mm ${c.heightMm}mm; margin: 0; }
+${pageRule(c)}
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: #fff; color: #000; }
 body { font-family: 'Courier New', Courier, monospace; font-size: ${c.fontSizePt}pt; line-height: 1.15; -webkit-print-color-adjust: exact; }

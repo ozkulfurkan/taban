@@ -14,7 +14,12 @@ test('kâğıt ölçüsü: hazır ölçü ayarı ezer, özel ölçü ve sınırl
   assert.deepEqual([normalizePrintConfig({ paper: 'CF240x140', widthMm: 10 }).widthMm, normalizePrintConfig({ paper: 'CF240x140' }).heightMm], [240, 140]);
   const c = normalizePrintConfig({ paper: 'CUSTOM', widthMm: 9999, heightMm: 120, fontSizePt: 1, copies: 0 });
   assert.deepEqual([c.widthMm, c.heightMm, c.fontSizePt, c.copies], [420, 120, 6, 1]);
-  assert.match(dispatchPrintHtml(input(1), { paper: 'CF240x140' }), /@page \{ size: 240mm 140mm/);
+  // Sürekli form (eni > boyu): ölçü yazıcıdaki formdan, yön dikey kalır (fiş 90° dönmez)
+  const cf = dispatchPrintHtml(input(1), { paper: 'CF240x140' });
+  assert.match(cf, /@page \{ margin: 0; \}/);
+  assert.doesNotMatch(cf, /size: 240mm 140mm/);
+  assert.match(cf, /\.page \{ position: relative; width: 240mm; height: 140mm;/);
+  assert.match(dispatchPrintHtml(input(1), { paper: 'A4' }), /@page \{ size: 210mm 297mm; margin: 0; \}/);
 });
 
 test('toplamlar: fiyatı olmayan satır toplama girmez ve işaretlenir', () => {
