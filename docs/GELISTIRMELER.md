@@ -186,6 +186,14 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 - **Büyüklük:** S
 - **Durum:** Web tamam, mobil bekliyor
 
+## G-11 · Mobilde fatura ödeme durumu yerine cari bakiye
+- **Tarih:** 27.11.2026
+- **İstek:** "Faturanın kapanmış olup olmadığı çok önemli değil, önemli olan müşterinin güncel bakiyesi"
+- **Önerilen çözüm:** Web'de tahsilat/ödemeler faturaya bağlanmıyor (PR #72). Mobilde `belgeler/satis/[id].tsx` "ödenen" satırı ve `belgeler/index.tsx` durum rozeti (Bekliyor/Kısmi/Ödendi) kaldırılmalı; satış detayında `customerBalance` (API hazır) gösterilmeli.
+- **Etkilenen alanlar:** mobil
+- **Büyüklük:** S
+- **Durum:** Web tamam, mobil bekliyor
+
 <!--
 Kayıt şablonu:
 
