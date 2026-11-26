@@ -140,6 +140,12 @@ export default function OrderDetailPage() {
   const handleStatusUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!statusForm.status) return;
+    // "Sevk Edildi": sevk fişi kesilsin mi? Fiş son sevkiyatla siparişi zaten "Sevk Edildi" yapar ve hesaba işler
+    if (statusForm.status === 'SHIPPED' && order.status !== 'SHIPPED'
+      && window.confirm('Sevk fişi kesilsin mi?\n\nTamam: sevk fişi ekranı açılır (kalan miktarlar gelir, fiş yazdırılır ve isteğe bağlı cari hesaba işlenir).\nİptal: yalnızca durum "Sevk Edildi" yapılır.')) {
+      router.push(`/sevkiyat/yeni?orderId=${order.id}`);
+      return;
+    }
     setSaving(true);
     setActionError('');
     const res = await fetch(`/api/orders/${params?.id}`, {
@@ -216,6 +222,7 @@ export default function OrderDetailPage() {
         sizes: order.product?.sizes ?? [], qty: qtyOf(order.sizeDistribution),
       }];
   const steps = nextStatuses(order.status, order.unit);
+  const postedShipment = (Array.isArray(order.shipments) ? order.shipments : []).find((x: any) => x.invoiceId);
   const shipments: any[] = Array.isArray(order.shipments) ? order.shipments : order.shipment ? [order.shipment] : [];
   // Formdaki kalem satırları: "sipariş" sütunu kalan miktarı gösterir (düzenlenen sevkiyat hariç)
   const formLines = remainingLines(shipLines(order), shippedSoFar(shipments.filter(x => x.id !== shipTarget)))
@@ -283,7 +290,13 @@ export default function OrderDetailPage() {
                     </button>
                   )
             )}
-            {order.invoiceId ? (
+            {postedShipment ? (
+              <Link href={`/invoices/${postedShipment.invoiceId}`} data-testid="order-posted"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium hover:bg-emerald-200"
+                title="Sevkiyat sevk fişiyle cari hesaba işlendi; sipariş ayrıca satışa çevrilmez">
+                <CheckCircle className="w-4 h-4" /> Sevk fişiyle hesaba işlendi
+              </Link>
+            ) : order.invoiceId ? (
               <Link href={`/invoices/${order.invoiceId}`}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium hover:bg-emerald-200">
                 <CheckCircle className="w-4 h-4" /> Fatura Görüntüle
@@ -470,6 +483,13 @@ export default function OrderDetailPage() {
             <div className="bg-white rounded-xl p-5 shadow-card border border-ink-200/80">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-ink-700">Sevkiyat</h2>
+                {!showShipForm && order.status !== 'CANCELLED' && order.status !== 'SHIPPED' && (totalRemaining > 0 || shipments.length === 0) && (
+                  <Link href={`/sevkiyat/yeni?orderId=${order.id}`} data-testid="order-dispatch"
+                    className="ml-auto mr-2 flex items-center gap-1.5 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium"
+                    title="Sevk fişi kes: yazdır ve isteğe bağlı cari hesaba işle">
+                    <Printer className="w-4 h-4" /> Sevk fişi kes
+                  </Link>
+                )}
                 {!showShipForm && order.status !== 'CANCELLED' && (totalRemaining > 0 || shipments.length === 0) && (
                   <button data-testid="ship-open" onClick={() => openShipForm(null)}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium">

@@ -75,6 +75,13 @@ export default function NewInvoicePage() {
 
   // Siparişten gelindiyse sipariş yüklenince açılır (irsaliye no ve sevk tarihi sevkiyattan gelir)
   if (orderId && !order) return <AppShell><div className="py-16 text-center text-ink-400 text-sm">Sipariş yükleniyor…</div></AppShell>;
+  // Sevk fişiyle hesaba işlenmiş siparişten ikinci satış açılmasın
+  if (order && (order.shipments ?? []).some((x: any) => x.invoiceId)) {
+    return <AppShell><div className="max-w-xl mx-auto py-16 text-center space-y-2" data-testid="convert-blocked">
+      <p className="font-semibold text-ink-800">Bu sipariş sevk fişiyle cari hesaba işlendi.</p>
+      <p className="text-sm text-ink-500">Aynı malı ikinci kez borç yazmamak için sipariş ayrıca satışa çevrilemez. Fişi Sevkiyat ekranından görebilirsiniz.</p>
+    </div></AppShell>;
+  }
   const shipmentHeader = order?.shipment ? {
     irsaliyeNo: order.shipment.deliveryNoteNo ?? '',
     sevkTarihi: order.shipment.shipmentDate ? new Date(order.shipment.shipmentDate).toISOString().split('T')[0] : undefined,

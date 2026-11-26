@@ -18,6 +18,10 @@ const ALL_PAGES = [
   { key: 'accounts', label: 'Hesaplarım' },
   { key: 'cek-portfolyo', label: 'Çek Portföyü' },
   { key: 'calculations', label: 'Taban Maliyet Hesapla' },
+  { key: 'orders', label: 'Gelen Siparişler' },
+  { key: 'sevkiyat', label: 'Sevkiyat (sevk fişi)' },
+  { key: 'fason', label: 'Fason' },
+  { key: 'personnel', label: 'Personel Takip' },
   { key: 'settings', label: 'Ayarlar' },
 ];
 

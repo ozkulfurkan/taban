@@ -118,6 +118,8 @@ model Company {
   materialCalculations    MaterialCalculation[]
   supportTickets          SupportTicket[]
   barcodeSettings         BarcodeSettings?
+  printSettings           PrintSettings?
+  dispatches              Dispatch[]
   productStockAdjustments ProductStockAdjustment[]
   statementShareLinks     StatementShareLink[]
   kolis                   Koli[]
@@ -372,6 +374,7 @@ model Customer {
   statementShareLinks   StatementShareLink[]
   companyLinks          CompanyLink[]
   kolis                 Koli[]
+  dispatches            Dispatch[]
 
   @@index([companyId])
 }
@@ -439,6 +442,7 @@ model Invoice {
   items         InvoiceItem[]
   payments      Payment[]
   soleOrder     SoleOrder?
+  dispatch      Dispatch?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -763,10 +767,15 @@ model OrderShipment {
   // [{ index, productId, productCode, productName, unit, ordered, shipped }]
   items          Json?
   totalQuantity  Float?
+  // Sevk fişi (Dispatch) ile gönderildiyse fiş; hesaba işlendiyse satış (aynı sevkiyat iki kez işlenmez)
+  dispatchId     String?
+  dispatch       Dispatch? @relation(fields: [dispatchId], references: [id], onDelete: SetNull)
+  invoiceId      String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   @@index([orderId, shipmentDate])
+  @@index([dispatchId])
 }
 
 // ─── Fason Modülleri ───────────────────────────────────────────────────────────
@@ -1350,4 +1359,64 @@ model RequestFingerprint {
 
   @@id([companyId, hash])
   @@index([createdAt])
+}
+
+/// Sevk fişi: müşteriye yapılan sevkiyat (siparişli ve/veya siparişsiz kalemler). "Cari hesaba işle" ile satış (Invoice) açılır.
+model Dispatch {
+  id           String          @id @default(cuid())
+  companyId    String
+  company      Company         @relation(fields: [companyId], references: [id])
+  customerId   String
+  customer     Customer        @relation(fields: [customerId], references: [id])
+  no           String
+  date         DateTime
+  carrier      String?
+  vehiclePlate String?
+  driverName   String?
+  notes        String?
+  /// [{ productId?, code, name, unit, qty, unitPrice?, priceSource, orderId?, orderLineIndex? }]
+  lines        Json
+  vatRate      Float           @default(0)
+  currency     String          @default("TRY")
+  subtotal     Float           @default(0)
+  total        Float           @default(0)
+  /// DRAFT (hesaba işlenmedi) | POSTED (satış açıldı) | CANCELLED
+  status       String          @default("DRAFT")
+  invoiceId    String?         @unique
+  invoice      Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  printedAt    DateTime?
+  createdById  String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  shipments    OrderShipment[]
+
+  @@unique([companyId, no])
+  @@index([companyId, date])
+  @@index([customerId])
+}
+
+/// Sevk fişi / irsaliye yazdırma ayarları (firma başına bir kayıt). Ölçüler mm.
+model PrintSettings {
+  id             String   @id @default(cuid())
+  companyId      String   @unique
+  company        Company  @relation(fields: [companyId], references: [id])
+  /// A4 | A5 | CF240x140 | CF240x280 | CUSTOM
+  paper          String   @default("A4")
+  widthMm        Float    @default(210)
+  heightMm       Float    @default(297)
+  marginTopMm    Float    @default(10)
+  marginRightMm  Float    @default(10)
+  marginBottomMm Float    @default(10)
+  marginLeftMm   Float    @default(10)
+  fontSizePt     Float    @default(10)
+  lineHeightMm   Float    @default(6)
+  maxLines       Int      @default(20)
+  /// full: boş kâğıda tam fiş | preprinted: matbu forma yalnızca değerler
+  mode           String   @default("full")
+  /// Matbu form alan konumları: { [alan]: { x, y } } (mm)
+  fieldPositions Json?
+  showPrices     Boolean  @default(false)
+  copies         Int      @default(1)
+  postByDefault  Boolean  @default(true)
+  updatedAt      DateTime @updatedAt
 }
