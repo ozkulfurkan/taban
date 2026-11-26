@@ -170,6 +170,14 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 - **Büyüklük:** L
 - **Durum:** Web tamam, mobil bekliyor
 
+## G-9 · Sevk fişi (mobil karşılığı)
+- **Tarih:** 26.11.2026
+- **İstek:** "Nakliyeci oradan sevk fişi yazdıracak. Müşteriyi seçip işte şu ürünleri sevk ediyorum dediğinde…"
+- **Önerilen çözüm:** Web'deki Sevkiyat ekranının (PR #66) mobil karşılığı. Müşteri seç → açık sipariş kalemleri → miktar → fiş; PDF olarak paylaş/yazdır (AirPrint, Android yazdırma). Yalnız "Sevkiyat" izni olan nakliyeci fiyat görmez, hesaba işleyemez; yetkili kullanıcı "Cari hesaba işle" ile işler. Nokta vuruşlu çıktı web'den kalır.
+- **Etkilenen alanlar:** mobil (API hazır: /api/dispatches)
+- **Büyüklük:** M
+- **Durum:** Web tamam, mobil bekliyor
+
 <!--
 Kayıt şablonu:
 
