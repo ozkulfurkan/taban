@@ -1114,9 +1114,6 @@ export default function CustomerDetailPage() {
                 <tbody>
                   {customer.invoices.slice(0, invoicesShown).map((inv: any) => {
                     const isOpen = expandedInvoiceId === inv.id;
-                    const remaining = inv.total - inv.paidAmount;
-                    const statusLabel = remaining <= 0 ? 'Faturalaşmış' : remaining < inv.total ? 'Kısmi' : 'Bekliyor';
-                    const statusColor = remaining <= 0 ? 'text-emerald-600' : remaining < inv.total ? 'text-brand-700' : 'text-amber-500';
                     return (
                       <>
                         <tr key={inv.id}

@@ -866,13 +866,6 @@ export default function SupplierDetailPage() {
   const [expandedPurchaseId, setExpandedPurchaseId] = useState<string | null>(null);
   const [paymentsShown, setPaymentsShown] = useState(10);
 
-  const STATUS_LABEL: Record<string, string> = {
-    DRAFT: t('invoices', 'statusDraft'),
-    PENDING: t('invoices', 'statusPending'),
-    PARTIAL: t('invoices', 'statusPartial'),
-    PAID: t('invoices', 'statusPaid'),
-    CANCELLED: t('invoices', 'statusCancelled'),
-  };
 
   const load = () => {
     if (!params?.id) return;
@@ -963,7 +956,6 @@ export default function SupplierDetailPage() {
         label: `${p.isReturn ? 'Alis Iadesi' : 'Alis'}: ${p.invoiceNo || 'Faturasiz'}`,
         debit: p.isReturn ? 0 : p.total,
         credit: p.isReturn ? Math.abs(p.total) : 0,
-        status: p.isReturn ? 'Iade' : STATUS_LABEL[p.status],
       })),
       ...(supplier.payments || []).map((p: any) => ({
         date: p.date,
@@ -1227,9 +1219,6 @@ export default function SupplierDetailPage() {
                 <tbody>
                   {supplier.purchases.slice(0, purchasesShown).map((p: any) => {
                     const isOpen = expandedPurchaseId === p.id;
-                    const remaining = p.total - p.paidAmount;
-                    const statusLabel = p.isReturn ? 'İade' : remaining <= 0 ? 'Faturalaşmış' : remaining < p.total ? 'Kısmi' : 'Bekliyor';
-                    const statusColor = p.isReturn ? 'text-amber-600' : remaining <= 0 ? 'text-emerald-600' : remaining < p.total ? 'text-brand-700' : 'text-amber-500';
                     return (
                       <>
                         <tr key={p.id}

@@ -63,7 +63,7 @@ export default function PurchaseDetailPage() {
   const handleDelete = () => {
     setConfirmModal({ message: purchase.isReturn
       ? 'Bu iade silinecek.\n\n⚠️ İade edilen hammadde ve ürünler stoğa geri eklenecek, tedarikçi borcu iade tutarı kadar artacak.'
-      : 'Bu alış faturası silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Bu alışla eklenen hammadde ve ürün stokları geri alınacaktır.', onConfirm: async () => {
+      : 'Bu alış faturası silinecek. Bu alışla ilgili ödemeler silinmez, tedarikçinin cari hesabında kalır.\n\n⚠️ Bu alışla eklenen hammadde ve ürün stokları geri alınacaktır.', onConfirm: async () => {
       setDeleting(true);
       await fetch(`/api/purchases/${params.id}`, { method: 'DELETE' });
       router.replace(`/suppliers/${purchase.supplierId}`);
@@ -76,7 +76,6 @@ export default function PurchaseDetailPage() {
     setPayLoading(true);
     try {
       const result = await postPayment({
-        purchaseId: purchase.id,
         supplierId: purchase.supplierId,
         amount: payForm.amount,
         currency: purchase.currency,
@@ -97,11 +96,10 @@ export default function PurchaseDetailPage() {
   if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-700" /></div></AppShell>;
   if (!purchase) return <AppShell><div className="text-center py-16 text-ink-400">Alış faturası bulunamadı</div></AppShell>;
 
-  const remaining = purchase.total - purchase.paidAmount;
+  // Ödemeler alışa bağlanmaz; tedarikçinin güncel cari bakiyesi gösterilir (pozitif = borcumuz)
+  const bal: number | null = typeof purchase.supplierBalance === 'number' ? purchase.supplierBalance : null;
 
   const totalKg = purchaseMaterials.reduce((s: number, pm: any) => s + (pm.kgAmount ?? 0), 0);
-  const statusLabel = purchase.isReturn ? 'Alış İadesi' : remaining <= 0 ? 'Faturalaşmış' : remaining < purchase.total ? 'Kısmi Ödeme' : 'Beklemede';
-  const statusColor = purchase.isReturn ? 'bg-amber-100 text-amber-700' : remaining <= 0 ? 'bg-emerald-100 text-emerald-700' : remaining < purchase.total ? 'bg-yellow-100 text-yellow-700' : 'bg-amber-100 text-amber-700';
 
   return (
     <AppShell>
@@ -168,24 +166,16 @@ export default function PurchaseDetailPage() {
               </div>
             </div>
 
-            {/* Payment history */}
-            {purchase.payments?.length > 0 && (
-              <div className="bg-white rounded-xl shadow-card overflow-hidden border border-ink-200/80">
-                <div className="px-4 py-2.5 border-b border-ink-100 bg-ink-50">
-                  <p className="text-xs font-bold text-ink-500 uppercase tracking-wide">Ödeme Geçmişi</p>
-                </div>
-                <div className="p-4 space-y-2">
-                  {purchase.payments.map((p: any) => (
-                    <div key={p.id} className="flex justify-between text-sm">
-                      <span className="text-ink-500">{fmtDate(p.date)} — {p.method}</span>
-                      <span className="font-semibold text-brand-700">{fmt(p.amount)}</span>
-                    </div>
-                  ))}
-                  <div className={`flex justify-between text-sm font-bold pt-2 border-t ${remaining > 0 ? 'text-red-500' : 'text-brand-700'}`}>
-                    <span>{remaining > 0 ? 'Kalan Borç' : 'Tümü Ödendi ✓'}</span>
-                    {remaining > 0 && <span>{fmt(remaining)} {purchase.currency}</span>}
-                  </div>
-                </div>
+            {/* Tedarikçinin güncel bakiyesi (ödemeler cariye işlenir) */}
+            {bal != null && (
+              <div className="bg-white rounded-xl shadow-card p-4 border border-ink-200/80" data-testid="purchase-supplier-balance">
+                <p className="text-xs font-bold text-ink-500 uppercase tracking-wide mb-2">Tedarikçinin güncel bakiyesi</p>
+                <p className={`text-xl font-bold ${bal > 0.005 ? 'text-red-600' : bal < -0.005 ? 'text-emerald-600' : 'text-ink-700'}`}>
+                  {fmt(Math.abs(bal))} {purchase.supplier?.currency ?? purchase.currency}
+                  <span className="ml-2 text-xs font-medium">{bal > 0.005 ? 'borcumuz' : bal < -0.005 ? 'alacağımız' : 'kapalı'}</span>
+                </p>
+                <p className="text-xs text-ink-400 mt-1">Ödemeler alışa değil tedarikçinin cari hesabına işlenir.</p>
+                {purchase.supplierId && <Link href={`/suppliers/${purchase.supplierId}`} className="text-xs text-brand-700 hover:underline">Cari hesaba git →</Link>}
               </div>
             )}
 
@@ -283,14 +273,6 @@ export default function PurchaseDetailPage() {
                   <span>Brüt Toplam</span>
                   <span className="font-medium">{fmt(purchase.total)} {purchase.currency}</span>
                 </div>
-                <div className="flex justify-between text-brand-700">
-                  <span>Ödenen</span>
-                  <span className="font-medium">{fmt(purchase.paidAmount)} {purchase.currency}</span>
-                </div>
-                <div className={`flex justify-between font-bold text-base pt-2 border-t ${remaining > 0 ? 'text-red-500' : 'text-brand-700'}`}>
-                  <span>KALAN BORÇ</span>
-                  <span>{fmt(remaining)} {purchase.currency}</span>
-                </div>
               </div>
             </div>
           </div>
@@ -339,8 +321,5 @@ async function handlePdf(purchase: any) {
   y = 34;
   doc.setTextColor(30, 30, 30); doc.setFontSize(10); doc.setFont('helvetica', 'normal');
   doc.text(`Toplam: ${fmt2(purchase.total)} ${purchase.currency}`, M, y); y += 8;
-  doc.text(`Odenen: ${fmt2(purchase.paidAmount)} ${purchase.currency}`, M, y); y += 8;
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Kalan: ${fmt2(purchase.total - purchase.paidAmount)} ${purchase.currency}`, M, y);
   doc.save(`${tr(purchase.invoiceNo || 'alis-faturasi')}.pdf`);
 }

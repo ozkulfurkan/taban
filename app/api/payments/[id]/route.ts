@@ -27,7 +27,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     // Çek ödemesi silindiyse ilgili çeki portföye geri al
     await releaseCheque(tx, user.companyId, payment);
 
-    // Kasa bakiyesi, fatura ve alış ödeme tutarı geri alınır
+    // Kasa bakiyesi geri alınır
     await applyPaymentEffects(tx, user.companyId, payment, -1);
 
     await tx.payment.delete({ where: { id: params.id } });
@@ -62,7 +62,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   }
 }
 
-// Düzenle: tutar, tarih, açıklama, kasa, döviz tutarı ve kur. Eski kayıt bağlı kayıtlardan geri alınır, yenisi uygulanır.
+// Düzenle: tutar, tarih, açıklama, kasa, döviz tutarı ve kur. Eski kayıt kasadan geri alınır, yenisi uygulanır.
 // Çek ile yapılan kayıtta yalnızca tarih ve açıklama değişir (çek portföy bağı korunur).
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -94,22 +94,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if ((old.method === 'Çek' || old.method === 'Transfer') && (Math.abs(amount - old.amount) > 0.001 || accountId !== old.accountId || originalAmount !== old.originalAmount)) {
     const what = old.method === 'Çek' ? 'Çek ile yapılan kayıtta' : 'Hesaplar arası transferde';
     return NextResponse.json({ error: `${what} yalnızca tarih ve açıklama değiştirilebilir. Tutarı değiştirmek için kaydı silip yeniden girin.` }, { status: 400 });
-  }
-
-  // Fatura / alış: fazla ödeme onayı (bu kaydın eski tutarı hariç)
-  const target = old.invoiceId
-    ? await prisma.invoice.findFirst({ where: { id: old.invoiceId, companyId: user.companyId }, select: { total: true, paidAmount: true, currency: true } })
-    : old.purchaseId
-      ? await prisma.purchase.findFirst({ where: { id: old.purchaseId, companyId: user.companyId }, select: { total: true, paidAmount: true, currency: true } })
-      : null;
-  if (target && !body.allowOverpayment) {
-    const remaining = round2(Math.abs(target.total) - (target.paidAmount - old.amount));
-    if (amount > remaining + 0.005) {
-      return NextResponse.json({
-        error: `Bu tutar kalan tutardan ${round2(amount - Math.max(remaining, 0))} ${target.currency} fazla.`,
-        code: 'OVERPAYMENT', remaining: Math.max(remaining, 0), currency: target.currency,
-      }, { status: 409 });
-    }
   }
 
   const updated = await prisma.$transaction(async tx => {

@@ -154,34 +154,34 @@ test.describe('Ödemeler', () => {
     expect((await prisma.invoice.findUnique({ where: { id: inv.id } }))?.status).toBe('PENDING');
   });
 
-  test('fazla ödeme önce onay ister, onaylanınca kaydedilir', async () => {
+  test('faturadan girilen tahsilat faturaya bağlanmaz, cariye işlenir; fazla tutar onay istemez', async () => {
     const c = await newCustomer('EUR');
     const inv = await (await invoice(c, [line(1, 50)], { currency: 'EUR' })).json();
-    const first = await A.owner.post('/api/payments', { data: { invoiceId: inv.id, customerId: c, amount: '500', currency: 'EUR' } });
-    expect(first.status()).toBe(409);
-    const body = await first.json();
-    expect(body).toMatchObject({ code: 'OVERPAYMENT', remaining: 50, currency: 'EUR' });
+    const r = await A.owner.post('/api/payments', { data: { invoiceId: inv.id, amount: '500', currency: 'EUR' } });
+    expect(r.status(), await r.text()).toBe(200);
+    const p = await r.json();
+    expect([p.invoiceId, p.customerId, p.type]).toEqual([null, c, 'RECEIVED']);
     expect((await prisma.invoice.findUnique({ where: { id: inv.id } }))?.paidAmount).toBe(0);
-    const ok = await A.owner.post('/api/payments', { data: { invoiceId: inv.id, customerId: c, amount: '500', currency: 'EUR', allowOverpayment: true } });
-    expect(ok.status()).toBe(200);
-    expect((await prisma.invoice.findUnique({ where: { id: inv.id } }))?.status).toBe('PAID');
+    expect(await balanceOf(c)).toEqual({ fromList: -450, fromDetail: -450 }); // müşteri alacaklı
+    // Faturanın carisi dışında bir müşteriyle gönderilirse reddedilir
+    const other = await newCustomer('EUR');
+    expect((await A.owner.post('/api/payments', { data: { invoiceId: inv.id, customerId: other, amount: 1, currency: 'EUR' } })).status()).toBe(400);
   });
 
-  test('kısmi ödeme Türkçe biçimle girilir ve yuvarlanır', async () => {
+  test('kısmi tahsilat Türkçe biçimle girilir, yuvarlanır ve bakiyeden düşer', async () => {
     const c = await newCustomer();
-    const inv = await (await invoice(c, [line(1, 2000)])).json();
-    const r = await A.owner.post('/api/payments', { data: { invoiceId: inv.id, customerId: c, amount: '1.234,567' } });
+    await invoice(c, [line(1, 2000)]);
+    const r = await A.owner.post('/api/payments', { data: { customerId: c, amount: '1.234,567' } });
     expect(r.status()).toBe(200);
-    const after = await prisma.invoice.findUnique({ where: { id: inv.id } });
-    expect([after?.paidAmount, after?.status]).toEqual([1234.57, 'PARTIAL']);
+    expect((await r.json()).amount).toBe(1234.57);
+    expect(await balanceOf(c)).toEqual({ fromList: 765.43, fromDetail: 765.43 });
   });
 
-  test('fatura tutarı düşürülünce ödeme durumu güncellenir', async () => {
+  test('fatura detayı müşterinin güncel bakiyesini döner', async () => {
     const c = await newCustomer();
     const inv = await (await invoice(c, [line(1, 100)])).json();
-    await A.owner.post('/api/payments', { data: { invoiceId: inv.id, customerId: c, amount: 60 } });
-    const r = await (await A.owner.put(`/api/invoices/${inv.id}`, { data: { items: [line(1, 60)] } })).json();
-    expect(r.status).toBe('PAID');
+    await A.owner.post('/api/payments', { data: { customerId: c, amount: 60 } });
+    expect((await (await A.owner.get(`/api/invoices/${inv.id}`)).json()).customerBalance).toBe(40);
   });
 });
 

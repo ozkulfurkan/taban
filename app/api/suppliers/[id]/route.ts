@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
-import { purchaseBalanceEffect, round2 } from '@/lib/money';
+import { supplierBalance } from '@/lib/money';
 import { logAction, getIp } from '@/lib/audit-logger';
 import { partyInputError } from '@/lib/party-input';
 
@@ -27,21 +27,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   });
   if (!supplier) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  // Net alış: iadeler düşülür
-  const totalPurchased = round2(supplier.purchases.reduce((s: number, p: any) => s + purchaseBalanceEffect(p), 0));
-
-  let balanceDelta = 0;
-  let totalPaid = 0;
-  for (const p of supplier.payments) {
-    if (p.method === 'Borç Fişi' || (p.method === 'Bakiye Düzeltme' && p.notes?.startsWith('+'))) {
-      balanceDelta += p.amount;
-    } else {
-      balanceDelta -= p.amount;
-      totalPaid += p.amount;
-    }
-  }
-
-  const balance = totalPurchased + balanceDelta;
+  // Net alış (iadeler düşülür) − ödemeler (+ borç fişleri)
+  const { totalPurchased, totalPaid, balance } = supplierBalance(supplier.purchases as any, supplier.payments as any);
 
   return NextResponse.json({
     ...supplier,

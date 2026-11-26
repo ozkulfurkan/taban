@@ -49,7 +49,7 @@ test('alış: hammadde ve ürün stoğu artar, toplam kalemlerden hesaplanır', 
   expect(detail.purchaseMaterials.map((x: any) => x.material?.name ?? x.product?.name)).toHaveLength(2);
 });
 
-test('alış düzenleme: kalem değişince stok farkı ve ödeme durumu düzelir', async () => {
+test('alış düzenleme: kalem değişince stok farkı düzelir; ödeme tedarikçi bakiyesine işlenir', async () => {
   const s = await supplier();
   const m1 = await material();
   const m2 = await material();
@@ -63,9 +63,9 @@ test('alış düzenleme: kalem değişince stok farkı ve ödeme durumu düzelir
     data: { purchaseId: purchase.id, supplierId: s, amount: 50, currency: 'USD', method: 'Nakit', date: new Date().toISOString() },
   });
   expect(pay.status(), await pay.text()).toBeLessThan(300);
-  expect((await prisma.purchase.findUnique({ where: { id: purchase.id } }))!.status).toBe('PARTIAL');
+  expect((await pay.json()).purchaseId).toBeNull(); // ödeme alışa değil cariye işlenir
 
-  // m1 10 → 4 kg, ürün kalemi çıkar, m2 eklenir; toplam 4×5 + 2×10 = 40 → ödenen 50 ile kapanır
+  // m1 10 → 4 kg, ürün kalemi çıkar, m2 eklenir; toplam 4×5 + 2×10 = 40 → ödenen 50 ile tedarikçiden 10 alacaklıyız
   const r = await A.owner.put(`/api/purchases/${purchase.id}`, {
     data: { notes: 'düzeltildi', items: [{ materialId: m1, qty: 4, unitPrice: 5 }, { materialId: m2, qty: 2, unitPrice: 10 }] },
   });
@@ -75,7 +75,7 @@ test('alış düzenleme: kalem değişince stok farkı ve ödeme durumu düzelir
   expect(await productStock(p)).toBe(0);
   const after = (await prisma.purchase.findUnique({ where: { id: purchase.id } }))!;
   expect(after.total).toBe(40);
-  expect(after.status).toBe('PAID');
+  expect((await (await A.owner.get(`/api/suppliers/${s}`)).json()).balance).toBe(-10);
   expect(after.notes).toBe('düzeltildi');
   expect(await prisma.purchaseMaterial.count({ where: { purchaseId: purchase.id } })).toBe(2);
 });
