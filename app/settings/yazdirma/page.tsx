@@ -115,9 +115,10 @@ export default function PrintSettingsPage() {
 
             <section className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 space-y-1.5">
               <h2 className="font-semibold">Nokta vuruşlu yazıcı için ipuçları</h2>
-              <p>1. Windows: Denetim Masası → Yazıcılar → yazıcınızı seçin → <b>Yazıcı sunucusu özellikleri → Formlar</b> ile kâğıdınızın ölçüsünü (ör. 240 × 140 mm) yeni form olarak ekleyin ve yazıcı tercihlerinde seçin.</p>
-              <p>2. Yazdırma penceresinde: <b>Kâğıt boyutu: eklediğiniz form</b> (ör. 240 × 140), <b>Yön: Dikey</b>, <b>Kenar boşlukları: Yok</b>, <b>Ölçek: %100</b>, <b>Üst bilgi ve alt bilgi: kapalı</b>. Fiş yan basılıyorsa yön ayarı veya kâğıt boyutu yanlıştır.</p>
-              <p>3. Matbu formda önce <b>Kalibrasyon sayfası</b>nı yazdırın; ızgaradaki mm değerlerine bakıp alan konumlarını düzeltin.</p>
+              <p>1. Windows&apos;ta kâğıt ölçüsünü form olarak ekleyin: <b>Windows + R</b> → <code className="bg-amber-100 px-1 rounded">printui /s /t0</code> → <b>Formlar</b> sekmesi → &quot;Yeni form oluştur&quot; → ad verin, Birimler: Metrik, genişlik ve yüksekliği girin (ör. 24 × 14 cm), kenar boşlukları 0 → <b>Formu Kaydet</b>. (Diğer yol: Ayarlar → Bluetooth ve cihazlar → Yazıcılar ve tarayıcılar → Yazdırma sunucusu özellikleri.) Yükseklik, kâğıttaki iki yırtma çizgisi arasıdır.</p>
+              <p>2. Yazıcının <b>Yazdırma tercihleri → Gelişmiş</b> bölümünde kâğıt boyutu olarak bu formu seçin.</p>
+              <p>3. Chrome yazdırma penceresinde <b>Daha fazla ayar</b>: <b>Kâğıt boyutu: eklediğiniz form</b>, <b>Düzen: Dikey</b>, <b>Kenar boşlukları: Yok</b>, <b>Ölçek: Varsayılan</b>, <b>Üst bilgi ve alt bilgi: kapalı</b>. Fiş yan basılıyorsa düzen, sonraki sayfaya taşıyorsa kâğıt boyutu yanlıştır.</p>
+              <p>4. Matbu formda önce <b>Kalibrasyon sayfası</b>nı yazdırın; ızgaradaki mm değerlerine bakıp alan konumlarını düzeltin.</p>
             </section>
           </div>
 
