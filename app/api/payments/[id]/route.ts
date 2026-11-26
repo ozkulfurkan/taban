@@ -3,6 +3,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { logAction, getIp } from '@/lib/audit-logger';
+import { applyPaymentEffects } from '@/lib/payment-effects';
+import { parseAmount, round2 } from '@/lib/money';
+import { parseDateInput } from '@/lib/time';
+import { rejectForeignRefs } from '@/lib/tenant';
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -50,35 +54,8 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
       }
     }
 
-    // Kasa bakiyesini geri al
-    if (payment.accountId) {
-      const reversalAmount = payment.originalAmount ?? payment.amount;
-      const isIncoming = payment.type === 'RECEIVED';
-      await tx.account.updateMany({
-        where: { id: payment.accountId, companyId: user.companyId },
-        data: { balance: { increment: isIncoming ? -reversalAmount : reversalAmount } },
-      });
-    }
-
-    // Fatura ödeme tutarını geri al
-    if (payment.invoiceId) {
-      const invoice = await tx.invoice.findFirst({ where: { id: payment.invoiceId, companyId: user.companyId } });
-      if (invoice) {
-        const newPaid = Math.max(0, invoice.paidAmount - payment.amount);
-        const status = newPaid <= 0 ? 'PENDING' : newPaid < invoice.total ? 'PARTIAL' : 'PAID';
-        await tx.invoice.update({ where: { id: payment.invoiceId }, data: { paidAmount: newPaid, status } });
-      }
-    }
-
-    // Alış ödeme tutarını geri al
-    if (payment.purchaseId) {
-      const purchase = await tx.purchase.findFirst({ where: { id: payment.purchaseId, companyId: user.companyId } });
-      if (purchase) {
-        const newPaid = Math.max(0, purchase.paidAmount - payment.amount);
-        const status = newPaid <= 0 ? 'PENDING' : newPaid < purchase.total ? 'PARTIAL' : 'PAID';
-        await tx.purchase.update({ where: { id: payment.purchaseId }, data: { paidAmount: newPaid, status } });
-      }
-    }
+    // Kasa bakiyesi, fatura ve alış ödeme tutarı geri alınır
+    await applyPaymentEffects(tx, user.companyId, payment, -1);
 
     await tx.payment.delete({ where: { id: params.id } });
   });
@@ -110,4 +87,73 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     });
     return NextResponse.json({ error: 'Ödeme silinemedi' }, { status: 500 });
   }
+}
+
+// Düzenle: tutar, tarih, açıklama, kasa, döviz tutarı ve kur. Eski kayıt bağlı kayıtlardan geri alınır, yenisi uygulanır.
+// Çek ile yapılan kayıtta yalnızca tarih ve açıklama değişir (çek portföy bağı korunur).
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = session.user as any;
+  if (!user.companyId) return NextResponse.json({ error: 'No company' }, { status: 400 });
+  const old = await prisma.payment.findFirst({ where: { id: params.id, companyId: user.companyId } });
+  if (!old) return NextResponse.json({ error: 'Kayıt bulunamadı' }, { status: 404 });
+  const body = await req.json().catch(() => ({}));
+
+  const amount = body.amount !== undefined ? round2(parseAmount(body.amount)) : old.amount;
+  if (!Number.isFinite(amount) || amount <= 0) return NextResponse.json({ error: 'Tutar sıfırdan büyük olmalı' }, { status: 400 });
+  if (amount > 1_000_000_000) return NextResponse.json({ error: 'Tutar çok büyük' }, { status: 400 });
+  const has = (k: string) => Object.prototype.hasOwnProperty.call(body, k);
+  const originalAmount = has('originalAmount') ? (body.originalAmount ? round2(parseAmount(body.originalAmount)) : null) : old.originalAmount;
+  const exchangeRate = has('exchangeRate') ? (body.exchangeRate ? parseAmount(body.exchangeRate) : null) : old.exchangeRate;
+  const originalCurrency = has('originalCurrency') ? (body.originalCurrency || null) : old.originalCurrency;
+  if ((originalAmount !== null && !(originalAmount > 0)) || (exchangeRate !== null && !(exchangeRate > 0))) {
+    return NextResponse.json({ error: 'Döviz tutarı veya kur geçersiz' }, { status: 400 });
+  }
+  const date = has('date') && body.date ? parseDateInput(body.date) : old.date;
+  if (!date) return NextResponse.json({ error: 'Tarih geçersiz' }, { status: 400 });
+  const accountId = has('accountId') ? (body.accountId || null) : old.accountId;
+  const notes = has('notes') ? (typeof body.notes === 'string' ? body.notes.trim().slice(0, 1000) || null : null) : old.notes;
+  const foreign = await rejectForeignRefs(user.companyId, { account: accountId });
+  if (foreign) return foreign;
+
+  // Çek (portföy bağı) ve hesaplar arası transfer (iki kayıt) için yalnızca tarih ve açıklama değişir
+  if ((old.method === 'Çek' || old.method === 'Transfer') && (Math.abs(amount - old.amount) > 0.001 || accountId !== old.accountId || originalAmount !== old.originalAmount)) {
+    const what = old.method === 'Çek' ? 'Çek ile yapılan kayıtta' : 'Hesaplar arası transferde';
+    return NextResponse.json({ error: `${what} yalnızca tarih ve açıklama değiştirilebilir. Tutarı değiştirmek için kaydı silip yeniden girin.` }, { status: 400 });
+  }
+
+  // Fatura / alış: fazla ödeme onayı (bu kaydın eski tutarı hariç)
+  const target = old.invoiceId
+    ? await prisma.invoice.findFirst({ where: { id: old.invoiceId, companyId: user.companyId }, select: { total: true, paidAmount: true, currency: true } })
+    : old.purchaseId
+      ? await prisma.purchase.findFirst({ where: { id: old.purchaseId, companyId: user.companyId }, select: { total: true, paidAmount: true, currency: true } })
+      : null;
+  if (target && !body.allowOverpayment) {
+    const remaining = round2(Math.abs(target.total) - (target.paidAmount - old.amount));
+    if (amount > remaining + 0.005) {
+      return NextResponse.json({
+        error: `Bu tutar kalan tutardan ${round2(amount - Math.max(remaining, 0))} ${target.currency} fazla.`,
+        code: 'OVERPAYMENT', remaining: Math.max(remaining, 0), currency: target.currency,
+      }, { status: 409 });
+    }
+  }
+
+  const updated = await prisma.$transaction(async tx => {
+    await applyPaymentEffects(tx, user.companyId, old, -1);
+    const p = await tx.payment.update({
+      where: { id: old.id },
+      data: { amount, originalAmount, originalCurrency: originalAmount ? originalCurrency : null, exchangeRate: originalAmount ? exchangeRate : null, date, accountId, notes },
+    });
+    await applyPaymentEffects(tx, user.companyId, p, 1);
+    return p;
+  });
+
+  await logAction({
+    companyId: user.companyId, userId: user.id, userName: user.name, action: 'UPDATE', entity: 'Payment', entityId: old.id,
+    detail: `Ödeme düzenlendi — ${old.amount} → ${updated.amount} ${updated.currency}`,
+    meta: { before: { amount: old.amount, date: old.date, accountId: old.accountId }, after: { amount: updated.amount, date: updated.date, accountId: updated.accountId } },
+    ip: getIp(req),
+  });
+  return NextResponse.json(updated);
 }

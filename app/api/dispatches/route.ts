@@ -37,6 +37,8 @@ export async function GET(req: NextRequest) {
   const pricing = canPrice(user);
   return NextResponse.json(rows.map(({ lines, total, ...r }) => ({
     ...r, total: pricing ? total : null,
+    // Satışı cari hesaptan silinmiş eski fişler "işlenmedi" görünsün
+    status: r.status === 'POSTED' && !r.invoice ? 'DRAFT' : r.status,
     lineCount: Array.isArray(lines) ? lines.length : 0,
     missingPrice: Array.isArray(lines) && (lines as any[]).some(l => l?.unitPrice == null),
   })));

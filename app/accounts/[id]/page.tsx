@@ -1,11 +1,12 @@
 'use client';
 
+import PaymentEditModal, { type EditablePayment } from '@/app/components/payment-edit-modal';
 import { useEffect, useState, useCallback } from 'react';
 import { postJson, showSaveError } from '@/app/components/post-json';
 import { useParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import { formatDate, toDateInputValue } from '@/lib/time';
-import { Loader2, Pencil, TrendingDown, TrendingUp, ArrowLeftRight, ChevronDown, Trash2, X, Save, AlertTriangle } from '@/app/components/icons';
+import { Loader2, Pencil, Edit2, TrendingDown, TrendingUp, ArrowLeftRight, ChevronDown, Trash2, X, Save, AlertTriangle } from '@/app/components/icons';
 import { matchesText } from '@/lib/search';
 import DecimalInput from '@/app/components/decimal-input';
 import BackLink from '@/app/components/back-link';
@@ -320,6 +321,7 @@ export default function AccountEkstrePage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [openRowMenu, setOpenRowMenu] = useState<string | null>(null);
+  const [editPayment, setEditPayment] = useState<EditablePayment | null>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [transferDropdown, setTransferDropdown] = useState(false);
   const [modal, setModal] = useState<'giris' | 'cikis' | 'transfer' | 'edit' | null>(null);
@@ -534,6 +536,12 @@ export default function AccountEkstrePage() {
           <div className="fixed inset-0 z-30" onClick={() => { setOpenRowMenu(null); setMenuPos(null); }} />
           <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right }} className="bg-white rounded-xl shadow-lg border border-ink-100 z-40 min-w-[140px] overflow-hidden">
             <button
+              onClick={() => { const p = payments.find((x: any) => x.id === openRowMenu); setOpenRowMenu(null); setMenuPos(null); if (p) setEditPayment(p); }}
+              data-testid="payment-edit"
+              className="w-full text-left px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50 flex items-center gap-2">
+              <Edit2 className="w-3.5 h-3.5" /> Düzenle
+            </button>
+            <button
               onClick={() => handleDeletePayment(openRowMenu)}
               className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
               <Trash2 className="w-3.5 h-3.5" /> Sil
@@ -543,6 +551,7 @@ export default function AccountEkstrePage() {
       )}
 
       {/* Modals */}
+      {editPayment && <PaymentEditModal payment={editPayment} onClose={() => setEditPayment(null)} onSaved={load} />}
       {modal === 'edit' && account && (
         <EditAccountModal account={account} onClose={() => setModal(null)} onSaved={load} />
       )}

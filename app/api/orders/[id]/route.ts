@@ -7,6 +7,7 @@ import { SHIPMENT_ORDER, withLastShipment } from '@/lib/order-shipments';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { clearStaleShipmentInvoices } from '@/lib/invoice-delete';
 import { isOrderStatus, notifyOrderStatus, notifyOrderTermin, saveShipment } from '@/lib/order-notify';
 import { partVariantMaterialIds, rejectForeignRefs } from '@/lib/tenant';
 
@@ -15,6 +16,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const user = session?.user as any;
   if (!user?.companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // Satışı cari hesaptan silinmiş sevkiyatların eski bağları "hesaba işlendi" göstermesin
+  if (await prisma.soleOrder.count({ where: { id: params.id, companyId: user.companyId } })) await clearStaleShipmentInvoices(prisma, params.id);
   const order = await prisma.soleOrder.findFirst({
     where: { id: params.id, companyId: user.companyId },
     include: {

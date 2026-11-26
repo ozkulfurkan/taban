@@ -6,6 +6,7 @@ import { logAction, getIp } from '@/lib/audit-logger';
 import { rejectForeignRefs } from '@/lib/tenant';
 import { parseDateInput } from '@/lib/time';
 import { validateInvoiceInput } from '@/lib/invoice-input';
+import { deleteSaleInvoice } from '@/lib/invoice-delete';
 
 async function getInvoice(id: string, companyId: string) {
   return prisma.invoice.findFirst({
@@ -239,42 +240,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     meta: { total: existing.total, currency: existing.currency },
     ip: getIp(req),
   });
-  await prisma.$transaction(async (tx) => {
-    // ── Stok geri al ───────────────────────────────────────────────────────
-    // Normal satış faturası: stok düşüldüyse geri ekle
-    // İade faturası: stok eklenmişti, geri düş
-    const sign = existing.isReturn ? -1 : 1; // sign to reverse
-
-    for (const item of existing.items) {
-      if (!item.productId || !item.product) continue;
-
-      // Ürün stoğunu geri al
-      await tx.product.updateMany({
-        where: { id: item.productId, companyId: user.companyId },
-        data: { stock: { increment: sign * item.quantity } },
-      });
-
-      // Hammadde stoğunu geri al (sadece SOLE_MANUFACTURER)
-      if (user.companyType !== 'MATERIAL_SUPPLIER') {
-        const partVariants: Array<{ partId: string; materialId: string }> =
-          Array.isArray((item as any).partVariantsData) ? (item as any).partVariantsData : [];
-        for (const part of item.product.parts) {
-          const matId = partVariants.find(pv => pv.partId === part.id)?.materialId ?? part.materialId;
-          if (!matId) continue;
-          const grossGrams = part.gramsPerPiece * (1 + part.wasteRate / 100);
-          const kgUsed = (grossGrams * item.quantity) / 1000;
-          await tx.material.updateMany({
-            where: { id: matId, companyId: user.companyId },
-            data: { stock: { increment: sign * kgUsed } },
-          });
-        }
-      }
-    }
-
-    await tx.payment.deleteMany({ where: { invoiceId: params.id } });
-    await tx.invoiceItem.deleteMany({ where: { invoiceId: params.id } });
-    await tx.invoice.delete({ where: { id: params.id } });
-  });
+  await prisma.$transaction(tx => deleteSaleInvoice(tx, user, params.id));
 
   return NextResponse.json({ ok: true });
 }

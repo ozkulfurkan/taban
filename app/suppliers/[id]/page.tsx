@@ -1,5 +1,6 @@
 'use client';
 
+import PaymentEditModal, { type EditablePayment } from '@/app/components/payment-edit-modal';
 import { useEffect, useRef, useState } from 'react';
 import { postJson, showSaveError } from '@/app/components/post-json';
 import { useParams, useRouter } from 'next/navigation';
@@ -853,6 +854,7 @@ export default function SupplierDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteWarning, setDeleteWarning] = useState('');
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [editPayment, setEditPayment] = useState<EditablePayment | null>(null);
   const [showOdeme, setShowOdeme] = useState(false);
   const [showBorcFis, setShowBorcFis] = useState(false);
   const [showBakiyeDuzelt, setShowBakiyeDuzelt] = useState(false);
@@ -1343,7 +1345,11 @@ export default function SupplierDetailPage() {
                         {p.method}{p.notes ? ` (${p.notes})` : ''}
                       </td>
                       <td className="px-2 py-2.5 text-center">
-                        <button onClick={() => handleDeletePayment(p.id, p.method)}
+                        <button onClick={() => setEditPayment(p)} aria-label="Düzenle" data-testid="payment-edit"
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded text-ink-400 hover:text-brand-700 hover:bg-brand-50 transition-all">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                              </button>
+                              <button onClick={() => handleDeletePayment(p.id, p.method)}
                           className="opacity-0 group-hover:opacity-100 p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
@@ -1401,6 +1407,7 @@ export default function SupplierDetailPage() {
           onSaved={() => { setShowBakiyeDuzelt(false); load(); }}
         />
       )}
+      {editPayment && <PaymentEditModal payment={editPayment} onClose={() => setEditPayment(null)} onSaved={load} />}
       {confirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmModal(null)} />

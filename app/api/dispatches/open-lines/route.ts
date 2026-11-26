@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   if (!customer) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   const extra = (req.nextUrl.searchParams.get('productIds') ?? '').split(',').filter(Boolean).slice(0, 100);
   const [orders, prices] = await Promise.all([
-    openLines(user, customerId),
+    openLines(user, customerId, req.nextUrl.searchParams.get('excludeDispatchId') || undefined),
     canPrice(user) && extra.length ? resolvePrices(user.companyId, customerId, extra) : Promise.resolve({}),
   ]);
   return NextResponse.json({ customer, orders, prices, canPrice: canPrice(user) });

@@ -3,10 +3,10 @@
 // Sevk fişi detayı: yeniden yazdır, hesaba işlenmediyse (eksik fiyatları girip) cari hesaba işle
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/app/components/app-shell';
 import BackLink from '@/app/components/back-link';
-import { CheckCircle, Loader2, Printer, Truck, AlertTriangle } from '@/app/components/icons';
+import { CheckCircle, Loader2, Printer, Truck, AlertTriangle, Edit2, Trash2 } from '@/app/components/icons';
 import { printDispatch } from '@/app/components/dispatch-print';
 import { formatQty } from '@/lib/order-units';
 
@@ -15,11 +15,12 @@ const money = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 
 function Detail() {
   const params = useParams();
   const sp = useSearchParams();
+  const router = useRouter();
   const id = String(params?.id ?? '');
   const [d, setD] = useState<any>(null);
   const [prices, setPrices] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(sp.get('uyari') ? { ok: false, text: `Fiş kaydedildi ama hesaba işlenemedi: ${sp.get('uyari')}` } : sp.get('yeni') ? { ok: true, text: 'Sevk fişi kaydedildi.' } : null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(sp.get('uyari') ? { ok: false, text: `Fiş kaydedildi ama hesaba işlenemedi: ${sp.get('uyari')}` } : sp.get('yeni') ? { ok: true, text: 'Sevk fişi kaydedildi.' } : sp.get('duzenlendi') ? { ok: true, text: 'Sevk fişi güncellendi.' } : null);
   const load = useCallback(() => { fetch(`/api/dispatches/${id}`).then(r => r.json()).then(setD).catch(() => setD({ error: true })); }, [id]);
   useEffect(() => { load(); }, [load]);
 
@@ -33,6 +34,18 @@ function Detail() {
     load();
   };
 
+  const remove = async () => {
+    const warn = d.invoice
+      ? `${d.no} silinecek. Bağlı satış (${d.invoice.invoiceNo}) cari hesaptan silinir, stok geri eklenir ve sipariş sevkiyatı geri alınır. Emin misiniz?`
+      : `${d.no} silinecek ve sipariş sevkiyatı geri alınacak. Emin misiniz?`;
+    if (!window.confirm(warn)) return;
+    setBusy(true); setMsg(null);
+    const r = await fetch(`/api/dispatches/${id}`, { method: 'DELETE' });
+    const j = await r.json().catch(() => ({}));
+    setBusy(false);
+    if (r.ok) router.replace('/sevkiyat'); else setMsg({ ok: false, text: j.error || 'Fiş silinemedi' });
+  };
+
   if (!d) return <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-brand-700" /></div>;
   if (d.error) return <p className="text-ink-500">Sevk fişi bulunamadı.</p>;
   const orders = Array.from(new Map((d.shipments ?? []).map((s: any) => [s.orderId, s.order?.orderNo])).entries()) as Array<[string, string]>;
@@ -43,9 +56,15 @@ function Detail() {
         <BackLink href="/sevkiyat" label="Sevkiyat" />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="page-title flex items-center gap-2"><Truck className="w-6 h-6 text-brand-700" /> {d.no}</h1>
-          <button type="button" onClick={() => void printDispatch(id)} data-testid="sv-print" className="inline-flex items-center gap-2 px-4 py-2 border border-ink-200 bg-white hover:bg-ink-50 rounded-lg text-sm font-medium">
-            <Printer className="w-4 h-4" /> Yazdır
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {(d.canPrice || !d.invoice) && <>
+              <Link href={`/sevkiyat/${id}/duzenle`} data-testid="sv-edit" className="inline-flex items-center gap-2 px-4 py-2 border border-ink-200 bg-white hover:bg-ink-50 rounded-lg text-sm font-medium"><Edit2 className="w-4 h-4" /> Düzenle</Link>
+              <button type="button" onClick={() => void remove()} disabled={busy} data-testid="sv-delete" className="inline-flex items-center gap-2 px-4 py-2 border border-red-200 bg-white hover:bg-red-50 text-red-700 rounded-lg text-sm font-medium disabled:opacity-60"><Trash2 className="w-4 h-4" /> Sil</button>
+            </>}
+            <button type="button" onClick={() => void printDispatch(id)} data-testid="sv-print" className="inline-flex items-center gap-2 px-4 py-2 border border-ink-200 bg-white hover:bg-ink-50 rounded-lg text-sm font-medium">
+              <Printer className="w-4 h-4" /> Yazdır
+            </button>
+          </div>
         </div>
       </div>
       {msg && <div role="status" className={`rounded-lg px-3 py-2.5 text-sm flex items-start gap-2 ${msg.ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-900 border border-amber-200'}`}>

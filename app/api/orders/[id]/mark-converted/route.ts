@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { clearStaleShipmentInvoices } from '@/lib/invoice-delete';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -17,7 +18,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   if (existing.status === 'CANCELLED') return NextResponse.json({ error: 'İptal edilmiş sipariş satışa çevrilemez' }, { status: 400 });
   if (existing.invoiceId) return NextResponse.json({ error: 'Sipariş zaten satışa çevrildi' }, { status: 409 });
-  // Sevk fişiyle cari hesaba işlenmiş sevkiyatı olan sipariş ikinci kez faturalanmaz
+  // Sevk fişiyle cari hesaba işlenmiş sevkiyatı olan sipariş ikinci kez faturalanmaz (satışı silinmiş eski bağlar sayılmaz)
+  await clearStaleShipmentInvoices(prisma, params.id);
   if (await prisma.orderShipment.count({ where: { orderId: params.id, invoiceId: { not: null } } })) {
     return NextResponse.json({ error: 'Bu siparişin sevkiyatı sevk fişiyle cari hesaba işlendi; ayrıca satışa çevrilemez' }, { status: 409 });
   }

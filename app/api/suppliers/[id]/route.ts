@@ -22,7 +22,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
           },
         },
       },
-      payments: { orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], select: { amount: true, method: true, notes: true, id: true, date: true, currency: true } },
+      payments: { orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], select: { amount: true, method: true, notes: true, id: true, date: true, currency: true, accountId: true, originalAmount: true, originalCurrency: true, exchangeRate: true, invoiceId: true, purchaseId: true } },
     },
   });
   if (!supplier) return NextResponse.json({ error: 'Not found' }, { status: 404 });
