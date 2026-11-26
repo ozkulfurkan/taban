@@ -126,3 +126,76 @@ test('yazdırma ayarları: kaydedilir, sınırlar uygulanır', async () => {
   const s = await (await A.owner.get('/api/print-settings')).json();
   expect([s.paper, s.widthMm, s.heightMm, s.mode, s.fontSizePt, s.copies, s.showPrices, s.fieldPositions.customer]).toEqual(['CF240x140', 240, 140, 'preprinted', 16, 5, true, { x: 25, y: 30 }]);
 });
+
+test('satış cari hesaptan silinince fiş "işlenmedi"ye döner ve yeniden işlenir; eski POSTED kayıt da işlenir', async () => {
+  const o = await order(pSpecial, { '40': 6 });
+  const r = await A.owner.post('/api/dispatches', { data: { customerId: cust, post: true, lines: [{ orderId: o, orderLineIndex: 0, name: 'x', qty: 6 }] } });
+  expect(r.status(), await r.text()).toBe(201);
+  const d = await r.json();
+  expect(d.posted, d.postError).toBe(true);
+  expect((await A.owner.delete(`/api/invoices/${d.invoice.id}`)).status()).toBe(200);
+  const back = await prisma.dispatch.findUniqueOrThrow({ where: { id: d.id } });
+  expect([back.status, back.invoiceId]).toEqual(['DRAFT', null]);
+  expect((await prisma.orderShipment.findFirstOrThrow({ where: { dispatchId: d.id } })).invoiceId).toBeNull();
+  const again = await A.owner.post(`/api/dispatches/${d.id}/post`, { data: {} });
+  expect(again.status(), await again.text()).toBe(200);
+  // Eski davranıştan kalan kayıt: POSTED ama satışı yok
+  const inv2 = (await again.json()).invoice.id;
+  await prisma.dispatch.update({ where: { id: d.id }, data: { invoiceId: null, status: 'POSTED' } });
+  await prisma.orderShipment.updateMany({ where: { dispatchId: d.id }, data: { invoiceId: 'silinmis-fatura' } });
+  await prisma.invoiceItem.deleteMany({ where: { invoiceId: inv2 } }); await prisma.invoice.delete({ where: { id: inv2 } });
+  const list = await (await A.owner.get('/api/dispatches')).json();
+  expect(list.find((x: any) => x.id === d.id).status).toBe('DRAFT');
+  expect((await A.owner.post(`/api/dispatches/${d.id}/post`, { data: {} })).status()).toBe(200);
+});
+
+test('fiş silinir: satış silinir, stok geri gelir, sevkiyat geri alınır, sipariş yeniden açılır; tahsilat bağlıysa engellenir', async () => {
+  const o = await order(pSpecial, { '41': 5 });
+  const before = (await prisma.product.findUniqueOrThrow({ where: { id: pSpecial } })).stock;
+  const d = await (await A.owner.post('/api/dispatches', { data: { customerId: cust, post: true, lines: [{ orderId: o, orderLineIndex: 0, name: 'x', qty: 5 }] } })).json();
+  expect((await prisma.soleOrder.findUniqueOrThrow({ where: { id: o } })).status).toBe('SHIPPED');
+  expect((await prisma.product.findUniqueOrThrow({ where: { id: pSpecial } })).stock).toBe(before - 5);
+  // Tahsilat bağlı: silinemez
+  const pay = await A.owner.post('/api/payments', { data: { customerId: cust, invoiceId: d.invoice.id, amount: 10, currency: 'TRY', method: 'Nakit' } });
+  expect(pay.status(), await pay.text()).toBe(200);
+  const blocked = await A.owner.delete(`/api/dispatches/${d.id}`);
+  expect(blocked.status()).toBe(409);
+  expect((await blocked.json()).error).toContain('tahsilat');
+  expect((await A.owner.delete(`/api/payments/${(await pay.json()).id}`)).status()).toBe(200);
+  // Nakliyeci hesaba işlenmiş fişi düzenleyemez; başka firma göremez
+  expect((await driver.put(`/api/dispatches/${d.id}`, { data: { customerId: cust, lines: [{ orderId: o, orderLineIndex: 0, name: 'x', qty: 1 }] } })).status()).toBe(403);
+  expect((await B.owner.delete(`/api/dispatches/${d.id}`)).status()).toBe(404);
+  expect((await B.owner.put(`/api/dispatches/${d.id}`, { data: {} })).status()).toBe(404);
+  // Sil
+  expect((await A.owner.delete(`/api/dispatches/${d.id}`)).status()).toBe(200);
+  expect(await prisma.dispatch.findUnique({ where: { id: d.id } })).toBeNull();
+  expect(await prisma.invoice.findUnique({ where: { id: d.invoice.id } })).toBeNull();
+  expect((await prisma.product.findUniqueOrThrow({ where: { id: pSpecial } })).stock).toBe(before);
+  const ord = await prisma.soleOrder.findUniqueOrThrow({ where: { id: o }, include: { shipments: true } });
+  expect([ord.status, ord.shipments.length]).toEqual(['READY_FOR_SHIPMENT', 0]);
+});
+
+test('fiş düzenlenir: miktar ve fiyat değişince satış aynı fiş numarasıyla yeniden oluşur, stok doğru kalır', async () => {
+  const o = await order(pSpecial, { '42': 10 });
+  const before = (await prisma.product.findUniqueOrThrow({ where: { id: pSpecial } })).stock;
+  const d = await (await A.owner.post('/api/dispatches', { data: { customerId: cust, post: true, vatRate: 0, lines: [{ orderId: o, orderLineIndex: 0, name: 'x', qty: 4 }] } })).json();
+  expect(d.posted).toBe(true);
+  // Düzenleme ekranı: bu fişin sevkiyatı kalandan düşülmez
+  const ol = await (await A.owner.get(`/api/dispatches/open-lines?customerId=${cust}&excludeDispatchId=${d.id}`)).json();
+  expect(ol.orders.find((x: any) => x.orderId === o).lines[0].remaining).toBe(10);
+  const r = await A.owner.put(`/api/dispatches/${d.id}`, {
+    data: { customerId: cust, post: true, vatRate: 0, carrier: 'Aras', lines: [{ orderId: o, orderLineIndex: 0, name: 'x', qty: 10, unitPrice: 90 }, { productId: pNone, name: 'Ek', qty: 2, unitPrice: 5 }] },
+  });
+  expect(r.status(), await r.text()).toBe(200);
+  const u = await r.json();
+  expect([u.no, u.posted, u.carrier]).toEqual([d.no, true, 'Aras']);
+  expect(await prisma.invoice.findUnique({ where: { id: d.invoice.id } })).toBeNull();
+  const inv = await prisma.invoice.findUniqueOrThrow({ where: { id: u.invoice.id } });
+  expect([inv.subtotal, inv.irsaliyeNo]).toEqual([910, d.no]);
+  expect((await prisma.product.findUniqueOrThrow({ where: { id: pSpecial } })).stock).toBe(before - 10);
+  const ord = await prisma.soleOrder.findUniqueOrThrow({ where: { id: o }, include: { shipments: true } });
+  expect([ord.status, ord.shipments.length, ord.shipments[0].totalQuantity]).toEqual(['SHIPPED', 1, 10]);
+  // Geçersiz düzenleme hiçbir şeyi bozmaz
+  expect((await A.owner.put(`/api/dispatches/${d.id}`, { data: { customerId: cust, lines: [{ orderId: o, orderLineIndex: 0, name: 'x', qty: 500 }] } })).status()).toBe(400);
+  expect((await prisma.dispatch.findUniqueOrThrow({ where: { id: d.id } })).invoiceId).toBe(u.invoice.id);
+});
