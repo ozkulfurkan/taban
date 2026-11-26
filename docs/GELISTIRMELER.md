@@ -178,6 +178,14 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 - **Büyüklük:** M
 - **Durum:** Web tamam, mobil bekliyor
 
+## G-10 · Tahsilat düzenleme ve sevk fişi sil/düzenle (mobil karşılığı)
+- **Tarih:** 26.11.2026
+- **İstek:** "Sevk fişi girildiğinde silinemiyor, düzenlenemiyor… girilen tahsilatlar düzenlenemiyor"
+- **Önerilen çözüm:** Web'de yapıldı (PR #70): `PUT /api/payments/[id]`, `PUT/DELETE /api/dispatches/[id]`. Mobilde cari ekstresindeki tahsilat satırına "Düzenle" (tutar, tarih, kasa, açıklama; çek/transferde yalnız tarih ve açıklama); mobil sevk fişi (G-9) yapılınca Düzenle/Sil.
+- **Etkilenen alanlar:** mobil (API hazır)
+- **Büyüklük:** S
+- **Durum:** Web tamam, mobil bekliyor
+
 <!--
 Kayıt şablonu:
 
