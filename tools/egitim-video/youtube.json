@@ -238,5 +238,21 @@
       "cari takip",
       "Mobil Uygulama"
     ]
+  },
+  {
+    "slug": "sevkiyat",
+    "file": "sevkiyat.mp4",
+    "title": "SoleCost Kullanım Rehberi · Sevkiyat ve Sevk Fişi",
+    "description": "SoleCost kullanım rehberi: Sevkiyat ve Sevk Fişi. Ekrandaki adım adım açıklamalarla kısa sürede öğrenin.\n\nBu videoda:\n• Yazdırma ayarları: nokta vuruşlu sürekli form, matbu form, A4\n• Sevke hazır siparişten sevk fişi kesme\n• Fişi yazdırırken cari hesaba işleme (satış, KDV, stok)\n• Nakliyeci kullanıcısı: fiyatsız fiş\n\nKısaca:\n• Ayarlar → Yazdırma Ayarları: kâğıt, matbu form, kalibrasyon\n• Sevkiyat → Sevk et → miktar → Kaydet ve fişi yazdır\n• Cari hesaba işle: satış + KDV + stok tek adımda\n\nSoleCost: ayakkabı ve taban sektörü için maliyet, cari, stok, sipariş ve çek takibi. Web ve mobil (iPhone / Android).\nWeb: https://www.solecost.com\nDestek: https://www.solecost.com/destek",
+    "tags": [
+      "SoleCost",
+      "kullanım rehberi",
+      "eğitim",
+      "ayakkabı",
+      "taban",
+      "ön muhasebe",
+      "cari takip",
+      "Sevkiyat ve Sevk Fişi"
+    ]
   }
 ]
