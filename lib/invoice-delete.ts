@@ -1,8 +1,7 @@
-// Satış / iade faturasını siler: stoğu (ürün ve hammadde) geri alır, bağlı tahsilatları kasadan geri alıp siler.
+// Satış / iade faturasını siler: stoğu (ürün ve hammadde) geri alır. Tahsilatlar cariye ait olduğu için silinmez.
 // Fatura bir sevk fişinden geldiyse fiş "hesaba işlenmedi" durumuna döner ve sipariş sevkiyatlarının satış bağı kalkar;
 // böylece fiş yeniden hesaba işlenebilir, sipariş de istenirse "Satışa Çevir" ile faturalanabilir.
 import type { Prisma } from '@prisma/client';
-import { applyPaymentEffects, releaseCheque } from '@/lib/payment-effects';
 
 type Tx = Prisma.TransactionClient;
 type User = { companyId: string; companyType?: string | null };
@@ -43,12 +42,8 @@ export async function deleteSaleInvoice(tx: Tx, user: User, invoiceId: string) {
   await tx.dispatch.updateMany({ where: { invoiceId, companyId: user.companyId }, data: { status: 'DRAFT', invoiceId: null } });
   await tx.orderShipment.updateMany({ where: { invoiceId }, data: { invoiceId: null } });
 
-  // Bağlı tahsilatlar: kasa bakiyesi geri alınır, çek portföye döner (tek tahsilat silmeyle aynı)
-  for (const p of await tx.payment.findMany({ where: { invoiceId, companyId: user.companyId } })) {
-    await releaseCheque(tx, user.companyId, p);
-    await applyPaymentEffects(tx, user.companyId, { ...p, invoiceId: null, purchaseId: null }, -1);
-  }
-  await tx.payment.deleteMany({ where: { invoiceId } });
+  // Tahsilatlar faturaya değil cariye aittir: silinmez, caride kalır (eski kayıtlardaki bağ kaldırılır)
+  await tx.payment.updateMany({ where: { invoiceId }, data: { invoiceId: null } });
   await tx.invoiceItem.deleteMany({ where: { invoiceId } });
   await tx.invoice.delete({ where: { id: invoiceId } });
   return existing;

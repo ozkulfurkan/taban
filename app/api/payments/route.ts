@@ -57,7 +57,7 @@ async function create(req: NextRequest) {
     invoiceId, purchaseId, customerId, supplierId,
     currency, date, method, notes,
     accountId, originalCurrency,
-    _type, allowOverpayment,
+    _type,
   } = body;
 
   // Tutarlar Türkçe biçimde de gelebilir ("1.234,56"); kuruşa yuvarlanır
@@ -86,6 +86,14 @@ async function create(req: NextRequest) {
     customerId ? prisma.customer.findFirst({ where: { id: customerId, companyId: user.companyId }, select: { currency: true } }) : null,
     supplierId ? prisma.supplier.findFirst({ where: { id: supplierId, companyId: user.companyId }, select: { currency: true } }) : null,
   ]);
+  if (invoiceId && !invoice) return NextResponse.json({ error: 'Fatura bulunamadı' }, { status: 404 });
+  if (purchaseId && !purchase) return NextResponse.json({ error: 'Alış bulunamadı' }, { status: 404 });
+  // Fatura / alış ekranından gelen kayıt: belgenin carisine işlenir
+  const partyCustomerId = customerId || invoice?.customerId || null;
+  const partySupplierId = supplierId || purchase?.supplierId || null;
+  if ((customerId && invoice && invoice.customerId !== customerId) || (supplierId && purchase && purchase.supplierId !== supplierId)) {
+    return NextResponse.json({ error: 'Belge bu cariye ait değil' }, { status: 400 });
+  }
   const expectedCurrency = invoice?.currency ?? purchase?.currency ?? customer?.currency ?? supplier?.currency;
   const paymentCurrency = currency || expectedCurrency || 'TRY';
   if (expectedCurrency && paymentCurrency !== expectedCurrency) {
@@ -94,30 +102,17 @@ async function create(req: NextRequest) {
     }, { status: 400 });
   }
 
-  // Fazla ödeme: kullanıcı onaylamadıysa kaydetme, onay iste
-  const target = invoice ?? purchase;
-  if (target && !allowOverpayment) {
-    const remaining = round2(Math.abs(target.total) - target.paidAmount);
-    if (amount > remaining + 0.005) {
-      return NextResponse.json({
-        error: `Bu ödeme kalan tutardan ${round2(amount - Math.max(remaining, 0))} ${expectedCurrency} fazla.`,
-        code: 'OVERPAYMENT',
-        remaining: Math.max(remaining, 0),
-        currency: expectedCurrency,
-      }, { status: 409 });
-    }
-  }
-
   try {
   const payment = await prisma.$transaction(async (tx) => {
     const p = await tx.payment.create({
       data: {
         companyId: user.companyId,
-        type: (_type as any) || (customerId ? 'RECEIVED' : 'PAID'),
-        customerId: customerId || null,
-        supplierId: supplierId || null,
-        invoiceId: invoiceId || null,
-        purchaseId: purchaseId || null,
+        type: (_type as any) || (partyCustomerId ? 'RECEIVED' : 'PAID'),
+        customerId: partyCustomerId,
+        supplierId: partySupplierId,
+        // Tahsilat / ödeme yalnız cariye işlenir; fatura veya alışa bağlanmaz (bakiye cari bazlı)
+        invoiceId: null,
+        purchaseId: null,
         accountId: accountId || null,
         amount,
         currency: paymentCurrency,
@@ -130,45 +125,11 @@ async function create(req: NextRequest) {
       },
     });
 
-    // Update invoice paidAmount and status
-    if (invoiceId) {
-      const invoice = await tx.invoice.findFirst({ where: { id: invoiceId, companyId: user.companyId } });
-      if (invoice) {
-        const newPaid = round2(invoice.paidAmount + amount);
-        let status: any = invoice.status;
-        if (newPaid <= 0) status = 'PENDING';
-        else if (newPaid < Math.abs(invoice.total) - 0.005) status = 'PARTIAL';
-        else status = 'PAID';
-
-        await tx.invoice.update({
-          where: { id: invoiceId },
-          data: { paidAmount: newPaid, status },
-        });
-      }
-    }
-
-    // Update purchase paidAmount and status
-    if (purchaseId) {
-      const purchase = await tx.purchase.findFirst({ where: { id: purchaseId, companyId: user.companyId } });
-      if (purchase) {
-        const newPaid = round2(purchase.paidAmount + amount);
-        let status: any = purchase.status;
-        if (newPaid <= 0) status = 'PENDING';
-        else if (newPaid < purchase.total - 0.005) status = 'PARTIAL';
-        else status = 'PAID';
-
-        await tx.purchase.update({
-          where: { id: purchaseId },
-          data: { paidAmount: newPaid, status },
-        });
-      }
-    }
-
     // Update account balance: incoming → increment, outgoing → decrement
     // _type overrides the customerId heuristic (used by Para Girişi / Para Çıkışı buttons)
     if (accountId) {
       const incrementBy = originalAmount ?? amount;
-      const isIncoming = _type ? _type === 'RECEIVED' : !!customerId;
+      const isIncoming = _type ? _type === 'RECEIVED' : !!partyCustomerId;
       await tx.account.update({
         where: { id: accountId },
         data: { balance: { increment: isIncoming ? incrementBy : -incrementBy } },

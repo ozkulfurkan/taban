@@ -211,21 +211,6 @@ export default function PurchasesListPage() {
                               </table>
                             )}
 
-                            {/* Ödeme özeti */}
-                            <div className="flex gap-4 text-xs text-ink-500 bg-white border border-ink-100 rounded-lg px-4 py-2.5 inline-flex w-full max-w-xs">
-                              <div>
-                                <span className="text-ink-400">Ödenen:</span>{' '}
-                                <span className="font-semibold text-brand-700">
-                                  {p.paidAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {p.currency}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-ink-400">Kalan:</span>{' '}
-                                <span className={`font-semibold ${(p.total - p.paidAmount) > 0 ? 'text-red-500' : 'text-brand-700'}`}>
-                                  {(p.total - p.paidAmount).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {p.currency}
-                                </span>
-                              </div>
-                            </div>
                           </td>
                         </tr>
                       )}

@@ -149,19 +149,15 @@ test('satış cari hesaptan silinince fiş "işlenmedi"ye döner ve yeniden işl
   expect((await A.owner.post(`/api/dispatches/${d.id}/post`, { data: {} })).status()).toBe(200);
 });
 
-test('fiş silinir: satış silinir, stok geri gelir, sevkiyat geri alınır, sipariş yeniden açılır; tahsilat bağlıysa engellenir', async () => {
+test('fiş silinir: satış silinir, stok geri gelir, sevkiyat geri alınır, sipariş yeniden açılır; tahsilat caride kalır', async () => {
   const o = await order(pSpecial, { '41': 5 });
   const before = (await prisma.product.findUniqueOrThrow({ where: { id: pSpecial } })).stock;
   const d = await (await A.owner.post('/api/dispatches', { data: { customerId: cust, post: true, lines: [{ orderId: o, orderLineIndex: 0, name: 'x', qty: 5 }] } })).json();
   expect((await prisma.soleOrder.findUniqueOrThrow({ where: { id: o } })).status).toBe('SHIPPED');
   expect((await prisma.product.findUniqueOrThrow({ where: { id: pSpecial } })).stock).toBe(before - 5);
-  // Tahsilat bağlı: silinemez
-  const pay = await A.owner.post('/api/payments', { data: { customerId: cust, invoiceId: d.invoice.id, amount: 10, currency: 'TRY', method: 'Nakit' } });
-  expect(pay.status(), await pay.text()).toBe(200);
-  const blocked = await A.owner.delete(`/api/dispatches/${d.id}`);
-  expect(blocked.status()).toBe(409);
-  expect((await blocked.json()).error).toContain('tahsilat');
-  expect((await A.owner.delete(`/api/payments/${(await pay.json()).id}`)).status()).toBe(200);
+  // Tahsilat faturaya bağlanmaz: fiş silinse de caride kalır
+  const pay = await (await A.owner.post('/api/payments', { data: { customerId: cust, invoiceId: d.invoice.id, amount: 10, currency: 'TRY', method: 'Nakit' } })).json();
+  expect(pay.invoiceId).toBeNull();
   // Nakliyeci hesaba işlenmiş fişi düzenleyemez; başka firma göremez
   expect((await driver.put(`/api/dispatches/${d.id}`, { data: { customerId: cust, lines: [{ orderId: o, orderLineIndex: 0, name: 'x', qty: 1 }] } })).status()).toBe(403);
   expect((await B.owner.delete(`/api/dispatches/${d.id}`)).status()).toBe(404);
@@ -169,6 +165,7 @@ test('fiş silinir: satış silinir, stok geri gelir, sevkiyat geri alınır, si
   // Sil
   expect((await A.owner.delete(`/api/dispatches/${d.id}`)).status()).toBe(200);
   expect(await prisma.dispatch.findUnique({ where: { id: d.id } })).toBeNull();
+  expect((await prisma.payment.findUniqueOrThrow({ where: { id: pay.id } })).amount).toBe(10);
   expect(await prisma.invoice.findUnique({ where: { id: d.invoice.id } })).toBeNull();
   expect((await prisma.product.findUniqueOrThrow({ where: { id: pSpecial } })).stock).toBe(before);
   const ord = await prisma.soleOrder.findUniqueOrThrow({ where: { id: o }, include: { shipments: true } });

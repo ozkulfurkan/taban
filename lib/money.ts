@@ -116,3 +116,21 @@ export function customerBalance(
     balance,
   };
 }
+
+/**
+ * Tedarikçi bakiyesi (bizim borcumuz): alışlar − alış iadeleri − ödemeler (+ borç fişleri ve "+" düzeltmeler).
+ * Tedarikçi listesi, detayı ve alış detayı aynı sonucu versin diye tek yerde.
+ */
+export function supplierBalance(
+  purchases: Array<{ total: number; isReturn?: boolean | null }>,
+  payments: Array<{ amount: number; method?: string | null; notes?: string | null }>,
+) {
+  const totalPurchased = round2(purchases.reduce((s, p) => s + purchaseBalanceEffect(p), 0));
+  let delta = 0, totalPaid = 0;
+  for (const p of payments) {
+    const effect = paymentBalanceEffect(p);
+    delta += effect;
+    if (effect < 0) totalPaid += -effect;
+  }
+  return { totalPurchased, totalPaid: round2(totalPaid), balance: round2(totalPurchased + delta) };
+}

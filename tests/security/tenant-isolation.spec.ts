@@ -38,7 +38,7 @@ test.afterAll(async () => {
 });
 
 test.describe('Firmalar arası veri ayrımı', () => {
-  test("başka firmanın faturası 'ödendi' yapılamaz, kasası değiştirilemez", async () => {
+  test("başka firmanın faturasına tahsilat girilemez, kasası değiştirilemez", async () => {
     const before = await prisma.invoice.findUnique({ where: { id: ids.invoice } });
     const acc = await prisma.account.findUnique({ where: { id: ids.account } });
     const r = await B.owner.post('/api/payments', {

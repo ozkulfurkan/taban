@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supplierBalanceOf } from '@/lib/party-balance';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -28,7 +29,9 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   });
 
   if (!purchase) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json(purchase);
+  // Ödemeler alışa değil tedarikçinin carisine işlenir: ekranda güncel bakiye gösterilir
+  const supplierBalance = purchase.supplierId ? await supplierBalanceOf(user.companyId, purchase.supplierId) : null;
+  return NextResponse.json({ ...purchase, supplierBalance });
 }
 
 // Alış düzenleme. items gönderilirse kalemler tamamen değişir: eski kalemlerin
@@ -124,30 +127,8 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     // Stok geri al (ürün, ana depo ve fasoncu deposu) ve kalemleri sil
     await reversePurchaseLines(tx, user.companyId, params.id, purchase.isReturn ? -1 : 1);
 
-    // Reverse account balances for all payments
-    for (const payment of purchase.payments) {
-      if (payment.accountId) {
-        const reversalAmount = (payment as any).originalAmount ?? payment.amount;
-        await tx.account.update({
-          where: { id: payment.accountId },
-          data: { balance: { increment: reversalAmount } }, // paid → reverse = add back
-        });
-      }
-      // Return Çek to PORTFOY if applicable
-      if (payment.method === 'Çek') {
-        const cekWhereClause: any = {
-          companyId: user.companyId,
-          tutar: payment.amount,
-          durum: 'TEDARIKCI_VERILDI',
-        };
-        if (payment.notes) cekWhereClause.seriNo = { contains: payment.notes };
-        await tx.cek.updateMany({
-          where: cekWhereClause,
-          data: { durum: 'PORTFOY', supplierId: null },
-        });
-      }
-    }
-    await tx.payment.deleteMany({ where: { purchaseId: params.id } });
+    // Ödemeler alışa değil tedarikçinin carisine aittir: silinmez, caride kalır (eski kayıtlardaki bağ kaldırılır)
+    await tx.payment.updateMany({ where: { purchaseId: params.id }, data: { purchaseId: null } });
     await tx.purchase.delete({ where: { id: params.id } });
   });
 

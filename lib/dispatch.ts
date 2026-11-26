@@ -189,15 +189,12 @@ async function revertDispatch(user: User & { companyType?: string | null }, d: {
   });
 }
 
-/** Fişin silinip düzenlenebilmesi için kontroller (yetki, tahsilat) */
+/** Fişin silinip düzenlenebilmesi için kontroller (yetki). Tahsilatlar cariye ait; fiş silinse de caride kalır. */
 async function editable(user: User, id: string): Promise<{ ok: true; d: any } | Fail> {
-  const d = await prisma.dispatch.findFirst({ where: { id, companyId: user.companyId }, include: { invoice: { select: { id: true, invoiceNo: true, paidAmount: true } } } });
+  const d = await prisma.dispatch.findFirst({ where: { id, companyId: user.companyId }, include: { invoice: { select: { id: true, invoiceNo: true } } } });
   if (!d) return { ok: false, error: 'Sevk fişi bulunamadı', status: 404 };
   if (d.status === 'POSTING') return { ok: false, error: 'Fiş şu an hesaba işleniyor; biraz sonra tekrar deneyin', status: 409 };
   if (d.invoice && !canPrice(user)) return { ok: false, error: 'Hesaba işlenmiş fişi yalnızca yöneticiniz değiştirebilir', status: 403 };
-  if (d.invoice && d.invoice.paidAmount > 0.005) {
-    return { ok: false, error: `${d.invoice.invoiceNo} satışına tahsilat bağlı; önce cari hesaptan tahsilatı silin`, status: 409 };
-  }
   return { ok: true, d };
 }
 

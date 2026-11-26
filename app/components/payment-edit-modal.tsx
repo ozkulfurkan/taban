@@ -25,7 +25,6 @@ export default function PaymentEditModal({ payment, onClose, onSaved }: { paymen
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [overpay, setOverpay] = useState<string | null>(null);
   useEffect(() => { fetch('/api/accounts').then(r => r.json()).then(d => setAccounts(Array.isArray(d) ? d : [])).catch(() => {}); }, []);
   const set = (k: keyof typeof form, v: string) => setForm(f => {
     const n = { ...f, [k]: v };
@@ -37,9 +36,9 @@ export default function PaymentEditModal({ payment, onClose, onSaved }: { paymen
     return n;
   });
 
-  const save = async (allowOverpayment = false) => {
+  const save = async () => {
     setBusy(true); setError('');
-    const body: any = { date: form.date, notes: form.notes, allowOverpayment };
+    const body: any = { date: form.date, notes: form.notes };
     if (!isCek) {
       body.amount = num(form.amount);
       // Kasa bilgisi gelmeyen listelerde kasa bağı korunur
@@ -50,7 +49,6 @@ export default function PaymentEditModal({ payment, onClose, onSaved }: { paymen
     const j = await r.json().catch(() => ({}));
     setBusy(false);
     if (r.ok) { onSaved(); onClose(); return; }
-    if (j.code === 'OVERPAYMENT') { setOverpay(j.error); return; }
     setError(j.error || 'Kaydedilemedi');
   };
 
@@ -94,12 +92,6 @@ export default function PaymentEditModal({ payment, onClose, onSaved }: { paymen
             <input id="pe-notes" value={form.notes} onChange={e => set('notes', e.target.value)} className={input} />
           </div>
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-          {overpay && (
-            <div className="text-sm bg-amber-50 border border-amber-200 text-amber-900 rounded-lg px-3 py-2 space-y-2">
-              <p>{overpay}</p>
-              <button type="button" onClick={() => { setOverpay(null); void save(true); }} className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-semibold">Yine de kaydet</button>
-            </div>
-          )}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-2 border border-ink-200 rounded-lg text-sm text-ink-600 hover:bg-ink-50">Vazgeç</button>
             <button type="submit" disabled={busy} data-testid="pe-save"

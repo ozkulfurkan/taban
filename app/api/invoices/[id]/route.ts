@@ -7,6 +7,7 @@ import { rejectForeignRefs } from '@/lib/tenant';
 import { parseDateInput } from '@/lib/time';
 import { validateInvoiceInput } from '@/lib/invoice-input';
 import { deleteSaleInvoice } from '@/lib/invoice-delete';
+import { customerBalanceOf } from '@/lib/party-balance';
 
 async function getInvoice(id: string, companyId: string) {
   return prisma.invoice.findFirst({
@@ -40,7 +41,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const invoice = await getInvoice(params.id, user.companyId);
   if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json(invoice);
+  // Tahsilatlar faturaya değil cariye işlenir: ekranda müşterinin güncel bakiyesi gösterilir
+  const customerBalance = invoice.customerId ? await customerBalanceOf(user.companyId, invoice.customerId) : null;
+  return NextResponse.json({ ...invoice, customerBalance });
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {

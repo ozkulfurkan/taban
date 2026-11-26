@@ -93,7 +93,7 @@ export default function InvoiceDetailPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleDelete = () => {
-    setConfirmModal({ message: 'Bu fatura silinecek. Bağlı ödemeler de silinir.\n\n⚠️ Bu faturaya bağlı tüm stok hareketleri (ürün ve hammadde stokları) geri alınacaktır.', onConfirm: async () => {
+    setConfirmModal({ message: 'Bu fatura silinecek. Bu faturayla ilgili tahsilatlar silinmez, müşterinin cari hesabında kalır.\n\n⚠️ Bu faturaya bağlı tüm stok hareketleri (ürün ve hammadde stokları) geri alınacaktır.', onConfirm: async () => {
       setDeleting(true);
       await fetch(`/api/invoices/${params.id}`, { method: 'DELETE' });
       router.replace(`/customers/${invoice.customerId}`);
@@ -106,7 +106,6 @@ export default function InvoiceDetailPage() {
     setPayLoading(true);
     try {
       const result = await postPayment({
-        invoiceId: invoice.id,
         customerId: invoice.customerId,
         amount: payForm.amount,
         currency: invoice.currency,
@@ -127,7 +126,8 @@ export default function InvoiceDetailPage() {
   if (loading) return <AppShell><div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-600" /></div></AppShell>;
   if (!invoice) return <AppShell><div className="text-center py-16 text-ink-400">Fatura bulunamadı</div></AppShell>;
 
-  const remaining = invoice.total - invoice.paidAmount;
+  // Tahsilatlar faturaya bağlanmaz; müşterinin güncel cari bakiyesi gösterilir
+  const bal: number | null = typeof invoice.customerBalance === 'number' ? invoice.customerBalance : null;
 
   // Computed display values from invoice items
   const displayTotals = (invoice.items || []).reduce((acc: any, i: any) => {
@@ -191,7 +191,7 @@ export default function InvoiceDetailPage() {
                 <label className="block text-xs font-medium text-emerald-700 mb-1">Tutar</label>
                 <DecimalInput required step="0.01" value={payForm.amount}
                   onChange={e => setPayForm(p => ({ ...p, amount: e.target.value }))}
-                  placeholder={`Kalan: ${fmt(remaining)}`}
+                  placeholder={bal != null && bal > 0 ? `Bakiye: ${fmt(bal)}` : '0,00'}
                   className="w-36 px-3 py-2 border border-emerald-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-400" />
               </div>
               <div>
@@ -262,27 +262,16 @@ export default function InvoiceDetailPage() {
               </div>
             </div>
 
-            {/* Payment summary */}
-            {invoice.payments?.length > 0 && (
-              <div className="bg-white rounded-xl shadow-card p-4 border border-ink-200/80">
-                <p className="text-xs font-bold text-ink-500 uppercase tracking-wide mb-3">Tahsilat Geçmişi</p>
-                <div className="space-y-2">
-                  {invoice.payments.map((p: any) => (
-                    <div key={p.id} className="flex justify-between text-sm">
-                      <span className="text-ink-500">{fmtDate(p.date)} — {p.method}</span>
-                      <span className="font-semibold text-emerald-600">+{fmt(p.amount)}</span>
-                    </div>
-                  ))}
-                  {remaining > 0 && (
-                    <div className="flex justify-between text-sm font-bold text-red-500 pt-2 border-t">
-                      <span>Kalan</span>
-                      <span>{fmt(remaining)} {invoice.currency}</span>
-                    </div>
-                  )}
-                  {remaining <= 0 && (
-                    <div className="text-center text-xs text-emerald-600 font-semibold pt-1">Tümü Tahsil Edildi ✓</div>
-                  )}
-                </div>
+            {/* Müşterinin güncel bakiyesi (tahsilatlar cariye işlenir) */}
+            {bal != null && (
+              <div className="bg-white rounded-xl shadow-card p-4 border border-ink-200/80" data-testid="invoice-customer-balance">
+                <p className="text-xs font-bold text-ink-500 uppercase tracking-wide mb-2">Müşterinin güncel bakiyesi</p>
+                <p className={`text-xl font-bold ${bal > 0.005 ? 'text-red-600' : bal < -0.005 ? 'text-emerald-600' : 'text-ink-700'}`}>
+                  {fmt(Math.abs(bal))} {invoice.customer?.currency ?? invoice.currency}
+                  <span className="ml-2 text-xs font-medium">{bal > 0.005 ? 'borçlu' : bal < -0.005 ? 'alacaklı' : 'kapalı'}</span>
+                </p>
+                <p className="text-xs text-ink-400 mt-1">Tahsilatlar faturaya değil müşterinin cari hesabına işlenir.</p>
+                <Link href={`/customers/${invoice.customerId}`} className="text-xs text-brand-700 hover:underline">Cari hesaba git →</Link>
               </div>
             )}
           </div>
