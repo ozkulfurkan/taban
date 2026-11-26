@@ -17,6 +17,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   if (existing.status === 'CANCELLED') return NextResponse.json({ error: 'İptal edilmiş sipariş satışa çevrilemez' }, { status: 400 });
   if (existing.invoiceId) return NextResponse.json({ error: 'Sipariş zaten satışa çevrildi' }, { status: 409 });
+  // Sevk fişiyle cari hesaba işlenmiş sevkiyatı olan sipariş ikinci kez faturalanmaz
+  if (await prisma.orderShipment.count({ where: { orderId: params.id, invoiceId: { not: null } } })) {
+    return NextResponse.json({ error: 'Bu siparişin sevkiyatı sevk fişiyle cari hesaba işlendi; ayrıca satışa çevrilemez' }, { status: 409 });
+  }
 
   // Fatura aynı firmaya ve siparişin müşterisine ait olmalı; başka siparişe bağlı olmamalı
   const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, companyId: user.companyId } });

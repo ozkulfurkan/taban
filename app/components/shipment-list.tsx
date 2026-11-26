@@ -5,8 +5,9 @@ import { ShippedTable } from '@/app/components/shipment-qty';
 import { FileText, Loader2, Truck } from '@/app/components/icons';
 import { deliveryNoteHtml } from '@/lib/delivery-note-html';
 import { printHtml } from '@/app/components/print-html';
+import { printDispatch } from '@/app/components/dispatch-print';
 
-type Shipment = { id: string; shipmentDate: string; deliveryNoteNo?: string | null; carrier?: string | null; trackingNo?: string | null; notes?: string | null; items?: any; totalQuantity?: number | null };
+type Shipment = { id: string; dispatchId?: string | null; shipmentDate: string; deliveryNoteNo?: string | null; carrier?: string | null; trackingNo?: string | null; notes?: string | null; items?: any; totalQuantity?: number | null };
 
 // Siparişin sevkiyatları (kısmi sevkiyat): her biri için bilgiler, kalemler ve irsaliye çıktısı.
 // noteEndpoint: irsaliye verisi ucu (…/delivery-note); t: portal çevirisi (yoksa Türkçe)
@@ -21,6 +22,8 @@ export function ShipmentList({ shipments, noteEndpoint, t = s => s, onEdit, comp
   const print = async (s: Shipment) => {
     setBusy(s.id); setError('');
     try {
+      // Sevk fişiyle gönderildiyse firmanın yazdırma ayarlarıyla sevk fişi (yalnızca firma ekranı; portalda dispatchId gelmez)
+      if (s.dispatchId) { await printDispatch(s.dispatchId); return; }
       const r = await fetch(`${noteEndpoint}?shipment=${encodeURIComponent(s.id)}`);
       const d = await r.json();
       if (!r.ok) throw new Error(d?.error || 'İrsaliye hazırlanamadı');

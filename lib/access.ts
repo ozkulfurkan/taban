@@ -27,11 +27,12 @@ export const PAGE_KEYS: Array<[string, string]> = [
   ['/subcontractor-orders', 'fason'],
   ['/personnel', 'personnel'],
   ['/orders', 'orders'],
+  ['/sevkiyat', 'sevkiyat'],
 ];
 
 // API öneki → izin anahtarı. Sadece hassas ve başka modüllerin
 // ortak kullanmadığı API'ler sayfa iznine bağlanır (örn. personel maaşları).
-const API_PAGE_KEYS: Array<[string, string]> = [
+const API_PAGE_KEYS: Array<[string, string | string[]]> = [
   ['/api/personnel', 'personnel'],
   // Fason: sipariş, zimmet ve fasoncu ayrıntısı (liste ucu alış/hammadde ekranlarında da kullanılır)
   ['/api/subcontractor-orders', 'fason'],
@@ -41,6 +42,8 @@ const API_PAGE_KEYS: Array<[string, string]> = [
   ['/api/orders', 'orders'],
   ['/api/portal/orders', 'orders'],
   ['/api/portal/catalog', 'orders'],
+  // Sevk fişi: Sevkiyat ekranı (nakliyeci) ve sipariş detayındaki sevkiyat (Siparişler izni)
+  ['/api/dispatches', ['sevkiyat', 'orders']],
 ];
 
 // Portal kullanıcılarının (müşteri / fasoncu) erişebileceği API'ler.
@@ -120,7 +123,8 @@ export function checkApiAccess(user: AccessUser | null | undefined, method: stri
 
   if (!hasFullAccess(user)) {
     const hit = API_PAGE_KEYS.find(([prefix]) => matchPrefix(pathname, prefix));
-    if (hit && !(user.allowedPages ?? []).includes(hit[1])) {
+    const need = hit ? (Array.isArray(hit[1]) ? hit[1] : [hit[1]]) : [];
+    if (hit && !need.some(k => (user.allowedPages ?? []).includes(k))) {
       return { ok: false, status: 403, error: 'Bu sayfaya erişim yetkiniz yok' };
     }
   }

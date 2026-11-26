@@ -56,6 +56,7 @@ export default function Sidebar() {
       title: t('nav', 'ordersSection'),
       links: [
         { href: '/orders', label: t('nav', 'incomingOrders'), icon: ClipboardList },
+        { href: '/sevkiyat', label: t('nav', 'dispatch'), icon: Truck },
         { href: '/verilen-siparisler', label: t('nav', 'networkOrders'), icon: Send },
       ],
     },

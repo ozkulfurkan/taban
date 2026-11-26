@@ -12,6 +12,7 @@ const SOURCES = {
   order: { table: 'SoleOrder', column: 'orderNo' },
   subcontractorOrder: { table: 'SubcontractorOrder', column: 'orderNo' },
   ticket: { table: 'SupportTicket', column: 'ticketNo' },
+  dispatch: { table: 'Dispatch', column: 'no' },
 } as const;
 
 export type DocumentKind = keyof typeof SOURCES;

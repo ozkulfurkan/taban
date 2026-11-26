@@ -475,6 +475,17 @@ export default function SettingsPage() {
           </motion.div>
         )}
 
+        {/* Yazdırma Ayarları (sevk fişi / irsaliye) */}
+        {canEditCompany && (
+          <a href="/settings/yazdirma" data-testid="print-settings-link" className="flex items-center justify-between gap-3 bg-white rounded-xl shadow-card p-6 border border-ink-200/80 hover:bg-ink-50">
+            <div>
+              <h2 className="text-lg font-semibold text-ink-800">Yazdırma Ayarları</h2>
+              <p className="text-xs text-ink-500">Sevk fişi kâğıt ölçüsü: A4, A5, nokta vuruşlu sürekli form ya da matbu form; fiyat gösterimi ve kopya sayısı</p>
+            </div>
+            <span className="text-brand-700 text-sm font-medium">Aç →</span>
+          </a>
+        )}
+
         {/* Barkod Ayarları */}
         {canEditCompany && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-white rounded-xl shadow-card p-6 space-y-5 border border-ink-200/80">
