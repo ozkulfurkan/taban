@@ -185,6 +185,21 @@ test.describe('Ödemeler', () => {
   });
 });
 
+test.describe('Borç/alacak fişi ve bakiye düzeltme', () => {
+  test('USD tedarikçide fiş ve bakiye düzeltme USD kaydedilir; TRY gönderilirse reddedilir', async () => {
+    const sup = (await prisma.supplier.create({ data: { companyId: A.companyId, name: `USD Ted ${RUN}`, currency: 'USD' } })).id;
+    const fis = await A.owner.post('/api/payments', { data: { supplierId: sup, amount: 1200, currency: 'USD', method: 'Borç Fişi', notes: 'AÇILIŞ BAKİYESİ' } });
+    expect(fis.status(), await fis.text()).toBe(200);
+    expect((await fis.json()).currency).toBe('USD');
+    const fix = await A.owner.post('/api/payments', { data: { supplierId: sup, amount: 200, currency: 'USD', method: 'Bakiye Düzeltme', notes: '-' } });
+    expect(fix.status()).toBe(200);
+    expect((await (await A.owner.get(`/api/suppliers/${sup}`)).json()).balance).toBe(1000);
+    expect((await A.owner.post('/api/payments', { data: { supplierId: sup, amount: 5, currency: 'TRY', method: 'Borç Fişi' } })).status()).toBe(400);
+    // Para birimi verilmezse carininki kullanılır
+    expect((await (await A.owner.post('/api/payments', { data: { supplierId: sup, amount: 5, method: 'Alacak Fişi' } })).json()).currency).toBe('USD');
+  });
+});
+
 test.describe('Stok', () => {
   async function product(stock: number) {
     const p = await (await A.owner.post('/api/products', { data: { name: `Ürün ${RUN} ${Math.random()}`, stock } })).json();

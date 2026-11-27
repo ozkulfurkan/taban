@@ -220,7 +220,7 @@ function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () 
       await postJson('/api/payments', {
           customerId: customer.id,
           amount: form.amount,
-          currency: 'TRY',
+          currency: customer.currency || 'TRY',
           date: nowIstanbulISO(),
           method: form.method,
           notes: form.notes,
@@ -241,7 +241,7 @@ function IadeModal({ customer, onClose, onSaved }: { customer: any; onClose: () 
         </div>
         <form onSubmit={handle} className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">{t('modal', 'amount')}</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">{t('modal', 'amount')} ({customer.currency || 'TRY'})</label>
             <DecimalInput required step="0.01" min="0.01" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
               className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none" />
           </div>
@@ -328,7 +328,7 @@ function BorcAlacakFisModal({ customer, onClose, onSaved }: { customer: any; onC
               className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">Tutar</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Tutar ({customer.currency || 'TRY'})</label>
             <DecimalInput required step="0.01" min="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
               className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right" />
           </div>
