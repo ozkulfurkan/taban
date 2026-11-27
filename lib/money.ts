@@ -7,6 +7,17 @@ export function round2(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+/** Kur için 4 ondalık */
+export function round4(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.round((value + Number.EPSILON) * 10000) / 10000;
+}
+
+/** Hesaplanan tutarı giriş kutusuna yazmak için: kuruşa yuvarlanmış, noktalı (ör. 1000 / 41,5 → "24.1") */
+export const amountInput = (value: number) => (value > 0 && Number.isFinite(value) ? String(round2(value)) : '');
+/** Hesaplanan kuru giriş kutusuna yazmak için: 4 ondalık */
+export const rateInput = (value: number) => (value > 0 && Number.isFinite(value) ? String(round4(value)) : '');
+
 /**
  * Kullanıcıdan gelen tutarı sayıya çevirir. Türkçe ve İngilizce biçimleri kabul eder:
  *   "1.234,56" → 1234.56   "1234,56" → 1234.56   "1,234.56" → 1234.56

@@ -26,6 +26,11 @@ export default function NewInvoicePage() {
   }, [orderId]);
 
   const prefillLines = useCallback((products: any[]): DocLine[] => {
+    // Fiyat müşterinin para biriminde: özel fiyat → liste fiyatı (kurla çevrilmiş); bulunamazsa boş, elle girilir
+    const priceOf = (productId?: string | null) => {
+      const v = productId ? order?.prices?.[productId]?.unitPrice : undefined;
+      return typeof v === 'number' && v > 0 ? toPriceInput(Math.round(v * 100) / 100) : '';
+    };
     // Paket sipariş: her kalem kendi ürünü ve miktarıyla ayrı satır (renk açıklamaya eklenir)
     // Sevkiyat yapıldıysa fatura sevk edilen gerçek miktarlarla (ör. 500 kg sipariş → 490 kg sevk)
     const shipped: any[] | null = Array.isArray(order?.shipment?.items) ? order.shipment.items : null;
@@ -41,7 +46,7 @@ export default function NewInvoicePage() {
           itemType: p ? 'product' : 'free', productId: p?.id,
           description: item.color ? `${name} — ${item.color}` : name,
           quantity: String(qty),
-          unitPrice: p ? toPriceInput(p.unitPrice) : '',
+          unitPrice: priceOf(p?.id),
         });
       });
     }
@@ -51,7 +56,7 @@ export default function NewInvoicePage() {
         itemType: 'product', productId: order.productId,
         description: order.productCode || p?.name || '',
         quantity: String(shippedQty(0, order.totalQuantity) || 1),
-        unitPrice: p ? toPriceInput(p.unitPrice) : '',
+        unitPrice: priceOf(order.productId),
         partVariantsData: Array.isArray(order.partVariantsData) && order.partVariantsData.length ? order.partVariantsData : undefined,
       })];
     }

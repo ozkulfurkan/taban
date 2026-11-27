@@ -1,5 +1,7 @@
 'use client';
 
+import { amountInput, rateInput, round2, round4 } from '@/lib/money';
+const fmtMoney = (n: number) => n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 import PaymentEditModal, { type EditablePayment } from '@/app/components/payment-edit-modal';
 import { useEffect, useState } from 'react';
 import { postJson, showSaveError } from '@/app/components/post-json';
@@ -74,7 +76,7 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
       if (rate) {
         const a = parseFloat(form.amount) || 0;
         const r = parseFloat(rate) || 0;
-        setForm(p => ({ ...p, exchangeRate: String(Math.round(parseFloat(rate) * 10000) / 10000), recordedAmount: (a > 0 && r > 0) ? String(a / r) : '' }));
+        setForm(p => ({ ...p, exchangeRate: rateInput(parseFloat(rate)), recordedAmount: (a > 0 && r > 0) ? amountInput(a / r) : '' }));
       }
     }).catch(() => {});
   }, [form.paymentCurrency]);
@@ -88,19 +90,19 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
   const handleAmountChange = (v: string) => {
     const a = parseFloat(v) || 0;
     const r = parseFloat(form.exchangeRate) || 0;
-    setForm(p => ({ ...p, amount: v, recordedAmount: (!isSameCurrency && r > 0 && a > 0) ? String(a / r) : p.recordedAmount }));
+    setForm(p => ({ ...p, amount: v, recordedAmount: (!isSameCurrency && r > 0 && a > 0) ? amountInput(a / r) : p.recordedAmount }));
   };
 
   // Kur (1 customer_currency = X account_currency) changes → recompute Kaydedilecek
   const handleRateChange = (v: string) => {
     const r = parseFloat(v) || 0;
-    setForm(p => ({ ...p, exchangeRate: v, recordedAmount: (amt > 0 && r > 0) ? String(amt / r) : p.recordedAmount }));
+    setForm(p => ({ ...p, exchangeRate: v, recordedAmount: (amt > 0 && r > 0) ? amountInput(amt / r) : p.recordedAmount }));
   };
 
   // Kaydedilecek Tutar changes → recompute Kur
   const handleRecordedChange = (v: string) => {
     const rec = parseFloat(v) || 0;
-    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? String(Math.round((amt / rec) * 10000) / 10000) : p.exchangeRate }));
+    setForm(p => ({ ...p, recordedAmount: v, exchangeRate: (amt > 0 && rec > 0) ? rateInput(amt / rec) : p.exchangeRate }));
   };
 
   const handle = async (e: React.FormEvent) => {
@@ -108,10 +110,10 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
     if (!form.accountId || amt <= 0 || (!isSameCurrency && finalRecorded <= 0)) return;
     setSaving(true);
     try {
-      const savedAmt = isSameCurrency ? amt : finalRecorded;
+      const savedAmt = round2(isSameCurrency ? amt : finalRecorded);
       let notes = form.notes || null;
       if (!isSameCurrency) {
-        const rateNote = `${amt} ${form.paymentCurrency} | Kur: 1 ${customer.currency} = ${form.exchangeRate} ${form.paymentCurrency}`;
+        const rateNote = `${fmtMoney(amt)} ${form.paymentCurrency} | Kur: 1 ${customer.currency} = ${round4(parseFloat(form.exchangeRate) || 0).toLocaleString('tr-TR', { maximumFractionDigits: 4 })} ${form.paymentCurrency}`;
         notes = notes ? `${notes} | ${rateNote}` : rateNote;
       }
       await postJson('/api/payments', {
@@ -119,9 +121,9 @@ function TahsilatModal({ customer, onClose, onSaved }: { customer: any; onClose:
           accountId: form.accountId,
           amount: savedAmt,
           currency: customer.currency || 'TRY',
-          originalAmount: isSameCurrency ? null : amt,
+          originalAmount: isSameCurrency ? null : round2(amt),
           originalCurrency: isSameCurrency ? null : form.paymentCurrency,
-          exchangeRate: isSameCurrency ? null : (parseFloat(form.exchangeRate) ? Math.round(parseFloat(form.exchangeRate) * 10000) / 10000 : null),
+          exchangeRate: isSameCurrency ? null : (parseFloat(form.exchangeRate) ? round4(parseFloat(form.exchangeRate)) : null),
           date: form.date || nowIstanbulISO(),
           notes,
         });

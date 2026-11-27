@@ -196,3 +196,11 @@ test('fiş düzenlenir: miktar ve fiyat değişince satış aynı fiş numarası
   expect((await A.owner.put(`/api/dispatches/${d.id}`, { data: { customerId: cust, lines: [{ orderId: o, orderLineIndex: 0, name: 'x', qty: 500 }] } })).status()).toBe(400);
   expect((await prisma.dispatch.findUniqueOrThrow({ where: { id: d.id } })).invoiceId).toBe(u.invoice.id);
 });
+
+test('Satışa Çevir fiyatı: sipariş detayı müşterinin para biriminde çözülmüş fiyatı döner (USD liste fiyatı kurla TL)', async () => {
+  const o = await order(pList, { '40': 3 });
+  const d = await (await A.owner.get(`/api/orders/${o}`)).json();
+  expect(d.prices[pList]).toEqual({ unitPrice: 100, source: 'list', converted: true, originalCurrency: 'USD' }); // 2,5 USD × 40
+  const o2 = await order(pSpecial, { '40': 3 });
+  expect((await (await A.owner.get(`/api/orders/${o2}`)).json()).prices[pSpecial].unitPrice).toBe(80); // müşteri özel fiyatı
+});
