@@ -230,8 +230,8 @@ function BorcAlacakFisModal({ supplier, onClose, onSaved }: { supplier: any; onC
       const notesArr = [form.dueDate ? `Vade:${form.dueDate}` : '', form.notes].filter(Boolean);
       await postJson('/api/payments', {
           supplierId: supplier.id,
-          amount: parseFloat(form.amount),
-          currency: 'TRY',
+          amount: round2(parseFloat(form.amount)),
+          currency: supplier.currency || 'TRY',
           date: nowIstanbulISO(),
           method: form.tip,
           notes: notesArr.join(' | ') || null,
@@ -271,7 +271,7 @@ function BorcAlacakFisModal({ supplier, onClose, onSaved }: { supplier: any; onC
               className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">Tutar</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Tutar ({supplier.currency || 'TRY'})</label>
             <DecimalInput required step="0.01" min="0.01" value={form.amount} onChange={e => set('amount', e.target.value)}
               className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right" />
           </div>
@@ -315,8 +315,8 @@ function BakiyeDuzeltModal({ supplier, currentBalance, onClose, onSaved }: {
       const direction = delta > 0 ? '+' : '-';
       await postJson('/api/payments', {
           supplierId: supplier.id,
-          amount: Math.abs(delta),
-          currency: 'TRY',
+          amount: round2(Math.abs(delta)),
+          currency: supplier.currency || 'TRY',
           date: nowIstanbulISO(),
           method: 'Bakiye Düzeltme',
           notes: direction + (notes ? ' | ' + notes : ''),
@@ -338,11 +338,11 @@ function BakiyeDuzeltModal({ supplier, currentBalance, onClose, onSaved }: {
         <form onSubmit={handle} className="p-5 space-y-4">
           <div className="bg-ink-50 border border-ink-200 rounded-lg px-3 py-2 text-sm text-ink-600">
             Mevcut Bakiye: <span className="font-semibold text-ink-800">
-              {currentBalance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TRY
+              {currentBalance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {supplier.currency || 'TRY'}
             </span>
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-500 mb-1">Yeni Bakiye (TRY)</label>
+            <label className="block text-xs font-medium text-ink-500 mb-1">Yeni Bakiye ({supplier.currency || 'TRY'})</label>
             <DecimalInput required step="0.01" value={targetBalance} onChange={e => setTargetBalance(e.target.value)}
               placeholder="0,00"
               className="w-full px-3 py-2 border border-ink-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-600 outline-none text-right" />
