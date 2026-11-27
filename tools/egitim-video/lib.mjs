@@ -95,7 +95,8 @@ export async function record(mod, outDir) {
   mkdirSync(outDir, { recursive: true });
   if (mod.prepare) await mod.prepare();
   const tmp = join(outDir, `_rec_${mod.slug}`); rmSync(tmp, { recursive: true, force: true });
-  const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM_PATH || '/opt/pw-browsers/chromium' });
+  // Mobil web çıktısı (:8090) demo API'ye (:3001) başka kökenden bağlanır; yalnız kayıt tarayıcısında CORS kapatılır
+  const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM_PATH || '/opt/pw-browsers/chromium', args: mod.slug === 'mobil' ? ['--disable-web-security'] : [] });
   const states = {};
   const state = async who => (states[who] ??= await loginState(browser, who));
 
