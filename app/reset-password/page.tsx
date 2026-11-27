@@ -93,7 +93,7 @@ function ResetPasswordForm() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="input py-2.5 text-[15px] transition pr-12"
-                placeholder="En az 6 karakter"
+                placeholder="En az 8 karakter, harf ve rakam"
                 required
               />
               <button

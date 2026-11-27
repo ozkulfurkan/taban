@@ -203,7 +203,7 @@ function SuccessModal({
 
 function passwordRules(pass: string) {
   return {
-    minLength: pass.length >= 6,
+    minLength: pass.length >= 8,
     hasLetter: /[a-zA-ZğüşıöçĞÜŞİÖÇ]/.test(pass),
     hasNumber: /[0-9]/.test(pass),
   };
@@ -337,7 +337,7 @@ export default function RegisterPage() {
                   onChange={(e) => updateField('password', e.target.value)}
                   className="input py-2.5 text-[15px] pr-12"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
                 <button
                   type="button"
@@ -350,7 +350,7 @@ export default function RegisterPage() {
               </div>
               {form.password && (
                 <div className="mt-2 flex gap-4 flex-wrap">
-                  <PasswordRule ok={rules.minLength} text="En az 6 karakter" />
+                  <PasswordRule ok={rules.minLength} text="En az 8 karakter" />
                   <PasswordRule ok={rules.hasLetter} text="En az 1 harf" />
                   <PasswordRule ok={rules.hasNumber} text="En az 1 rakam" />
                 </div>

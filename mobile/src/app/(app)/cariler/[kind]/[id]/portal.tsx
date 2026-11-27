@@ -15,7 +15,7 @@ import { useTheme } from '@/hooks/use-theme';
 type PortalAccount = { id: string; customerId: string | null; email: string; name: string | null; isActive: boolean; emailVerified: boolean; portalType: string };
 type Customer = { id: string; name: string; email?: string | null };
 
-const passwordOk = (p: string) => p.length >= 6 && /[A-Za-zğüşıöçĞÜŞİÖÇ]/.test(p) && /\d/.test(p);
+const passwordOk = (p: string) => p.length >= 8 && /[A-Za-zğüşıöçĞÜŞİÖÇ]/.test(p) && /\d/.test(p);
 
 // Müşteri portalı hesabı: aç, aktif/pasif yap, şifre sıfırla ve davet gönder.
 export default function PortalAccountScreen() {
@@ -53,7 +53,7 @@ export default function PortalAccountScreen() {
   const create = async () => {
     setError('');
     if (!/^\S+@\S+\.\S+$/.test(mail.trim())) return setError('Geçerli bir e-posta girin.');
-    if (!passwordOk(password)) return setError('Şifre en az 6 karakter, 1 harf ve 1 rakam içermelidir.');
+    if (!passwordOk(password)) return setError('Şifre en az 8 karakter, 1 harf ve 1 rakam içermelidir.');
     setBusy(true);
     try {
       const r = await api<{ emailSent?: boolean }>('/api/portal/auth/register', { method: 'POST', body: { customerId: id, email: mail.trim(), name: cust.name, password } });
@@ -114,7 +114,7 @@ export default function PortalAccountScreen() {
             <Section title="Şifre sıfırla">
               <Field label="Yeni şifre" value={password} onChangeText={setPassword} autoCapitalize="none" autoComplete="off" testID="portal-new-password" />
               <Button title="Şifreyi değiştir" variant="secondary" loading={busy}
-                onPress={() => { if (!passwordOk(password)) setError('Şifre en az 6 karakter, 1 harf ve 1 rakam içermelidir.'); else void update({ newPassword: password }); }} testID="portal-reset" />
+                onPress={() => { if (!passwordOk(password)) setError('Şifre en az 8 karakter, 1 harf ve 1 rakam içermelidir.'); else void update({ newPassword: password }); }} testID="portal-reset" />
             </Section>
             <Button title="Davet gönder" icon="link" onPress={() => { void invite(acc.email); }} testID="portal-invite" />
           </>

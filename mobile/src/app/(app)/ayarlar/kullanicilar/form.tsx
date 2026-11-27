@@ -37,7 +37,7 @@ function Form({ existing }: { existing?: CompanyUser }) {
     setError('');
     if (!existing) {
       if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError('Geçerli bir e-posta girin.');
-      if (password.length < 6 || !/[A-Za-zğüşıöçĞÜŞİÖÇ]/.test(password) || !/\d/.test(password)) return setError('Şifre en az 6 karakter, 1 harf ve 1 rakam içermelidir.');
+      if (password.length < 8 || !/[A-Za-zğüşıöçĞÜŞİÖÇ]/.test(password) || !/\d/.test(password)) return setError('Şifre en az 8 karakter, 1 harf ve 1 rakam içermelidir.');
     }
     setBusy(true);
     try {

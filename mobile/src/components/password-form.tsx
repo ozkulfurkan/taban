@@ -20,7 +20,7 @@ export function PasswordForm() {
   const submit = async () => {
     setError('');
     if (!current) return setError('Mevcut şifrenizi girin.');
-    if (next.length < 6 || !/[A-Za-zğüşıöçĞÜŞİÖÇ]/.test(next) || !/\d/.test(next)) return setError('Yeni şifre en az 6 karakter, 1 harf ve 1 rakam içermelidir.');
+    if (next.length < 8 || !/[A-Za-zğüşıöçĞÜŞİÖÇ]/.test(next) || !/\d/.test(next)) return setError('Yeni şifre en az 8 karakter, 1 harf ve 1 rakam içermelidir.');
     if (next !== again) return setError('Yeni şifreler aynı değil.');
     setBusy(true);
     try {
@@ -42,7 +42,7 @@ export function PasswordForm() {
           <Field label="Mevcut şifre" value={current} onChangeText={setCurrent} secureTextEntry autoComplete="current-password" textContentType="password" testID="pw-current" />
           <Field label="Yeni şifre" value={next} onChangeText={setNext} secureTextEntry autoComplete="new-password" textContentType="newPassword" testID="pw-new" />
           <Field label="Yeni şifre (tekrar)" value={again} onChangeText={setAgain} secureTextEntry autoComplete="new-password" textContentType="newPassword" testID="pw-again" onSubmitEditing={submit} />
-          <T variant="small">En az 6 karakter, 1 harf ve 1 rakam.</T>
+          <T variant="small">En az 8 karakter, 1 harf ve 1 rakam.</T>
           {error ? <T color={c.danger} testID="pw-error">{error}</T> : null}
         </Card>
         <Button title="Şifreyi değiştir" onPress={submit} loading={busy} testID="pw-submit" />

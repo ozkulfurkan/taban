@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { importTooLarge, IMPORT_TOO_LARGE_MESSAGE } from '@/lib/upload-limit';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const file = formData.get('file') as File | null;
   if (!file) return NextResponse.json({ error: 'Dosya bulunamadı' }, { status: 400 });
+  if (importTooLarge(file)) return NextResponse.json({ error: IMPORT_TOO_LARGE_MESSAGE }, { status: 413 });
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const workbook = XLSX.read(buffer, { type: 'buffer' });

@@ -125,7 +125,7 @@ function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
             <label className="block text-xs font-medium text-ink-500 mb-1">Şifre *</label>
             <div className="relative">
               <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="En az 6 karakter"
+                placeholder="En az 8 karakter, harf ve rakam"
                 className="w-full px-3 py-2 pr-9 border border-ink-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-600" />
               <button type="button" onClick={() => setShowPass(!showPass)}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-400">
@@ -209,7 +209,7 @@ function EditUserModal({ user, onClose, onSaved }: { user: User; onClose: () => 
     try {
       const body: any = { name, role, allowedPages: hasFullAccess(role) ? [] : allowedPages };
       if (newPassword) {
-        if (newPassword.length < 6) { setError('Şifre en az 6 karakter olmalı'); setSaving(false); return; }
+        if (newPassword.length < 8) { setError('Şifre en az 8 karakter olmalı'); setSaving(false); return; }
         body.newPassword = newPassword;
       }
       const res = await fetch(`/api/users/${user.id}`, {
