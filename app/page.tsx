@@ -6,6 +6,7 @@ import {
   Truck, UserCheck, Wallet, Smartphone, Check,
 } from '@/app/components/icons';
 import { BrandMark } from '@/app/components/brand-mark';
+import { AppStoreBadge } from '@/app/components/app-store-badge';
 
 const FEATURES = [
   { icon: ClipboardList, title: 'Sipariş takibi', desc: 'Müşteri siparişlerini alın, onaylayın; üretim, hazır ve sevk aşamalarını izleyin.' },
@@ -16,7 +17,7 @@ const FEATURES = [
   { icon: Users, title: 'Müşteri portalı', desc: 'Müşterileriniz katalogdan sipariş verir, durumunu ve ekstresini kendisi görür.' },
   { icon: Wallet, title: 'Ön muhasebe', desc: 'Cari hesaplar, çek portföyü, kasa-banka ve ödeme takibi tek ekranda.' },
   { icon: UserCheck, title: 'Personel takibi', desc: 'Giriş-çıkış, izin ve fazla mesai kayıtları.' },
-  { icon: Smartphone, title: 'Mobil uygulama', desc: 'iOS ve Android uygulamasıyla verilerinize her yerden ulaşın.', soon: true },
+  { icon: Smartphone, title: 'Mobil uygulama', desc: 'iPhone uygulaması App Store’da: cari, tahsilat, sipariş ve bildirimler cebinizde. Android yakında.', soon: false },
 ];
 
 const STEPS = [
@@ -80,6 +81,7 @@ export default function LandingPage() {
               </Link>
               <Link href="/login" className="btn-secondary px-6 py-3 text-[15px]">Giriş yap</Link>
             </div>
+            <AppStoreBadge className="mt-4" testId="landing-app-store" />
           </div>
 
           {/* Ürün kesiti: sipariş kartı */}
@@ -280,7 +282,8 @@ export default function LandingPage() {
             <span className="font-display font-semibold text-ink-900">SoleCost</span>
             <span>© {new Date().getFullYear()}</span>
           </div>
-          <nav className="flex items-center gap-5">
+          <nav className="flex flex-wrap items-center justify-center gap-5">
+            <AppStoreBadge size="sm" testId="footer-app-store" />
             <Link href="/gizlilik" className="hover:text-ink-900">Gizlilik</Link>
             <Link href="/hesap-silme" className="hover:text-ink-900">Hesap silme</Link>
             <Link href="/destek" className="hover:text-ink-900">Destek</Link>

@@ -18,8 +18,9 @@ for (const f of files) {
     'Kısaca:',
     ...(m.recap ?? m.summary).map(s => `• ${s}`),
     '',
-    'SoleCost: ayakkabı ve taban sektörü için maliyet, cari, stok, sipariş ve çek takibi. Web ve mobil (iPhone / Android).',
+    'SoleCost: ayakkabı ve taban sektörü için maliyet, cari, stok, sipariş ve çek takibi. Web ve iPhone uygulaması.',
     'Web: https://www.solecost.com',
+    'iPhone (App Store): https://apps.apple.com/tr/app/solecost/id6836669345?l=tr',
     'Destek: https://www.solecost.com/destek',
   ].join('\n');
   out.push({

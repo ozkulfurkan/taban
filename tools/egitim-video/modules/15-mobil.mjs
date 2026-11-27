@@ -4,7 +4,7 @@ export default {
   slug: 'mobil',
   kicker: 'Mobil uygulama',
   title: 'Mobil Uygulama',
-  summary: ['iPhone ve Android için', 'Web hesabınızla giriş', 'Cari, tahsilat ve ekstre cepte', 'Sipariş ve bildirimler'],
+  summary: ['iPhone uygulaması App Store’da (Android yakında)', 'Web hesabınızla giriş', 'Cari, tahsilat ve ekstre cepte', 'Sipariş ve bildirimler'],
   async run(h) {
     const { p } = h;
     const f = await h.phone(`${APP}/login`);
@@ -39,5 +39,5 @@ export default {
     await h.point(f.getByTestId('home-stock'), 800);
     await h.say('Stok ekranında barkod okutarak ürün bulabilir, stok girişi yapabilirsiniz.', 3000);
   },
-  recap: ['SoleCost uygulamasını telefonunuza kurun', 'Web hesabınızla giriş yapın', 'Cari, tahsilat, sipariş ve bildirimler cebinizde'],
+  recap: ['App Store’dan SoleCost’u indirin', 'Web hesabınızla giriş yapın', 'Cari, tahsilat, sipariş ve bildirimler cebinizde'],
 };

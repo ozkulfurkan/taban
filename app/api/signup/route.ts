@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { APP_STORE_URL } from '@/lib/app-links';
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
           <p>Hesabınız oluşturuldu. Giriş yapabilmek için e-posta adresinizi doğrulamanız gerekmektedir.</p>
           <p><a href="${verifyUrl}" style="background:#6B1A2C;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">E-postamı Doğrula</a></p>
           <p>Butona tıklayamıyorsanız şu bağlantıyı kopyalayın: ${verifyUrl}</p>
+          <p>iPhone uygulaması: <a href="${APP_STORE_URL}">App Store'dan indirin</a> (aynı e-posta ve şifreyle giriş yapın).</p>
           <p>Bu e-posta, SoleCost hesabınız için otomatik olarak gönderildi.</p>
         `,
         text: `Merhaba ${user.name ?? user.email},\n\nHesabınızı doğrulamak için şu bağlantıya tıklayın:\n${verifyUrl}`,

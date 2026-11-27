@@ -1,5 +1,6 @@
 'use client';
 
+import { AppStoreBadge } from '@/app/components/app-store-badge';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -126,6 +127,7 @@ export default function PortalLoginPage() {
               </button>
             </form>
           )}
+          <div className="mt-6 flex justify-center"><AppStoreBadge size="sm" testId="portal-login-app-store" /></div>
         </div>
     </AuthShell>
   );

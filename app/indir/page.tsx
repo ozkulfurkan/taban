@@ -3,10 +3,11 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { BrandMark } from '@/app/components/brand-mark';
+import { APP_STORE_URL } from '@/lib/app-links';
 
 // Davet bağlantısı (www.solecost.com/indir): iPhone'dan açılırsa App Store'a yönlendirir,
 // diğer cihazlarda uygulama ve web girişi bağlantılarını gösterir.
-// App Store adresi: NEXT_PUBLIC_APP_STORE_URL (uygulama yayınlanınca Vercel'e eklenir).
+// App Store adresi: lib/app-links.ts (NEXT_PUBLIC_APP_STORE_URL ile değiştirilebilir).
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default function Indir() {
-  const appStore = process.env.NEXT_PUBLIC_APP_STORE_URL || '';
+  const appStore = APP_STORE_URL;
   const ua = headers().get('user-agent') || '';
   if (appStore && /iPhone|iPad|iPod/i.test(ua)) redirect(appStore);
 
@@ -35,6 +36,7 @@ export default function Indir() {
           ) : (
             <div className="w-full py-3 rounded-xl bg-ink-100 text-ink-500 font-medium" data-testid="indir-soon">iPhone uygulaması yakında App Store&apos;da</div>
           )}
+          <p className="text-xs text-ink-400" data-testid="indir-android">Android uygulaması yakında. Android telefonda web girişini kullanabilirsiniz.</p>
           <Link href="/portal/login" className="block w-full py-3 rounded-xl bg-[#6B1A2C] text-white font-semibold" data-testid="indir-portal">
             Müşteri olarak web&apos;den giriş
           </Link>

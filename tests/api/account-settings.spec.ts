@@ -122,4 +122,13 @@ test('davet sayfası herkese açık; web girişi bağlantısı var', async () =>
   const html = await r.text();
   expect(html).toContain('/portal/login');
   expect(html).toContain('SoleCost');
+  expect(html).toContain('apps.apple.com/tr/app/solecost/id6836669345');
+  // iPhone'dan açılınca doğrudan App Store'a gider
+  const ios = await anon.get('/indir', { headers: { 'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)' }, maxRedirects: 0 });
+  expect([307, 308]).toContain(ios.status());
+  expect(ios.headers()['location']).toContain('apps.apple.com/tr/app/solecost/id6836669345');
+  // Tanıtım ve giriş sayfalarında App Store bağlantısı
+  for (const path of ['/', '/login', '/portal/login']) {
+    expect(await (await anon.get(path)).text(), path).toContain('id6836669345');
+  }
 });
