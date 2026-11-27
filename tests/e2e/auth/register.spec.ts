@@ -40,7 +40,7 @@ test.describe('Auth — Kayıt Akışı', () => {
   test('zaten kayıtlı email → anlaşılır hata mesajı', async ({ page }) => {
     const register = new RegisterPage(page);
     await register.goto();
-    await register.register('Var Olan', 'Firma', TEST_CONFIG.credentials.email, 'Test123456');
+    await register.register('Var Olan', 'Firma', TEST_CONFIG.credentials.email, 'Kayit2026Guclu');
     await expect(page.getByRole('alert').filter({ hasText: /kayıtlı bir hesap/i })).toBeVisible({ timeout: 8000 });
   });
 
