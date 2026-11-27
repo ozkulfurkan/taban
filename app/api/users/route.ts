@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   if (!email || !password) {
     return NextResponse.json({ error: 'Email ve şifre zorunlu' }, { status: 400 });
   }
-  const pwErr = passwordError(password);
+  const pwErr = passwordError(password, { email });
   if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
   const newRole = role || 'EDITOR';
   if (!canAssignRole(user.role, newRole)) {

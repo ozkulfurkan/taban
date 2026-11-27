@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     if (!email || !password) {
       return NextResponse.json({ error: 'E-posta ve şifre zorunludur' }, { status: 400 });
     }
-    const pwErr = passwordError(password);
+    const pwErr = passwordError(password, { email });
     if (pwErr) return NextResponse.json({ error: pwErr }, { status: 400 });
 
     const existing = await prisma.user.findUnique({ where: { email } });

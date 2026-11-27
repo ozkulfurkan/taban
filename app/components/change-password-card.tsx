@@ -53,7 +53,7 @@ export function ChangePasswordCard({ provider = 'credentials' }: { provider?: 'c
         <label className="text-sm text-ink-600 space-y-1"><span>Yeni şifre (tekrar)</span>
           <input type="password" autoComplete="new-password" value={again} onChange={e => setAgain(e.target.value)} className={input} required data-testid="pw-again" /></label>
       </div>
-      <p className="text-xs text-ink-400">En az 6 karakter, 1 harf ve 1 rakam.</p>
+      <p className="text-xs text-ink-400">En az 8 karakter, 1 harf ve 1 rakam.</p>
       {msg ? <p className={`text-sm ${msg.ok ? 'text-emerald-600' : 'text-red-600'}`} data-testid="pw-msg">{msg.text}</p> : null}
       <button type="submit" disabled={busy} className="flex items-center gap-2 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium disabled:opacity-50">
         {busy && <Loader2 className="w-4 h-4 animate-spin" />} Şifreyi değiştir

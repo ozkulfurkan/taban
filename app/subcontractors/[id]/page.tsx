@@ -283,7 +283,7 @@ export default function SubcontractorDetailPage() {
               <p className="text-xs text-ink-500">Fasoncuya giriş yapabileceği bir portal hesabı oluşturulur ve e-posta doğrulama bağlantısı gönderilir. Güvenlik için şifre e-postada gönderilmez; şifreyi fasoncuya siz iletin.</p>
               {[
                 { key: 'email', label: 'E-posta *', type: 'email', placeholder: 'fasoncu@firma.com' },
-                { key: 'password', label: 'Şifre * (en az 6 karakter, harf ve rakam)', type: 'password', placeholder: '••••••••' },
+                { key: 'password', label: 'Şifre * (en az 8 karakter, harf ve rakam)', type: 'password', placeholder: '••••••••' },
                 { key: 'name', label: 'Kullanıcı Adı', type: 'text', placeholder: data.contactPerson || data.name },
               ].map(({ key, label, type, placeholder }) => (
                 <div key={key}>
