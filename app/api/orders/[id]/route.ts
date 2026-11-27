@@ -7,6 +7,7 @@ import { SHIPMENT_ORDER, withLastShipment } from '@/lib/order-shipments';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
+import { canPrice, resolvePrices } from '@/lib/dispatch-prices';
 import { clearStaleShipmentInvoices } from '@/lib/invoice-delete';
 import { isOrderStatus, notifyOrderStatus, notifyOrderTermin, saveShipment } from '@/lib/order-notify';
 import { partVariantMaterialIds, rejectForeignRefs } from '@/lib/tenant';
@@ -57,7 +58,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     : [];
   // Mesaj kutusu yalnızca karşı taraf varsa (firma ağı ya da portal) gösterilir
   const counterparty = await messageCounterparty(order);
-  return NextResponse.json(withLastShipment({ ...order, itemProducts, messaging: !!counterparty, counterparty }));
+  // "Satışa Çevir": müşterinin para biriminde fiyatlar (özel fiyat → liste fiyatı, kurla çevrilmiş); yalnız fiyat yetkisine
+  const productIds = [order.productId, ...(Array.isArray(order.orderItems) ? (order.orderItems as any[]).map(i => i?.productId) : [])].filter((x): x is string => typeof x === 'string' && !!x);
+  const prices = canPrice(user) && order.customerId ? await resolvePrices(user.companyId, order.customerId, productIds) : {};
+  return NextResponse.json(withLastShipment({ ...order, itemProducts, messaging: !!counterparty, counterparty, prices }));
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {

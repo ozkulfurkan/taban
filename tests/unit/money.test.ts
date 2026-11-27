@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  round2, parseAmount, lineTotal, invoiceTotals, customerBalance, invoiceBalanceEffect,
+  round2, round4, amountInput, rateInput, parseAmount, lineTotal, invoiceTotals, customerBalance, invoiceBalanceEffect,
 } from '../../lib/money';
 import { validateInvoiceInput } from '../../lib/invoice-input';
 import { parseDateInput } from '../../lib/time';
@@ -224,4 +224,13 @@ test('çek vadesi: gün farkı, renk ve ağırlıklı ortalama', () => {
   assert.ok(fx.days > 20, String(fx.days));
   assert.deepEqual(totalsByCurrency([{ tutar: 1, currency: 'USD' }, { tutar: 2.5, currency: 'TRY' }, { tutar: 0.1, currency: 'USD' }]),
     [{ currency: 'TRY', count: 1, total: 2.5 }, { currency: 'USD', count: 2, total: 1.1 }]);
+});
+
+test('döviz penceresi: hesaplanan tutar kuruşa, kur 4 ondalığa yuvarlanır', () => {
+  assert.equal(amountInput(1000 / 41.5), '24.1');      // 24.096385542168676 değil
+  assert.equal(amountInput(777 / 41.37), '18.78');
+  assert.equal(rateInput(1000 / 24.1), '41.4938');
+  assert.equal(round4(41.123456), 41.1235);
+  assert.equal(amountInput(0), '');
+  assert.equal(amountInput(NaN), '');
 });

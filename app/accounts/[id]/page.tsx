@@ -1,5 +1,6 @@
 'use client';
 
+import { amountInput, rateInput } from '@/lib/money';
 import PaymentEditModal, { type EditablePayment } from '@/app/components/payment-edit-modal';
 import { useEffect, useState, useCallback } from 'react';
 import { postJson, showSaveError } from '@/app/components/post-json';
@@ -123,21 +124,21 @@ function TransferModal({
   const handleAmountChange = (v: string) => {
     const amt = parseFloat(v);
     const rate = parseFloat(form.exchangeRate);
-    const newTargetAmount = amt > 0 && rate > 0 ? String((amt / rate).toFixed(4)) : '';
+    const newTargetAmount = amt > 0 && rate > 0 ? amountInput(amt / rate) : '';
     setForm(p => ({ ...p, amount: v, targetAmount: newTargetAmount }));
   };
 
   const handleExchangeRateChange = (v: string) => {
     const amt = parseFloat(form.amount);
     const rate = parseFloat(v);
-    const newTargetAmount = amt > 0 && rate > 0 ? String((amt / rate).toFixed(4)) : '';
+    const newTargetAmount = amt > 0 && rate > 0 ? amountInput(amt / rate) : '';
     setForm(p => ({ ...p, exchangeRate: v, targetAmount: newTargetAmount }));
   };
 
   const handleTargetAmountChange = (v: string) => {
     const amt = parseFloat(form.amount);
     const tgt = parseFloat(v);
-    const newRate = amt > 0 && tgt > 0 ? String((amt / tgt).toFixed(4)) : '';
+    const newRate = amt > 0 && tgt > 0 ? rateInput(amt / tgt) : '';
     setForm(p => ({ ...p, targetAmount: v, exchangeRate: newRate }));
   };
 
