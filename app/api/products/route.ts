@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 import { rejectForeignRefs } from '@/lib/tenant';
+import { isRestricted } from '@/lib/access';
 
 // ?list=1: liste ekranları için hafif yanıt (reçete parçaları olmadan)
 export async function GET(req: NextRequest) {
@@ -10,6 +11,13 @@ export async function GET(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const user = session.user as any;
   if (!user.companyId) return NextResponse.json([]);
+
+  // Kısıtlı profil (nakliyeci, usta): yalnız ad/kod/birim; fiyat ve maliyet yok
+  if (isRestricted(user)) {
+    return NextResponse.json(await prisma.product.findMany({
+      where: { companyId: user.companyId }, select: { id: true, name: true, code: true, unit: true, sizes: true }, orderBy: { name: 'asc' },
+    }));
+  }
 
   const products = await prisma.product.findMany({
     where: { companyId: user.companyId },

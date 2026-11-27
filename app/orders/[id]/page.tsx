@@ -1,5 +1,6 @@
 'use client';
 
+import { canEditOrders } from '@/lib/access';
 import { formatQty, isPairUnit } from '@/lib/order-units';
 import { nextStatuses, statusLabel } from '@/lib/order-status';
 import { remainingLines, shipLines, shippedSoFar } from '@/lib/shipment';
@@ -75,6 +76,8 @@ export default function OrderDetailPage() {
   const [showKoli, setShowKoli] = useState(false);
   const { data: session } = useSession() || {};
   const isMaterial = (session?.user as any)?.companyType === 'MATERIAL_SUPPLIER';
+  // Salt okunur (usta): durum, sevkiyat, onay, iptal, fason, satış ve mesaj işlemleri gizlenir
+  const editable = canEditOrders(session?.user as any);
   const [showSubModal, setShowSubModal] = useState(false);
   const [subcontractors, setSubcontractors] = useState<any[]>([]);
   const [materialsList, setMaterialsList] = useState<any[]>([]);
@@ -103,9 +106,11 @@ export default function OrderDetailPage() {
   useEffect(() => { loadOrder(); }, [params?.id]);
 
   useEffect(() => {
+    // Fasoncu ve hammadde listeleri yalnız düzenleme yetkisinde (salt okunur kullanıcı stok bilgisini siparişten görür)
+    if (!session?.user || !canEditOrders(session.user as any)) return;
     fetch('/api/subcontractors').then(r => r.json()).then(d => { if (Array.isArray(d)) setSubcontractors(d); });
     fetch('/api/materials').then(r => r.json()).then(d => { if (Array.isArray(d)) setMaterialsList(d); });
-  }, []);
+  }, [session?.user]);
 
   const handleSendToSubcontractor = () => {
     if (!selectedSubId) return;
@@ -259,7 +264,7 @@ export default function OrderDetailPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {order.status !== 'SHIPPED' && order.status !== 'CANCELLED' && (
+            {editable && order.status !== 'SHIPPED' && order.status !== 'CANCELLED' && (
               <button onClick={handleCancel}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-sm font-medium transition-colors">
                 <X className="w-4 h-4" /> İptal Et
@@ -275,7 +280,7 @@ export default function OrderDetailPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-ink-100 hover:bg-ink-200 text-ink-700 rounded-lg text-sm font-medium transition-colors">
               <Printer className="w-4 h-4" /> Üretim Çıktısı
             </button>
-            {!isPackage && pair && (
+            {editable && !isPackage && pair && (
               Array.isArray(order.subcontractorOrders) && order.subcontractorOrders.length > 0
                 ? order.subcontractorOrders.map((so: any) => (
                     <Link key={so.id} href={`/subcontractors/${so.subcontractor.id}`}
@@ -290,7 +295,7 @@ export default function OrderDetailPage() {
                     </button>
                   )
             )}
-            {postedShipment ? (
+            {!editable ? null : postedShipment ? (
               <Link href={`/invoices/${postedShipment.invoiceId}`} data-testid="order-posted"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium hover:bg-emerald-200"
                 title="Sevkiyat sevk fişiyle cari hesaba işlendi; sipariş ayrıca satışa çevrilmez">
@@ -408,10 +413,10 @@ export default function OrderDetailPage() {
                           </td>}
                           <td className="px-3 py-2 font-semibold text-ink-800 text-xs whitespace-nowrap">{formatQty(item.totalQuantity, item.unit ?? order.unit)}</td>
                           {pair && <td className="px-3 py-2">
-                            <button onClick={() => { setSubModalItem(item); setShowSubModal(true); }}
+                            {editable && <button onClick={() => { setSubModalItem(item); setShowSubModal(true); }}
                               className="flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded text-xs font-medium">
                               <Factory className="w-3 h-3" /> Fasoncu
-                            </button>
+                            </button>}
                           </td>}
                         </tr>
                       ))}
@@ -434,7 +439,7 @@ export default function OrderDetailPage() {
 
           {/* RIGHT — Yönetim */}
           <div className="space-y-4">
-            {order.status === 'ORDER_RECEIVED' && !order.confirmedAt && (
+            {editable && order.status === 'ORDER_RECEIVED' && !order.confirmedAt && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-3" data-testid="order-confirm-card">
                 <h2 className="font-semibold text-amber-800">Sipariş onay bekliyor</h2>
                 <p className="text-xs text-amber-700">Onaylayınca sipariş verene bildirim ve e-posta gider.</p>
@@ -453,7 +458,7 @@ export default function OrderDetailPage() {
             )}
 
             {/* Status update */}
-            <div className="bg-white rounded-xl p-5 shadow-card border border-ink-200/80">
+            {editable && <div className="bg-white rounded-xl p-5 shadow-card border border-ink-200/80">
               <h2 className="font-semibold text-ink-700 mb-4">Durum Güncelle</h2>
               <form onSubmit={handleStatusUpdate} className="space-y-3">
                 <select value={statusForm.status} onChange={e => setStatusForm(f => ({ ...f, status: e.target.value }))}
@@ -477,20 +482,20 @@ export default function OrderDetailPage() {
                   Kaydet
                 </button>
               </form>
-            </div>
+            </div>}
 
             {/* Shipment */}
             <div className="bg-white rounded-xl p-5 shadow-card border border-ink-200/80">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-ink-700">Sevkiyat</h2>
-                {!showShipForm && order.status !== 'CANCELLED' && order.status !== 'SHIPPED' && (totalRemaining > 0 || shipments.length === 0) && (
+                {editable && !showShipForm && order.status !== 'CANCELLED' && order.status !== 'SHIPPED' && (totalRemaining > 0 || shipments.length === 0) && (
                   <Link href={`/sevkiyat/yeni?orderId=${order.id}`} data-testid="order-dispatch"
                     className="ml-auto mr-2 flex items-center gap-1.5 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium"
                     title="Sevk fişi kes: yazdır ve isteğe bağlı cari hesaba işle">
                     <Printer className="w-4 h-4" /> Sevk fişi kes
                   </Link>
                 )}
-                {!showShipForm && order.status !== 'CANCELLED' && (totalRemaining > 0 || shipments.length === 0) && (
+                {editable && !showShipForm && order.status !== 'CANCELLED' && (totalRemaining > 0 || shipments.length === 0) && (
                   <button data-testid="ship-open" onClick={() => openShipForm(null)}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium">
                     <Truck className="w-4 h-4" /> {shipments.length ? 'Yeni Sevkiyat' : 'Sevkiyat Ekle'}
@@ -499,7 +504,7 @@ export default function OrderDetailPage() {
               </div>
               {!showShipForm && (
                 shipments.length ? (
-                  <ShipmentList shipments={shipments} noteEndpoint={`/api/orders/${order.id}/delivery-note`} onEdit={sh => openShipForm(sh)} complete={order.status === 'SHIPPED'} />
+                  <ShipmentList shipments={shipments} noteEndpoint={`/api/orders/${order.id}/delivery-note`} onEdit={editable ? sh => openShipForm(sh) : undefined} complete={order.status === 'SHIPPED'} />
                 ) : <p className="text-sm text-ink-400">Henüz sevkiyat yok.</p>
               )}
               {showShipForm && (
@@ -537,7 +542,7 @@ export default function OrderDetailPage() {
             </div>
 
             {/* Mesajlar ve talepler: yalnızca karşı taraf varsa (firma ağı ya da müşteri portalı) */}
-            {order.messaging && (
+            {editable && order.messaging && (
               <OrderMessages endpoint={`/api/orders/${order.id}/messages`} viewer="staff" resolveBase={`/api/orders/${order.id}/messages`}
                 subtitle={`${order.counterparty === 'network' ? 'Firma ağı' : 'Müşteri portalı'} · ${order.customer?.name ?? ''}`}
                 refreshKey={msgKey} onChanged={() => { loadOrder(); setMsgKey(k => k + 1); }} />

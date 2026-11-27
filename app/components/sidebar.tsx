@@ -96,12 +96,16 @@ export default function Sidebar() {
     return pathname === href || pathname?.startsWith(href + '/');
   };
 
+  // Alt sekmeler (telefon): yalnız izinli sayfalar; kısıtlı profilde (usta, nakliyeci) kendi ekranları
   const bottomTabs = [
     { href: '/dashboard', label: t('nav', 'home'), icon: LayoutDashboard },
     { href: '/customers', label: t('nav', 'commercial'), icon: Users },
     { href: '/products', label: t('nav', 'mobileStock'), icon: BoxIcon },
     { href: '/accounts', label: t('nav', 'mobileAccounts'), icon: Landmark },
-  ];
+    { href: '/orders', label: t('nav', 'incomingOrders'), icon: ClipboardList },
+    { href: '/verilen-siparisler', label: t('nav', 'networkOrders'), icon: Send },
+    { href: '/sevkiyat', label: t('nav', 'dispatch'), icon: Truck },
+  ].filter(tab => canSee(tab.href)).slice(0, 4);
 
   const NavLink = ({ link }: { link: LinkItem }) => {
     const Icon = link.icon;

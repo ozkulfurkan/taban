@@ -58,7 +58,9 @@ export default function Home() {
   const owner = user?.type === 'staff' && (user.role === 'ADMIN' || user.role === 'COMPANY_OWNER');
   const pages = user?.type === 'staff' ? user.allowedPages ?? [] : [];
   // Web'deki sayfa izinleriyle aynı: sahip her kutuyu, diğerleri izin verilen sayfaları görür
-  const tiles = TILES.filter(t => (!t.write || canWrite) && (!t.page || owner || pages.includes(t.page)));
+  // Usta: "orders-view" (salt okunur) ve "material-orders" (hammadde siparişi) izinleri de Siparişler kutucuğunu açar
+  const has = (p: string) => pages.includes(p) || (p === 'orders' && (pages.includes('orders-view') || pages.includes('material-orders')));
+  const tiles = TILES.filter(t => (!t.write || canWrite) && (!t.page || owner || has(t.page)));
   const tones: Record<Tone, { fg: string; bg: string }> = {
     primary: { fg: c.primary, bg: c.primarySoft },
     success: { fg: c.success, bg: c.successSoft },
