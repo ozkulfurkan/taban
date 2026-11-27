@@ -15,6 +15,11 @@ mobil uygulamayı etkileyen **10 iş** (hata düzeltmesi ya da yeni geliştirme)
 
 Not: İlk Android derlemesi (Google Play dahili test, [#42](https://github.com/ozkulfurkan/taban/pull/42)) sayaçtan bağımsız yapılır; o derleme yukarıdaki işleri de Android'e getirir.
 
+## Mağaza durumu
+
+- **iOS:** App Store'da yayında (27.11.2026) — https://apps.apple.com/tr/app/solecost/id6836669345?l=tr
+- **Android:** Google Play'de henüz yayında değil.
+
 ## Derleme geçmişi
 
 | Tarih | Platform | İçerik |
