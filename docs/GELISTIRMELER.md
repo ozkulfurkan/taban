@@ -194,6 +194,14 @@ Durum: **Bekliyor** → **Yapılıyor** → **Tamamlandı** (PR linkiyle). Büy�
 - **Büyüklük:** S
 - **Durum:** Web tamam, mobil bekliyor
 
+## G-12 · Usta (üretim) kullanıcısı — mobil
+- **Tarih:** 27.11.2026
+- **İstek:** "Sadece siparişleri gören ve sipariş verebilen şekilde üretim departmanına kullanıcı adı şifre verelim. Usta girişi"
+- **Önerilen çözüm:** Web'de yapıldı (PR #76). Mobilde yapılan: panelde Siparişler kutucuğu `orders-view`/`material-orders` ile açılır, kullanıcı formunda yeni izinler. Eksik: mobil sipariş ekranında salt okunur kullanıcıya düzenleme düğmeleri gizlenmeli (sunucu zaten 403 veriyor) ve "Yeni hammadde siparişi" (bağlı tedarikçi seç → katalog).
+- **Etkilenen alanlar:** mobil
+- **Büyüklük:** S
+- **Durum:** Web tamam, mobil kısmen (derleme bekliyor)
+
 <!--
 Kayıt şablonu:
 

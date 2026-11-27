@@ -8,10 +8,11 @@ mobil uygulamayı etkileyen **10 iş** (hata düzeltmesi ya da yeni geliştirme)
 - Yalnızca web'i etkileyen işler sayılmaz; onlar Vercel'e anında gider.
 - Her derlemeden sonra sayaç sıfırlanır ve aşağıya not edilir.
 
-## Derleme bekleyen mobil işler: 0 / 10
+## Derleme bekleyen mobil işler: 1 / 10
 
 | İş | Açıklama | PR |
 | --- | --- | --- |
+| G-12 | Usta/nakliyeci izinleri: panelde Siparişler kutucuğu, kullanıcı formunda yeni izinler | [#76](https://github.com/ozkulfurkan/taban/pull/76) |
 
 Not: İlk Android derlemesi (Google Play dahili test, [#42](https://github.com/ozkulfurkan/taban/pull/42)) sayaçtan bağımsız yapılır; o derleme yukarıdaki işleri de Android'e getirir.
 
