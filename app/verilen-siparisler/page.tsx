@@ -33,9 +33,13 @@ export default function NetworkOrdersPage() {
   return (
     <AppShell>
       <div className="space-y-5">
-        <div>
-          <h1 className="page-title">Verilen Siparişler</h1>
-          <p className="text-ink-500 text-sm mt-0.5">SoleCost&apos;ta bağlı olduğunuz tedarikçilere verdiğiniz siparişler. Yeni sipariş için tedarikçi sayfasındaki <b>Sipariş ver</b> düğmesini kullanın.</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="page-title">Verilen Siparişler</h1>
+            <p className="text-ink-500 text-sm mt-0.5">SoleCost&apos;ta bağlı olduğunuz tedarikçilere verdiğiniz hammadde siparişleri.</p>
+          </div>
+          <Link href="/verilen-siparisler/yeni" data-testid="material-order-new"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold">+ Yeni hammadde siparişi</Link>
         </div>
         <div className="flex gap-1 bg-ink-100 rounded-lg p-1 w-fit">
           {([['active', 'Aktif'], ['shipped', 'Sevk edilen'], ['cancelled', 'İptal'], ['all', 'Tümü']] as const).map(([v, l]) => (

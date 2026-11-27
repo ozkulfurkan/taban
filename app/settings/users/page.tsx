@@ -7,6 +7,14 @@ import {
   Users, Plus, Loader2, Trash2, Edit2, Key, X, Save, Eye, EyeOff, Copy, CheckCircle, Shield, AlertTriangle
 } from '@/app/components/icons';
 
+// Hazır kullanıcı tipleri: tek tıkla rol ve izinler
+const PRESETS: Array<{ key: string; label: string; desc: string; role: string; pages: string[] }> = [
+  { key: 'usta', label: 'Usta (üretim)', desc: 'Gelen siparişleri görür (fiyatsız, değiştiremez), hammadde siparişi verir', role: 'EDITOR', pages: ['orders-view', 'material-orders'] },
+  { key: 'nakliyeci', label: 'Nakliyeci', desc: 'Yalnız sevk fişi keser (fiyat görmez)', role: 'EDITOR', pages: ['sevkiyat'] },
+];
+const presetOf = (u: { role: string; allowedPages: string[] }) =>
+  PRESETS.find(p => p.role === u.role && p.pages.length === u.allowedPages.length && p.pages.every(k => u.allowedPages.includes(k)));
+
 const ALL_PAGES = [
   { key: 'dashboard', label: 'Ana Sayfa' },
   { key: 'customers', label: 'Müşteriler' },
@@ -19,6 +27,8 @@ const ALL_PAGES = [
   { key: 'cek-portfolyo', label: 'Çek Portföyü' },
   { key: 'calculations', label: 'Taban Maliyet Hesapla' },
   { key: 'orders', label: 'Gelen Siparişler' },
+  { key: 'orders-view', label: 'Gelen Siparişleri Görüntüle (salt okunur)' },
+  { key: 'material-orders', label: 'Hammadde Siparişi Ver' },
   { key: 'sevkiyat', label: 'Sevkiyat (sevk fişi)' },
   { key: 'fason', label: 'Fason' },
   { key: 'personnel', label: 'Personel Takip' },
@@ -122,6 +132,20 @@ function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
                 {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-ink-500 mb-1.5">Hazır kullanıcı tipi</label>
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map(p => (
+                <button key={p.key} type="button" title={p.desc} data-testid={`preset-${p.key}`}
+                  onClick={() => { setRole(p.role); setAllowedPages(p.pages); }}
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-medium ${presetOf({ role, allowedPages }) === p ? 'bg-brand-700 text-white border-brand-700' : 'bg-white border-ink-200 text-ink-700 hover:border-brand-400'}`}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            {presetOf({ role, allowedPages }) && <p className="text-xs text-ink-500 mt-1">{presetOf({ role, allowedPages })!.desc}</p>}
           </div>
 
           {!hasFullAccess(role) && (
@@ -427,6 +451,8 @@ export default function UsersPage() {
                     <td className="px-4 py-3 hidden md:table-cell">
                       {hasFullAccess(u.role) ? (
                         <span className="text-xs text-ink-400 italic">Tam erişim</span>
+                      ) : presetOf(u) ? (
+                        <span className="text-xs bg-brand-50 text-brand-800 px-1.5 py-0.5 rounded font-medium" data-testid="user-preset">{presetOf(u)!.label}</span>
                       ) : u.allowedPages.length === 0 ? (
                         <span className="text-xs text-red-400 italic">Erişim yok</span>
                       ) : u.allowedPages.length === ALL_PAGES.length ? (

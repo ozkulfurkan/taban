@@ -1,6 +1,6 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
-import { canSeePage, checkApiAccess } from '@/lib/access';
+import { canSeePage, checkApiAccess, homePathFor } from '@/lib/access';
 import { decode } from 'next-auth/jwt';
 import { bearerToken, withBearerCookie } from '@/lib/mobile-auth';
 
@@ -17,7 +17,7 @@ export default withAuth(
       if (bearer) {
         token = await decode({ token: bearer, secret: process.env.NEXTAUTH_SECRET! }).catch(() => null);
       }
-      const decision = checkApiAccess(token, req.method, pathname);
+      const decision = checkApiAccess(token, req.method, pathname, req.nextUrl.searchParams);
       if (!decision.ok) {
         return NextResponse.json({ error: decision.error }, { status: decision.status });
       }
@@ -63,6 +63,11 @@ export default withAuth(
         pathname.startsWith('/portal/fason/');
       if (isPortalCustomerRoute) {
         return NextResponse.redirect(new URL('/dashboard', req.url));
+      }
+      // Ana Sayfa izni olmayan (ör. usta, nakliyeci) girişte izinli ilk sayfasına gider
+      if ((pathname === '/dashboard' || pathname === '/dashboard/') && !canSeePage(token, pathname)) {
+        const home = homePathFor(token);
+        if (home !== '/dashboard') return NextResponse.redirect(new URL(home, req.url));
       }
       // Sayfa izinleri (menüde gizlenen sayfaya adresle girilmesini engeller)
       if (!canSeePage(token, pathname)) {
@@ -119,6 +124,10 @@ export const config = {
     '/portal/fason',
     '/orders/:path*',
     '/orders',
+    '/sevkiyat/:path*',
+    '/sevkiyat',
+    '/verilen-siparisler/:path*',
+    '/verilen-siparisler',
     '/personnel/:path*',
     '/personnel',
     '/destek-merkezi/:path*',

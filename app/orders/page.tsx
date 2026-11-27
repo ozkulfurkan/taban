@@ -1,5 +1,6 @@
 'use client';
 
+import { canEditOrders } from '@/lib/access';
 import { formatQty } from '@/lib/order-units';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -71,6 +72,8 @@ const BULK_ACTIONS = [
 export default function OrdersPage() {
   const router = useRouter();
   const { data: session } = useSession() || {};
+  // Salt okunur (usta): yeni sipariş ve toplu durum değişikliği yok
+  const editable = canEditOrders(session?.user as any);
   const [activeTab, setActiveTab] = useState('ORDER_RECEIVED');
   const [datePreset, setDatePreset] = useState<DatePreset>('1m');
   const [dateFrom, setDateFrom] = useState(defaultDateFrom);
@@ -104,7 +107,8 @@ export default function OrdersPage() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/customers')
+    // Filtre için yalnız müşteri adları (bakiye yok)
+    fetch('/api/customers?minimal=true')
       .then(r => r.json())
       .then(d => setCustomers(Array.isArray(d) ? d : (d.customers ?? [])))
       .catch(() => {});
@@ -202,10 +206,10 @@ export default function OrdersPage() {
               className="flex items-center gap-1.5 px-4 py-2 bg-white border border-ink-200 hover:bg-ink-50 text-ink-700 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50">
               <Printer className="w-4 h-4" /> Yazdır / PDF{selectedIds.size ? ` (${selectedIds.size})` : ''}
             </button>
-            <Link href="/orders/new"
+            {editable && <Link href="/orders/new"
               className="flex items-center gap-1.5 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold transition-colors">
               <Plus className="w-4 h-4" /> Yeni Sipariş
-            </Link>
+            </Link>}
           </div>
         </div>
 
@@ -331,7 +335,7 @@ export default function OrdersPage() {
           </div>
 
           {/* Bulk action dropdown */}
-          {view === 'order' && selectedIds.size > 0 && (
+          {editable && view === 'order' && selectedIds.size > 0 && (
             <div className="relative flex-shrink-0" ref={bulkRef}>
               <button
                 onClick={() => setBulkOpen(o => !o)}
@@ -368,9 +372,9 @@ export default function OrdersPage() {
           <div className="bg-white rounded-xl shadow-card text-center py-16 border border-ink-200/80">
             <ClipboardList className="w-12 h-12 text-ink-200 mx-auto mb-3" />
             <p className="text-ink-400 text-sm mb-3">Henüz sipariş yok</p>
-            <Link href="/orders/new" className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium transition-colors">
+            {editable && <Link href="/orders/new" className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-medium transition-colors">
               <Plus className="w-4 h-4" /> İlk siparişi oluştur
-            </Link>
+            </Link>}
           </div>
         ) : view === 'product' ? (
           <ProductSummaryTable summary={productSummary} />
